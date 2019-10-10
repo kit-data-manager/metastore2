@@ -1,0 +1,43 @@
+import java.text.SimpleDateFormat
+
+apply plugin: 'jacoco'
+
+ext {
+   snippetsDir = file("build/generated-snippets")
+}
+
+test { 
+   outputs.dir snippetsDir
+}
+
+asciidoctor {
+   attributes "snippets": snippetsDir,
+            "version": version,
+            "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+   inputs.dir snippetsDir
+   dependsOn test  
+   sourceDir "docs/"
+   outputDir "build/docs"
+}
+
+test {
+   environment "spring.config.location", "classpath:/config/"
+   include '**/*'
+}
+
+tasks.withType(Test) {
+   testLogging {
+      events 'started', 'passed'
+   }
+}
+
+jacoco {
+   toolVersion = "0.8.2"
+}
+
+jacocoTestReport {
+   reports {
+      xml.enabled true
+      html.enabled true
+   }}
+   
