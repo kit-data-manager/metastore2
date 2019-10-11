@@ -40,21 +40,39 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
   @Override
   public ResponseEntity<MetadataSchemaRecord> createRecord(MetadataSchemaRecord record, MultipartFile document, WebRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder){
+    //check schema id and mimetype in record -> if not found HTTP BAD_REQUEST
+    //find record for schemaid -> if found HTTP CONFLICT
+    //check record type -> not found: guess according to document
+    //try to read document according to type in record -> if fails HTTP BAD_REQUEST
+    //persist document
+    //update schemaDocumentUri in record 
+    //set createdAt and lastUpdate to Instant.now()
+    //persist record
+    //return HTTP 201 with record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public ResponseEntity<MetadataSchemaRecord> getRecordById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
+    //search for record with provided schemaId -> if not found HTTP NOT_FOUND
+    //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+    //return HTTP 200 with record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public ResponseEntity getSchemaDocumentById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
+    //search for record with provided schemaId -> if not found HTTP NOT_FOUND
+    //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+    //obtain schemaDocumentUri from record -> if file not found return HTTP NOT_FOUND
+    //return HTTP 200 with streamed file
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(List<String> schemaIds, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
+      //search for records with provided schemaIds AND mimeTypes including updateFrom and updateUntil for lastUpdate field
+      //re
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
