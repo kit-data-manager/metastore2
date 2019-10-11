@@ -61,31 +61,34 @@ public interface ISchemaRegistryController{
           final HttpServletResponse response,
           final UriComponentsBuilder uriBuilder);
 
-  @ApiOperation(value = "Get a schema record by its id.", notes = "Obtain is single schema record by its identifier. Depending on a user's role, accessing a specific record may be allowed or forbidden."
-          + " Furthermore, a specific version of the record can be returned by providing a version number as request parameter.")
-  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/json"})
+  @ApiOperation(value = "Get a schema record by schema id.", notes = "Obtain is single schema record by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden."
+          + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter.")
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK and the record is returned if the record exists and the user has sufficient permission.", response = MetadataSchemaRecord.class),
     @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
   @ResponseBody
-  public ResponseEntity<MetadataSchemaRecord> getRecordById(@ApiParam(value = "The record identifier.", required = true) @PathVariable(value = "id") String id,
-          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+  public ResponseEntity<MetadataSchemaRecord> getRecordById(@ApiParam(value = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
+          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @ApiOperation(value = "Get a schema document by its record's id.", notes = "Obtain is single schema document identified by it's associated record's identifier. Depending on a user's role, accessing a specific record may be allowed or forbidden. "
+  @ApiOperation(value = "Get a schema document by schema id.", notes = "Obtain is single schema document identified by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the schema document can be returned by providing a version number as request parameter.")
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK and the schema document is returned if the record exists and the user has sufficient permission."),
     @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
   @ResponseBody
-  public ResponseEntity getSchemaDocumentById(@ApiParam(value = "The record identifier.", required = true) @PathVariable(value = "id") String id,
+  public ResponseEntity getSchemaDocumentById(@ApiParam(value = "The schema id.", required = true) @PathVariable(value = "id") String id,
           @ApiParam(value = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @ApiOperation(value = "Get all schema records.", notes = "List all schema records in a paginated and/or sorted form. The result can be refined by providing a list of one or more mimetypes returned schema(s) are linked to. A schema is listed, if it's associated mimetype is in the list. "
+  @ApiOperation(value = "Get all schema records.", notes = "List all schema records in a paginated and/or sorted form. The result can be refined by providing a list of one or more mimetypes returned schema(s) are linked to  and/or one or more schema identifier valid records must match. "
+          + "If both parameters are provided, a record matches if its associated mime type AND the schema id are matching. "
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
           + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed.")
@@ -98,6 +101,7 @@ public interface ISchemaRegistryController{
     @ApiResponse(code = 200, message = "OK and a list of records or an empty list of no record matches.")})
   @ResponseBody
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
+          @ApiParam(value = "A list of schema ids of returned schemas.", required = false) @RequestParam(value = "schemaId") List<String> schemaIds,
           @ApiParam(value = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType") List<String> mimeTypes,
           @ApiParam(value = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @ApiParam(value = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
@@ -106,7 +110,7 @@ public interface ISchemaRegistryController{
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
 
-  @ApiOperation(value = "Update a schema record.", notes = "Apply an update to the schema record with the provided id and/or its accociated schema document. "
+  @ApiOperation(value = "Update a schema record.", notes = "Apply an update to the schema record with the provided schema id and/or its accociated schema document. "
           + "If versioning is enabled, a new version of the record is created. Otherwise, the record and/or its schema are overwritten.")
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK is returned in case of a successful update, e.g. the record (if provided) was in the correct format and the schema (if provided) is valid according to the provided schema type. "
@@ -115,7 +119,7 @@ public interface ISchemaRegistryController{
     @ApiResponse(code = 404, message = "Not Found is returned if no record for the provided id was found.", response = MetadataSchemaRecord.class)})
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
   ResponseEntity<MetadataSchemaRecord> updateRecord(
-          @ApiParam(value = "The schema record identifier.", required = true) @PathVariable("id") String id,
+          @ApiParam(value = "The schema id.", required = true) @PathVariable("id") String id,
           @ApiParam(value = "JSON representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MetadataSchemaRecord record,
           @ApiParam(value = "The schema document associated with the record. The document must match the schema type defined in the record.", required = false) @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request,
@@ -123,11 +127,12 @@ public interface ISchemaRegistryController{
           final UriComponentsBuilder uriBuilder
   );
 
-  @ApiOperation(value = "Delete a schema record.", notes = "Delete a single schema record and the associated schema document. Deleting a record typically requires the caller to have special permissions. "
+  @ApiOperation(value = "Delete a schema record.", notes = "Delete a single schema record and the associated schema document by schema id. "
+          + "Deleting a record typically requires the caller to have special permissions. "
           + "In some cases, deleting a record can also be available for the owner or other privileged users or can be forbidden at all. Deletion of a record affects all versions of the particular record.")
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
   @ApiResponses(value = {
     @ApiResponse(code = 204, message = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @ResponseBody
-  public ResponseEntity deleteRecord(@ApiParam(value = "The record identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
+  public ResponseEntity deleteRecord(@ApiParam(value = "The schema id.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
 }

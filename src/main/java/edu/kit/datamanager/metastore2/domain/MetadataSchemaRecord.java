@@ -24,14 +24,10 @@ import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
-import java.net.URI;
 import java.time.Instant;
-import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import lombok.Data;
 
@@ -50,13 +46,8 @@ public class MetadataSchemaRecord implements Serializable{
     XML
     //,PROPERTIES
   }
-
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @ApiModelProperty(value = "The numeric identifier of the schema. Used for adressing the schema at the RESTful endpoint.", dataType = "Long")
-  private Long id;
   @ApiModelProperty(value = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.", dataType = "String", example = "dc1.1")
-  @Column(unique = true)
   private String schemaId;
   @ApiModelProperty(value = "The mime type this schema is associated with. The mime type should be as specific as possible in order to allow an easy mapping of documents matching the schema.", dataType = "String", example = "application/vnd.datamanager.data-resource+json")
   private String mimeType;
