@@ -1,0 +1,6 @@
+[submodule "libraries/service-base"]
+	path = libraries/service-base
+	url = git://github.com/kit-data-manager/service-base.git
+[submodule "libraries/generic-message-consumer"]
+	path = libraries/generic-message-consumer
+	url = git://github.com/kit-data-manager/generic-message-consumer.git

@@ -1,0 +1,51 @@
+/**Build the service-base library. This is the first step required before any other library can be build.
+ * There are two more options involved in here:
+ * 
+ * If properties 'clean-release' or 'travis' are set, the current sources of all dependend libraries are pulled from the remote repository. 
+ * If property 'clean-release' is set, also the sources of the base-repo are pulled before the build starts.
+ * 
+ * Afterwards, 'gradlew build install' is executed for the service-base dependency.
+ */
+task buildServiceBase(type:Exec){
+   if (project.hasProperty('clean-release') || project.hasProperty('travis')) {
+      apply from: 'gradle/git_checkout.gradle'
+      if (!project.hasProperty('travis')) {
+         dependsOn checkoutProject, checkoutDependencies
+      }else{
+         dependsOn checkoutDependencies
+      }
+   }
+   workingDir 'libraries/service-base'
+   commandLine './gradlew.bat', 'build', 'install'
+
+   standardOutput = new ByteArrayOutputStream()
+
+   ext.output = {
+      return standardOutput.toString()
+   }
+}
+
+/**Build the generic-message-consumer library. This dependeny is build after the service-base dependency has been built. Thus, it will also
+ * benefit from updating its sources in case the according properties are set.
+ * 
+ * Afterwards, 'gradlew build install' is executed for the generic-message-consumer dependency.
+ */
+task buildGenericMessageConsumer(type:Exec){
+   dependsOn buildServiceBase
+ 
+   workingDir 'libraries/generic-message-consumer'
+   commandLine './gradlew.bat', 'build', 'install'
+
+   standardOutput = new ByteArrayOutputStream()
+
+   ext.output = {
+      return standardOutput.toString()
+   }
+}
+
+/**The default task for compiling the project has to be overwritten in order to build first 
+ * all dependencies. At this point, task 'buildServiceBase' is called.
+ */
+compileJava {
+      dependsOn buildGenericMessageConsumer
+}
