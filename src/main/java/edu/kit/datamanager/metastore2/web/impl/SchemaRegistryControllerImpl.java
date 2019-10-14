@@ -56,6 +56,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   public ResponseEntity<MetadataSchemaRecord> getRecordById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
     //search for record with provided schemaId -> if not found HTTP NOT_FOUND
     //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     //return HTTP 200 with record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
@@ -64,6 +65,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   public ResponseEntity getSchemaDocumentById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
     //search for record with provided schemaId -> if not found HTTP NOT_FOUND
     //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+    
     //obtain schemaDocumentUri from record -> if file not found return HTTP NOT_FOUND
     //return HTTP 200 with streamed file
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
