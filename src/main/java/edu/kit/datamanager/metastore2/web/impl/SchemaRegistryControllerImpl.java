@@ -85,7 +85,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
     //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
     //ETag check -> HTTP CONFLICT if fails
-    //check for valid fields to update -> return HTTP BAD_REQUEST if forbidden fields are included
+    //check for valid fields to update (mimeType only?) -> return HTTP BAD_REQUEST if forbidden fields are included
     //if document is provided:
     //check record type -> guess if not provided
     //try to read document according to type -> HTTP BAD_REQUEST if fails
