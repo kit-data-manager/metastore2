@@ -63,27 +63,27 @@ public interface ISchemaRegistryController{
 
   @ApiOperation(value = "Get a schema record by schema id.", notes = "Obtain is single schema record by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden."
-          + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter.")
+          + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.")
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK and the record is returned if the record exists and the user has sufficient permission.", response = MetadataSchemaRecord.class),
-    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
+    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id and version was found.")})
   @ResponseBody
   public ResponseEntity<MetadataSchemaRecord> getRecordById(@ApiParam(value = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
-          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning is enabled.", required = false) @RequestParam(value = "version") Long version,
+          @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version") Integer version,
           WebRequest wr,
           HttpServletResponse hsr);
 
   @ApiOperation(value = "Get a schema document by schema id.", notes = "Obtain is single schema document identified by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
-          + "Furthermore, a specific version of the schema document can be returned by providing a version number as request parameter.")
+          + "Furthermore, a specific version of the schema document can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.")
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK and the schema document is returned if the record exists and the user has sufficient permission."),
-    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
+    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id and version was found.")})
   @ResponseBody
   public ResponseEntity getSchemaDocumentById(@ApiParam(value = "The schema id.", required = true) @PathVariable(value = "id") String id,
-          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+          @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version") Integer version,
           WebRequest wr,
           HttpServletResponse hsr);
 
@@ -91,7 +91,7 @@ public interface ISchemaRegistryController{
           + "If both parameters are provided, a record matches if its associated mime type AND the schema id are matching. "
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
-          + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed.")
+          + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.")
   @ApiImplicitParams(value = {
     @ApiImplicitParam(name = "page", dataType = "integer", paramType = "query", value = "Results page you want to retrieve (0..N)"),
     @ApiImplicitParam(name = "size", dataType = "integer", paramType = "query", value = "Number of records per page."),
@@ -111,7 +111,10 @@ public interface ISchemaRegistryController{
           UriComponentsBuilder ucb);
 
   @ApiOperation(value = "Update a schema record.", notes = "Apply an update to the schema record with the provided schema id and/or its accociated schema document. "
-          + "If versioning is enabled, a new version of the record is created. Otherwise, the record and/or its schema are overwritten.")
+          + "The update capabilities for a schema record are quite limited. An update is always related to the most recent version. "
+          + "Without providing a new schema document, only the associated mimeType and acl can be changed. If a schema document "
+          + "is provided, also the schema type can be changed if necessary. All other fields are updated automatically or are read-only."
+          + "If a schema document is provided which differs from the current document, the version of the schema is increased by one. Modifying the record does not affect the version number.")
   @ApiResponses(value = {
     @ApiResponse(code = 200, message = "OK is returned in case of a successful update, e.g. the record (if provided) was in the correct format and the schema (if provided) is valid according to the provided schema type. "
             + "The updated record is returned in the response."),

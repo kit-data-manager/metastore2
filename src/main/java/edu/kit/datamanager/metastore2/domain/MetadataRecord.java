@@ -58,8 +58,11 @@ public class MetadataRecord implements Serializable{
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @ApiModelProperty(value = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.", dataType = "String", example = "dc1.1")
+  @ApiModelProperty(value = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.", dataType = "String", example = "dc")
   private String schemaId;
+  @ApiModelProperty(value = "The version of the used schema. If none is provided, the most recent version at record creation time is used.", dataType = "Integer")
+  private Integer schemaVersion;
+  
   @ApiModelProperty(value = "A list of access control entries for resticting access.")
   private Set<AclEntry> acl;
   @ApiModelProperty(value = "The metadata document uri, e.g. pointing to a local file.")

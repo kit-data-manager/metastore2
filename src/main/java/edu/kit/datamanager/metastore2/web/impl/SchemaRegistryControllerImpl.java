@@ -47,24 +47,25 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     //persist document
     //update schemaDocumentUri in record 
     //set createdAt and lastUpdate to Instant.now()
+    //set schemaVersion to 1
     //persist record
     //return HTTP 201 with record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
-  public ResponseEntity<MetadataSchemaRecord> getRecordById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
-    //search for record with provided schemaId -> if not found HTTP NOT_FOUND
+  public ResponseEntity<MetadataSchemaRecord> getRecordById(String id, Integer version, WebRequest wr, HttpServletResponse hsr){
+    //search for record with provided schemaId and version -> if not found HTTP NOT_FOUND
     //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
+    //set schemaDocumentUri to path of getSchemaDocumentById(id, version)
     //return HTTP 200 with record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
-  public ResponseEntity getSchemaDocumentById(String id, Long version, WebRequest wr, HttpServletResponse hsr){
-    //search for record with provided schemaId -> if not found HTTP NOT_FOUND
-    //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+  public ResponseEntity getSchemaDocumentById(String id, Integer version, WebRequest wr, HttpServletResponse hsr){
+    //search for record with provided schemaId and version -> if not found HTTP NOT_FOUND
     //if security is enabled, check permissions -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     //obtain schemaDocumentUri from record -> if file not found return HTTP NOT_FOUND
     //return HTTP 200 with streamed file
@@ -73,37 +74,43 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
   @Override
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(List<String> schemaIds, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
-      //search for records with provided schemaIds AND mimeTypes including updateFrom and updateUntil for lastUpdate field
+      //search for records with provided schemaIds AND mimeTypes including updateFrom and updateUntil for lastUpdate field with the biggest version number
       //if security is enabled, include principal in query
+      //set all schemaDocumentUri elemets to path of getSchemaDocumentById(schemaId, version)
       //return HTTP 200 and result list
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public ResponseEntity<MetadataSchemaRecord> updateRecord(String id, MetadataSchemaRecord record, MultipartFile document, WebRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder){
-    //search for record with provided schemaId -> if not found, return HTTP NOT_FOUND
-    //if versioning enabled, include version number -> if version not found, return HTTP NOT_FOUND
+    //search for record with provided schemaId in the most recent version -> if not found, return HTTP NOT_FOUND
     //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
     //ETag check -> HTTP CONFLICT if fails
-    //check for valid fields to update (mimeType only?) -> return HTTP BAD_REQUEST if forbidden fields are included
+    //check for valid fields to update (mimeType and acl, if document is provided also recordType) -> return HTTP BAD_REQUEST if forbidden fields are included
+
     //if document is provided:
+    //compare current document with provided and check for difference -> no difference, proceed at end
     //check record type -> guess if not provided
     //try to read document according to type -> HTTP BAD_REQUEST if fails
     //persist document
-    //update schemaDocumentUri accordingly
     //end if document provided
-    //apply changes to record
+    
+    //apply changes to record (mimeType, acl and schema type if document was provided)
+    //update version (if document was provided)
+    //update schemaDocumentUri (if document was provided)
     //update lastModifiedAt to Instant.now()
+    
     //Persist record
+    //set schemaDocumentUri to path of getSchemaDocumentById(id, version)
     //return HTTP 200 and record
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
 
   @Override
   public ResponseEntity deleteRecord(String id, WebRequest wr, HttpServletResponse hsr){
-      //search for record with provided schemaId
+      //search for all versions of record with provided schemaId
       //ETag check -> HTTP CONFLICT if fails
-      //Delete document and record
+      //Delete documents and records
       //return HTTP 204
     throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
   }
