@@ -8,13 +8,11 @@ package edu.kit.datamanager.metastore2.validation;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import java.io.File;
 import java.io.InputStream;
-import org.springframework.stereotype.Component;
 
 /**
  *
  * @author Torridity
  */
-@Component
 public interface IValidator {
 
     boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type);

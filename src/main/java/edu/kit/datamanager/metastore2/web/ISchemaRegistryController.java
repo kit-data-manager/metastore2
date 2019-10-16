@@ -70,7 +70,7 @@ public interface ISchemaRegistryController {
         @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id and version was found.")})
     @ResponseBody
     public ResponseEntity<MetadataSchemaRecord> getRecordById(@ApiParam(value = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
-            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version") Integer version,
+            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Integer version,
             WebRequest wr,
             HttpServletResponse hsr);
 
@@ -85,7 +85,7 @@ public interface ISchemaRegistryController {
     })
     @ResponseBody
     public ResponseEntity<MetadataSchemaRecord> validate(@ApiParam(value = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
-            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version") Integer version,
+            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Integer version,
             @ApiParam(value = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
             WebRequest wr,
             HttpServletResponse hsr);
@@ -99,7 +99,7 @@ public interface ISchemaRegistryController {
         @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id and version was found.")})
     @ResponseBody
     public ResponseEntity getSchemaDocumentById(@ApiParam(value = "The schema id.", required = true) @PathVariable(value = "id") String id,
-            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version") Integer version,
+            @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Integer version,
             WebRequest wr,
             HttpServletResponse hsr);
 
@@ -117,8 +117,8 @@ public interface ISchemaRegistryController {
         @ApiResponse(code = 200, message = "OK and a list of records or an empty list of no record matches.")})
     @ResponseBody
     public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
-            @ApiParam(value = "A list of schema ids of returned schemas.", required = false) @RequestParam(value = "schemaId") List<String> schemaIds,
-            @ApiParam(value = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType") List<String> mimeTypes,
+            @ApiParam(value = "A list of schema ids of returned schemas.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
+            @ApiParam(value = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
             @ApiParam(value = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
             @ApiParam(value = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
             Pageable pgbl,

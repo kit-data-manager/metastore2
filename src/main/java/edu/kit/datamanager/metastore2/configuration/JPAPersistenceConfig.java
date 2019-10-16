@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @Configuration
 @EnableTransactionManagement
-@EnableJpaRepositories(basePackages = "edu.kit.datamanager.notification")
+@EnableJpaRepositories(basePackages = "edu.kit.datamanager.metastore2")
 @EntityScan(basePackages = {"edu.kit.datamanager.metastore2.domain"})
 public class JPAPersistenceConfig{
 

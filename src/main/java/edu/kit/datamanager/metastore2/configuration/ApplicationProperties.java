@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
+import java.net.URL;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.stereotype.Component;
@@ -31,4 +32,6 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties{
 
+  @edu.kit.datamanager.annotations.LocalFolderURL
+  private URL schemaFolder;
 }
