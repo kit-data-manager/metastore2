@@ -112,7 +112,7 @@ bootJar {
 }
 
 test {
-   environment "spring.config.location", "classpath:/test/"
+   environment "spring.config.location", "classpath:/test-config/"
 
    testLogging {
       outputs.upToDateWhen {false}

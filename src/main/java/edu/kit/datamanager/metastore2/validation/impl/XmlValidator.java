@@ -18,12 +18,14 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 /**
  *
  * @author Torridity
  */
+@Component
 public class XmlValidator implements IValidator {
 
     private static final Logger LOG = LoggerFactory.getLogger(XmlValidator.class);

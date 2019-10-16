@@ -8,9 +8,9 @@ package edu.kit.datamanager.metastore2.test;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.repo.AclEntry;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,71 +43,69 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
-    DependencyInjectionTestExecutionListener.class,
-    DirtiesContextTestExecutionListener.class,
-    TransactionalTestExecutionListener.class,
-    WithSecurityContextTestExecutionListener.class})
+  DependencyInjectionTestExecutionListener.class,
+  DirtiesContextTestExecutionListener.class,
+  TransactionalTestExecutionListener.class,
+  WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-public class SchemaRegistryControllerTest {
+public class SchemaRegistryControllerTest{
 
-    @Autowired
-    private MockMvc mockMvc;
-    @Autowired
-    private IMetadataSchemaDao metadataSchemaDao;
+  @Autowired
+  private MockMvc mockMvc;
+  @Autowired
+  private IMetadataSchemaDao metadataSchemaDao;
 
-    @Before
-    public void setUp() throws JsonProcessingException {
-        metadataSchemaDao.deleteAll();
-    }
+  @Before
+  public void setUp() throws JsonProcessingException{
+    metadataSchemaDao.deleteAll();
+  }
 
-    @Test
-    public void testGetSchemaRecordByIdWithoutVersion() throws Exception {
-        createDcSchema();
+  @Test
+  public void testGetSchemaRecordByIdWithoutVersion() throws Exception{
+    createDcSchema();
 
-        MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/dc")).andDo(print()).andExpect(status().isOk()).andReturn();
-        ObjectMapper map = new ObjectMapper();
-        MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("dc", result[0].getSchemaId());
-        Assert.assertNotEquals("file:///tmp/dc.xsd", result[0].getSchemaDocumentUri());
-    }
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/dc").header("Accept", "application/vnd.datamanager.schema-record+json")).andDo(print()).andExpect(status().isOk()).andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertNotNull(result);
+    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
+  }
 
-    @Test
-    public void testGetSchemaRecordByIdWithVersion() throws Exception {
-        createDcSchema();
+  @Test
+  public void testGetSchemaRecordByIdWithVersion() throws Exception{
+    createDcSchema();
 
-        MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "1")).andDo(print()).andExpect(status().isOk()).andReturn();
-        ObjectMapper map = new ObjectMapper();
-        MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-        Assert.assertNotNull(result);
-        Assert.assertEquals(1, result.length);
-        Assert.assertEquals("dc", result[0].getSchemaId());
-        Assert.assertNotEquals("file:///tmp/dc.xsd", result[0].getSchemaDocumentUri());
-    }
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "1").header("Accept", "application/vnd.datamanager.schema-record+json")).andDo(print()).andExpect(status().isOk()).andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertNotNull(result);
+    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
+  }
 
-    @Test
-    public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception {
-        createDcSchema();
-        this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "2")).andDo(print()).andExpect(status().isNotFound()).andReturn();
-    }
+  @Test
+  public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception{
+    createDcSchema();
+    this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "2").header("Accept", "application/vnd.datamanager.schema-record+json")).andDo(print()).andExpect(status().isNotFound()).andReturn();
+  }
 
-    private void createDcSchema() {
-        MetadataSchemaRecord record = new MetadataSchemaRecord();
-        record.setCreatedAt(Instant.now());
-        record.setLastUpdate(Instant.now());
-        record.setSchemaId("dc");
-        record.setSchemaVersion(1);
-        record.setMimeType("application/xml");
-        record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-        Set<AclEntry> acl = new HashSet<>();
-        AclEntry entry = new AclEntry();
-        entry.setSid("SELF");
-        entry.setPermission(PERMISSION.WRITE);
-        acl.add(entry);
-        record.setAcl(acl);
-        record.setSchemaDocumentUri("file:///tmp/dc.xsd");
-        metadataSchemaDao.save(record);
-    }
+  private void createDcSchema(){
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setCreatedAt(Instant.now());
+    record.setLastUpdate(Instant.now());
+    record.setSchemaId("dc");
+    record.setSchemaVersion(1);
+    record.setMimeType("application/xml");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    Set<AclEntry> acl = new HashSet<>();
+    AclEntry entry = new AclEntry();
+    entry.setSid("SELF");
+    entry.setPermission(PERMISSION.WRITE);
+    acl.add(entry);
+    record.setAcl(acl);
+    record.setSchemaDocumentUri("file:///tmp/dc.xsd");
+    metadataSchemaDao.save(record);
+  }
 
 }

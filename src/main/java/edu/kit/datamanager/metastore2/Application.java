@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
 import org.slf4j.Logger;
@@ -73,6 +74,11 @@ public class Application{
 //  public RequestMappingHandlerAdapter adapter(){
 //    return requestMappingHandlerAdapter;
 //  }
+  @Bean
+  @ConfigurationProperties("repo")
+  public ApplicationProperties applicationProperties(){
+    return new ApplicationProperties();
+  }
 
   @Bean
   public IMessagingService messagingService(){

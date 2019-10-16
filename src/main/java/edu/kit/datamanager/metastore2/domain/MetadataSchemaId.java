@@ -12,17 +12,19 @@ import lombok.Data;
  *
  * @author Torridity
  */
-
 @Data
-public class MetadataSchemaId implements Serializable {
+public class MetadataSchemaId implements Serializable{
 
-    private String schemaId;
-    private Integer schemaVersion;
+  private String schemaId;
+  private Integer schemaVersion;
 
-    // default constructor
-    public MetadataSchemaId(String schemaId, Integer schemaVersion) {
-        this.schemaId = schemaId;
-        this.schemaVersion = schemaVersion;
-    }
+  public MetadataSchemaId(){
+  }
+
+  // default constructor
+  public MetadataSchemaId(String schemaId, Integer schemaVersion){
+    this.schemaId = schemaId;
+    this.schemaVersion = schemaVersion;
+  }
 
 }

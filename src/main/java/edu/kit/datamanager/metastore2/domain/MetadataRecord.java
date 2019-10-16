@@ -19,18 +19,21 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import edu.kit.datamanager.entities.repo.AclEntry;
+import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.OneToMany;
 import lombok.Data;
 
 /**
@@ -62,9 +65,11 @@ public class MetadataRecord implements Serializable{
   private String schemaId;
   @ApiModelProperty(value = "The version of the used schema. If none is provided, the most recent version at record creation time is used.", dataType = "Integer")
   private Integer schemaVersion;
-  
+
   @ApiModelProperty(value = "A list of access control entries for resticting access.")
-  private Set<AclEntry> acl;
+  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "resource_id")
+  private Set<AclEntry> acl = new HashSet<>();
   @ApiModelProperty(value = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
 }
