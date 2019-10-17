@@ -6,6 +6,8 @@
  * 
  * Afterwards, 'gradlew build install' is executed for the service-base dependency.
  */
+import static org.apache.tools.ant.taskdefs.condition.Os.*
+
 task buildServiceBase(type:Exec){
    if (project.hasProperty('clean-release') || project.hasProperty('travis')) {
       apply from: 'gradle/git_checkout.gradle'
@@ -16,7 +18,11 @@ task buildServiceBase(type:Exec){
       }
    }
    workingDir 'libraries/service-base'
-   commandLine './gradlew.bat', 'build', 'install'
+   if (isFamily(FAMILY_WINDOWS)) {
+      commandLine './gradlew.bat', 'build', 'install'
+   }else{
+      commandLine './gradlew', 'build', 'install'
+   }
 
    standardOutput = new ByteArrayOutputStream()
 
@@ -34,7 +40,11 @@ task buildGenericMessageConsumer(type:Exec){
    dependsOn buildServiceBase
  
    workingDir 'libraries/generic-message-consumer'
-   commandLine './gradlew.bat', 'build', 'install'
+   if (isFamily(FAMILY_WINDOWS)) {
+      commandLine './gradlew.bat', 'build', 'install'
+   }else{
+      commandLine './gradlew', 'build', 'install'
+   }
 
    standardOutput = new ByteArrayOutputStream()
 
@@ -47,5 +57,5 @@ task buildGenericMessageConsumer(type:Exec){
  * all dependencies. At this point, task 'buildServiceBase' is called.
  */
 compileJava {
-      dependsOn buildGenericMessageConsumer
+   dependsOn buildGenericMessageConsumer
 }
