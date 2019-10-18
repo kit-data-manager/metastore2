@@ -86,7 +86,7 @@ public interface ISchemaRegistryController {
     @ResponseBody
     public ResponseEntity<MetadataSchemaRecord> validate(@ApiParam(value = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
             @ApiParam(value = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Integer version,
-            @ApiParam(value = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
+            @ApiParam(value = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
             WebRequest wr,
             HttpServletResponse hsr);
 
