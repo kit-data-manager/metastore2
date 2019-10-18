@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<oai_dc:dc xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd">
+  <dc:creator>Carbon, Seth</dc:creator>
+  <dc:creator>Mungall, Chris</dc:creator>
+  <dc:date>2018-07-02</dc:date>
+  <dc:description>Archival bundle of GO data release.</dc:description>
+  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>
+  <dc:identifier>10.5281/zenodo.3477535</dc:identifier>
+  <dc:identifier>oai:zenodo.org:3477535</dc:identifier>
+  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>
+  <dc:relation>url:https://zenodo.org/communities/gene-ontology</dc:relation>
+  <dc:relation>url:https://zenodo.org/communities/zenodo</dc:relation>
+  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>
+  <dc:rights>http://creativecommons.org/licenses/by/4.0/legalcode</dc:rights>
+  <dc:title>Gene Ontology Data Archive</dc:title>
+  <dc:type>info:eu-repo/semantics/other</dc:type>
+  <dc:type>dataset</dc:type>
+</oai_dc:dc>

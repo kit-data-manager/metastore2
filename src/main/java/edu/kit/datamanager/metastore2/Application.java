@@ -76,7 +76,7 @@ public class Application{
 //  }
   @Bean
   @ConfigurationProperties("repo")
-  public ApplicationProperties applicationProperties(){
+  public ApplicationProperties metastoreProperties(){
     return new ApplicationProperties();
   }
 
