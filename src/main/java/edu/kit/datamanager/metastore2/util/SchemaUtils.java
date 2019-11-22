@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class SchemaUtils{
 
   private static final Pattern JSON_FIRST_BYTE = Pattern.compile("[{\\[].*");
-  private static final Pattern XML_FIRST_BYTE = Pattern.compile("<.*");
+  private static final Pattern XML_FIRST_BYTE = Pattern.compile("[\\<schema](.|\\s)*");
 
   public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema){
     Matcher m = JSON_FIRST_BYTE.matcher(new String(schema));

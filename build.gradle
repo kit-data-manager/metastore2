@@ -60,6 +60,7 @@ if (project.hasProperty('travis')) {
 }
 
 dependencies {
+   compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
    compile("org.springframework.boot:spring-boot-starter-data-rest")
    compile("org.springframework.boot:spring-boot-starter-mail") 
    
@@ -73,7 +74,7 @@ dependencies {
    compile("org.postgresql:postgresql:42.2.1")
    compile("org.apache.tika:tika-core:1.18") 
    compile ("org.javers:javers-core:5.3.2")
-
+   
    //Java 11 Support 
    compile('javax.xml.bind:jaxb-api:2.2.11')
    compile('com.sun.xml.bind:jaxb-core:2.2.11')
