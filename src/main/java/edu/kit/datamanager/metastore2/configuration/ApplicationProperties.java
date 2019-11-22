@@ -17,8 +17,10 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
+import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
@@ -34,4 +36,10 @@ public class ApplicationProperties extends GenericApplicationProperties{
 
   @edu.kit.datamanager.annotations.LocalFolderURL
   private URL schemaFolder;
+  @Value("${repo.schema.synchronization.enabled:FALSE}")
+  private boolean synchronizationEnabled;
+
+  @Value("${repo.schema.synchronization.source}")
+  private Map<String, String> schemaSources;
+
 }

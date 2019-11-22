@@ -73,4 +73,23 @@ public class JPAQueryHelper{
       return Optional.empty();
     }
   }
+
+  /**
+   * Get the max version of the metadata schema record with the provided id.
+   *
+   * @param schemaId The schema id.
+   *
+   * @return The max version number.
+   */
+  public Integer getMaxRecordVersion(String schemaId){
+    CriteriaBuilder qb = entityManager.getCriteriaBuilder();
+    CriteriaQuery<Number> cq = qb.createQuery(Number.class);
+    Root<MetadataSchemaRecord> root = cq.from(MetadataSchemaRecord.class);
+    cq.select(qb.max(root.get("schemaVersion")));
+
+    cq.where(qb.equal(root.get("schemaId"), schemaId));
+    return (Integer) entityManager.createQuery(cq).getSingleResult();
+
+  }
+
 }
