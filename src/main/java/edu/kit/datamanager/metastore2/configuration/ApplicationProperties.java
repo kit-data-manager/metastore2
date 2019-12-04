@@ -15,12 +15,14 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
-import edu.kit.datamanager.configuration.GenericApplicationProperties;
+import edu.kit.datamanager.configuration.GenericPluginProperties;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
@@ -28,18 +30,19 @@ import org.springframework.validation.annotation.Validated;
  *
  * @author jejkal
  */
+@ConfigurationProperties(prefix = "repo.schema")
 @Component
 @Data
 @Validated
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericApplicationProperties{
+public class ApplicationProperties extends GenericPluginProperties{
 
   @edu.kit.datamanager.annotations.LocalFolderURL
+  @Value("${repo.schema.schemaFolder}")
   private URL schemaFolder;
   @Value("${repo.schema.synchronization.enabled:FALSE}")
   private boolean synchronizationEnabled;
-
-  @Value("${repo.schema.synchronization.source}")
-  private Map<String, String> schemaSources;
+  // @Value("${repo.schema.synchronization.schemaSources}")
+  private List<SynchronizationSource> schemaSources;
 
 }

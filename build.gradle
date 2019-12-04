@@ -68,7 +68,6 @@ dependencies {
    compile("io.springfox:springfox-swagger-ui:2.9.0")
    
    compile("edu.kit.datamanager:service-base:0.1")
-   compile("edu.kit.datamanager:generic-message-consumer:0.1.0")
 
    compile("com.monitorjbl:spring-json-view:0.16")
    compile("org.postgresql:postgresql:42.2.1")

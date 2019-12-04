@@ -36,6 +36,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import lombok.Data;
+import org.springframework.http.MediaType;
 
 /**
  *
@@ -47,7 +48,7 @@ import lombok.Data;
 @Data
 public class MetadataSchemaRecord implements EtagSupport, Serializable{
 
-  public final static String METADATA_SCHEMA_RECORD_MEDIA_TYPE = "application/vnd.datamanager.schema-record+json";
+  public final static MediaType METADATA_SCHEMA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.schema-record+json");
 
   public enum SCHEMA_TYPE{
     JSON,
@@ -81,6 +82,10 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable{
   private Set<AclEntry> acl = new HashSet<>();
   @ApiModelProperty(value = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;
+  @ApiModelProperty(value = "The SHA-256 hash of the associated schema file. The hash is used for comparison while synchonization.")
+  private String schemaHash;
+  @ApiModelProperty(value = "The schema can be synchronized from a central registry. If 'true', synchronization will be skipped.")
+  private boolean locked = false;
 
   public void setAcl(Set<AclEntry> newAclList){
     acl.clear();

@@ -15,7 +15,6 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
@@ -24,7 +23,6 @@ import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.MimeTypeSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.util.JPAQueryHelper;
 import edu.kit.datamanager.metastore2.util.SchemaUtils;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
@@ -33,7 +31,6 @@ import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.annotations.Api;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -41,16 +38,16 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,7 +62,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -93,6 +89,11 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   @PersistenceContext
   private EntityManager em;
 
+  public SchemaRegistryControllerImpl(){
+
+    System.out.println("LINK " + ControllerLinkBuilder.linkTo(ControllerLinkBuilder.methodOn(ISchemaRegistryController.class).getRecords(null, null, null, null, null, null, null, null)).toUri().toString());
+  }
+
   @Override
   public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, WebRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder){
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
@@ -111,11 +112,13 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
       LOG.trace("Schema with id {} found. Setting new schema version to {}.", record.getSchemaId(), (version + 1));
       record.setSchemaVersion(version + 1);
     } else{
-      LOG.trace("Setting initial schema version to {}.", 1);
-      record.setSchemaVersion(1l);
+      version = 1l;
+      LOG.trace("Setting initial schema version to {}.", version);
+      record.setSchemaVersion(version);
     }
 
     try{
+
       byte[] schemaBytes = document.getBytes();
 
       IValidator applicableValidator = null;
@@ -149,33 +152,63 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
         record.setCreatedAt(Instant.now());
         record.setLastUpdate(record.getCreatedAt());
 
-        URL schemaFolderUrl = metastoreProperties.getSchemaFolder();
+        boolean writeSchemaFile = true;
         try{
-          Path schemaDir = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId());
-          if(!Files.exists(schemaDir)){
-            LOG.trace("Creating schema directory at {}.", schemaDir);
-            Files.createDirectories(schemaDir);
-          } else{
-            if(!Files.isDirectory(schemaDir)){
-              LOG.error("Schema directory {} exists but is no folder. Aborting operation.", schemaDir);
-              throw new CustomInternalServerError("Illegal schema registry state detected.");
+          LOG.trace("Creating schema document hash and updating record.");
+          MessageDigest md = MessageDigest.getInstance("SHA1");
+          md.update(schemaBytes, 0, schemaBytes.length);
+          record.setSchemaHash("sha1:" + Hex.encodeHexString(md.digest()));
+          if(record.getSchemaVersion() > 1){
+            Optional<MetadataSchemaRecord> optCurrentRecord = metadataSchemaDao.findById(record.getSchemaId());
+            if(optCurrentRecord.isEmpty()){
+              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to find expected schema record for schemaId " + record.getSchemaId() + " in database.");
+            }
+            if(Objects.equals(record.getSchemaHash(), optCurrentRecord.get().getSchemaHash())){
+              LOG.trace("Schema file hashes are equal. Skip writing new schema file.");
+              record.setSchemaDocumentUri(optCurrentRecord.get().getSchemaDocumentUri());
+              writeSchemaFile = false;
             }
           }
-
-          Path p = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId(), record.getSchemaId() + "_" + record.getSchemaVersion() + ((MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(record.getType())) ? ".xsd" : ".schema"));
-          if(Files.exists(p)){
-            LOG.error("Schema conflict. A schema file at path {} already exists.", p);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal schema filename conflict.");
-          }
-          LOG.trace("Persisting valid schema document at {}.", p);
-          Files.write(p, schemaBytes);
-          LOG.trace("Schema document successfully persisted. Updating record.");
-          record.setSchemaDocumentUri(p.toUri().toString());
-          LOG.trace("Schema record completed.");
-        } catch(URISyntaxException ex){
-          LOG.error("Failed to determine schema storage location.", ex);
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
+        } catch(NoSuchAlgorithmException ex){
+          LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
         }
+
+        if(writeSchemaFile){
+          LOG.trace("Writing user-provided schema file to repository.");
+          URL schemaFolderUrl = metastoreProperties.getSchemaFolder();
+          try{
+            Path schemaDir = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId());
+            if(!Files.exists(schemaDir)){
+              LOG.trace("Creating schema directory at {}.", schemaDir);
+              Files.createDirectories(schemaDir);
+            } else{
+              if(!Files.isDirectory(schemaDir)){
+                LOG.error("Schema directory {} exists but is no folder. Aborting operation.", schemaDir);
+                throw new CustomInternalServerError("Illegal schema registry state detected.");
+              }
+            }
+
+            Path p = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId(), record.getSchemaId() + "_" + record.getSchemaVersion() + ((MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(record.getType())) ? ".xsd" : ".schema"));
+            if(Files.exists(p)){
+              LOG.error("Schema conflict. A schema file at path {} already exists.", p);
+              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal schema filename conflict.");
+            }
+
+            LOG.trace("Persisting valid schema document at {}.", p);
+            Files.write(p, schemaBytes);
+            LOG.trace("Schema document successfully persisted. Updating record.");
+            record.setSchemaDocumentUri(p.toUri().toString());
+
+            LOG.trace("Schema record completed.");
+          } catch(URISyntaxException ex){
+            LOG.error("Failed to determine schema storage location.", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
+          }
+        } else{
+          LOG.trace("Skip writing user-provided schema file to repository. Using unchanged, existing schema at {}.", record.getSchemaDocumentUri());
+        }
+
         LOG.trace("Persisting schema record.");
         record = metadataSchemaDao.save(record);
 
