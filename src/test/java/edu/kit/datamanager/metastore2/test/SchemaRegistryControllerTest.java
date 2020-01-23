@@ -445,6 +445,20 @@ public class SchemaRegistryControllerTest{
     this.mockMvc.perform(delete("/api/v1/schemas/dc").header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
     //delete second time
     this.mockMvc.perform(delete("/api/v1/schemas/dc")).andDo(print()).andExpect(status().isNoContent()).andReturn();
+
+    //try to create after deletion (Should return HTTP GONE)
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("dc");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isGone()).andReturn();
   }
 
   private void createDcSchema() throws FileNotFoundException, IOException{
