@@ -214,25 +214,15 @@ public class SchemaRegistryControllerTest{
 
   @Test
   public void testCreateSchemaRecordWithBadRecord() throws Exception{
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc");
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    //mime type is missing
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
-
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
-
-    record = new MetadataSchemaRecord();
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
     //schemaId is missing
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
 
-    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -365,6 +355,7 @@ public class SchemaRegistryControllerTest{
 
   @Test
   public void testValidate() throws Exception{
+
     createDcSchema();
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", DC_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNoContent()).andReturn();
   }

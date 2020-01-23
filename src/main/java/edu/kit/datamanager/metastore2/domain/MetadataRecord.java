@@ -16,9 +16,11 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
@@ -29,12 +31,10 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import lombok.Data;
+import org.springframework.http.MediaType;
 
 /**
  *
@@ -44,12 +44,16 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @ApiModel(description = "Metadata record")
 @Data
-public class MetadataRecord implements Serializable{
+public class MetadataRecord implements EtagSupport, Serializable{
+
+  public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.metadata-record+json");
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
-  @ApiModelProperty(value = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool.", dataType = "String")
+  @ApiModelProperty(value = "The unique identify of the record.", dataType = "String")
+  private String id;
+  @ApiModelProperty(value = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.", dataType = "String")
+  private String pid;
+  @ApiModelProperty(value = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.", dataType = "String")
   private String relatedResource;
   @ApiModelProperty(value = "The date the record has been initially created.", example = "2017-05-10T10:41:00Z", required = true)
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
@@ -63,13 +67,25 @@ public class MetadataRecord implements Serializable{
   private Instant lastUpdate;
   @ApiModelProperty(value = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.", dataType = "String", example = "dc")
   private String schemaId;
-  @ApiModelProperty(value = "The version of the used schema. If none is provided, the most recent version at record creation time is used.", dataType = "Integer")
-  private Integer schemaVersion;
+  @ApiModelProperty(value = "The record version. The version is set by the metadata registry and cannot be provided manually.", dataType = "Long")
+  private Long recordVersion;
 
   @ApiModelProperty(value = "A list of access control entries for resticting access.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "resource_id")
-  private Set<AclEntry> acl = new HashSet<>();
+  private final Set<AclEntry> acl = new HashSet<>();
   @ApiModelProperty(value = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
+  @ApiModelProperty(value = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
+  private String documentHash;
+
+  public void setAcl(Set<AclEntry> newAclList){
+    acl.clear();
+    acl.addAll(newAclList);
+  }
+
+  @Override
+  @JsonIgnore
+  public String getEtag(){
+    return Integer.toString(hashCode());
+  }
 }

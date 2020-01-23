@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.service;
 
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.service.IAuditService;
 import java.util.List;
@@ -37,19 +38,19 @@ import org.springframework.stereotype.Service;
  * @author jejkal
  */
 @Service
-public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaRecord>{
+public class MetadataAuditService implements IAuditService<MetadataRecord>{
 
   @Autowired
   private Logger LOGGER;
   private final Javers javers;
 
   @Autowired
-  public MetadataSchemaAuditService(Javers javers){
+  public MetadataAuditService(Javers javers){
     this.javers = javers;
   }
 
   @Override
-  public void captureAuditInformation(MetadataSchemaRecord resource, String principal){
+  public void captureAuditInformation(MetadataRecord resource, String principal){
     LOGGER.trace("Calling captureAuditInformation(MetadataSchemaRecord#{}, {}).", resource.getSchemaId(), principal);
     javers.commit(principal, resource);
     LOGGER.trace("Successfully committed audit information for resource with id {}.", resource.getSchemaId());
@@ -59,7 +60,7 @@ public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaR
   public Optional<String> getAuditInformationAsJson(String resourceId, int page, int resultsPerPage){
     LOGGER.trace("Calling getAuditInformationAsJson({}, {}, {}).", resourceId, page, resultsPerPage);
 
-    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataSchemaRecord.class).limit(resultsPerPage).skip(page * resultsPerPage).build();
+    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataRecord.class).limit(resultsPerPage).skip(page * resultsPerPage).build();
     Changes result = javers.findChanges(query);
 
     LOGGER.trace("Obtained {} change elements. Returning them in serialized format.", result.size());
@@ -67,12 +68,12 @@ public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaR
   }
 
   @Override
-  public Optional<MetadataSchemaRecord> getResourceByVersion(String resourceId, long version){
+  public Optional<MetadataRecord> getResourceByVersion(String resourceId, long version){
     LOGGER.trace("Calling getResourceByVersion({}, {}).", resourceId, version);
 
-    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataSchemaRecord.class).withVersion(version).withShadowScope(ShadowScope.DEEP_PLUS).build();
+    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataRecord.class).withVersion(version).withShadowScope(ShadowScope.DEEP_PLUS).build();
     LOGGER.trace("Obtaining shadows from Javers repository.");
-    List<Shadow<MetadataSchemaRecord>> shadows = javers.findShadows(query);
+    List<Shadow<MetadataRecord>> shadows = javers.findShadows(query);
 
     if(CollectionUtils.isEmpty(shadows)){
       LOGGER.warn("No version information found for resource id {}. Returning empty result.", resourceId);
@@ -80,7 +81,7 @@ public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaR
     }
 
     LOGGER.trace("Shadow for resource id {} and version {} found. Returning result.", resourceId, version);
-    Shadow<MetadataSchemaRecord> versionShadow = shadows.get(0);
+    Shadow<MetadataRecord> versionShadow = shadows.get(0);
     LOGGER.trace("Returning shadow at index 0 with commit metadata {}.", versionShadow.getCommitMetadata());
     return Optional.of(versionShadow.get());
 
@@ -90,7 +91,7 @@ public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaR
   public long getCurrentVersion(String resourceId){
     LOGGER.trace("Calling getCurrentVersion({}).", resourceId);
 
-    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataSchemaRecord.class).limit(1).build();
+    JqlQuery query = QueryBuilder.byInstanceId(resourceId, MetadataRecord.class).limit(1).build();
     LOGGER.trace("Obtaining snapshots from Javers repository.");
     List<CdoSnapshot> snapshots = javers.findSnapshots(query);
 
@@ -105,15 +106,17 @@ public class MetadataSchemaAuditService implements IAuditService<MetadataSchemaR
     }
 
     long version = snapshots.get(0).getVersion();
+
     LOGGER.trace("Snapshot for resource id {} found. Returning version {}.", resourceId, version);
     return version;
   }
 
   @Override
-  public void deleteAuditInformation(String authorId, MetadataSchemaRecord resource){
+  public void deleteAuditInformation(String authorId, MetadataRecord resource){
     LOGGER.trace("Calling deleteAuditInformation({}, <resource>).", authorId);
 
     javers.commitShallowDelete(authorId, resource);
     LOGGER.trace("Shallow delete executed.");
   }
+
 }

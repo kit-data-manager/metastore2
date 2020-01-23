@@ -22,22 +22,16 @@ import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaSynchronizationEventDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaSynchronizationEvent;
-import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.env.Environment;
-import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -106,7 +100,8 @@ public class SchemaSynchronizationService{
       }
 
       if(event.getErrorCount() != null && event.getErrorCount() > 3){
-        LOGGER.warn("Synchronization of schema {} failed 3 times. Please check the synchronization source registry.");
+        LOGGER.warn("Synchronization with schema source with id {} at {} failed 3 times, skipping entry for now. Please check the synchronization source registry.", source.getId(), source.getBaseUrl());
+        continue;
       }
 
       HttpHeaders headers = new HttpHeaders();
@@ -122,89 +117,73 @@ public class SchemaSynchronizationService{
 
       LOGGER.trace("Obtaining schemas updated after {} via URL {}.", lastSynchronization, uriBuilder.toUriString());
 
-      //@TODO switch to service client, add bearer token optionally
+      //@TODO switch to service identity, add bearer token optionally
       ResponseEntity<MetadataSchemaRecord[]> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, requestEntity, MetadataSchemaRecord[].class);
       if(response.getStatusCodeValue() == 200){
-        LOGGER.trace("Performing update for {} schema(s).", response.getBody().length);
-        for(MetadataSchemaRecord record : response.getBody()){
-          LOGGER.trace("Checking record with schema with id {} in local schema registry.", record.getSchemaId());
-          //obtain local schema
-          Optional<MetadataSchemaRecord> optRecord = metadataSchemaDao.findById(record.getSchemaId());
-          if(!optRecord.isPresent()){
-            LOGGER.trace("New schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
-            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-            int status = SimpleServiceClient.create(source.getBaseUrl()).accept(MediaType.APPLICATION_OCTET_STREAM).withResourcePath(record.getSchemaId()).getResource(stream);
-            if(status == 200){
-              LOGGER.trace("Remote schema document successfully downloaded. Registering schema at local registry.");
-              try{
-                LOGGER.trace("Determining local schema registry URI.");
-                HttpStatus createStatus = SimpleServiceClient.create(localBaseUrl).withFormParam("record", record).withFormParam("schema", new ByteArrayInputStream(stream.toByteArray())).postForm();
-                if(HttpStatus.CREATED.equals(createStatus)){
-                  LOGGER.trace("New schema with id {} successfully created.", record.getSchemaId());
+        MetadataSchemaRecord[] receivedRecords = response.getBody();
+        if(receivedRecords != null && receivedRecords.length > 0){
+          LOGGER.trace("Performing update for {} schema(s).", receivedRecords.length);
+          for(MetadataSchemaRecord record : receivedRecords){
+            LOGGER.trace("Checking record with schema with id {} in local schema registry.", record.getSchemaId());
+            //obtain local schema
+            Optional<MetadataSchemaRecord> optRecord = metadataSchemaDao.findById(record.getSchemaId());
+            if(!optRecord.isPresent()){
+              LOGGER.trace("New schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
+              createOrUpdateSchema(source.getBaseUrl(), localBaseUrl, record, event);
+            } else{
+              LOGGER.trace("Existing schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
+              MetadataSchemaRecord localRecord = optRecord.get();
+              if(localRecord.getLocked() == null || !localRecord.getLocked()){
+                LOGGER.trace("Synchronization of local record enabled. Comparing schema document hashes.");
+                if(!localRecord.getSchemaHash().equals(record.getSchemaHash())){
+                  //download remote schema
+                  LOGGER.trace("Schema document hashes are NOT equal. Downloading schema document with id {} from {}.", record.getSchemaId(), source.getBaseUrl());
+                  createOrUpdateSchema(source.getBaseUrl(), localBaseUrl, localRecord, event);
+                } else{
+                  LOGGER.trace("Schema document hashes are equal. Skipping update.");
                   updateSynchronizationEvent(event, true);
                   LOGGER.trace("Schema synchronization finished.");
-                } else{
-                  LOGGER.error("Failed to register schema at local registry. Service returned {}.", createStatus);
-                }
-              } catch(IOException ex){
-                LOGGER.error("Failed to create schema record locally.", ex);
-                updateSynchronizationEvent(event, false);
-                LOGGER.trace("Schema synchronization finished.");
-              }
-            } else{
-              LOGGER.error("Failed to download remote schema document with status {}. Skipping schema registration.", status);
-              updateSynchronizationEvent(event, false);
-              LOGGER.trace("Schema synchronization finished.");
-            }
-          } else{
-            LOGGER.trace("Existing schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
-            MetadataSchemaRecord localRecord = optRecord.get();
-            if(!localRecord.isLocked()){
-              LOGGER.trace("Synchronization of local record enabled. Comparing schema document hashes.");
-              if(!localRecord.getSchemaHash().equals(record.getSchemaHash())){
-                //download remote schema
-                LOGGER.trace("Schema document hashes are NOT equal. Downloading schema document with id {} from {}.", record.getSchemaId(), source.getBaseUrl());
-                ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                int status = SimpleServiceClient.create(source.getBaseUrl()).accept(MediaType.APPLICATION_OCTET_STREAM).withResourcePath(record.getSchemaId()).getResource(stream);
-                if(status == 200){
-                  try{
-                    LOGGER.trace("Remote schema document successfully downloaded. Updating schema at local registry.");
-                    HttpStatus createStatus = SimpleServiceClient.create(localBaseUrl).withFormParam("record", localRecord).withFormParam("schema", new ByteArrayInputStream(stream.toByteArray())).postForm();
-                    if(HttpStatus.CREATED.equals(createStatus)){
-                      LOGGER.trace("New schema with id {} successfully updated. Updating lastSynchronization timestamp.", record.getSchemaId());
-                      updateSynchronizationEvent(event, true);
-                      LOGGER.trace("Schema synchronization finished.");
-                    } else{
-                      LOGGER.error("Failed to update schema at local registry, service returned {}. Updating errorCount.", createStatus);
-                      updateSynchronizationEvent(event, false);
-                      LOGGER.trace("Schema synchronization finished.");
-                    }
-                  } catch(IOException ex){
-                    LOGGER.error("Failed to update schema record locally.", ex);
-                    updateSynchronizationEvent(event, false);
-                    LOGGER.trace("Schema synchronization finished.");
-                  }
                 }
               } else{
-                LOGGER.trace("Schema document hashes are equal. Skipping update.");
+                //skip
+                LOGGER.trace("Synchronization for local record is disabled. Skipping synchronization of schema {}.", localRecord.getSchemaId());
                 updateSynchronizationEvent(event, true);
                 LOGGER.trace("Schema synchronization finished.");
               }
-            } else{
-              //skip
-              LOGGER.trace("Synchronization for local record is disabled. Skipping synchronization of schema {}.", localRecord.getSchemaId());
-              updateSynchronizationEvent(event, true);
-              LOGGER.trace("Schema synchronization finished.");
             }
           }
+        } else{
+          LOGGER.trace("No new or updated schemas received.");
         }
 
       } else{
         LOGGER.error("Failed to obtain updates schemas from URL {}. Service returned status {}.", uriBuilder.toUriString(), response.getStatusCodeValue());
       }
-
     }
+  }
 
+  private void createOrUpdateSchema(String baseUrl, String localBaseUrl, MetadataSchemaRecord record, SchemaSynchronizationEvent event){
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    int status = SimpleServiceClient.create(baseUrl).accept(MediaType.APPLICATION_OCTET_STREAM).withResourcePath(record.getSchemaId()).getResource(stream);
+    if(status == 200){
+      try{
+        LOGGER.trace("Remote schema document successfully downloaded. Updating schema at local registry.");
+        HttpStatus createStatus = SimpleServiceClient.create(localBaseUrl).withFormParam("record", record).withFormParam("schema", new ByteArrayInputStream(stream.toByteArray())).postForm();
+        if(HttpStatus.CREATED.equals(createStatus)){
+          LOGGER.trace("New schema with id {} successfully updated. Updating lastSynchronization timestamp.", record.getSchemaId());
+          updateSynchronizationEvent(event, true);
+          LOGGER.trace("Schema synchronization finished.");
+        } else{
+          LOGGER.error("Failed to update schema at local registry, service returned {}. Updating errorCount.", createStatus);
+          updateSynchronizationEvent(event, false);
+          LOGGER.trace("Schema synchronization finished.");
+        }
+      } catch(IOException ex){
+        LOGGER.error("Failed to update schema record locally.", ex);
+        updateSynchronizationEvent(event, false);
+        LOGGER.trace("Schema synchronization finished.");
+      }
+    }
   }
 
   private void updateSynchronizationEvent(SchemaSynchronizationEvent event, boolean success){

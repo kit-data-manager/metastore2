@@ -15,7 +15,6 @@
  */
 package edu.kit.datamanager.metastore2.dao.spec;
 
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import java.time.Instant;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -26,7 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
  *
  * @author jejkal
  */
-public class LastUpdateSpecification{
+public class LastUpdateSpecification<C>{
 
   /**
    * Hidden constructor.
@@ -34,13 +33,13 @@ public class LastUpdateSpecification{
   private LastUpdateSpecification(){
   }
 
-  public static Specification<MetadataSchemaRecord> toSpecification(Instant lastUpdateFrom, Instant lastUpdateUntil){
-    Specification<MetadataSchemaRecord> newSpec = Specification.where(null);
+  public static <C> Specification<C> toSpecification(Instant lastUpdateFrom, Instant lastUpdateUntil){
+    Specification<C> newSpec = Specification.where(null);
     if(lastUpdateFrom == null && lastUpdateUntil == null){
       return newSpec;
     }
 
-    return (Root<MetadataSchemaRecord> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
+    return (Root<C> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
       if(lastUpdateFrom != null && lastUpdateUntil != null){
         return builder.and(builder.between(root.get("lastUpdate"), lastUpdateFrom, lastUpdateUntil));
       } else if(lastUpdateFrom == null){
