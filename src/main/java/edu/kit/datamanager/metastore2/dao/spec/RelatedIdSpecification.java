@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Karlsruhe Institute of Technology.
+ * Copyright 2020 Karlsruhe Institute of Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.dao.spec;
 
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import java.util.List;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
@@ -25,22 +26,22 @@ import org.springframework.data.jpa.domain.Specification;
  *
  * @author jejkal
  */
-public class SchemaIdSpecification<C>{
+public class RelatedIdSpecification{
 
   /**
    * Hidden constructor.
    */
-  private SchemaIdSpecification(){
+  private RelatedIdSpecification(){
   }
 
-  public static <C> Specification<C> toSpecification(List<String> schemaIds){
-    Specification<C> newSpec = Specification.where(null);
-    if(schemaIds == null || schemaIds.isEmpty()){
+  public static Specification<MetadataRecord> toSpecification(List<String> ids){
+    Specification<MetadataRecord> newSpec = Specification.where(null);
+    if(ids == null || ids.isEmpty()){
       return newSpec;
     }
 
-    return (Root<C> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
-      return builder.and(root.get("schemaId").in(schemaIds));
+    return (Root<MetadataRecord> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
+      return builder.and(root.get("relatedResource").in(ids));
     };
   }
 }

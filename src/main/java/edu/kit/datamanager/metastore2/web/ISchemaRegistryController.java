@@ -24,6 +24,7 @@ import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import java.time.Instant;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,9 @@ import org.springframework.web.util.UriComponentsBuilder;
   @ApiResponse(code = 403, message = "Forbidden is returned if the caller has no sufficient privileges.")})
 public interface ISchemaRegistryController{
 
-  @ApiOperation(value = "Register a new schema record.", notes = "", response = MetadataSchemaRecord.class)
+  @ApiOperation(value = "Register/replace a schema record.", notes = "This endpoint allows to create or replace a metadata schema record. If no metadata record for the schema identifier provided in the record argument "
+          + "is found, a new schema record is created. Otherwise, the existing record is updated to a new version. The later use case is meant to be used mainly for schema synchronization from an external authoritive source, "
+          + " as updating a schema document for an existing schema may break the validation of previously assigned and validated metadata documents. That's why schema updates are only possible from the local machine. ", response = MetadataSchemaRecord.class)
   @RequestMapping(path = "/", method = RequestMethod.POST)
   @ApiResponses(value = {
     @ApiResponse(code = 201, message = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", response = MetadataSchemaRecord.class),
@@ -58,7 +61,7 @@ public interface ISchemaRegistryController{
   public ResponseEntity createRecord(
           @ApiParam(value = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
           @ApiParam(value = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
-          final WebRequest request,
+          final HttpServletRequest request,
           final HttpServletResponse response,
           final UriComponentsBuilder uriBuilder);
 

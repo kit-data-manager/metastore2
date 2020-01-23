@@ -18,7 +18,6 @@ package edu.kit.datamanager.metastore2.configuration;
 import edu.kit.datamanager.configuration.GenericPluginProperties;
 import java.net.URL;
 import java.util.List;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +29,7 @@ import org.springframework.validation.annotation.Validated;
  *
  * @author jejkal
  */
-@ConfigurationProperties(prefix = "repo.schema")
+@ConfigurationProperties(prefix = "metastore")
 @Component
 @Data
 @Validated
@@ -38,11 +37,17 @@ import org.springframework.validation.annotation.Validated;
 public class ApplicationProperties extends GenericPluginProperties{
 
   @edu.kit.datamanager.annotations.LocalFolderURL
-  @Value("${repo.schema.schemaFolder}")
+  @Value("${metastore.schema.schemaFolder}")
   private URL schemaFolder;
-  @Value("${repo.schema.synchronization.enabled:FALSE}")
+
+  @Value("${metastore.schema.synchronization.enabled:FALSE}")
   private boolean synchronizationEnabled;
-  // @Value("${repo.schema.synchronization.schemaSources}")
+  // @Value("${metastore.schema.synchronization.schemaSources}")
   private List<SynchronizationSource> schemaSources;
+
+  @Value("${metastore.metadata.metadataFolder}")
+  private URL metadataFolder;
+  @Value("${metastore.metadata.schemaRegistries:''}")
+  private String[] schemaRegistries;
 
 }

@@ -6,7 +6,7 @@ buildscript {
 
    }
    dependencies {
-      classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.4.RELEASE")
+      classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
       classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
       //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
    }
@@ -14,7 +14,7 @@ buildscript {
 
 plugins { 
    id 'io.franzbecker.gradle-lombok' version '1.14'
-   id "io.spring.dependency-management" version "1.0.7.RELEASE" 
+   id "io.spring.dependency-management" version "1.0.8.RELEASE" 
    id "com.github.kt3k.coveralls" version "2.8.1" 
    id "org.owasp.dependencycheck" version "3.1.2"
    id "org.asciidoctor.convert" version "1.5.3"
@@ -35,6 +35,7 @@ repositories {
    mavenLocal() 
    jcenter()
    mavenCentral()
+   maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
 sourceCompatibility = 1.8
@@ -45,7 +46,7 @@ configurations {
 }
 
 lombok {
-   version = '1.18.4'
+   version = '1.18.10'
    sha256 = ""
 }
 
@@ -65,11 +66,10 @@ dependencies {
    compile("org.springframework.boot:spring-boot-starter-mail") 
    
    compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
-   compile("io.springfox:springfox-swagger-ui:2.9.0")
+   compile("io.springfox:springfox-swagger-ui:3.0.0-SNAPSHOT")
    
    compile("edu.kit.datamanager:service-base:0.1")
 
-   compile("com.monitorjbl:spring-json-view:0.16")
    compile("org.postgresql:postgresql:42.2.1")
    compile("org.apache.tika:tika-core:1.18") 
    compile ("org.javers:javers-core:5.3.2")
