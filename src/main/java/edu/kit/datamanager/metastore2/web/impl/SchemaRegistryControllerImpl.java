@@ -66,7 +66,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -283,8 +285,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
   @Override
   public ResponseEntity getSchemaDocumentById(
-          String schemaId,
-          Long version,
+          @PathVariable(value = "id") String schemaId,
+          @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr){
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
@@ -478,7 +480,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   }
 
   private void fixSchemaDocumentUri(MetadataSchemaRecord record){
-    record.setSchemaDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(ISchemaRegistryController.class).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri().toString());
+    record.setSchemaDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri().toString());
   }
 
 }
