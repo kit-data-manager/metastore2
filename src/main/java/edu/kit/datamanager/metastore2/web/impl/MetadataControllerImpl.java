@@ -270,8 +270,8 @@ public class MetadataControllerImpl implements IMetadataController{
 
   @Override
   public ResponseEntity getMetadataDocumentById(
-          String id,
-          Long version,
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr
   ){
@@ -549,7 +549,7 @@ public class MetadataControllerImpl implements IMetadataController{
   }
 
   private void fixMetadataDocumentUri(MetadataRecord record){
-    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(IMetadataController.class).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
+    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getSchemaId(), record.getRecordVersion(), null, null)).toUri().toString());
   }
 
   private String getUniqueRecordHash(MetadataRecord record){
