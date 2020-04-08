@@ -129,7 +129,7 @@ public class SchemaRegistryControllerTest{
   public void setUp() throws Exception{
     metadataSchemaDao.deleteAll();
     try{
-      try(Stream<Path> walk = Files.walk(Paths.get(URI.create("file:///Users/jejkal/tmp/my_dc/")))){
+      try(Stream<Path> walk = Files.walk(Paths.get(URI.create("file:///tmp/metastore2/my_dc/")))){
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);

@@ -31,7 +31,6 @@ import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.annotations.Api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -80,7 +79,6 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
-@Api(value = "Metadata Repository")
 public class MetadataControllerImpl implements IMetadataController{
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);

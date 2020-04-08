@@ -24,8 +24,6 @@ import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.HashSet;
@@ -33,6 +31,7 @@ import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
@@ -42,50 +41,49 @@ import org.springframework.http.MediaType;
  */
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
-@ApiModel(description = "Metadata record")
 @Data
-public class MetadataRecord implements EtagSupport, Serializable{
+public class MetadataRecord implements EtagSupport, Serializable {
 
   public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.metadata-record+json");
 
   @Id
-  @ApiModelProperty(value = "The unique identify of the record.", dataType = "String")
+  @NotBlank(message = "The unique identify of the record.")
   private String id;
-  @ApiModelProperty(value = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.", dataType = "String")
+  @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
   private String pid;
-  @ApiModelProperty(value = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.", dataType = "String")
+  @NotBlank(message = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.")
   private String relatedResource;
-  @ApiModelProperty(value = "The date the record has been initially created.", example = "2017-05-10T10:41:00Z", required = true)
+  @NotBlank(message = "The date the record has been initially created.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant createdAt;
-  @ApiModelProperty(value = "The date the record had been updated the last time.", example = "2017-05-10T10:41:00Z", required = true)
+  @NotBlank(message = "The date the record had been updated the last time.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @ApiModelProperty(value = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.", dataType = "String", example = "dc")
+  @NotBlank(message = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.")
   private String schemaId;
-  @ApiModelProperty(value = "The record version. The version is set by the metadata registry and cannot be provided manually.", dataType = "Long")
+  @NotBlank(message = "The record version. The version is set by the metadata registry and cannot be provided manually.")
   private Long recordVersion;
 
-  @ApiModelProperty(value = "A list of access control entries for resticting access.")
+  @NotBlank(message = "A list of access control entries for resticting access.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<AclEntry> acl = new HashSet<>();
-  @ApiModelProperty(value = "The metadata document uri, e.g. pointing to a local file.")
+  @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
-  @ApiModelProperty(value = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
+  @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
 
-  public void setAcl(Set<AclEntry> newAclList){
+  public void setAcl(Set<AclEntry> newAclList) {
     acl.clear();
     acl.addAll(newAclList);
   }
 
   @Override
   @JsonIgnore
-  public String getEtag(){
+  public String getEtag() {
     return Integer.toString(hashCode());
   }
 }
