@@ -65,8 +65,9 @@ dependencies {
    compile("org.springframework.boot:spring-boot-starter-data-rest")
    compile("org.springframework.boot:spring-boot-starter-mail") 
    
-   compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
-   compile("io.springfox:springfox-swagger-ui:3.0.0-SNAPSHOT")
+   compile("org.springdoc:springdoc-openapi-ui:1.2.34")
+   compile("org.springdoc:springdoc-openapi-data-rest:1.2.34")
+   compile("org.springdoc:springdoc-openapi-webmvc-core:1.2.34")
    
    compile("edu.kit.datamanager:service-base:0.1")
 
@@ -75,9 +76,9 @@ dependencies {
    compile ("org.javers:javers-core:5.3.2")
    
    //Java 11 Support 
-   compile('javax.xml.bind:jaxb-api:2.2.11')
-   compile('com.sun.xml.bind:jaxb-core:2.2.11')
-   compile('com.sun.xml.bind:jaxb-impl:2.2.11')
+   compile('javax.xml.bind:jaxb-api:2.3.1')
+   compile('com.sun.xml.bind:jaxb-core:2.3.0.1')
+   compile('com.sun.xml.bind:jaxb-impl:2.3.0.1')
    compile('javax.activation:activation:1.1.1')
    compile('org.javassist:javassist:3.23.1-GA')
     

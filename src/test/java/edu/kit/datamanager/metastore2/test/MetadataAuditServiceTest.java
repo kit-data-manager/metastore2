@@ -59,7 +59,7 @@ public class MetadataAuditServiceTest{
   @Test
   public void testCaptureAndReadAuditInformation(){
     MetadataRecord record = new MetadataRecord();
-    record.setId("test1");
+    record.setId("testCapture1");
     record.setPid("doi:123/123");
     record.setRecordVersion(1l);
 
@@ -68,7 +68,7 @@ public class MetadataAuditServiceTest{
     Optional<String> auditInfo = service.getAuditInformationAsJson(record.getId(), 1, 1);
     Assert.assertTrue(auditInfo.isPresent());
 
-    Assert.assertEquals(1l, service.getCurrentVersion(record.getSchemaId()));
+    Assert.assertEquals(1l, service.getCurrentVersion(record.getId()));
     Optional<MetadataRecord> recordFromVersioning = service.getResourceByVersion(record.getId(), 1l);
     Assert.assertTrue(recordFromVersioning.isPresent());
     Assert.assertNull(recordFromVersioning.get().getRelatedResource());

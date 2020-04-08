@@ -16,15 +16,17 @@
 package edu.kit.datamanager.metastore2.web;
 
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletResponse;
+import org.springdoc.core.converters.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -42,98 +44,98 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @author jejkal
  */
 @ApiResponses(value = {
-  @ApiResponse(code = 401, message = "Unauthorized is returned if authorization in required but was not provided."),
-  @ApiResponse(code = 403, message = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface IMetadataController{
+  @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
+  @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
+public interface IMetadataController {
 
-  @ApiOperation(value = "Create a new metadata record.", notes = "This endpoint allows to create a new metadata record by providing the record metadata as JSON document as well as the actual metadata as file upload. The record metadata mainly contains "
+  @Operation(summary = "Create a new metadata record.", description = "This endpoint allows to create a new metadata record by providing the record metadata as JSON document as well as the actual metadata as file upload. The record metadata mainly contains "
           + "the resource identifier the record is associated with as well as the identifier of the schema which can be used to validate the provided metadata document. In the current version, both parameters are required. For future versions, e.g. the metadata "
-          + "document might be provided by reference.")
+          + "document might be provided by reference.",
+          responses = {
+            @ApiResponse(responseCode = "201", description = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
+            @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
+
   @RequestMapping(path = "/", method = RequestMethod.POST)
-  @ApiResponses(value = {
-    @ApiResponse(code = 201, message = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", response = MetadataRecord.class),
-    @ApiResponse(code = 400, message = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
-    @ApiResponse(code = 404, message = "Not found is returned, if no schema for the provided schema id was found."),
-    @ApiResponse(code = 409, message = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
   @ResponseBody
   public ResponseEntity<MetadataRecord> createRecord(
-          @ApiParam(value = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MetadataRecord record,
-          @ApiParam(value = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
+          @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MetadataRecord record,
+          @Parameter(description = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response,
           final UriComponentsBuilder uriBuilder);
 
-  @ApiOperation(value = "Get a metadata record by its id.", notes = "Obtain is single record by its identifier. The identifier can be either the numeric identifier or the related resource's identifier. "
+  @Operation(summary = "Get a metadata record by its id.", description = "Obtain is single record by its identifier. The identifier can be either the numeric identifier or the related resource's identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
-          + "by providing a version number as request parameter.")
+          + "by providing a version number as request parameter.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
+
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
-  @ApiResponses(value = {
-    @ApiResponse(code = 200, message = "OK and the record is returned if the record exists and the user has sufficient permission.", response = MetadataRecord.class),
-    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
   @ResponseBody
-  public ResponseEntity<MetadataRecord> getRecordById(@ApiParam(value = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+  public ResponseEntity<MetadataRecord> getRecordById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @ApiOperation(value = "Get a metadata document by its record's id.", notes = "Obtain is single metadata document identified by its identifier. The identifier can be either the numeric identifier or the related resource's identifier. "
+  @Operation(summary = "Get a metadata document by its record's id.", description = "Obtain is single metadata document identified by its identifier. The identifier can be either the numeric identifier or the related resource's identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
-          + "Furthermore, a specific version of the metadata document can be returned by providing a version number as request parameter.")
+          + "Furthermore, a specific version of the metadata document can be returned by providing a version number as request parameter.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the metadata document is returned if the record exists and the user has sufficient permission."),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
+
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
-  @ApiResponses(value = {
-    @ApiResponse(code = 200, message = "OK and the metadata document is returned if the record exists and the user has sufficient permission."),
-    @ApiResponse(code = 404, message = "Not found is returned, if no record for the provided id or version was found.")})
   @ResponseBody
-  public ResponseEntity getMetadataDocumentById(@ApiParam(value = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @ApiParam(value = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+  public ResponseEntity getMetadataDocumentById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @ApiOperation(value = "Get all records.", notes = "List all records in a paginated and/or sorted form. The result can be refined by providing specific related resource id(s) and/or metadata schema id(s) valid records must match. "
+  @Operation(summary = "Get all records.", description = "List all records in a paginated and/or sorted form. The result can be refined by providing specific related resource id(s) and/or metadata schema id(s) valid records must match. "
           + "If both parameters are provided, a record matches if its related resource identifier AND the used metadata schema are matching. "
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
-          + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed.")
-  @ApiImplicitParams(value = {
-    @ApiImplicitParam(name = "page", dataType = "integer", paramType = "query", value = "Results page you want to retrieve (0..N)"),
-    @ApiImplicitParam(name = "size", dataType = "integer", paramType = "query", value = "Number of records per page."),
-    @ApiImplicitParam(name = "sort", allowMultiple = true, dataType = "string", paramType = "query", value = "Sorting criteria in the format: property(,asc|desc). Default sort order is ascending. Multiple sort criteria are supported.")})
+          + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataRecord.class))))})
   @RequestMapping(value = {"/"}, method = {RequestMethod.GET})
-  @ApiResponses(value = {
-    @ApiResponse(code = 200, message = "OK and a list of records or an empty list of no record matches.")})
+  @PageableAsQueryParam
   @ResponseBody
   public ResponseEntity<List<MetadataRecord>> getRecords(
-          @ApiParam(value = "A list of related resource identifiers.", required = false) @RequestParam(value = "resoureId", required = false) List<String> relatedIds,
-          @ApiParam(value = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
-          @ApiParam(value = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
-          @ApiParam(value = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
+          @Parameter(description = "A list of related resource identifiers.", required = false) @RequestParam(value = "resoureId", required = false) List<String> relatedIds,
+          @Parameter(description = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
+          @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
+          @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
           Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
 
-  @ApiOperation(value = "Update a metadata record.", notes = "Apply an update to the metadata record with the provided identifier and/or its accociated metadata document. The identifier can be either the numeric identifier or the related resource's identifier."
-          + "If versioning is enabled, a new version of the record is created. Otherwise, the record and/or its metadata are overwritten.")
-  @ApiResponses(value = {
-    @ApiResponse(code = 200, message = "OK is returned in case of a successful update, e.g. the record (if provided) was in the correct format and the document (if provided) matches the provided schema id. The updated record is returned in the response.", response = MetadataRecord.class),
-    @ApiResponse(code = 400, message = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
-    @ApiResponse(code = 404, message = "Not Found is returned if no record for the provided id or no schema for the provided schema id was found.")})
+  @Operation(summary = "Update a metadata record.", description = "Apply an update to the metadata record with the provided identifier and/or its accociated metadata document. The identifier can be either the numeric identifier or the related resource's identifier."
+          + "If versioning is enabled, a new version of the record is created. Otherwise, the record and/or its metadata are overwritten.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK is returned in case of a successful update, e.g. the record (if provided) was in the correct format and the document (if provided) matches the provided schema id. The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
+            @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id or no schema for the provided schema id was found.")})
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
   ResponseEntity<MetadataRecord> updateRecord(
-          @ApiParam(value = "The record identifier of related resource identifier.", required = true) @PathVariable("id") String id,
-          @ApiParam(value = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MetadataRecord record,
-          @ApiParam(value = "The metadata document associated with the record. The document must match the schema defined in the record.", required = false) @RequestPart(name = "document", required = false) final MultipartFile document,
+          @Parameter(description = "The record identifier of related resource identifier.", required = true) @PathVariable("id") String id,
+          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MetadataRecord record,
+          @Parameter(description = "The metadata document associated with the record. The document must match the schema defined in the record.", required = false) @RequestPart(name = "document", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response,
           final UriComponentsBuilder uriBuilder
   );
 
-  @ApiOperation(value = "Delete a record.", notes = "Delete a single metadata record and the associated metadata document. The identifier can be either the numeric identifier or the related resource's identifier. "
+  @Operation(summary = "Delete a record.", description = "Delete a single metadata record and the associated metadata document. The identifier can be either the numeric identifier or the related resource's identifier. "
           + "Deleting a record typically requires the caller to have special permissions. "
-          + "In some cases, deleting a record can also be available for the owner or other privileged users or can be forbidden at all. Deletion of a record affects all versions of the particular record.")
+          + "In some cases, deleting a record can also be available for the owner or other privileged users or can be forbidden at all. Deletion of a record affects all versions of the particular record.",
+          responses = {
+            @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
-  @ApiResponses(value = {
-    @ApiResponse(code = 204, message = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @ResponseBody
-  public ResponseEntity deleteRecord(@ApiParam(value = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
+  public ResponseEntity deleteRecord(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
 }
