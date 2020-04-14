@@ -140,13 +140,12 @@ public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
             + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
     @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record is invalid."),
     @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
-  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
+  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = "application/json", produces = {"application/json"})
   ResponseEntity<MetadataSchemaRecord> updateRecord(
-          @Parameter(description = "The schema id.", required = true) @PathVariable("id") String id,
-          @Parameter(description = "JSON representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
+          @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
+          @Parameter(description = "Json representation of the schema record.", required = true) @RequestBody final MetadataSchemaRecord record,
           final WebRequest request,
-          final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder
+          final HttpServletResponse response
   );
 
   @Operation(summary = "Delete a schema record.", description = "Delete a single schema record. Deleting a record typically requires the caller to have special permissions. "

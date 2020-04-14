@@ -99,6 +99,7 @@ public class MetadataControllerImpl implements IMetadataController{
           UriComponentsBuilder uriBuilder){
 
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
+    System.out.println("volker create metadata" + record);
 
     if(record == null || document == null){
       LOG.error("No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.");
@@ -334,6 +335,7 @@ public class MetadataControllerImpl implements IMetadataController{
           UriComponentsBuilder uriBuilder
   ){
     LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
+    System.out.println("volker update metadata" + record);
 
     if(record == null && document == null){
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");

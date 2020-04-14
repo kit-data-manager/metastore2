@@ -31,6 +31,8 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -68,6 +70,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -96,6 +99,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
+    System.out.println("volker create record" + record);
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
     if (record == null || document == null) {
       LOG.error("No metadata schema record and/or schema document provided. Returning HTTP BAD_REQUEST.");
@@ -378,10 +382,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity updateRecord(String schemaId, MetadataSchemaRecord record, WebRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
+  public ResponseEntity updateRecord(@PathVariable("id") final String schemaId, @RequestBody final MetadataSchemaRecord record, final WebRequest request, final HttpServletResponse response) {
+    MetadataSchemaRecord updatedRecord;
     LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
-
-    if (record == null) {
+    System.out.println("SchemaId " + schemaId);
+    System.out.println("volker update record" + record);
+    if ((record == null)) {// || (record.getSchemaId() == null)) {
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record provided.");
     }
@@ -398,12 +404,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     //schema version is not changed for metadata updates
     LOG.trace("Persisting schema record.");
-    record = metadataSchemaDao.save(existingRecord);
+    updatedRecord = metadataSchemaDao.save(existingRecord);
 
     //audit information not captured here as version not changes via PUT
     LOG.trace("Schema record successfully persisted. Updating document URI and returning result.");
-    fixSchemaDocumentUri(record);
-    return new ResponseEntity<>(record, HttpStatus.OK);
+    fixSchemaDocumentUri(updatedRecord);
+    return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
   }
 
   @Override
