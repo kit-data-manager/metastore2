@@ -99,7 +99,6 @@ public class MetadataControllerImpl implements IMetadataController{
           UriComponentsBuilder uriBuilder){
 
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
-    System.out.println("volker create metadata" + record);
 
     if(record == null || document == null){
       LOG.error("No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.");
