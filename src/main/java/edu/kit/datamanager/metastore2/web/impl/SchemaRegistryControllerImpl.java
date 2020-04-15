@@ -31,8 +31,8 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -68,12 +68,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
+
 
 /**
  *
@@ -99,11 +100,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
-    System.out.println("volker create record" + record);
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
-    if (record == null || document == null) {
-      LOG.error("No metadata schema record and/or schema document provided. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record and/or schema document provided.");
+    if (document == null || document.isEmpty()) {
+      LOG.error("No schema document provided. Returning HTTP BAD_REQUEST.");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No schema document provided.");
     }
     if (record.getSchemaId() == null) {
       LOG.error("Mandatory attributes schemaId not found in record. Returning HTTP BAD_REQUEST.");
@@ -124,6 +124,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     }
 
     long version = auditService.getCurrentVersion(record.getSchemaId());
+    LOG.trace("Actual version: {}, Host: {}", version, request.getRemoteHost());
     if (version > 0) {
       try {
         InetAddress addr = InetAddress.getByName(request.getRemoteHost());
@@ -234,7 +235,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
         //schema file is written/skipped, continue with checking and writing metadata
         String callerPrincipal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
-        LOG.trace("Checking resource for caller acl entry.");
+        LOG.trace("Checking resource for caller acl entry. [sid = '{}']", callerPrincipal);
         //check ACLs for caller
         AclEntry callerEntry = null;
         for (AclEntry entry : record.getAcl()) {
@@ -315,7 +316,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
 
-    if (document == null) {
+    if (document == null || document.isEmpty()) {
       LOG.error("Missing metadata document in body. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Metadata document is missing from request body.");
     }
@@ -384,15 +385,13 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Override
   public ResponseEntity updateRecord(@PathVariable("id") final String schemaId, @RequestBody final MetadataSchemaRecord record, final WebRequest request, final HttpServletResponse response) {
     MetadataSchemaRecord updatedRecord;
-    LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
-    System.out.println("SchemaId " + schemaId);
-    System.out.println("volker update record" + record);
-    if ((record == null)) {// || (record.getSchemaId() == null)) {
+    LOG.trace("Performing updateMetadataSchemaRecord({}, {}).", schemaId, record);
+    if ((record == null) || (record.getSchemaId() == null)) {
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record provided.");
     }
 
-    LOG.trace("Obtaining most recent schema record with id {}.", schemaId);
+    LOG.trace("Obtaining most recent metadata schema record with id {}.", schemaId);
     MetadataSchemaRecord existingRecord = getRecordByIdAndVersion(schemaId);
     //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
 

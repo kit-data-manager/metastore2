@@ -16,22 +16,22 @@
 package edu.kit.datamanager.metastore2.web;
 
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.springframework.data.domain.Pageable;
 import org.springdoc.core.converters.PageableAsQueryParam;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -140,10 +140,10 @@ public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
             + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
     @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record is invalid."),
     @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
-  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = "application/json", produces = {"application/json"})
+  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
   ResponseEntity<MetadataSchemaRecord> updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
-          @Parameter(description = "Json representation of the schema record.", required = true) @RequestBody final MetadataSchemaRecord record,
+          @Parameter(description = "Json representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
           final WebRequest request,
           final HttpServletResponse response
   );
