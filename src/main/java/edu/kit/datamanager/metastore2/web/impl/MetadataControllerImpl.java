@@ -206,10 +206,13 @@ public class MetadataControllerImpl implements IMetadataController{
       } catch(URISyntaxException ex){
         LOG.error("Failed to determine schema storage location.", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
-      }
+      } catch(IOException ex){
+      LOG.error("Failed to write metadata to metadata folder. Returning HTTP INSUFFICIENT_STORAGE.");
+      return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to write medata to metadata folder.");
+    }
     } catch(IOException ex){
-      LOG.error("Failed to read medata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read medata from input stream.");
+      LOG.error("Failed to read metadata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
+      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read metadata from input stream.");
     }
 
     String callerPrincipal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
@@ -334,7 +337,6 @@ public class MetadataControllerImpl implements IMetadataController{
           UriComponentsBuilder uriBuilder
   ){
     LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
-    System.out.println("volker update metadata" + record);
 
     if(record == null && document == null){
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
