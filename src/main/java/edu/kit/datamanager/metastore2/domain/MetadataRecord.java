@@ -32,6 +32,7 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
@@ -53,24 +54,24 @@ public class MetadataRecord implements EtagSupport, Serializable {
   private String pid;
   @NotBlank(message = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.")
   private String relatedResource;
-  @NotBlank(message = "The date the record has been initially created.")
+  @NotNull(message = "The date the record has been initially created.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant createdAt;
-  @NotBlank(message = "The date the record had been updated the last time.")
+  @NotNull(message = "The date the record had been updated the last time.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
   @NotBlank(message = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.")
   private String schemaId;
-  @NotBlank(message = "The record version. The version is set by the metadata registry and cannot be provided manually.")
+  @NotNull(message = "The record version. The version is set by the metadata registry and cannot be provided manually.")
   private Long recordVersion;
 
-  @NotBlank(message = "A list of access control entries for resticting access.")
+  @NotNull(message = "A list of access control entries for resticting access.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<AclEntry> acl = new HashSet<>();
+   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")

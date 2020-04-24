@@ -34,6 +34,7 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
@@ -73,17 +74,17 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @Enumerated(EnumType.STRING)
   @NotBlank(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
   private SCHEMA_TYPE type;
-  @NotBlank(message = "The date the record has been initially created.")
+  @NotNull(message = "The date the record has been initially created.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant createdAt;
-  @NotBlank(message = "The date the record had been updated the last time.")
+  @NotNull(message = "The date the record had been updated the last time.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @NotBlank(message = "A list of access control entries for resticting access.")
+  @NotNull(message = "A list of access control entries for resticting access.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
