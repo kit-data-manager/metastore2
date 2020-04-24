@@ -136,7 +136,11 @@ public class MetadataControllerImpl implements IMetadataController{
 
     try{
       byte[] data = document.getBytes();
-
+      if (metastoreProperties.getSchemaRegistries().length == 0) {
+          LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
+          return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
+        
+      }
       for(String schemaRegistry : metastoreProperties.getSchemaRegistries()){
         URI schemaRegistryUri = URI.create(schemaRegistry);
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
@@ -207,7 +211,7 @@ public class MetadataControllerImpl implements IMetadataController{
         LOG.error("Failed to determine schema storage location.", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
       } catch(IOException ex){
-      LOG.error("Failed to write metadata to metadata folder. Returning HTTP INSUFFICIENT_STORAGE.");
+      LOG.error("Failed to write metadata to metadata folder. Returning HTTP INSUFFICIENT_STORAGE.", ex);
       return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to write medata to metadata folder.");
     }
     } catch(IOException ex){
@@ -239,9 +243,9 @@ public class MetadataControllerImpl implements IMetadataController{
 
     LOG.trace("Persisting metadata record.");
     MetadataRecord result = metadataRecordDao.save(record);
-
+    
     LOG.trace("Capturing metadata schema audit information.");
-    auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
+    auditService.captureAuditInformation(result, AuthenticationHelper.getPrincipal());
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
     fixMetadataDocumentUri(result);
