@@ -58,7 +58,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Torridity
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
   DependencyInjectionTestExecutionListener.class,
@@ -177,12 +177,13 @@ public class MetadataControllerTest {
   @Test
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
     record.setSchemaId("my_dc");
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test",PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
+//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+//    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -205,7 +206,7 @@ public class MetadataControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
+            file(schemaFile)).andDo(print()).andExpect(status().isNotFound()).andReturn();
   }
 
   // @Test 
