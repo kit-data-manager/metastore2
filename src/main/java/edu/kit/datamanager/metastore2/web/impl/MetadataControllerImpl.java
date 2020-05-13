@@ -130,6 +130,7 @@ public class MetadataControllerImpl implements IMetadataController{
       if(reattempts == 10){
         return ResponseEntity.status(HttpStatus.CONFLICT).body("Unable to assign unique, random UUID. Please try again later.");
       }
+      versionById = auditService.getCurrentVersion(record.getId());
     }
 
     LOG.trace("Trying to validate metadata document using one of {} schema registry/registries.", metastoreProperties.getSchemaRegistries().length);
@@ -161,7 +162,7 @@ public class MetadataControllerImpl implements IMetadataController{
         } catch(HttpClientErrorException ce){
           //not valid 
           LOG.error("Failed to validate metadata document at schema registry.", ce);
-          return ResponseEntity.status(ce.getRawStatusCode()).body("Failed to validate metadata document against schema " + record.getSchemaId() + " with status " + ce.getStatusCode() + ".");
+          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to validate metadata document against schema " + record.getSchemaId() + " with status " + ce.getStatusCode() + ".");
         } catch(IOException ex){
           LOG.error("Failed to access schema registry at " + schemaRegistry + ". Proceeding with next registry.", ex);
         }
