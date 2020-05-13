@@ -213,7 +213,7 @@ public class MetadataControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   // @Test 
@@ -469,7 +469,7 @@ public class MetadataControllerTest {
     //delete schema file
     Files.delete(Paths.get("/tmp/dc.xml"));
 
-    this.mockMvc.perform(get("/api/v1/metadata/unknown_dc")).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/unknown_dc")).andDo(print()).andExpect(status().isNotFound()).andReturn();
   }
 
   @Test
@@ -484,7 +484,7 @@ public class MetadataControllerTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
 
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
             file(recordFile).
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
 
@@ -494,9 +494,9 @@ public class MetadataControllerTest {
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getMetadataDocumentUri(), record2.getMetadataDocumentUri());
+    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
-    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());//version is not changing for metadata update
+    Assert.assertEquals((long)record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -580,20 +580,20 @@ public class MetadataControllerTest {
 
     this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
     //delete second time
-    this.mockMvc.perform(delete("/api/v1/metadata/ + METADATA_RECORD_ID")).andDo(print()).andExpect(status().isNoContent()).andReturn();
-
-    //try to create after deletion (Should return HTTP GONE)
-    MetadataRecord record = new MetadataRecord();
-    record.setSchemaId("dc");
-    record.setRelatedResource(RELATED_RESOURCE);
-    ObjectMapper mapper = new ObjectMapper();
-
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
-
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
-            file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isGone()).andReturn();
+    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID)).andDo(print()).andExpect(status().isNoContent()).andReturn();
+//    Recreation should be no problem.
+//    //try to create after deletion (Should return HTTP GONE)
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchemaId("dc");
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    ObjectMapper mapper = new ObjectMapper();
+//
+//    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+//    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+//
+//    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
+//            file(recordFile).
+//            file(metadataFile)).andDo(print()).andExpect(status().isGone()).andReturn();
   }
 
   private void createDCMetadataRecord() throws FileNotFoundException, IOException {
@@ -602,6 +602,7 @@ public class MetadataControllerTest {
     record.setCreatedAt(Instant.now());
     record.setLastUpdate(Instant.now());
     record.setSchemaId(SCHEMA_ID);
+    record.setRecordVersion(1l);
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> acl = new HashSet<>();
     AclEntry entry = new AclEntry();
