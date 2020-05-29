@@ -105,7 +105,7 @@ public interface IMetadataController {
   @PageableAsQueryParam
   @ResponseBody
   public ResponseEntity<List<MetadataRecord>> getRecords(
-          @Parameter(description = "A list of related resource identifiers.", required = false) @RequestParam(value = "resoureId", required = false) List<String> relatedIds,
+          @Parameter(description = "A list of related resource identifiers.", required = false) @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @Parameter(description = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,

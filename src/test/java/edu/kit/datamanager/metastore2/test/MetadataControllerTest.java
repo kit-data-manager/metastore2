@@ -423,10 +423,17 @@ public class MetadataControllerTest {
 
   @Test
   public void testFindRecordsByResourceId() throws Exception {
+    Instant oneHourBefore = Instant.now().minusSeconds(3600);
+    Instant twoHoursBefore = Instant.now().minusSeconds(7200);
     createDCMetadataRecord();
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(1, result.length);
+    res = this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString())).andDo(print()).andExpect(status().isOk()).andReturn();
+    map = new ObjectMapper();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(1, result.length);
   }
@@ -437,6 +444,25 @@ public class MetadataControllerTest {
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", "invalid")).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(0, result.length);
+  }
+
+  @Test
+  public void testFindRecordsByInvalidUploadDate() throws Exception {
+    createDCMetadataRecord();
+    Instant oneHourBefore = Instant.now().minusSeconds(3600);
+    Instant twoHoursBefore = Instant.now().minusSeconds(7200);
+ 
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", RELATED_RESOURCE).param("until", oneHourBefore.toString())).andDo(print()).andExpect(status().isOk()).andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(0, result.length);
+    
+    res = this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).andExpect(status().isOk()).andReturn();
+    map = new ObjectMapper();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(0, result.length);
   }
@@ -619,7 +645,6 @@ public class MetadataControllerTest {
         fout.flush();
       }
     }
-    System.out.println("Volker save record: " + record);
     schemaAuditService.captureAuditInformation(record, "TEST");
   }
 
