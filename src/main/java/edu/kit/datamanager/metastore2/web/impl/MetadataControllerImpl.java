@@ -302,7 +302,7 @@ public class MetadataControllerImpl implements IMetadataController{
 
   @Override
   public ResponseEntity<List<MetadataRecord>> getRecords(
-          @RequestParam(value = "resoureId", required = false) List<String> relatedIds,
+          @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @RequestParam(name = "from", required = false) Instant updateFrom,
           @RequestParam(name = "until", required = false) Instant updateUntil,
@@ -313,7 +313,12 @@ public class MetadataControllerImpl implements IMetadataController{
   ){
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
     Specification<MetadataRecord> spec = SchemaIdSpecification.toSpecification(schemaIds);
-    spec = spec.and(RelatedIdSpecification.toSpecification(relatedIds)).or(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    if (relatedIds != null) {
+    spec = spec.and(RelatedIdSpecification.toSpecification(relatedIds));
+    }
+    if ((updateFrom != null) || (updateUntil != null)) {
+      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    }
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
