@@ -23,8 +23,10 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
@@ -62,9 +64,9 @@ public interface IMetadataController {
   public ResponseEntity<MetadataRecord> createRecord(
           @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MetadataRecord record,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
-          final WebRequest request,
+          final HttpServletRequest request,
           final HttpServletResponse response,
-          final UriComponentsBuilder uriBuilder);
+          final UriComponentsBuilder uriBuilder) throws URISyntaxException;
 
   @Operation(summary = "Get a metadata record by its id.", description = "Obtain is single record by its identifier. The identifier can be either the numeric identifier or the related resource's identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
