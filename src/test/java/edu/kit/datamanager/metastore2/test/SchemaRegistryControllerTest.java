@@ -50,6 +50,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -161,6 +162,34 @@ public class SchemaRegistryControllerTest {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
+
+  @Test
+  public void testCreateSchemaRecordWithLocationUri() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("my_dc");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test",PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/" + record.getSchemaId() + "?version=1")).andReturn();
+    String locationUri = result.getResponse().getHeader("Location");
+    String content = result.getResponse().getContentAsString();
+
+    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String content2 = result2.getResponse().getContentAsString();
+
+  
+    Assert.assertEquals(content, content2);
+ }
 
   @Test
   public void testCreateInvalidSchemaRecord() throws Exception {
@@ -559,6 +588,49 @@ public class SchemaRegistryControllerTest {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+  }
+
+
+  @Test
+  public void testUpdateRecordWithoutExplizitGet() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("dc");
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+     Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test",PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    mapper = new ObjectMapper();
+    MetadataSchemaRecord record1 = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record1.getMimeType();
+    record1.setMimeType(MediaType.APPLICATION_JSON.toString());
+
+    result = this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record1))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
+    Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record1.getSchemaId(), record2.getSchemaId());
+    Assert.assertEquals(record1.getSchemaVersion(), record2.getSchemaVersion());//version is not changing for metadata update
+    if (record1.getAcl() != null) {
+      Assert.assertTrue(record1.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record1.getLastUpdate().isBefore(record2.getLastUpdate()));
   }
 
   @Test

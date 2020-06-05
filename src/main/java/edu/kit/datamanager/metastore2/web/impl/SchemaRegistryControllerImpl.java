@@ -49,6 +49,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.logging.Level;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
@@ -74,7 +75,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
-
 
 /**
  *
@@ -262,12 +262,15 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         LOG.trace("Capturing metadata schema audit information.");
         auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
+        LOG.trace("Schema record successfully persisted. Returning result.");
+        String etag = record.getEtag();
+
         LOG.trace("Schema record successfully persisted. Updating document URI.");
         fixSchemaDocumentUri(record);
-        LOG.trace("Schema record successfully persisted. Returning result.");
-        return new ResponseEntity<>(record, HttpStatus.CREATED);
+        URI locationUri = new URI(request.getRequestURI() + record.getSchemaId() + "?version=" + record.getSchemaVersion());
+        return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(record);
       }
-    } catch (IOException ex) {
+    } catch (IOException | URISyntaxException ex) {
       LOG.error("Failed to read schema data from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
       return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read schema data from input stream.");
     }
