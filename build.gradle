@@ -25,17 +25,18 @@ apply plugin: 'jacoco'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
+description = 'General purpose metadata repository and schema registry service'
+group = 'edu.kit.datamanager'
+version = '0.1'
 
-jar {
-    baseName = 'metastore2'
-    version =  '0.1'
-}
+println "Building ${name} version: ${version}"
+
 
 repositories {
     mavenLocal() 
     jcenter()
     mavenCentral()
-    maven { url 'http://oss.jfrog.org/artifactory/oss-snapshot-local/' }
+    maven { url 'https://oss.jfrog.org/artifactory/oss-snapshot-local/' }
 }
 
 sourceCompatibility = 1.8
@@ -61,45 +62,45 @@ if (project.hasProperty('travis')) {
 }
 
 dependencies {
-    compile("org.javers:javers-spring-boot-starter-sql:3.9.0")
-    compile("org.springframework.boot:spring-boot-starter-data-rest")
-    compile("org.springframework.boot:spring-boot-starter-mail") 
+    implementation "org.javers:javers-spring-boot-starter-sql:3.9.0"
+    implementation "org.springframework.boot:spring-boot-starter-data-rest"
+    implementation "org.springframework.boot:spring-boot-starter-mail"
    
-    compile("org.springdoc:springdoc-openapi-ui:1.2.34")
-    compile("org.springdoc:springdoc-openapi-data-rest:1.2.34")
-    compile("org.springdoc:springdoc-openapi-webmvc-core:1.2.34")
+    implementation "org.springdoc:springdoc-openapi-ui:1.2.34"
+    implementation "org.springdoc:springdoc-openapi-data-rest:1.2.34"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:1.2.34"
    
-    compile("edu.kit.datamanager:service-base:0.1")
+    implementation "edu.kit.datamanager:service-base:0.1"
 
-    compile("org.postgresql:postgresql:42.2.1")
-    compile("org.apache.tika:tika-core:1.18") 
-    compile ("org.javers:javers-core:5.3.2")
+    implementation "org.postgresql:postgresql:42.2.1"
+    implementation "org.apache.tika:tika-core:1.18"
+    implementation "org.javers:javers-core:5.3.2"
    
     //Java 11 Support 
-    compile('javax.xml.bind:jaxb-api:2.3.1')
-    compile('com.sun.xml.bind:jaxb-core:2.3.0.1')
-    compile('com.sun.xml.bind:jaxb-impl:2.3.0.1')
-    compile('javax.activation:activation:1.1.1')
-    compile('org.javassist:javassist:3.23.1-GA')
+    implementation 'javax.xml.bind:jaxb-api:2.3.1'
+    implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
+    implementation 'com.sun.xml.bind:jaxb-impl:2.3.0.1'
+    implementation 'javax.activation:activation:1.1.1'
+    implementation 'org.javassist:javassist:3.23.1-GA'
     
-    compileOnly('org.apache.httpcomponents:httpclient:4.5.6')
+    runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
 
-    testCompile("com.h2database:h2:1.4.194") 
-    testCompile("org.springframework.restdocs:spring-restdocs-mockmvc")
-    testCompile("org.springframework.boot:spring-boot-starter-test")
-    testCompile("org.springframework:spring-test")
-    testCompile("org.springframework.security:spring-security-test")
+    testImplementation "com.h2database:h2:1.4.194"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc"
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.springframework:spring-test"
+    testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testCompile("org.mockito:mockito-core:2.18.0")
-    testCompile("org.powermock:powermock-module-junit4:2.0.0-beta.5")
-    testCompile("org.powermock:powermock-api-mockito2:2.0.0-beta.5")
-    testCompile("junit:junit:4.12")
+    testImplementation "org.mockito:mockito-core:2.18.0"
+    testImplementation "org.powermock:powermock-module-junit4:2.0.0-beta.5"
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.0-beta.5"
+    testImplementation "junit:junit:4.12"
 
-    testCompile('org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE')
-    testCompile('org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2')
-    asciidoctor('org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE')
-    asciidoctor('com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1')
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE'
+    testImplementation 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
+    asciidoctor 'org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE'
+    asciidoctor 'com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1'
 }
 
 bootJar {
@@ -114,6 +115,7 @@ bootJar {
 }
 
 test {
+    finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
 
     testLogging {
@@ -122,24 +124,25 @@ test {
     }
 }
 
-
 jacoco {
-    toolVersion = "0.8.2"
+    toolVersion = "0.8.5"
 }
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.enabled true
         html.enabled true
+        html.destination file("${buildDir}/reports/coverage")
     }
     afterEvaluate {
         //exclude some classes/package from code coverage report
-        classDirectories = files(classDirectories.files.collect {
-                fileTree(dir: it, exclude: [\
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [\
             'edu/kit/datamanager/collection/configuration/**', \
             'edu/kit/datamanager/collection/filters/**', \
             'edu/kit/datamanager/collection/Application*'
                     ])
-            })
+            }))
     }
 }
