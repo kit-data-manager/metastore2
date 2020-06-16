@@ -127,8 +127,8 @@ public class MetadataControllerImpl implements IMetadataController {
     Example<MetadataRecord> example = Example.of(dummy);
     Optional<MetadataRecord> findOne = metadataRecordDao.findOne(example);
     if (findOne.isPresent()) {
-       LOG.error("Conflict with existing metadata record!");
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
+      LOG.error("Conflict with existing metadata record!");
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
     }
     //check for re-use of old id
     long versionById = auditService.getCurrentVersion(record.getId());
@@ -552,25 +552,27 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   public MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
-    if (!Objects.isNull(provided.getPid())) {
-      LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-      managed.setPid(provided.getPid());
-    }
+    if (provided != null) {
+      if (!Objects.isNull(provided.getPid())) {
+        LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
+        managed.setPid(provided.getPid());
+      }
 
-    if (!Objects.isNull(provided.getRelatedResource())) {
-      LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-      managed.setRelatedResource(provided.getRelatedResource());
-    }
+      if (!Objects.isNull(provided.getRelatedResource())) {
+        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+        managed.setRelatedResource(provided.getRelatedResource());
+      }
 
-    if (!Objects.isNull(provided.getSchemaId())) {
-      LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-      managed.setSchemaId(provided.getSchemaId());
-    }
+      if (!Objects.isNull(provided.getSchemaId())) {
+        LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
+        managed.setSchemaId(provided.getSchemaId());
+      }
 
-    //update acl
-    if (provided.getAcl() != null) {
-      LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-      managed.setAcl(provided.getAcl());
+      //update acl
+      if (provided.getAcl() != null) {
+        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+        managed.setAcl(provided.getAcl());
+      }
     }
     LOG.trace("Setting lastUpdate to now().");
     managed.setLastUpdate(Instant.now());

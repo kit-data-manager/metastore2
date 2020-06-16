@@ -124,7 +124,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     }
 
     long version = auditService.getCurrentVersion(record.getSchemaId());
-    LOG.trace("Actual version: {}, Host: {}", version, request.getRemoteHost());
+    LOG.trace("Actual version: {}, Host: {}, HostAddr: ", version, request.getRemoteHost(), request.getRemoteAddr());
     if (version > 0) {
       try {
         InetAddress addr = InetAddress.getByName(request.getRemoteHost());

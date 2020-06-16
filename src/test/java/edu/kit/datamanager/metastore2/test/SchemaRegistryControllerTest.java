@@ -166,7 +166,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testCreateSchemaRecordWithLocationUri() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc");
+    record.setSchemaId("my_dc_new");
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();
