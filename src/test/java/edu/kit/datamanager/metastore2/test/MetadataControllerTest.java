@@ -241,9 +241,9 @@ public class MetadataControllerTest {
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
-//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
-//    record.setAcl(aclEntries);
+    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -656,6 +656,7 @@ public class MetadataControllerTest {
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
+    System.out.println("LocationURI: " + locationUri);
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
