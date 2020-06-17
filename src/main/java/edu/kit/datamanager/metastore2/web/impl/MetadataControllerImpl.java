@@ -70,6 +70,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -100,12 +101,8 @@ public class MetadataControllerImpl implements IMetadataController {
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) throws URISyntaxException {
 
-    LOG.trace("Performing createRecord({}, {}).", record, "#document");
+    LOG.trace("Performing createRecord({},...).", record);
 
-    if (record == null || document == null) {
-      LOG.error("No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata record and/or metadata document provided.");
-    }
     if (record.getRelatedResource() == null || record.getSchemaId() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
@@ -151,32 +148,12 @@ public class MetadataControllerImpl implements IMetadataController {
       if (metastoreProperties.getSchemaRegistries().length == 0) {
         LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
         return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
-
       }
-      for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
-        URI schemaRegistryUri = URI.create(schemaRegistry);
-        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
 
-        URI finalUri = builder.build().toUri();
+      ResponseEntity<String> responseEntity = validateMetadataDocument(record, data);
 
-        try {
-          HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(data)).postForm(MediaType.MULTIPART_FORM_DATA);
-
-          if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
-            LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
-            break;
-          } else {
-            //not valid 
-            LOG.error("Received unexpected status from SchemaRegistry.validate(). Expecting NO_CONTENT but received " + status + ". Aborting operation.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected status " + status + " received from metadata validation. Aborting operation.");
-          }
-        } catch (HttpClientErrorException ce) {
-          //not valid 
-          LOG.error("Failed to validate metadata document at schema registry.", ce);
-          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to validate metadata document against schema " + record.getSchemaId() + " with status " + ce.getStatusCode() + ".");
-        } catch (IOException ex) {
-          LOG.error("Failed to access schema registry at " + schemaRegistry + ". Proceeding with next registry.", ex);
-        }
+      if (responseEntity != null) {
+        return responseEntity;
       }
 
       LOG.trace("Setting createdAt and lastUpdate to now().");
@@ -386,31 +363,14 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.trace("Updating metadata document.");
       try {
         byte[] data = document.getBytes();
+        if (metastoreProperties.getSchemaRegistries().length == 0) {
+          LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
+          return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
+        }
+        ResponseEntity<String> responseEntity = validateMetadataDocument(existingRecord, data);
 
-        for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
-          URI schemaRegistryUri = URI.create(schemaRegistry);
-          UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", existingRecord.getSchemaId(), "validate");
-
-          URI finalUri = builder.build().toUri();
-
-          try {
-            HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(data)).postForm(MediaType.MULTIPART_FORM_DATA);
-
-            if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
-              LOG.trace("Successfully validated document against schema {} in registry {}.", existingRecord.getSchemaId(), schemaRegistry);
-              break;
-            } else {
-              //not valid 
-              LOG.error("Received unexpected status from SchemaRegistry.validate(). Expecting NO_CONTENT but received " + status + ". Aborting operation.");
-              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected status " + status + " received from metadata validation. Aborting operation.");
-            }
-          } catch (HttpClientErrorException ce) {
-            //not valid 
-            LOG.error("Failed to validate metadata document at schema registry.", ce);
-            return ResponseEntity.status(ce.getRawStatusCode()).body("Failed to validate metadata document against schema " + existingRecord.getSchemaId() + " with status " + ce.getStatusCode() + ".");
-          } catch (IOException ex) {
-            LOG.error("Failed to access schema registry at " + schemaRegistry + ". Proceeding with next registry.", ex);
-          }
+        if (responseEntity != null) {
+          return responseEntity;
         }
 
         boolean writeMetadataFile = true;
@@ -598,5 +558,51 @@ public class MetadataControllerImpl implements IMetadataController {
       throw new CustomInternalServerError("Failed to create metadata record hash.");
     }
     return hash;
+  }
+
+  /**
+   * Validate metadata document with given schema.
+   *
+   * @param record metadata of the document.
+   * @param document document
+   * @return ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  private ResponseEntity<String> validateMetadataDocument(MetadataRecord record, byte[] document) {
+    ResponseEntity<String> responseEntity = null;
+    boolean validationSuccess = false;
+    StringBuilder errorMessage = new StringBuilder();
+    for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+      URI schemaRegistryUri = URI.create(schemaRegistry);
+      UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
+
+      URI finalUri = builder.build().toUri();
+
+      try {
+        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(document)).postForm(MediaType.MULTIPART_FORM_DATA);
+
+        if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
+          LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
+          validationSuccess = true;
+          break;
+        } 
+      } catch (HttpClientErrorException ce) {
+        //not valid 
+        String message = new String("Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".");
+        LOG.error(message, ce);
+        errorMessage.append(message).append("\n");
+        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
+      } catch (IOException|RestClientException ex) {
+        String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
+        LOG.error(message, ex);
+        errorMessage.append(message).append("\n");
+        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
+      }
+    }
+    if (!validationSuccess) {
+      return responseEntity;
+    }
+
+    return null;
   }
 }
