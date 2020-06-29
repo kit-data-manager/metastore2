@@ -18,30 +18,28 @@ package edu.kit.datamanager.metastore2.documentation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.service.IAuditService;
-import java.io.FileWriter;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import org.apache.commons.lang3.RandomStringUtils;
+import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -60,13 +58,6 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -85,7 +76,7 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-public class SchemaResgistryControllerDocumentationTest{
+public class SchemaRegistryControllerDocumentationTest{
 
   private MockMvc mockMvc;
   @Autowired
@@ -98,58 +89,46 @@ public class SchemaResgistryControllerDocumentationTest{
 //  private IDataResourceService dataResourceService;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+  private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
   private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
-  private static final String INVALID_SCHEMA = "invalid_dc";
-  private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-          + "        xmlns=\"http://www.w3.org/2001/XMLSchema\"\n"
+  private final static String EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
+          + "        xmlns=\"http://www.example.org/schema/xsd\"\n"
+          + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
           + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
           + "\n"
-          + "<import namespace=\"http://purl.org/dc/elements/1.1/\" schemaLocation=\"https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd\"/>\n"
+          + "<xs:element name=\"metadata\">\n"
+          + "  <xs:complexType>\n"
+          + "    <xs:sequence>\n"
+          + "      <xs:element name=\"title\" type=\"xs:string\"/>\n"
+          + "      <xs:element name=\"date\" type=\"xs:date\"/>\n"
+          + "    </xs:sequence>\n"
+          + "  </xs:complexType>\n"
+          + "</xs:element>\n"
           + "\n"
-          + "<element name=\"dc\" type=\"oai_dc:oai_dcType\"/>\n"
+          + "</xs:schema>";
+  private final static String NEW_EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
+          + "        xmlns=\"http://www.example.org/schema/xsd\"\n"
+          + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
+          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
           + "\n"
-          + "<complexType name=\"oai_dcType\">\n"
-          + "  <choice minOccurs=\"0\" maxOccurs=\"unbounded\">\n"
-          + "    <element ref=\"dc:title\"/>\n"
-          + "    <element ref=\"dc:creator\"/>\n"
-          + "    <element ref=\"dc:subject\"/>\n"
-          + "    <element ref=\"dc:description\"/>\n"
-          + "    <element ref=\"dc:publisher\"/>\n"
-          + "    <element ref=\"dc:contributor\"/>\n"
-          + "    <element ref=\"dc:date\"/>\n"
-          + "    <element ref=\"dc:type\"/>\n"
-          + "    <element ref=\"dc:format\"/>\n"
-          + "    <element ref=\"dc:identifier\"/>\n"
-          + "    <element ref=\"dc:source\"/>\n"
-          + "    <element ref=\"dc:language\"/>\n"
-          + "    <element ref=\"dc:relation\"/>\n"
-          + "    <element ref=\"dc:coverage\"/>\n"
-          + "    <element ref=\"dc:rights\"/>\n"
-          + "  </choice>\n"
-          + "</complexType>\n"
+          + "<xs:element name=\"metadata\">\n"
+          + "  <xs:complexType>\n"
+          + "    <xs:sequence>\n"
+          + "      <xs:element name=\"title\" type=\"xs:string\"/>\n"
+          + "      <xs:element name=\"date\" type=\"xs:date\"/>\n"
+          + "      <xs:element name=\"note\" type=\"xs:string\" minOccurs=\"0\"/>\n"
+          + "    </xs:sequence>\n"
+          + "  </xs:complexType>\n"
+          + "</xs:element>\n"
           + "\n"
-          + "</schema>";
+          + "</xs:schema>";
 
   private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-          + "  <dc:creator>Carbon, Seth</dc:creator>\n"
-          + "  <dc:creator>Mungall, Chris</dc:creator>\n"
-          + "  <dc:date>2018-07-02</dc:date>\n"
-          + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
-          + "  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>\n"
-          + "  <dc:identifier>10.5281/zenodo.3477535</dc:identifier>\n"
-          + "  <dc:identifier>oai:zenodo.org:3477535</dc:identifier>\n"
-          + "  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/gene-ontology</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/zenodo</dc:relation>\n"
-          + "  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>\n"
-          + "  <dc:rights>http://creativecommons.org/licenses/by/4.0/legalcode</dc:rights>\n"
-          + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
-          + "  <dc:type>info:eu-repo/semantics/other</dc:type>\n"
-          + "  <dc:type>dataset</dc:type>\n"
-          + "</oai_dc:dc>";
+          + "<example:metadata xmlns:example=\"http://www.example.org/schema/xsd/\" >\n"
+          + "  <example:title>My first XML document</example:title>\n"
+          + "  <example:date>2018-07-02</example:date>\n"
+          + "  <example:metadata>\n"
+          + "</example:metadata>";
 
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
@@ -159,6 +138,17 @@ public class SchemaResgistryControllerDocumentationTest{
 
   @Before
   public void setUp() throws JsonProcessingException{
+    metadataSchemaDao.deleteAll();
+    try {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+     } catch (IOException ex) {
+      ex.printStackTrace();
+    }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
             .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation))
@@ -166,35 +156,51 @@ public class SchemaResgistryControllerDocumentationTest{
   }
 
   @Test
-  public void documentBasicAccess() throws Exception{
+  public void documentSchemaRegistry() throws Exception{
     MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc");
+    record.setSchemaId(EXAMPLE_SCHEMA_ID);
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test",PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
      mapper.registerModule(new JavaTimeModule());
+     System.out.println("xxxx"+ mapper.writeValueAsString(record) + "xxxx");
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", EXAMPLE_SCHEMA.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(record).getBytes()));
 
       
     //create resource and obtain location from response header
     String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile)).
+            file(schemaFile).
+            file(recordFile)).
             andExpect(status().isCreated()).
-            andDo(document("create-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andDo(document("register-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andReturn().getResponse().getHeader("Location");
 
     Assert.assertNotNull(location);
+    // List all meatadata schema records
+    this.mockMvc.perform(get("/api/v1/schemas/")).andExpect(status().isOk()).andDo(document("get-all-schemas", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    
+    // Get single metadata schema record
+    String etag = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).accept("application/vnd.datamanager.schema-record+json")).andExpect(status().isOk()).andDo(document("get-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
+    
+    // Get metadata schema
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
-    //extract resourceId from response header and use it to issue a GET to obtain the current ETag
-    String resourceId = location.substring(location.lastIndexOf("/") + 1);
-//    String etag = this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
+      
+    //update schema document
+    schemaFile = new MockMultipartFile("schema", NEW_EXAMPLE_SCHEMA.getBytes());
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(schemaFile).
+            file(recordFile).header("If-Match", etag)).
+            andExpect(status().isCreated()).
+            andDo(document("update-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andReturn().getResponse().getHeader("Location");
+    System.out.println(location);
+    
+    // Get metadata schema version 2
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schemav2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+
 //
 //    //apply a simple patch to the resource
 //    String patch = "[{\"op\": \"replace\",\"path\": \"/publicationYear\",\"value\": \"2017\"}]";
