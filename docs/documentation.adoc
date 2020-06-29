@@ -1,0 +1,706 @@
+= KIT Data Manager Documentation - Metastore2 Service
+v{version}, KIT Data Manager Development Team, {date}
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:highlightjs-theme: github
+:toc: left
+:toclevels: 4
+:sectlinks:
+:sectnums:
+
+[introduction]
+= RESTful API Description
+
+== Introduction
+
+In this documentation, the basics of the KIT Data Manager RESTful API of the Metastore2 Service are described. You will be guided through the first steps of 
+register an XML schema, update it. After that add an appropriate metadata document to metastore2 which may be linked to a data resource.
+
+This documentation assumes, that you have an instance of the KIT Data Manager Metastore2 Repository Service installed locally. If the repository is running on another
+host or port you should change hostname and/or port accordingly. Furthermore, the examples assume that you are using the repository without authentication
+and authorization, which is provided by another service. If you plan to use this optional service, please refer to its documentation first to see how the 
+examples in this documentation have to be modified in order to work with authentication. Typically, this should be achieved by simple adding an additional header
+entry.
+
+The example structure is identical for all examples below. Each example starts with a CURL command that can be run by copy&paste to your console/terminal window.
+The second part shows the HTTP request sent to the server including arguments and required headers. Finally, the third block shows the response comming from the server.
+In between, special characteristics of the calls are explained together with additional, optional arguments or alternative responses.
+
+[NOTE]
+For technical reasons, all metadata resources shown in the examples contain all fields, e.g. also empty lists or fields with value 'null'. You may ignore most of them
+as long as they are not needed. Some of them will be assigned by the server, others remain empty or null as long as you don't assign any value to them. 
+All fields mandatory at creation time are explained in the resource creation example.
+
+[[ChapterMetadataSchemaHandling]]
+== Schema Registration and Management
+
+In this first section, the handling of schema resources is explained. It all starts with creating your first xml schema resource. The model of a metadata schema record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "schemaId" : "...",
+  "schemaVersion" : 1,
+  "mimeType" : "...",
+  "type" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "schemaDocumentUri" : "...",
+  "schemaHash" : "...",
+  "locked" : false
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label for the schema.
+- mimeType: The resource type must be assigned by the user. 
+- type: For XSD schemas this should be 'application/xml'
+
+In addition, ACL may be userful to make schema editable by others. (This will be of interest while updating an existing schema)
+
+=== Registering a Metadata Schema
+
+The following example shows the creation of the first xsd schema only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+record.json:
+{
+  "schemaId" : "my_first_xsd",
+  "mimeType" : "application/xml",
+  "type" : "XML",
+}
+--------
+
+include::{snippets}/register-schema/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/register-schema/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The two other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/register-schema/http-response.adoc[]
+
+What you see is, that the metadata schema record looks different from the original document. All remaining elements received a value by the server. 
+Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET, PUT and PATCH calls and must be provided for 
+all calls modifying the resource, e.g. PATCH, PUT and DELETE, in order to avoid conflicts.
+
+=== Getting List of Metadata Schema Records
+
+Obtaining all accessible metadata schema records. 
+
+include::{snippets}/get-all-schemas/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the resource's path using the base path and the resource identifier.
+
+include::{snippets}/get-all-schemas/http-request.adoc[]
+
+As a result, you receive a list of metadata schema records. 
+
+include::{snippets}/get-all-schemas/http-response.adoc[]
+
+
+=== Getting a Metadata Schema Record
+
+For obtaining one metadata schema record.
+
+include::{snippets}/get-schema-record/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the resource's path using the base path and the resource identifier.
+
+include::{snippets}/get-schema-record/http-request.adoc[]
+
+As a result, you receive the metadata schema record send before resource metadata and again the corresponding ETag in the HTTP response header. 
+
+include::{snippets}/get-schema-record/http-response.adoc[]
+
+=== Getting a Metadata Schema
+
+For obtaining accessible metadata schemas you have multiple options: list all resources, access a single resource using a known identifier or search by example. The following example shows how to obtain a 
+single resource. You may also use the location URL provided during the create 
+
+include::{snippets}/get-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the resource's path using the base path and the resource identifier.
+
+include::{snippets}/get-schema/http-request.adoc[]
+
+As a result, you receive the XSD schema send before resource metadata and again the ETag in the HTTP response header. 
+
+include::{snippets}/get-schema/http-response.adoc[]
+
+=== Updating a Metadata Schema
+
+Warning: This should be used with extreme caution.
+The new scheme should only add optional elements. Therefor it's not accessible from remote. 
+
+include::{snippets}/update-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the resource's path using the base path and the resource identifier.
+
+include::{snippets}/update-schema/http-request.adoc[]
+
+As a result, you receive the XSD schema send before resource metadata and again the ETag in the HTTP response header. 
+
+include::{snippets}/update-schema/http-response.adoc[]
+
+
+=== Getting new Version of Metadata Schema
+
+For obtaining accessible metadata schemas you have multiple options: list all resources, access a single resource using a known identifier or search by example. The following example shows how to obtain a 
+single resource. You may also use the location URL provided during the create 
+
+include::{snippets}/get-schemav2/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the resource's path using the base path and the resource identifier.
+
+include::{snippets}/get-schemav2/http-request.adoc[]
+
+As a result, you receive the XSD schema send before resource metadata and again the ETag in the HTTP response header. 
+
+include::{snippets}/get-schemav2/http-response.adoc[]
+
+
+
+
+Often, it is not enough to access either all resources or only one specific resources, but you want to search for resources following criterias you want to specify. This can be either done using an external service, 
+e.g. elasticseach, having all metadata registered or by using the built-in support for finding resources by example. The idea is to allow the user to submit a resource document having values assigned to 
+certain fields and to map this resource to a query on the database backend. The main advantage of this approach is its simplicity, the main disadvantage are very basic queries not allowing fine-grained 
+selection or other features provided if using a dedicated query language or a search index. That's why for KIT Data Manager both approaches are supported, whereas only the search by example is described in this
+document as setting up a search index is quite specific to the use case and will be covered in a separate document.
+
+In order to find resources by example you simple have to POST a resource document all fields filled you want to search for to the endpoint shown in the following curl request: 
+
+include::{snippets}/find-resource/curl-request.adoc[]
+
+In our example we search for resources of type DATASET with the type value 'testingSample'. All empty fields in the request can be omitted. You can also see that the endpoint 'dataresources/seach' is based on the
+pattern for all other endpoints, so in that case we want to search for data resources. The result of the request will be either an empty response with no element or a list of matching resources. 
+
+include::{snippets}/find-resource/http-response.adoc[]
+
+Also in that case, pagination is supported which you can see in the response header containing the 'Content-Range' key. Internally, assigned values of the example are mapped to queries. Strings are mapped using 'LIKE'
+expression with a wildcard character at the beginning and the end. Thus, in our example above also a type value of 'testing' would produce the same result. 
+
+Finding resources by example is supported for data resources as well as for content information. However, there are also some limitations in order to keep it simple and reproducible. The following tables show, which 
+attributes are evaluated in which way for creating queries to the data backend.
+
+[cols="m,n", options="header"]
+|============================================================================================================================
+|Supported Data Resource Fields|Queried as...|Match Type 
+|publisher|String|resource.publisher LIKE %value%
+|publicationYear|String|resource.publicationYear LIKE %value%
+|language|String|resource.language LIKE %value%
+|version|String|resource.version LIKE %value%
+|state|String|resource.state IN [value]
+|resourceType|String|resource.resourceType.typeGeneral=resourceType.typeGeneral AND resource.resourceType.value LIKE %resourceType.value%
+|creators|Strings|resource.creator.familyName LIKE %creators.familyName% OR resource.creator.givenName LIKE %creators.givenName% OR resource.creator.affiliation IN [creators.affiliation]
+|primaryIdentifier|String|resource.identifier.value IN [primaryIdentifier.value]
+|alternateIdentifiers|String|resource.alternateIdentifier.identifierType!=INTERNAL AND resource.alternateIdentifier.value IN [alternateIdentifiers.value]
+|============================================================================================================================
+
+[NOTE]
+Other fields will be supported in future. If you require a certain field by your use case. please feel free to file a feature request at GitHub.
+
+[cols="m,n", options="header"]
+|============================================================================================================================
+|Supported Content Information Fields|Queried as...|Match Type 
+|relativePath|String|contentInformation.relativePath LIKE %relativePath%
+|contentUri|String|contentInformation.contentUri LIKE %contentUri%
+|mediaType|String|contentInformation.mediaType LIKE %mediaType%
+|metadata|String|contentInformation.metadata.key=metadata.key AND contentInformation.metadata.value LIKE %metadata.value%
+|tags|String|contentInformation.tags IN [tags]
+|============================================================================================================================
+
+=== Updating a Data Resource
+
+The default way of updating resources' metadata in KIT Data Manager is by using HTTP PATCH. Therefor, JSON Patch documents following the RFC 6902 specification are sent to the server stating 
+which operation should be applied to which field with which value. A sample request is shown below.
+
+include::{snippets}/patch-resource/curl-request.adoc[]
+
+In this simple example we change the publicationYear property of a resource. Therefor, we are using the operation 'replace', the path '/publicationYear' and the new value "2017". 
+Thus, you need to know a few things in order to create a patch document:
+
+1. Which operation should be used? - Please refer to the RFC 6902 specification for available operations.
+2. Which path should be affected? - The path is defined by the model of KIT Data Manager's data resources. If you want to modify an array you should know that the index starts with 0 and you should also know
+the number of elements before the patch operation in order to add the new element to index current + 1.
+3. Which kind of value must be provided? - Depending on the provided path you'll either have to provide a primitive value, e.g. a string like "new value" or a number like 123, or you have to provide a JSON object.
+
+As soon as you have created your patch document, you can send it to the server using the HTTP verb PATCH and the ETag of the resource. Furthermore, you have to provide the Content-Type 'application/json-patch+json'
+in order to state that you're sending a patch document. A valid request will then look as follows:
+
+include::{snippets}/patch-resource/http-request.adoc[]
+
+If a patch could be applied, you'll receive a response with HTTP status 204 (NO_CONTENT). If this is the case, you can assume that the resource has been changed. If the patch document was invalid, HTTP 400 (BAD_REQUEST)
+will be returned.
+
+include::{snippets}/patch-resource/http-response.adoc[]
+
+[NOTE]
+If you want to apply multiple patch operations you do not have to send one request per operation. Instead you can submit an array of patch operations within one single request. In case of a positive response of HTTP 204, 
+all patch operations have been applied.
+
+If you now request the patched resource you will see all modifications included: 
+
+include::{snippets}/get-patched-resource/curl-request.adoc[]
+
+include::{snippets}/get-patched-resource/http-response.adoc[]
+
+In the next example, a more complex patch operation is shown adding a new alternate identifier. We are using the patch operation 'add' affecting the path '/alternateIdentifiers/1' with a value containing a
+JSON object representing the new identifier. Using the index 1 is because each resource has by default one alternate identifier of type INTERNAL assigned accessible at index 0. However, it's more save to 
+check the resource first before trying to add a new element to an array in order to provide the correct index. Otherwise, if you try to add an element to an existing index, HTTP 400 (BAD_REQUEST) will be returned. 
+The request for adding a new alternate identifier should look as follows:
+
+include::{snippets}/patch-resource-complex/curl-request.adoc[]
+
+Bear also in mind, that the value of the patch operation contains a value matching the addressed path in the same format as it would be returned by the server. Thus, you don't need any escaping of
+array elements or numbers. Only strings have to be quoted. The HTTP request including the proper Content-Type and mandatory ETag is shown in the block below followed by the response we already know.
+
+include::{snippets}/patch-resource-complex/http-request.adoc[]
+
+include::{snippets}/patch-resource-complex/http-response.adoc[]
+
+If you now obtain the patched resource you'll see that there are two alternate identifiers, the INTERNAL one and the identifier of type OTHER we just added.
+
+include::{snippets}/get-patched-resource-complex/curl-request.adoc[]
+
+include::{snippets}/get-patched-resource-complex/http-response.adoc[]
+
+Besides the possiblity of patching resources there is also the option to apply updates to an existing resource via HTTP PUT. This rather traditional approach requires the user to read a resource,
+apply updates locally and send the modified resource back to the server. This approach may seem more intuitive but can also causes a comparibly huge overhead as also unchanged content is sent between
+client and server. To illustrate the impact, let's go back to the update example in the beginning. In order to update the publication year the following requests are necessary:
+
+1. HTTP HEAD /api/v1/dataresources/f1062088-3946-410c-8d85-b64f3d6f0751 in order to obtain the current ETag w/o requesting the entire resource (not shown in the example)
+2. HTTP PATCH /api/v1/dataresources/f1062088-3946-410c-8d85-b64f3d6f0751 sending 77 bytes of patch document
+3. HTTP GET /api/v1/dataresources/f1062088-3946-410c-8d85-b64f3d6f0751 requesting 1202 bytes to read the resource after patching it (not necessary, just for a fair comparison)
+
+Summarizing, approx. 1300 bytes of payload were transferred. If we now take a look at the same operation using HTTP PUT it looks as follows:
+
+1. HTTP GET /api/v1/dataresources/f1062088-3946-410c-8d85-b64f3d6f0751 requesting 1202 bytes to read the resource itself as we have to apply changes client-side and the current ETag and the
+2. Apply changes locally, e.g. set the new publication year
+3. HTTP PUT /api/v1/dataresources/f1062088-3946-410c-8d85-b64f3d6f0751 sending 1202 bytes of data containing the changed resource and receiving 1202 bytes of data (the modified resource) as response
+
+You can see that in the second scenario the entire resource is sent three times summing up to around 3600 bytes of data. For a single requests this doesn't seem to be much, but just imagine the overhead
+produced by hundreds or thousands of users working actively with the system. Then a factor of three definitely matters.
+
+However, let's wrap this up with the example of the PUT operation being aware that it should only be used if there are good reasons to do so.
+
+include::{snippets}/put-resource/curl-request.adoc[]
+
+As described before, the entire document is send with the PUT request including the current ETag of the resource.
+
+include::{snippets}/put-resource/http-request.adoc[]
+
+Finally, the updated resource is sent back to the user in the response body together with HTTP status 200 (OK) if the update was successful.
+
+include::{snippets}/put-resource/http-response.adoc[]
+
+==== Rules for Applying Updates
+
+Before you try to update a certain resource and wonder why the update fails for unknown reasons, please check the following rules for updating resources as not all fields can be updated (by everybody). 
+These rules apply to both scenarios, updating via PATCH and PUT.
+
+- It is NOT allowed to update any field named 'id'. This is for technical reasons as these ids are used internally for indexing and linking, therefore changes would influence the integrity of the system.
+- Performing updates requires WRITE permissions to the updated resource. This only applies if authorization is enabled, which is not part of this document. Without active authorization, each request is executed with WRITE permissions.
+- With WRITE permissions, Resources can only be updated as long as their state is VOLATILE. If the state is changed to FIXED, only the owner and administrators are allowed to update the resource. This only applies if authorization is enabled, 
+which is not part of this document. Without active authorization, the state has no influence.
+- The array 'acls' can only be changed by the owner or an administrator. This only applies if authorization is enabled, which is not part of this document. Without active authorization, acls have no influence.
+- Each value of 'identifier' and 'alternateIdentifiers' of all resources must be unique. This is due to the fact, that a resource can be accessed by all its identifiers and allowing duplicated identifiers would cause equivocal results.
+
+If one of these rules is violated, an according HTTP status code is returned, e.g. BAD_REQUEST, FORBIDDEN or CONFLICT. 
+
+=== Getting a Data Resource by an Alternate Identifier
+
+Typically, the main identifier of the resource, stored in the 'id' field, is used to address a resource. As stated in chapter <<ChapterDataResourceHandling,Data Resource Handling>>
+this main identifier is set at resource creation time, either from a provided DOI, a provided identifier of type INTERNAL or by the server. However, you can also use any other identifier to address a resource, 
+e.g. the DOI added at a later point or the value of another alternate identifier assigned to the resource. In the following example we are using the alternate identifier of type OTHER we just added 
+to the resource via patch operation. The request looks like a typical GET request:
+
+include::{snippets}/get-resource-by-alt-id/curl-request.adoc[]
+
+Also the HTTP request shows no difference compared to the GET request shown in the beginning: 
+
+include::{snippets}/get-resource-by-alt-id/http-request.adoc[]
+
+The only difference is how the response looks like. If you are NOT using the main identifier you'll not receive a direct response. Instead, HTTP 303 (SEE_OTHER) is returned together with the link
+to the resource including the main identifier in the Location response header. 
+
+include::{snippets}/get-resource-by-alt-id/http-response.adoc[]
+
+However, depending on the utilized HTTP client and its configuration, the redirect might be executed immediately such that you won't be able to spot any difference compared to the direct request 
+using the main identifier of the resource.
+
+=== Uploading Data for a Data Resource
+
+After covering the basics of metadata creation and modification it's time to associate the first file with a created data resource. Uploading data to a KIT Data Manager based repository is also
+done using the RESTful API. In order to inform the repository to access data or data-related metadata, you only have to append a path element 'data' to the URL of the actual resource. After this 
+'data' path element you are free to organize and name your data as you wish. This allows you to build filesystem-like hierarchies for each data resource. Furthermore, with each file uploaded to
+KIT Data Manager a metadata document is connected called 'ContentInformation'. This document contains internal information, e.g. the relative path, the depth in the hierarchy and the parent resource, 
+automatically generated metadata, e.g. checksum, size and mime type information, as well as custom information that can be added by the user, e.g. key-value based metadata or tags for grouping content elements.
+For the time being, let's stick with the simple case of uploading a single file you can see in the following example.
+
+include::{snippets}/upload-file/curl-request.adoc[]
+
+You should pay attention to three different things: first, check the URL. You can see the base URL for the resource we've created before with the aforementioned 'data' element and a filename 'randomFile.txt'. 
+This will be the URL where the file is uploaded to and from where it can be downloaded later. The second part worth mentioning is the Content-Type header which is set to 'multipart/form-data'. You always have 
+to provide this content type while uploading data, otherwise the upload will fail. Finally, there is the file to upload. For the curl command, it must be provided in the way shown in the example with the -F 
+command line option, the argument name 'file' and the reference to the local file, in this example '@randomFile.txt'. How you provide this argument depends on the client or the API you are using.
+
+[NOTE]
+In the example, the local source file and the destination file name at the server are both 'randomFile.txt'. This is not necessarily required. There can be used an arbitrary name for the file on the server
+independent from the original file name.
+
+In the HTTP request you can see how the data is submitted. You have your part boundary surrounding the actual content of the file in an encoded form. 
+
+include::{snippets}/upload-file/http-request.adoc[]
+
+Finally, if the file has been uploaded, a response with HTTP status 201 (CREATED) is returned together with the file access URL in the Location header. 
+
+include::{snippets}/upload-file/http-response.adoc[]
+
+Via the file location you can access both: the bitstream of the file as well as metadata collected during file ingest. 
+Let's first take a look at the metadata. Therefor, you have to do a simple HTTP GET to the data location telling the server that you request for metadata by adding the Accept header with the value 
+'application/vnd.datamanager.content-information+json' as you can see it in the curl command below.
+
+include::{snippets}/get-content-metadata/curl-request.adoc[]
+
+The HTTP request holds no surprises, it contains the provided target URL as well as the Accept header for requesting ContentInformation instead of data.
+
+include::{snippets}/get-content-metadata/http-request.adoc[]
+
+With the response you receive on the one hand the current ETag and on the other hand the actual ContentInformation document for the addressed file. All information you can see in the following response
+is added by the server during the file ingest.
+
+include::{snippets}/get-content-metadata/http-response.adoc[]
+
+Of course, you can also provide a ContentInformation document during upload, e.g. if you plan to add key-value metadata or tags for a file. In that case you basically do the same as before but you also add 
+another file argument with name 'metadata' containing a JSON file with the ContentInformation document.
+
+include::{snippets}/upload-file-with-metadata/curl-request.adoc[]
+
+In the HTTP request you now see two content elements: the file 'randomFile2.txt' and the metadata 'metadata.json'. You can choose an arbitrary name for the metadata file, but the content must match the 
+ContentInformation model. In the example you see what's in the metadata file. The only element that is relevant is 'metadata' containing a single key 'test' with value 'ok'. There are also other elements
+in this file, e.g. depth, size and filename. These are examples for content metadata elements that cannot be set by the user. If there is a value assigned, it will be overwritten during ingest with one 
+exception explained later.
+
+include::{snippets}/upload-file-with-metadata/http-request.adoc[]
+
+The response of the upload including content information is identical to the first upload example. If an HTTP status 201 (CREATED) is returned, everything worked out fine and the file as well as the 
+ContentInformation document can be accessed via the Location provided in the header.
+
+include::{snippets}/upload-file-with-metadata/http-response.adoc[]
+
+Finally, in some cases, it might not be possible or desired to upload a certain file to the repository, e.g. due to size limitations or due to licensing issues. For these cases it is possible, to just register
+a remotely stored file at the local repository. In this scenario, the file argument is omitted during upload and only the ContentInformation metadata document is submitted containing the remote URL in the 
+'contentUri' field as you can see it in the following example.
+
+include::{snippets}/upload-file-with-reference/curl-request.adoc[]
+
+There is another exception in this special scenario. As there is no guarantee that the file referenced by 'contentUri' is accessible by the repository and for performance reasons, the file is neither checked
+nor downloaded at ingest time. Therefore, no size or checksum information will be assigned by the system. If you are aware of these information and if you want to make them available, it is allowed to 
+provide the size and checksum element of the ContentInformation document at upload time. They are (only in this case) not overwritten and will be available later, no matter if they are correct or not. 
+
+include::{snippets}/upload-file-with-reference/http-request.adoc[]
+
+Finally, the response of the 'virtual upload' looks as before. However, please keep in mind that there are NO CHECKS of what's behind the contentUri. This happens only at download time, which will be the next 
+example. 
+
+include::{snippets}/upload-file-with-reference/http-response.adoc[]
+
+=== Listing Content Information
+
+If you just uploaded the data you still have the data access URL in the Location header of the upload response. However, if you are not the uploader you have to check first, which files are associated with a 
+resource in order to obtain a data access URL before download. This can be done by submitting an HTTP GET request to an arbitraty 'virtual folder' as shown in the next example.
+
+include::{snippets}/get-content-listing/curl-request.adoc[]
+
+This request will return all content information associated with the addressed resource as we perform a listing of the root data folder. By providing the Accept header with a value 'application/vnd.datamanager.content-information+json'
+we ask for ContentInformation metadata as we've learned before. Currently, it is NOT possible to access a 'virtual folder' without providing this header.  
+
+include::{snippets}/get-content-listing/http-request.adoc[]
+
+In the response we get all ContentInformation entries starting with the accessed path. As we provided the root path of the resource's data, we receive all three content elements we've uploaded until now. 
+
+include::{snippets}/get-content-listing/http-response.adoc[]
+
+Listing ContentInformation also support pagination. Furthermore, the results are sorted by their depth within the entire hierarchy of the resource's content. This means, when listing the root folder of a complex content hierarchy, 
+you'll first receive all elements directly located at the root folder followed by all elements located in folders of the first hierarchy level and so on.
+
+In addition, you can provide a tag as query argument in order to return only elements having this tag assigned. This allows you to overlay different hierarchies easily and perform a very selective listing of elements.
+
+=== Downloading Data from a Data Resource
+
+After explaining how metadata and data are put into the system, let's give a brief overview on downloading content. Actually, it's just putting the file URL received during upload to the browser address bar or 
+to issue a GET request without Accept header as you can see in the curl command below.
+
+include::{snippets}/download-file/curl-request.adoc[]
+
+There is not much to say about the HTTP request as it only contains the location of the data...
+
+include::{snippets}/download-file/http-request.adoc[]
+
+...and the response contains the content of the file. That's all in case the file is located at the repository.
+
+include::{snippets}/download-file/http-response.adoc[]
+
+If the content is not located at the repository but referenced from remote, there are plenty of possible responses depending on the availability of the referenced content. While accessing references content,
+the repository tries to issue an HTTP GET to the content URI. Depending on the response status received from the remote service, the repository responds as follows:
+
+[cols="m,n", options="header"]
+|============================================================================================================================
+|Response from Remote Service|Response by Repository
+|None|SERVICE_UNAVAILABLE (503)
+|OK (200)|SEE_OTHER (303) with Content URI in 'Location' header
+|MOVED_PERMANENTLY (301), FOUND (302), SEE_OTHER (303),TEMPORARY_REDIRECT (307), PERMANENT_REDIRECT (308) with 'Location' header|Previous response status with Content URI in 'Location' header
+|MOVED_PERMANENTLY (301), FOUND (302), SEE_OTHER (303),TEMPORARY_REDIRECT (307), PERMANENT_REDIRECT (308) without 'Location' header|INTERNAL_SERVER_ERROR (500)
+|All other status codes including UNAUTHORIZED (401) and FORBIDDEN (403)|NO_CONTENT (204) with Content URI in 'Content-Location' header
+|============================================================================================================================
+ 
+In all cases where the Location header is set, your HTTP client may redirect you immediately to the correct URL, so you probably won't recognize any difference compared to direct data access. If you receive status
+ SERVICE_UNAVAILABLE (503) or INTERNAL_SERVER_ERROR (500) there is (currently) no chance to receive the data you've requested. If you receive status NO_CONTENT (204) you should check for the Content-Location header in order
+to try to access the data manually. There are two situations where manual access might be promising: 
+
+1. The remote server returned HTTP UNAUTHORIZED (401) or FORBIDDEN (403) as access requires custom authentication. If you own appropriate credentials, you can access the content after proper authentication.
+2. If the content is not accessed via HTTP(s) you may use a custom data access client capable of opening a data stream to the content URI.
+
+Beside of downloading single files, it's also possible to download all data of one resource or virtual subfolders. Let's assume you've organized a resource in the following way: 
+
+[tree]
+----
+> /
+>> experiment
+>>> parameters.txt
+>>> measurements.csv
+>>> reference_image.png
+>> log
+>>> output.log
+>>> error.log
+----
+
+With this structure, your are able to dowload either the entire content by addressing '/', only all experiment data by addressing 'experiment' or only the 'log' folder. In order to do so, you just address a virtual folder the same way you
+would address a single file, e.g. 
+
+include::get-collection.adoc[]
+
+You can see, that the only differences compared to a single file download are the URLs ending with a slash, in order to address a virtual folder, and the provided content type in the 'Accept' header. In the example above, 'application/zip'
+indicates that all content within the addressed folder is downloaded in a single ZIP archive. Currently, the following content types are supported: 
+
+[cols="m,n,o", options="header"]
+|============================================================================================================================
+|Content Type|Format|Availability
+|application/zip|File with zip compression|Part of default KIT DM 2.0 instance
+|application/vnd.datamanager.bagit+zip|BagIt file following the recommendations of the RDA Research Data Repository Interoperability Working Group with zip compression|Available via plugin (see https://github.com/kit-data-manager/bagit-provider-plugin[bagit-provider-plugin])
+|============================================================================================================================
+ 
+
+=== Deleting Data Resources
+
+Finally, after presenting several creation and access scenarios, let's briefly cover the removal of resources. First things first, it is NOT possible to permanently remove resources via the RESTful API. The DELETE operation
+is implemented in a way of revoking resources to make them invisible to users, but as they might be references internally or externally, they are never removed from the system unless using additional tools. The following request
+shows how a DELETE operation is performed on an existing resource.
+
+include::{snippets}/delete-resource/curl-request.adoc[]
+
+You can see that you need the resource URL as well as the current ETag.
+
+include::{snippets}/delete-resource/http-request.adoc[]
+
+The server responds with status HTTP NO_CONTENT (204) to all returning delete requests, even if the resource has been deleted already.
+
+include::{snippets}/delete-resource/http-response.adoc[]
+
+As soon as the resource was REVOKED, no user will be able to see or access the resource. A request to the resource URL will result in an HTTP status NOT_FOUND (404).
+However, revoked resources are still visible to the owner(s) of the resource (person(s) possessing ADMINISTATE permission) or the system administrator (person(s) possessing the ADMINISTRATOR role). They still can access
+and modify the resource, e.g. in order to change back the state to VOLATILE or FIXED in order to 'undo' the deletion.
+
+If no authentication is enabled, which is assumed by this documentation, the deletion of resources only changes the state to REVOKED. The system account used for authentication-less access is automatically the owner
+of all resources, which grants this account the access even to revoked resources. This is shown in the following example.
+
+include::{snippets}/get-deleted-resource/curl-request.adoc[]
+
+We are trying a normal HTTP GET to the resource we just deleted. According to the description above, we should receive a positive response showing us a resource with state REVOKED.
+
+include::{snippets}/get-deleted-resource/http-request.adoc[]
+
+The response looks as expected. The resource we've deleted with the changed state. 
+
+include::{snippets}/get-deleted-resource/http-response.adoc[]
+
+That's the reason why another resource state has been introduced in case a resource should be hidden entirely from all users. This state is called GONE and is assigned if a revoked resource is deleted by 
+an ADMINISTRATOR. Of course, the GONE state can also be assigned via PATCH operation, but deleting a resource twice is the typical approach to do so. Let's try applying a delete operation a second time.
+
+include::{snippets}/delete-resource-twice/http-request.adoc[]
+
+The response looks as expected delivering status status HTTP NO_CONTENT (204).
+
+include::{snippets}/delete-resource-twice/http-response.adoc[]
+
+However, if we now try to access the resource again via HTTP GET...
+
+include::{snippets}/get-gone-resource/http-request.adoc[]
+
+...we'll receive nothing but the status HTTP NOT_FOUND (404). From now on, the resource is no longer accessible by anybody via RESTful endpoints. The only possibility to re-allow resource access is to modify its state 
+in the database.
+
+[WARNING]
+In contrast to deleting entire resource, deleting single content elements is permanent. If you send a DELETE request to a data URL of a resource, the associated file and all metadata associated with the particular 
+element are deleted. This operation is not reversible and you should double check before deleting a content element.
+
+= Messaging and Event Message Handling
+
+== Introduction
+
+For a data repository creating a resource and uploading data is only the simplest workflow. In many cases, additional steps have to be performed in order to obtain all required information, to validate an upload or 
+to monitor what happens. For this purpose, KIT Data Manager offers a feature called 'messaging' emitting small messages after certain operations have succeeded. The following chapters describe how these messages 
+are look like, when they are emitted and how to deal with them in order to react on certain repository events.
+
+== Message Types and Format
+
+There are different kinds of messages grouped by category. Depending on its category, a message may contain additional properties or not. The following table shows all currently available message categories and the 
+condition under which a message with a certain category is sent.
+
+[cols="m,n", options="header"]
+|============================================================================================================================
+|category[.subcategory]|Sent if...
+|create|...a data resource has been created.
+|create.data|...a new content element has been uploaded.
+|update|...a data resource has been updated via PUT or PATCH.
+|update.data|...the metadata of a content element has been updated via PATCH.
+|update.acl|...an access control list element of a data resource has been updated via PATCH.
+|delete|...a data resource has been physically deleted (not implemented, yet).
+|delete.data|...a content element has been deleted.
+|fix|...a data resource has been changed to FIXED state.
+|revoke|...a data resource has been changed to REVOKED state.
+|============================================================================================================================
+ 
+Apart from the category (and an optional sub category) each message holds the associated resource identifier as 'entityId' as well as the caller as 'principal' and a timestamp when the message was created. In addition, all
+messages in the 'data' subcategory also contain 'contentPath', 'contentUri' and 'contentType' information as 'metadata' in order to allow quick decisions on whether a message should be handled or not. 
+The following snipped shows a sample message emitted after creating a new content element. 
+
+include::message.adoc[]
+
+You will find all default elements mentioned above as well as the 'metadata' elements containing additional metadata specific to messages from the 'data' sub category. Messages are created by the repository as soon as 
+the operation they are related to has successfully finished, jut before returning the result to the user. Therefor, a Message Queue service called RabbitMQ is used, which has to be installed in addition to the database 
+and the repository microservice itself in order to be able to exchange messages.
+
+== Messaging Service Configuration
+
+In order to make use of the messaging feature, a RabbitMQ instance must be running, preferably locally for security reasons. Please refer to the RabbitMQ web page (https://www.rabbitmq.com/) on how to install and 
+operate such an instance. From the repository perspective, all relevant settings are part of the default configuration file 'application.properties'. These properties, their function and values/defaults are listed 
+in the following table. Typically, no additional repository-specific configuration of the message queue is necessary.
+
+[cols="m,n", options="header"]
+|============================================================================================================================
+|property key|function|allowed values [default]
+|repo.messaging.enabled|Enables (true) or disables (false) the entire messaging functionality.|true or false [true]
+|repo.messaging.hostnamea|The hostname where the RabbitMQ instance is running at.|A valid hostname [localhost]
+|repo.messaging.port|The port on which the RabbitMQ instance is running at.|A numeric port number [5672]
+|repo.messaging.binding.exchange|The RabbitMQ exchange to which all messages are sent.|A string uniquely identifying the exchange [repository_events]
+|repo.messaging.binding.queue|The name of the queue collecting all messages of the exchange. This queue is used for all handlers installed at the repository itself. External consumers may create an own quene.|A string uniquely identifying the queue [repoEventQueue]
+|repo.messaging.binding.routingKeys|The routing key (category.[subcategory] of messages) sent to the configured queue.|A String containing the category (e.g. 'dataresource') and subcategory (e.g. '#' for all) [dataresources.#]
+|repo.schedule.rate|The schedule rate in milliseconds at which the repository checks for new messages.|A numeric amount of milliseconds [1000]
+|============================================================================================================================
+
+== Adding a Message Handler
+
+There are multiple possibilities to consume messages from a server supporting the Advanced Message Queuing Protocol (AMQP) like RabbitMQ. In this documentation, we'll describe how to do this using the built-in messaging support. 
+Therefore, it's beneficial if you already have some programming experiences, preferably in Java. 
+In the code repository there exists an example handler which is part of this project: https://github.com/kit-data-manager/generic-message-consumer
+
+You may now open your preferred development environment and clone the project from GitHub.
+
+[NOTE]
+Before you continue you should also clone and build the service-base project (https://github.com/kit-data-manager/service-base) as it is a required dependency of the generic-message-consumer project.
+
+After building the generic-message-consumer project, the sample-handler project can be opened from the same project folder. This project consists of one source file named 'LoggingMessageHandler.java' implementing the 'IMessageHandler' interface. 
+This interface offers three methods, whereas two have to be implemented: 
+
+1. getHandlerIdentifier(): This method allows to (optionally) return a custom handler identifier, e.g. a unique name and implementation version. By default, the class name is returned.
+2. configure(): This method is called at instantiation time and allows loading and validating handler-specific properties. The handler will be available only if configure() returns 'true'. Otherwise, the handler is deactivated.
+3. handle(BasicMessage message): This method is called for each and every message received by the repository's message queue. Thus, a handler should decide first if the message should be handled or not. If not, it might be rejected.
+
+include::LoggingHandler.adoc[]
+
+The code snippet above shows the implementation of the aforementioned interface for the sample-handler. You can see that no configuration is needed for this handler, 'getHandlerIdentifier' is not overwritten, therefore the default identifier
+is 'LoggingMessageHandler' and the only thing which is done is logging the message. One remarkable thing of this sample is the return value of the 'handle' method. As described in the code comment, we return REJECTED in order to not mark the 
+message as 'handled' in the scheduler. The reason for doing this can be clarified by the following description of the scheduling process:
+
+1. The scheduler polls every second (default, can be changed in application.properties) for the next message in the queue.
+2. The message is presented to all successfully configured handlers.
+3. The first handler which returns 'SUCCEEDED' activates a flag 'messageHandledByOne'. 
+4. If a handler returns 'FAILED', the message and the handler name are preserved in a file called 'failed_message_handles.csv' for later processing. If this succeeds once, the flag 'messageHandledByOne' is also set.
+5. If 'REJECTED' is returned by a handler, the scheduler proceeds to the next handler without setting the flag 'messageHandledByOne' nor preserving the message.
+6. If the flag 'messageHandledByOne' is not set after all handlers were called, the message is logged to the logfile as debug entry and will be discarded.
+
+Thus, if we in our sample handler wouldn't return 'REJECTED', our status would influence how the scheduler deals with the message based on our response, which is nothing we want for a handler only logging the message.
+
+After implementing a custom message handler you have to build a jar file and place it, together with all required dependencies, in the extensions folder of your KIT DM 2.0 installation. If your handler needs any configuration, 
+it is recommended to place it in the current working directory at service startup, which is typically the folder where 'base-repo.jar' is located.
+
+= Audit Information and Versioning of Metadata Resources
+
+== Introduction
+
+Not only in living data repositories metadata (and sometimes also data) are subject of change, either by a user or in the course of curation activities. For validation and documentation purposes it can be desirable 
+to keep track of these changes, either for monitoring or to be able to rollback unwanted changes at a later point in time. Therefor, KIT Data Manager offers support for capturing audit information and versioning of 
+metadata documents. It uses the JaVers library (https://javers.org/) to collect changes between two versions of one document and stores this information in a relational database. With the collected changes
+JaVers is capable of creating so called 'Shadows' of a document, which are representing a version at a specific point in time. 
+
+== Audit Information and Versioning Configuration
+
+Enabling or disabling the audit and versioning feature can be done easily by setting the value of the property 'repo.audit.enabled' inside 'application.properties' either 'true' or 'false'. All audit information is stored
+in the same database configured for the repository, therefore, no additional configuration is needed. If the feature was not enabled, yet, you can enable it at any time to start capturing audit information beginning with 
+the next restart of the repository service. You may also disable the feature again, e.g. temporarily to avoid capturing information, as the primary version of a resource is stored at the repository. 
+
+== Working with Versions and Audit Information
+
+Audit and versioning support are seamlessly integrated into the internal workflows and you can benefit from it easily. If you go back to the example of how to <<ChapterGetResource,get a Data Resource>> you'll find in the response
+header the property 'Resource-Version' with a value of 1. If you scroll down to the second GET operation performed after updating the resource, you'll see that 'Resource-Version' has been increased to 2. Additionally, a version number
+larger than 0 tells you, that versioning is enabled. If not, the version number will be 0, whereas the initial version of a resource is 1.
+
+Now, how can you benefit from this. At first, you might be interested to get all changes applied to a resource. The following request delivers this information. You simply refer to the resource for which you want to obtain audit information
+and provide in the 'Accept' header the value 'application/vnd.datamanager.audit+json'.
+
+include::{snippets}/get-audit-information/curl-request.adoc[]
+
+As a result you receive a list of changes in a format, which is proprietary to JaVers but which also contains all information in a clear JSON format. Changes are returned ordered by version in decreasing order.
+
+include::{snippets}/get-audit-information/http-response.adoc[]
+
+In the example you can see three changes (starting with the last entry): 
+
+1. The value of property publicationYear has been changed from 2019 (left) to 2017 (right) by the user with id SELF (which is the service itself as we are not using authentication). The result is version 2.
+2. The set alternateIdentifiers has been changed by adding the value at index 2. The result is version 3.
+3. The value of property publicationYear has been changed back from 2017 to 2019, resulting in the current version 4 of the resource.
+
+Of course, the number of changes can be huge. Therfore, also the listing of audit information supports pagination as explained above for the basic examples. 
+
+Now, what about obtaining a specific version of a resource. This is done as shown in the next request.
+
+include::{snippets}/get-resource-version/curl-request.adoc[]
+
+The only thing you have to do is to add a query parameter with name 'version' and the value of the requested version to your GET request. As a result, you'll receive the resource state at the specified version, which is
+also stated by the 'Resource-Version' header.
+
+include::{snippets}/get-resource-version/http-response.adoc[]
+
+If you omit the version argument, you always get the most recent version of the resource, in our example it's version 4 as shown below.
+
+include::{snippets}/get-current-resource-version/http-response.adoc[]
+
+As mentioned at the beginning, versioning is supported for metadata resources, e.g. data resources and content information. There is currently no support for versioning of the actual content.
+
+== Remarks on Working with Versions
+
+While working with versions you should keep some particularities in mind. Access to version is only possible for single resources. There is e.g. no way to obtain all resources in version 2 from the server.
+If a specific version of a resource is returned, the obtained ETag also relates to this specific version. Therefore, you should NOT use this ETag for any update operation as the operation will fail with response 
+code 412 (PRECONDITION FAILED). Consequently, it is also NOT allowed to modify a format version of a resource. If you want to rollback to a previous version, you should obtain the resource and submit a PUT request
+of the entire document which will result in a new version equal to the previous state unless there were changes you are not allowed to apply (anymore), e.g. if permissions have changed. 

@@ -31,8 +31,6 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -49,7 +47,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
@@ -442,7 +439,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
-  public MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
+  private MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
     //update mime type the schema can be applied to
     if (!Objects.isNull(provided.getMimeType())) {
       LOG.trace("Updating record mime type from {} to {}.", managed.getMimeType(), provided.getMimeType());
