@@ -30,6 +30,8 @@ import org.xml.sax.SAXException;
 public class XmlValidator implements IValidator{
 
   private static final Logger LOG = LoggerFactory.getLogger(XmlValidator.class);
+  
+  private String errorMessage;
 
   @Override
   public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type){
@@ -74,7 +76,13 @@ public class XmlValidator implements IValidator{
       valid = true;
     } catch(SAXException | IOException e){
       LOG.trace("Failed to validate metadata document.", e);
+      errorMessage = new String("Validation error: " + e.getMessage());
     }
     return valid;
+  }
+
+  @Override
+  public String getErrorMessage() {
+    return errorMessage;
   }
 }

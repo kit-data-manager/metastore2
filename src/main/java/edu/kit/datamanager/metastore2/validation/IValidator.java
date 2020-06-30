@@ -15,9 +15,40 @@ import java.io.InputStream;
  */
 public interface IValidator {
 
-    boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type);
+  /**
+   * Supports the given schema type.
+   *
+   * @see MetadataSchemaRecord#type
+   *
+   * @param type Type of the schema.
+   *
+   * @return supports schema type or not.
+   */
+  boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type);
 
-    boolean isSchemaValid(InputStream schemaStream);
+  /**
+   * Is given schema valid.
+   *
+   * @param schemaStream Stream containing schema.
+   *
+   * @return Schema is valid or not.
+   */
+  boolean isSchemaValid(InputStream schemaStream);
 
-    boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream);
+  /**
+   * Validate metadata document with metadata schema. In case of invalid schema
+   * an explanation may be available via getErrorMessage.
+   *
+   * @param schemaFile File containing schema.
+   * @param metadataDocumentStream Stream containing metadata document.
+   * @return valid or not.
+   */
+  boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream);
+
+  /**
+   * Get the error message if available.
+   *
+   * @return error message or NULL if validation was successful.
+   */
+  String getErrorMessage();
 }
