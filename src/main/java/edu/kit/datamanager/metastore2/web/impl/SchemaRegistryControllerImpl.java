@@ -350,8 +350,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
           return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
         } else {
-          LOG.warn("Metadata document validation failed. Returning HTTP HTTP UNPROCESSABLE_ENTITY.");
-          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Metadata document is not valid according to the addressed schema.");
+          LOG.warn("Metadata document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.");
+          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(applicableValidator.getErrorMessage());
         }
       } catch (IOException ex) {
         LOG.error("Failed to read metadata document from input stream. Returning HTTP UNPROCESSABLE_ENTITY.", ex);

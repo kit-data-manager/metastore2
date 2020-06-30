@@ -18,8 +18,10 @@ package edu.kit.datamanager.metastore2.documentation;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.service.IAuditService;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -57,7 +59,11 @@ import org.springframework.test.context.support.DirtiesContextTestExecutionListe
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -92,7 +98,7 @@ public class SchemaRegistryControllerDocumentationTest{
   private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
   private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
   private final static String EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns=\"http://www.example.org/schema/xsd\"\n"
+          + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
           + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
           + "\n"
@@ -107,7 +113,7 @@ public class SchemaRegistryControllerDocumentationTest{
           + "\n"
           + "</xs:schema>";
   private final static String NEW_EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns=\"http://www.example.org/schema/xsd\"\n"
+          + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
           + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
           + "\n"
@@ -123,11 +129,17 @@ public class SchemaRegistryControllerDocumentationTest{
           + "\n"
           + "</xs:schema>";
 
-  private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
+  private final static String DC_DOCUMENT_V1 = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<example:metadata xmlns:example=\"http://www.example.org/schema/xsd/\" >\n"
           + "  <example:title>My first XML document</example:title>\n"
           + "  <example:date>2018-07-02</example:date>\n"
-          + "  <example:metadata>\n"
+          + "</example:metadata>";
+
+  private final static String DC_DOCUMENT_V2 = "<?xml version='1.0' encoding='utf-8'?>\n"
+          + "<example:metadata xmlns:example=\"http://www.example.org/schema/xsd/\" >\n"
+          + "  <example:title>My first XML document</example:title>\n"
+          + "  <example:date>2018-07-02</example:date>\n"
+          + "  <example:note>since version 2 notes are allowed</example:note>\n"
           + "</example:metadata>";
 
   @Autowired
@@ -188,19 +200,39 @@ public class SchemaRegistryControllerDocumentationTest{
     this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
       
-    //update schema document
+    //update schema document and create new version
     schemaFile = new MockMultipartFile("schema", NEW_EXAMPLE_SCHEMA.getBytes());
-    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(schemaFile).
             file(recordFile).header("If-Match", etag)).
             andExpect(status().isCreated()).
             andDo(document("update-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
-            andReturn().getResponse().getHeader("Location");
+            andReturn().getResponse().getHeader("ETag");
     System.out.println(location);
     
     // Get metadata schema version 2
     this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schemav2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
+    // Get metadata schema version 1
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).param("version", "1")).andExpect(status().isOk()).andDo(document("get-schemav1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+
+    // Validate XML against schema version 1 (is invalid)
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes()).queryParam("version", "1")).andDo(document("validate-documentv1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+
+    // Validate XML against schema version 2 (should be valid)
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes())).andDo(document("validate-documentv2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+
+    // Update metadata record to allow admin to edit schema as well.
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    mapper = new ObjectMapper();
+    record = mapper.readValue(body, MetadataSchemaRecord.class);
+    record.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
+
+    this.mockMvc.perform(put("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    
 //
 //    //apply a simple patch to the resource
 //    String patch = "[{\"op\": \"replace\",\"path\": \"/publicationYear\",\"value\": \"2017\"}]";
