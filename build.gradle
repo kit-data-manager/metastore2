@@ -69,13 +69,14 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:1.2.34"
     implementation "org.springdoc:springdoc-openapi-data-rest:1.2.34"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:1.2.34"
-   
-    implementation "edu.kit.datamanager:service-base:0.1"
 
     implementation "org.postgresql:postgresql:42.2.1"
     implementation "org.apache.tika:tika-core:1.18"
     implementation "org.javers:javers-core:5.3.2"
    
+    // datamanager
+    implementation "edu.kit.datamanager:service-base:0.1"
+
     //Java 11 Support 
     implementation 'javax.xml.bind:jaxb-api:2.3.1'
     implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
