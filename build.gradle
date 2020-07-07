@@ -53,13 +53,11 @@ lombok {
 
 if (project.hasProperty('travis')) {
     println 'Using travis profile for building ' + project.getName()
-    apply from: 'gradle/build_dependencies.gradle'
     apply from: 'gradle/profile-travis.gradle'
-} else if (project.hasProperty('release') || project.hasProperty('clean-release')) {
+} else if (project.hasProperty('release')) {
     println 'Using release profile for building ' + project.getName()
-    apply from: 'gradle/build_dependencies.gradle'
     apply from: 'gradle/profile-release.gradle'   
-}
+} 
 
 dependencies {
     implementation "org.javers:javers-spring-boot-starter-sql:3.9.0"
@@ -127,23 +125,4 @@ test {
 
 jacoco {
     toolVersion = "0.8.5"
-}
-
-jacocoTestReport {
-    dependsOn test
-    reports {
-        xml.enabled true
-        html.enabled true
-        html.destination file("${buildDir}/reports/coverage")
-    }
-    afterEvaluate {
-        //exclude some classes/package from code coverage report
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [\
-            'edu/kit/datamanager/collection/configuration/**', \
-            'edu/kit/datamanager/collection/filters/**', \
-            'edu/kit/datamanager/collection/Application*'
-                    ])
-            }))
-    }
 }
