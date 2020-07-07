@@ -494,7 +494,7 @@ public class MetadataControllerImpl implements IMetadataController {
     if (recordVersion == null) {
       LOG.trace("No record version provided. Reading schema record from database.");
       Optional<MetadataRecord> record = metadataRecordDao.findById(recordId);
-      if (record.isEmpty()) {
+      if (!record.isPresent()) {
         LOG.error("No metadata record found for id {}. Returning HTTP 404.", recordId);
         throw new ResourceNotFoundException("No metadata record found for id " + recordId + ".");
       }
@@ -503,7 +503,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
     Optional<MetadataRecord> optRecord = auditService.getResourceByVersion(recordId, recordVersion);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    if (optRecord.isEmpty()) {
+    if (!optRecord.isPresent()) {
       LOG.error("No metadata record found for id {} and version {}. Returning HTTP 404.", recordId, version);
       throw new ResourceNotFoundException("No metadata record found for id " + recordId + " and version " + version + ".");
     }
