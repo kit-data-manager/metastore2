@@ -81,7 +81,7 @@ public class MetadataSchemaAuditServiceTest{
     Assert.assertEquals("Comment added.", recordFromVersioning.get().getComment());
 
     recordFromVersioning = service.getResourceByVersion(record.getSchemaId(), 3l);
-    Assert.assertTrue(recordFromVersioning.isEmpty());
+    Assert.assertTrue(!recordFromVersioning.isPresent());
 
     service.deleteAuditInformation("TEST", record);
   }

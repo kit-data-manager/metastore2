@@ -590,7 +590,7 @@ public class MetadataControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + METADATA_RECORD_ID)).andDo(print()).andExpect(status().isOk()).andReturn();
     String content = result.getResponse().getContentAsString();
 
-    String dcMetadata = java.nio.file.Files.readString(Paths.get(URI.create("file:///tmp/dc.xml")));
+    String dcMetadata = new String(java.nio.file.Files.readAllBytes(Paths.get(URI.create("file:///tmp/dc.xml"))));
 
     Assert.assertEquals(dcMetadata, content);
   }

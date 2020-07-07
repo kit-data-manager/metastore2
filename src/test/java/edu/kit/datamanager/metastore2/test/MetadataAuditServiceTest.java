@@ -80,7 +80,7 @@ public class MetadataAuditServiceTest{
     Assert.assertEquals("MyResource", recordFromVersioning.get().getRelatedResource());
 
     recordFromVersioning = service.getResourceByVersion(record.getId(), 3l);
-    Assert.assertTrue(recordFromVersioning.isEmpty());
+    Assert.assertTrue(!recordFromVersioning.isPresent());
 
     service.deleteAuditInformation("TEST", record);
   }

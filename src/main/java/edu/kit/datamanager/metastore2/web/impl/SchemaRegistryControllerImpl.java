@@ -110,7 +110,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     Optional<MetadataSchemaRecord> optRecord = metadataSchemaDao.findById(record.getSchemaId());
     String existingSchemaHash = null;
 
-    if (optRecord.isEmpty()) {
+    if (!optRecord.isPresent()) {
       //we have either a new record or the record has been deleted before
       record.setCreatedAt(Instant.now());
       record.setLastUpdate(record.getCreatedAt());
@@ -465,7 +465,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     if (recordVersion == null) {
       LOG.trace("No record version provided. Reading schema record from database.");
       Optional<MetadataSchemaRecord> record = metadataSchemaDao.findById(schemaId);
-      if (record.isEmpty()) {
+      if (!record.isPresent()) {
         LOG.error("No metadata schema found for schemaId {}. Returning HTTP 404.", schemaId);
         throw new ResourceNotFoundException("No metadata schema found for schemaId " + schemaId + ".");
       }
@@ -474,7 +474,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     Optional<MetadataSchemaRecord> optRecord = auditService.getResourceByVersion(schemaId, recordVersion);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    if (optRecord.isEmpty()) {
+    if (!optRecord.isPresent()) {
       LOG.error("No metadata schema found for schemaId {} and version {}. Returning HTTP 404.", schemaId, version);
       throw new ResourceNotFoundException("No metadata schema found for schemaId " + schemaId + " and version " + version + ".");
     }

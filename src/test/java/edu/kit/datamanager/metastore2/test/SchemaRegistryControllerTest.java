@@ -473,7 +473,7 @@ public class SchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/dc")).andDo(print()).andExpect(status().isOk()).andReturn();
     String content = result.getResponse().getContentAsString();
 
-    String dcSchema = java.nio.file.Files.readString(Paths.get(URI.create("file:///tmp/dc.xsd")));
+    String dcSchema = new String(java.nio.file.Files.readAllBytes(Paths.get(URI.create("file:///tmp/dc.xsd"))));
 
     Assert.assertEquals(dcSchema, content);
   }
