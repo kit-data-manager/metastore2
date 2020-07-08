@@ -215,7 +215,7 @@ Same for the HTTP request.
 
 include::{snippets}/validate-documentv2/http-request.adoc[]
 
-As a result, you receive 200 as HTTP status and no further content. 
+As a result, you receive 204 as HTTP status and no further content. 
 
 include::{snippets}/validate-documentv2/http-response.adoc[]
 
@@ -241,6 +241,64 @@ After the update the following fields has changed:
 
 [NOTE]
 Version number will be only updated while changing metadata schema.
+
+== Metadata Management
+After registration of a schema metadata may be added to metastore.
+In this section, the handling of metadata resources is explained. 
+It all starts with creating your first metadata resource. The model of a metadata record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "id" : "...",
+  "relatedResource" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "schemaId" : "...",
+  "recordVersion" : 1,
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "metadataDocumentUri" : "...",
+  "documentHash" : "..."
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label of the schema.
+- relatedResource: The link to the resource. 
+
+In addition, ACL may be userful to make schema editable by others. (This will be of interest while updating an existing metadata)
+=== Creating a Metadata Record
+
+The following example shows the creation of the first metadata reocrd and its metadata only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+record.json:
+{
+    "relatedResource": "anyResourceId",
+    "schemaId": "my_first_xsd"
+}
+----
+The schemaId used while registering metadata schema has to be used to link the metadata with the
+approbriate metadata schema.
+include::{snippets}/create-metadata-record/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/create-metadata-record/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The two other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/create-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
+Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
 
 == Remarks on Working with Versions

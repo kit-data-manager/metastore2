@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.service.IAuditService;
@@ -37,7 +38,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,6 +53,7 @@ import org.springframework.security.test.context.support.WithSecurityContextTest
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
@@ -64,6 +65,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -74,7 +76,7 @@ import org.springframework.web.context.WebApplicationContext;
  */
 //@ActiveProfiles("doc")
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
   DependencyInjectionTestExecutionListener.class,
@@ -82,6 +84,8 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
+@TestPropertySource(properties = {"server.port=41405"})
 public class SchemaRegistryControllerDocumentationTest{
 
   private MockMvc mockMvc;
@@ -141,6 +145,7 @@ public class SchemaRegistryControllerDocumentationTest{
           + "  <example:date>2018-07-02</example:date>\n"
           + "  <example:note>since version 2 notes are allowed</example:note>\n"
           + "</example:metadata>";
+  private static final String RELATED_RESOURCE = "anyResourceId";
 
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
@@ -169,16 +174,16 @@ public class SchemaRegistryControllerDocumentationTest{
 
   @Test
   public void documentSchemaRegistry() throws Exception{
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId(EXAMPLE_SCHEMA_ID);
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
+    schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    schemaRecord.setMimeType(MediaType.APPLICATION_XML.toString());
     ObjectMapper mapper = new ObjectMapper();
      mapper.registerModule(new JavaTimeModule());
-     System.out.println("xxxx"+ mapper.writeValueAsString(record) + "xxxx");
+     System.out.println("xxxx"+ mapper.writeValueAsString(schemaRecord) + "xxxx");
 
     MockMultipartFile schemaFile = new MockMultipartFile("schema", EXAMPLE_SCHEMA.getBytes());
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(record).getBytes()));
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
 
       
     //create resource and obtain location from response header
@@ -228,10 +233,24 @@ public class SchemaRegistryControllerDocumentationTest{
     String body = result.getResponse().getContentAsString();
 
     mapper = new ObjectMapper();
-    record = mapper.readValue(body, MetadataSchemaRecord.class);
-    record.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
+    schemaRecord = mapper.readValue(body, MetadataSchemaRecord.class);
+    schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
 
-    this.mockMvc.perform(put("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(put("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(schemaRecord))).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    
+    
+    // Create a metadata record.
+        MetadataRecord metadataRecord = new MetadataRecord();
+//    record.setId("my_id");
+    metadataRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
+    metadataRecord.setRelatedResource(RELATED_RESOURCE);
+    
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_V1.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn();
     
 //
 //    //apply a simple patch to the resource
