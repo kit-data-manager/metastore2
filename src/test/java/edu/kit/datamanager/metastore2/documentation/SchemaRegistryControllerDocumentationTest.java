@@ -42,6 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
@@ -64,6 +65,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -248,10 +250,40 @@ public class SchemaRegistryControllerDocumentationTest{
     recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_V1.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn();
+            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn().getResponse().getHeader("Location");
     
+     
+    // Get metadata
+    this.mockMvc.perform(get(location).accept("application/xml")).andExpect(status().isOk()).andDo(document("get-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+   
+    // Get metadata record
+    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andExpect(status().isOk()).andDo(document("get-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    
+    // Update metadata record (add ACL entry)
+    result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
+    mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.getAcl().add(new AclEntry("guest", PERMISSION.READ));
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn();
+   
+    // Update mateadata
+    // Get URL
+    String newLocation = location.split("[?]")[0];
+    result = this.mockMvc.perform(get(newLocation).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    etag = result.getResponse().getHeader("ETag");
+
+    metadataFile = new MockMultipartFile("document", DC_DOCUMENT_V2.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
+            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn();
 //
 //    //apply a simple patch to the resource
 //    String patch = "[{\"op\": \"replace\",\"path\": \"/publicationYear\",\"value\": \"2017\"}]";
@@ -343,6 +375,13 @@ public class SchemaRegistryControllerDocumentationTest{
 //    //perform a final GET to show that resources is no longer accessible if it is gone
 //    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isNotFound()).andDo(document("get-gone-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
 
+  }
+
+  private static RequestPostProcessor putMultipart() { // it's nice to extract into a helper
+    return (MockHttpServletRequest request) -> {
+      request.setMethod("PUT");
+      return request;
+    };
   }
 
 }
