@@ -272,6 +272,7 @@ At least the following elements are expected to be provided by the user:
 - relatedResource: The link to the resource. 
 
 In addition, ACL may be userful to make schema editable by others. (This will be of interest while updating an existing metadata)
+
 === Creating a Metadata Record
 
 The following example shows the creation of the first metadata reocrd and its metadata only providing mandatory fields mentioned above:
@@ -287,7 +288,7 @@ The schemaId used while registering metadata schema has to be used to link the m
 approbriate metadata schema.
 include::{snippets}/create-metadata-record/curl-request.adoc[]
 
-You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+You can see, that most of the sent metadata schema record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
 
 include::{snippets}/create-metadata-record/http-request.adoc[]
 
@@ -297,8 +298,70 @@ provided document, adding missing information where possible and persisting the 
 include::{snippets}/create-metadata-record/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
-Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+Furthermore, you'll find a location URL to access the ingested metadata and an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
+
+=== Accessing Metadata
+For accessing the metadata the location URL provided before may be used.
+The URL is compiled by the id of the metadata and its version.
+include::{snippets}/get-metadata/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata/http-request.adoc[]
+
+Content-Type will be ignored. The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-metadata/http-response.adoc[]
+
+What you see is, that the metadata is untouched.
+
+=== Accessing Metadata Record
+For accessing the metadata record the same URL as before has to bei used.
+The only difference ist the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
+Then the command line looks like this:
+include::{snippets}/get-metadata-record/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-record/http-request.adoc[]
+
+Content-Type will be ignored. The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record was untouched.
+
+
+=== Updating a Metadata Record (edit ACL entries)
+
+The following example shows the update of the metadata reocrd. As mentioned before the
+ETag is needed:
+include::{snippets}/update-metadata-record/curl-request.adoc[]
+
+You can see, that only the ACL entry for "guest" was added. All other properties are still the same. HTTP-wise the call looks as follows: 
+
+include::{snippets}/create-metadata-record/http-request.adoc[]
+
+You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'reocrdVersion' are modified by the server.
+include::{snippets}/create-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. 
+
+=== Updating a Metadata
+The following example shows the update of the metadata. As mentioned before the
+ETag is needed. As the ETag has changed in the meanwhile you first have to get the
+new ETag.
+include::{snippets}/get-metadata-record-v2/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-record-v2/http-request.adoc[]
+
+You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'reocrdVersion' are modified by the server.
+include::{snippets}/get-metadata-record-v2/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. 
 
 
 == Remarks on Working with Versions
