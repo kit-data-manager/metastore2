@@ -48,7 +48,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
-@TestPropertySource(properties = {"server.port=41405"})
+@TestPropertySource(properties = {"server.port=41406"})
 public class MetadataControllerWithoutRegistryTest {
 
   private static final String SCHEMA_ID = "my_dc";
