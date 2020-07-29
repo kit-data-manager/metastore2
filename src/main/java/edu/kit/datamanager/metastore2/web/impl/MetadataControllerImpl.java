@@ -436,7 +436,9 @@ public class MetadataControllerImpl implements IMetadataController {
     //audit information not captured here as version not changes via PUT
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     fixMetadataDocumentUri(record);
-    return new ResponseEntity<>(record, HttpStatus.OK);
+    String etag = record.getEtag();
+
+    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(record);
   }
 
   @Override

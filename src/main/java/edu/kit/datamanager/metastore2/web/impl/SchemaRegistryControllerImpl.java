@@ -408,7 +408,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     //audit information not captured here as version not changes via PUT
     LOG.trace("Schema record successfully persisted. Updating document URI and returning result.");
     fixSchemaDocumentUri(updatedRecord);
-    return new ResponseEntity<>(updatedRecord, HttpStatus.OK);
+    String etag = record.getEtag();
+
+    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(updatedRecord);
   }
 
   @Override
