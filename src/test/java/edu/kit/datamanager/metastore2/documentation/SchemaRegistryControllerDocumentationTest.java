@@ -253,7 +253,7 @@ public class SchemaRegistryControllerDocumentationTest {
 
     location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn().getResponse().getHeader("Location");
+            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn().getResponse().getHeader("Location");
 
     // Get metadata
     this.mockMvc.perform(get(location).accept("application/xml")).andExpect(status().isOk()).andDo(document("get-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
@@ -282,9 +282,12 @@ public class SchemaRegistryControllerDocumentationTest {
 
     metadataFile = new MockMultipartFile("document", DC_DOCUMENT_V2.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
-            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn();
-
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
+            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("Location");
+    result = this.mockMvc.perform(get(newLocation).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-record-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-record-v3-2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    // get updated metadata
+    this.mockMvc.perform(get(location)).andDo(print()).andDo(document("get-metadata-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);

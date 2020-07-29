@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +35,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.restdocs.JUnitRestDocumentation;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
+import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -52,6 +56,8 @@ import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  *
@@ -120,12 +126,17 @@ public class SchemaRegistryControllerTest {
           + "  <dc:type>dataset</dc:type>\n"
           + "</oai_dc:dc>";
 
-  @Autowired
   private MockMvc mockMvc;
   @Autowired
+  private WebApplicationContext context;
+  @Autowired
+  private FilterChainProxy springSecurityFilterChain;
+ @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
   private IAuditService<MetadataSchemaRecord> schemaAuditService;
+  @Rule
+  public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
   @Before
   public void setUp() throws Exception {
@@ -141,6 +152,10 @@ public class SchemaRegistryControllerTest {
     } catch (IOException ex) {
       ex.printStackTrace();
     }
+      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+              .addFilters(springSecurityFilterChain)
+            .apply(documentationConfiguration(this.restDocumentation))
+              .build();
   }
 
   @Test
@@ -180,7 +195,7 @@ public class SchemaRegistryControllerTest {
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/" + record.getSchemaId() + "?version=1")).andReturn();
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=1")).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
 
@@ -575,7 +590,7 @@ public class SchemaRegistryControllerTest {
     String mimeTypeBefore = record.getMimeType();
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
 
-    result = this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=1")).andReturn();
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
@@ -696,6 +711,7 @@ public class SchemaRegistryControllerTest {
     record.setCreatedAt(Instant.now());
     record.setLastUpdate(Instant.now());
     record.setSchemaId("dc");
+    record.setSchemaVersion(1l);
     record.setMimeType("application/xml");
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     Set<AclEntry> acl = new HashSet<>();

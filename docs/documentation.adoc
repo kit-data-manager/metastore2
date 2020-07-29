@@ -278,8 +278,7 @@ Same for the HTTP request.
 include::{snippets}/update-schema-record/http-request.adoc[]
 
 As a result, you receive 200 as HTTP status, the updated metadata schema record and the 
-updated ETag.
-[ToDo] ETag und Location sind nicht gesetzt!
+updated ETag and location in the HTTP response header.
 
 include::{snippets}/update-schema-record/http-response.adoc[]
 
@@ -434,6 +433,18 @@ include::{snippets}/update-metadata/http-request.adoc[]
 
 You will get the new metadata record.
 include::{snippets}/update-metadata/http-response.adoc[]
+ 
+
+Now you can access the updated metadata via the URI in the HTTP response header.
+include::{snippets}/get-metadata-v3/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-v3/http-request.adoc[]
+
+You will get the updated metadata.
+include::{snippets}/get-metadata-v3/http-response.adoc[]
+ 
  
 
 === Find a Metadata Record 

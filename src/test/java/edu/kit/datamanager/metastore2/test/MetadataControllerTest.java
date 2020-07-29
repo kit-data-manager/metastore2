@@ -31,19 +31,22 @@ import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.restdocs.JUnitRestDocumentation;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
+import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
@@ -53,12 +56,13 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
 
 /**
  *
@@ -73,6 +77,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"server.port=41403"})
 public class MetadataControllerTest {
 
   private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
@@ -165,14 +170,19 @@ public class MetadataControllerTest {
           + "  <dc:creater>Carbon, Seth</dc:creater>\n"
           + "</oai_dc:dc>";
 
-  @Autowired
   private MockMvc mockMvc;
+  @Autowired
+  private WebApplicationContext context;
+  @Autowired
+  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private IMetadataRecordDao metadataRecordDao;
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
   private IAuditService<MetadataRecord> schemaAuditService;
+  @Rule
+  public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
   @Before
   public void setUp() throws Exception {
@@ -187,6 +197,10 @@ public class MetadataControllerTest {
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
       Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
+      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+              .addFilters(springSecurityFilterChain)
+            .apply(documentationConfiguration(this.restDocumentation))
+              .build();
       ingestSchemaRecord();
     } catch (IOException ex) {
       ex.printStackTrace();
@@ -210,7 +224,7 @@ public class MetadataControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
   }
 
   @Test
@@ -241,8 +255,8 @@ public class MetadataControllerTest {
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -251,7 +265,7 @@ public class MetadataControllerTest {
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("/**/*?version=1")).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
 
@@ -358,7 +372,6 @@ public class MetadataControllerTest {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
-
 
   @Test
   public void testCreateRecordWithInvalidMetadata() throws Exception {
