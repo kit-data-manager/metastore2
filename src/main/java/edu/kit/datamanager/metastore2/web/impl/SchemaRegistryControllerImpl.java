@@ -263,11 +263,13 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         String etag = record.getEtag();
 
         LOG.trace("Schema record successfully persisted. Updating document URI.");
-        fixSchemaDocumentUri(record);
-        URI locationUri = new URI(request.getRequestURI() + record.getSchemaId() + "?version=" + record.getSchemaVersion());
+         fixSchemaDocumentUri(record);
+        URI locationUri;
+        locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri();
+        LOG.warn("uri              " + locationUri);
         return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(record);
       }
-    } catch (IOException | URISyntaxException ex) {
+    } catch (IOException ex) {
       LOG.error("Failed to read schema data from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
       return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read schema data from input stream.");
     }
@@ -408,9 +410,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     //audit information not captured here as version not changes via PUT
     LOG.trace("Schema record successfully persisted. Updating document URI and returning result.");
     fixSchemaDocumentUri(updatedRecord);
-    String etag = record.getEtag();
 
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(updatedRecord);
+    String etag = updatedRecord.getEtag();
+    URI locationUri;
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(updatedRecord.getSchemaId(), updatedRecord.getSchemaVersion(), null, null)).toUri();
+
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedRecord);
   }
 
   @Override

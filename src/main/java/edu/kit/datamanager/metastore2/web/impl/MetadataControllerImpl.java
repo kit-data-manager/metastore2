@@ -243,7 +243,7 @@ public class MetadataControllerImpl implements IMetadataController {
     fixMetadataDocumentUri(result);
 
     URI locationUri;
-    locationUri = new URI(request.getRequestURI() + record.getId() + "?version=" + record.getRecordVersion());
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
 
     LOG.trace("Schema record successfully persisted. Returning result.");
     return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(result);
@@ -438,7 +438,10 @@ public class MetadataControllerImpl implements IMetadataController {
     fixMetadataDocumentUri(record);
     String etag = record.getEtag();
 
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(record);
+    URI locationUri;
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
+
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(record);
   }
 
   @Override
@@ -587,14 +590,14 @@ public class MetadataControllerImpl implements IMetadataController {
           LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
           validationSuccess = true;
           break;
-        } 
+        }
       } catch (HttpClientErrorException ce) {
         //not valid 
         String message = new String("Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".");
         LOG.error(message, ce);
         errorMessage.append(message).append("\n");
         responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
-      } catch (IOException|RestClientException ex) {
+      } catch (IOException | RestClientException ex) {
         String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
         LOG.error(message, ex);
         errorMessage.append(message).append("\n");
