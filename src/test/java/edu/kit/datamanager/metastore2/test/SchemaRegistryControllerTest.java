@@ -73,6 +73,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 public class SchemaRegistryControllerTest {
+
   private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
@@ -131,7 +132,7 @@ public class SchemaRegistryControllerTest {
   private WebApplicationContext context;
   @Autowired
   private FilterChainProxy springSecurityFilterChain;
- @Autowired
+  @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
   private IAuditService<MetadataSchemaRecord> schemaAuditService;
@@ -152,77 +153,75 @@ public class SchemaRegistryControllerTest {
     } catch (IOException ex) {
       ex.printStackTrace();
     }
-      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation))
-              .build();
+            .build();
   }
 
-  @Test
-  public void testCreateSchemaRecord() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc");
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test",PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
+    @Test
+    public void testCreateSchemaRecord() throws Exception {
+      MetadataSchemaRecord record = new MetadataSchemaRecord();
+      record.setSchemaId("my_dc");
+      record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+      record.setMimeType(MediaType.APPLICATION_XML.toString());
+      Set<AclEntry> aclEntries = new HashSet<>();
+      aclEntries.add(new AclEntry("test", PERMISSION.READ));
+      aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+      record.setAcl(aclEntries);
+      ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-  }
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    }
 
-  @Test
-  public void testCreateSchemaRecordWithLocationUri() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc_new");
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test",PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
+    @Test
+    public void testCreateSchemaRecordWithLocationUri() throws Exception {
+      MetadataSchemaRecord record = new MetadataSchemaRecord();
+      record.setSchemaId("my_dc_new");
+      record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+      record.setMimeType(MediaType.APPLICATION_XML.toString());
+      Set<AclEntry> aclEntries = new HashSet<>();
+      aclEntries.add(new AclEntry("test", PERMISSION.READ));
+      aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+      record.setAcl(aclEntries);
+      ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
 
-    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=1")).andReturn();
-    String locationUri = result.getResponse().getHeader("Location");
-    String content = result.getResponse().getContentAsString();
+      MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=1")).andReturn();
+      String locationUri = result.getResponse().getHeader("Location");
+      String content = result.getResponse().getContentAsString();
 
-    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String content2 = result2.getResponse().getContentAsString();
+      MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      String content2 = result2.getResponse().getContentAsString();
 
-  
-    Assert.assertEquals(content, content2);
- }
+      Assert.assertEquals(content, content2);
+    }
 
-  @Test
-  public void testCreateInvalidSchemaRecord() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId(INVALID_SCHEMA);
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    ObjectMapper mapper = new ObjectMapper();
+    @Test
+    public void testCreateInvalidSchemaRecord() throws Exception {
+      MetadataSchemaRecord record = new MetadataSchemaRecord();
+      record.setSchemaId(INVALID_SCHEMA);
+      record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+      record.setMimeType(MediaType.APPLICATION_XML.toString());
+      ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
-  }
-
-  // @Test 
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
+    }
+    // @Test 
   public void testCreateSchemaRecordFromExternal() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId("my_dc");
@@ -238,6 +237,7 @@ public class SchemaRegistryControllerTest {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
       }
     };
+
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile).with(remoteAddr("any.external.domain"))).andDo(print()).andExpect(status().isCreated()).andReturn();
@@ -605,16 +605,15 @@ public class SchemaRegistryControllerTest {
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
   }
 
-
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId("dc");
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-     Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test",PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF",PERMISSION.ADMINISTRATE));
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     record.setAcl(aclEntries);
 
     ObjectMapper mapper = new ObjectMapper();
