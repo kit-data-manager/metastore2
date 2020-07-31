@@ -284,8 +284,7 @@ public class SchemaRegistryControllerDocumentationTest {
 
     location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("Location");
-    result = this.mockMvc.perform(get(newLocation).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-record-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
-    result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-record-v3-2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+
     // get updated metadata
     this.mockMvc.perform(get(location)).andDo(print()).andDo(document("get-metadata-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
     // find all metadata for a resource

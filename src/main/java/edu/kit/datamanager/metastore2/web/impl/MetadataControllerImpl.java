@@ -432,8 +432,9 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Persisting metadata record.");
     record = metadataRecordDao.save(existingRecord);
+    LOG.trace("Capturing metadata schema audit information.");
+    auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
-    //audit information not captured here as version not changes via PUT
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     fixMetadataDocumentUri(record);
     String etag = record.getEtag();
@@ -545,7 +546,7 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   private void fixMetadataDocumentUri(MetadataRecord record) {
-    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getSchemaId(), record.getRecordVersion(), null, null)).toUri().toString());
+    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
   }
 
   private String getUniqueRecordHash(MetadataRecord record) {
