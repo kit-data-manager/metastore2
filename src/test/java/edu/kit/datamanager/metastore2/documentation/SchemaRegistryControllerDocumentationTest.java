@@ -292,102 +292,10 @@ public class SchemaRegistryControllerDocumentationTest {
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
     this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE)).andDo(print()).andDo(document("find-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata/").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from-to", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from-to", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
-
-    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).andDo(print()).andDo(document("find-metadata-record-all-from", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
-//
-//    //apply a simple patch to the resource
-//    String patch = "[{\"op\": \"replace\",\"path\": \"/publicationYear\",\"value\": \"2017\"}]";
-//    this.mockMvc.perform(patch("/api/v1/dataresources/" + resourceId).header("If-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isNoContent()).andDo(document("patch-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //perform a GET for the patched resource...the publicationYear should be modified
-//    etag = this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-patched-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
-//
-//    //do some more complex patch adding a new alternate identifier
-//    patch = "[{\"op\": \"add\",\"path\": \"/alternateIdentifiers/1\",\"value\": {\"identifierType\":\"OTHER\", \"value\":\"resource-1-231118\"}}]";
-//    this.mockMvc.perform(patch("/api/v1/dataresources/" + resourceId).header("If-Match", etag).contentType("application/json-patch+json").content(patch)).andDo(print()).andExpect(status().isNoContent()).andDo(document("patch-resource-complex", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //get the resource again together with the current ETag
-//    MockHttpServletResponse response = this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-patched-resource-complex", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
-//
-//    //perform PUT operation 
-//    etag = response.getHeader("ETag");
-//    String resourceString = response.getContentAsString();
-//    DataResource resourceToPut = mapper.readValue(resourceString, DataResource.class);
-//    resourceToPut.setPublisher("KIT Data Manager");
-//    this.mockMvc.perform(put("/api/v1/dataresources/" + resourceId).header("If-Match", etag).contentType("application/json").content(mapper.writeValueAsString(resourceToPut))).andDo(print()).andExpect(status().isOk()).andDo(document("put-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    etag = this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-put-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
-//
-//    //try to GET the resource using the alternate identifier added a second ago
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + "resource-1-231118")).andExpect(status().isSeeOther()).andDo(document("get-resource-by-alt-id", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //find by example
-//    DataResource example = new DataResource();
-//    example.setResourceType(ResourceType.createResourceType("testingSample"));
-//    this.mockMvc.perform(post("/api/v1/dataresources/search").contentType("application/json").content(mapper.writeValueAsString(example))).
-//            andExpect(status().isOk()).
-//            andDo(document("find-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //upload random data file
-//    Path temp = Files.createTempFile("randomFile", "test");
-//
-//    try(FileWriter w = new FileWriter(temp.toFile())){
-//      w.write(RandomStringUtils.randomAlphanumeric(64));
-//      w.flush();
-//    }
-//
-//    MockMultipartFile fstmp = new MockMultipartFile("file", "randomFile.txt", "multipart/form-data", Files.newInputStream(temp));
-//    this.mockMvc.perform(multipart("/api/v1/dataresources/" + resourceId + "/data/randomFile.txt").file(fstmp)).andDo(print()).andExpect(status().isCreated()).andDo(document("upload-file", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //upload random data file with metadata
-//    ContentInformation cinfo = new ContentInformation();
-//    Map<String, String> metadata = new HashMap<>();
-//    metadata.put("test", "ok");
-//    cinfo.setVersioningService("none");
-//    cinfo.setMetadata(metadata);
-//    fstmp = new MockMultipartFile("file", "randomFile2.txt", "multipart/form-data", Files.newInputStream(temp));
-//    MockMultipartFile secmp = new MockMultipartFile("metadata", "metadata.json", "application/json", mapper.writeValueAsBytes(cinfo));
-//    this.mockMvc.perform(multipart("/api/v1/dataresources/" + resourceId + "/data/randomFile2.txt").file(fstmp).file(secmp)).andDo(print()).andExpect(status().isCreated()).andDo(document("upload-file-with-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //upload referenced file
-//    cinfo = new ContentInformation();
-//    cinfo.setVersioningService("none");
-//    cinfo.setContentUri("https://www.google.com");
-//    secmp = new MockMultipartFile("metadata", "metadata.json", "application/json", mapper.writeValueAsBytes(cinfo));
-//    this.mockMvc.perform(multipart("/api/v1/dataresources/" + resourceId + "/data/referencedContent").file(secmp)).andDo(print()).andExpect(status().isCreated()).andDo(document("upload-file-with-reference", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //obtain content metadata
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId + "/data/randomFile.txt").header(HttpHeaders.ACCEPT, "application/vnd.datamanager.content-information+json")).andExpect(status().isOk()).andDo(document("get-content-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //obtain content metadata as listing
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId + "/data/").header(HttpHeaders.ACCEPT, "application/vnd.datamanager.content-information+json")).andExpect(status().isOk()).andDo(document("get-content-listing", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //download file
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId + "/data/randomFile.txt")).andExpect(status().isOk()).andDo(document("download-file", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //get audit information
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId).header(HttpHeaders.ACCEPT, "application/vnd.datamanager.audit+json")).andExpect(status().isOk()).andDo(document("get-audit-information", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //get particular version
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId).param("version", "2")).andExpect(status().isOk()).andDo(document("get-resource-version", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //get particular version
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-current-resource-version", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //perform a DELETE
-//    this.mockMvc.perform(delete("/api/v1/dataresources/" + resourceId).header("If-Match", etag)).andExpect(status().isNoContent()).andDo(document("delete-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//    //perform another GET to show that resources are still accessible by the owner/admin
-//    etag = this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isOk()).andDo(document("get-deleted-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
-//
-//    //perform a DELETE a second time
-//    this.mockMvc.perform(delete("/api/v1/dataresources/" + resourceId).header("If-Match", etag)).andExpect(status().isNoContent()).andDo(document("delete-resource-twice", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
-//
-//    //perform a final GET to show that resources is no longer accessible if it is gone
-//    this.mockMvc.perform(get("/api/v1/dataresources/" + resourceId)).andExpect(status().isNotFound()).andDo(document("get-gone-resource", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint())));
   }
 
   private static RequestPostProcessor putMultipart() { // it's nice to extract into a helper
