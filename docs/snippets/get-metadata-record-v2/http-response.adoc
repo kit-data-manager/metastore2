@@ -1,0 +1,30 @@
+[source,http,options="nowrap"]
+----
+HTTP/1.1 200 OK
+ETag: "-1485515463"
+Content-Type: application/vnd.datamanager.metadata-record+json
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: DENY
+Content-Length: 578
+
+{
+  "id" : "a3de8b05-96df-458c-955b-b14e747f116d",
+  "relatedResource" : "anyResourceId",
+  "createdAt" : "2020-08-03T06:57:52.501272Z",
+  "lastUpdate" : "2020-08-03T06:57:52.576155Z",
+  "schemaId" : "my_first_xsd",
+  "recordVersion" : 2,
+  "acl" : [ {
+    "id" : 5,
+    "sid" : "guest",
+    "permission" : "READ"
+  }, {
+    "id" : 4,
+    "sid" : "SELF",
+    "permission" : "ADMINISTRATE"
+  } ],
+  "metadataDocumentUri" : "http://localhost:8080/api/v1/metadata/a3de8b05-96df-458c-955b-b14e747f116d?version=2",
+  "documentHash" : "sha1:63ddd73b983ee265caee93dbe72c1995e813dc9e"
+}
+----

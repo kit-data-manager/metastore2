@@ -1,0 +1,6 @@
+[source,http,options="nowrap"]
+----
+GET /api/v1/metadata/a3de8b05-96df-458c-955b-b14e747f116d?version=3 HTTP/1.1
+Host: localhost:8080
+
+----
