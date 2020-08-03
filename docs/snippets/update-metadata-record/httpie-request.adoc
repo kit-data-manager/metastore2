@@ -1,0 +1,7 @@
+[source,bash]
+----
+$ http --form PUT 'http://localhost:8080/api/v1/metadata/a3de8b05-96df-458c-955b-b14e747f116d?version=1' \
+    'record'@'metadata-record-acl.json' \
+    'If-Match:"-268772164"' \
+    'version=1'
+----

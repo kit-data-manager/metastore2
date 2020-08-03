@@ -31,7 +31,6 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.annotations.Api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -67,6 +66,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
@@ -79,8 +79,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
-@Api(value = "Metadata Schema Registry")
-public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
+public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl.class);
 
@@ -97,13 +96,13 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   private EntityManager em;
 
   @Override
-  public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder){
+  public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({}, {}).", record, "#document");
-    if(record == null || document == null){
-      LOG.error("No metadata schema record and/or schema document provided. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record and/or schema document provided.");
+    if (document == null || document.isEmpty()) {
+      LOG.error("No schema document provided. Returning HTTP BAD_REQUEST.");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No schema document provided.");
     }
-    if(record.getSchemaId() == null){
+    if (record.getSchemaId() == null) {
       LOG.error("Mandatory attributes schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes schemaId and/or mimeType not found in record.");
     }
@@ -111,107 +110,108 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     Optional<MetadataSchemaRecord> optRecord = metadataSchemaDao.findById(record.getSchemaId());
     String existingSchemaHash = null;
 
-    if(optRecord.isEmpty()){
+    if (!optRecord.isPresent()) {
       //we have either a new record or the record has been deleted before
       record.setCreatedAt(Instant.now());
       record.setLastUpdate(record.getCreatedAt());
-    } else{
+    } else {
       LOG.trace("Found existing schema record. Merging records.");
       record = mergeRecords(optRecord.get(), record);
       existingSchemaHash = record.getSchemaHash();
     }
 
     long version = auditService.getCurrentVersion(record.getSchemaId());
-    if(version > 0){
-      try{
+    LOG.trace("Actual version: {}, Host: {}, HostAddr: ", version, request.getRemoteHost(), request.getRemoteAddr());
+    if (version > 0) {
+      try {
         InetAddress addr = InetAddress.getByName(request.getRemoteHost());
-        if(!addr.isAnyLocalAddress() && !addr.isLoopbackAddress()){
+        if (!addr.isAnyLocalAddress() && !addr.isLoopbackAddress()) {
           LOG.error("Schema updates are only allowed from localhost.");
           return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Schema updates are only allowed from localhost.");
         }
-      } catch(UnknownHostException ex){
+      } catch (UnknownHostException ex) {
         LOG.error("Unable to check remove host address " + request.getRemoteAddr() + ".", ex);
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Unable to check remote host address.");
       }
 
       LOG.trace("Schema with id {} found. Setting new schema version to {}.", record.getSchemaId(), (version + 1));
       record.setSchemaVersion(version + 1);
-    } else if(version < 0){
+    } else if (version < 0) {
       LOG.warn("Schema record with id {} has been deleted and cannot be re-activated.", record.getSchemaId());
       return ResponseEntity.status(HttpStatus.GONE).body("The record with id " + record.getSchemaId() + "has been deleted and cannot be re-activated.");
-    } else{
+    } else {
       version = 1l;
       LOG.trace("Setting initial schema version to {}.", version);
       record.setSchemaVersion(version);
     }
 
-    try{
+    try {
       byte[] schemaBytes = document.getBytes();
 
       //obtain/guess record type
-      if(record.getType() == null){
+      if (record.getType() == null) {
         record.setType(SchemaUtils.guessType(schemaBytes));
-        if(record.getType() == null){
+        if (record.getType() == null) {
           LOG.error("Unable to detect schema type automatically. Returning HTTP UNPROCESSABLE_ENTITY.");
           return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Unable to detect schema type automatically.");
-        } else{
+        } else {
           LOG.debug("Automatically detected schema type {}.", record.getType());
         }
       }
 
       //obtain validator for type
       IValidator applicableValidator = null;
-      for(IValidator validator : validators){
-        if(validator.supportsSchemaType(record.getType())){
+      for (IValidator validator : validators) {
+        if (validator.supportsSchemaType(record.getType())) {
           applicableValidator = validator;
           break;
         }
       }
 
-      if(applicableValidator == null){
+      if (applicableValidator == null) {
         LOG.error("No validator found for schema type " + record.getType() + ". Returning HTTP UNPROCESSABLE_ENTITY.");
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("No validator found for schema type " + record.getType() + ".");
-      } else{
+      } else {
         //validate schema
-        if(!applicableValidator.isSchemaValid(new ByteArrayInputStream(schemaBytes))){
+        if (!applicableValidator.isSchemaValid(new ByteArrayInputStream(schemaBytes))) {
           LOG.error("Failed to validate provided schema document. Returning HTTP UNPROCESSABLE_ENTITY.");
           return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to validate provided schema document.");
         }
 
         //hash schema document and compare with existing hash
         boolean writeSchemaFile = true;
-        try{
+        try {
           LOG.trace("Creating schema document hash and updating record.");
           MessageDigest md = MessageDigest.getInstance("SHA1");
           md.update(schemaBytes, 0, schemaBytes.length);
           record.setSchemaHash("sha1:" + Hex.encodeHexString(md.digest()));
 
-          if(Objects.equals(record.getSchemaHash(), existingSchemaHash)){
+          if (Objects.equals(record.getSchemaHash(), existingSchemaHash)) {
             LOG.trace("Schema file hashes are equal. Skip writing new schema file.");
             writeSchemaFile = false;
           }
-        } catch(NoSuchAlgorithmException ex){
+        } catch (NoSuchAlgorithmException ex) {
           LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
         }
 
-        if(writeSchemaFile){
+        if (writeSchemaFile) {
           LOG.trace("Writing user-provided schema file to repository.");
           URL schemaFolderUrl = metastoreProperties.getSchemaFolder();
-          try{
+          try {
             Path schemaDir = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId());
-            if(!Files.exists(schemaDir)){
+            if (!Files.exists(schemaDir)) {
               LOG.trace("Initially creating schema directory at {}.", schemaDir);
               Files.createDirectories(schemaDir);
-            } else{
-              if(!Files.isDirectory(schemaDir)){
+            } else {
+              if (!Files.isDirectory(schemaDir)) {
                 LOG.error("Schema directory {} exists but is no folder. Aborting operation.", schemaDir);
                 throw new CustomInternalServerError("Illegal schema registry state detected.");
               }
             }
 
             Path p = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId(), record.getSchemaId() + "_" + record.getSchemaVersion() + ((MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(record.getType())) ? ".xsd" : ".schema"));
-            if(Files.exists(p)){
+            if (Files.exists(p)) {
               LOG.error("Schema conflict. A schema file at path {} already exists.", p);
               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal schema filename conflict.");
             }
@@ -222,32 +222,32 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
             record.setSchemaDocumentUri(p.toUri().toString());
 
             LOG.trace("Schema record completed.");
-          } catch(URISyntaxException ex){
+          } catch (URISyntaxException ex) {
             LOG.error("Failed to determine schema storage location.", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
           }
-        } else{
+        } else {
           LOG.trace("Skip writing user-provided schema file to repository. Using unchanged, existing schema at {}.", record.getSchemaDocumentUri());
         }
 
         //schema file is written/skipped, continue with checking and writing metadata
         String callerPrincipal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
-        LOG.trace("Checking resource for caller acl entry.");
+        LOG.trace("Checking resource for caller acl entry. [sid = '{}']", callerPrincipal);
         //check ACLs for caller
         AclEntry callerEntry = null;
-        for(AclEntry entry : record.getAcl()){
-          if(callerPrincipal.equals(entry.getSid())){
+        for (AclEntry entry : record.getAcl()) {
+          if (callerPrincipal.equals(entry.getSid())) {
             LOG.trace("Acl entry for caller {} found: {}", callerPrincipal, entry);
             callerEntry = entry;
             break;
           }
         }
 
-        if(callerEntry == null){
+        if (callerEntry == null) {
           LOG.debug("Adding caller entry with ADMINISTRATE permissions.");
           callerEntry = new AclEntry(callerPrincipal, PERMISSION.ADMINISTRATE);
           record.getAcl().add(callerEntry);
-        } else{
+        } else {
           LOG.debug("Ensuring ADMINISTRATE permissions for acl entry {}.", callerEntry);
           //make sure at least the caller has administrate permissions
           callerEntry.setPermission(PERMISSION.ADMINISTRATE);
@@ -259,19 +259,24 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
         LOG.trace("Capturing metadata schema audit information.");
         auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
-        LOG.trace("Schema record successfully persisted. Updating document URI.");
-        fixSchemaDocumentUri(record);
         LOG.trace("Schema record successfully persisted. Returning result.");
-        return new ResponseEntity<>(record, HttpStatus.CREATED);
+        String etag = record.getEtag();
+
+        LOG.trace("Schema record successfully persisted. Updating document URI.");
+         fixSchemaDocumentUri(record);
+        URI locationUri;
+        locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri();
+        LOG.warn("uri              " + locationUri);
+        return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(record);
       }
-    } catch(IOException ex){
+    } catch (IOException ex) {
       LOG.error("Failed to read schema data from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
       return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read schema data from input stream.");
     }
   }
 
   @Override
-  public ResponseEntity getRecordById(String schemaId, Long version, WebRequest wr, HttpServletResponse hsr){
+  public ResponseEntity getRecordById(String schemaId, Long version, WebRequest wr, HttpServletResponse hsr) {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
@@ -288,7 +293,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
           @PathVariable(value = "id") String schemaId,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
-          HttpServletResponse hsr){
+          HttpServletResponse hsr) {
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
@@ -297,7 +302,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
     MediaType contentType = MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(record.getType()) ? MediaType.APPLICATION_XML : MediaType.APPLICATION_JSON;
     Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-    if(!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)){
+    if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
       LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Schema document on server either does not exist or is no file or is not readable.");
     }
@@ -310,10 +315,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   }
 
   @Override
-  public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr){
+  public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
 
-    if(document == null){
+    if (document == null || document.isEmpty()) {
       LOG.error("Missing metadata document in body. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Metadata document is missing from request body.");
     }
@@ -322,35 +327,35 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     MetadataSchemaRecord record = getRecordByIdAndVersion(schemaId, version);
     IValidator applicableValidator = null;
     LOG.trace("Checking for applicable validator.");
-    for(IValidator validator : validators){
-      if(validator.supportsSchemaType(record.getType())){
+    for (IValidator validator : validators) {
+      if (validator.supportsSchemaType(record.getType())) {
         applicableValidator = validator;
         break;
       }
     }
 
-    if(applicableValidator == null){
+    if (applicableValidator == null) {
       LOG.error("No validator found for schema type " + record.getType() + ". Returning HTTP UNPROCESSABLE_ENTITY.");
       return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("No validator found for schema type " + record.getType() + ".");
-    } else{
+    } else {
       LOG.trace("Validator found. Checking local schema file.");
       Path schemaDocumentPath = Paths.get(URI.create(record.getSchemaDocumentUri()));
 
-      if(!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)){
+      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
         LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Schema document on server either does not exist or is no file or is not readable.");
       }
 
-      try{
+      try {
         LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", record.getSchemaId(), record.getSchemaVersion(), applicableValidator);
-        if(applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), document.getInputStream())){
+        if (applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), document.getInputStream())) {
           LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
           return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-        } else{
-          LOG.warn("Metadata document validation failed. Returning HTTP HTTP UNPROCESSABLE_ENTITY.");
-          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Metadata document is not valid according to the addressed schema.");
+        } else {
+          LOG.warn("Metadata document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.");
+          return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(applicableValidator.getErrorMessage());
         }
-      } catch(IOException ex){
+      } catch (IOException ex) {
         LOG.error("Failed to read metadata document from input stream. Returning HTTP UNPROCESSABLE_ENTITY.", ex);
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to metadata document from input stream.");
       }
@@ -358,7 +363,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   }
 
   @Override
-  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(List<String> schemaIds, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
+  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(List<String> schemaIds, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaIds, mimeTypes, updateFrom, updateUntil);
     Specification<MetadataSchemaRecord> spec = SchemaIdSpecification.toSpecification(schemaIds);
     spec = spec.and(MimeTypeSpecification.toSpecification(mimeTypes)).or(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
@@ -380,15 +385,15 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
   }
 
   @Override
-  public ResponseEntity updateRecord(String schemaId, MetadataSchemaRecord record, WebRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder){
-    LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
-
-    if(record == null){
+  public ResponseEntity updateRecord(@PathVariable("id") final String schemaId, @RequestBody final MetadataSchemaRecord record, final WebRequest request, final HttpServletResponse response) {
+    MetadataSchemaRecord updatedRecord;
+    LOG.trace("Performing updateMetadataSchemaRecord({}, {}).", schemaId, record);
+    if ((record == null) || (record.getSchemaId() == null)) {
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record provided.");
     }
 
-    LOG.trace("Obtaining most recent schema record with id {}.", schemaId);
+    LOG.trace("Obtaining most recent metadata schema record with id {}.", schemaId);
     MetadataSchemaRecord existingRecord = getRecordByIdAndVersion(schemaId);
     //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
 
@@ -400,19 +405,24 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
     //schema version is not changed for metadata updates
     LOG.trace("Persisting schema record.");
-    record = metadataSchemaDao.save(existingRecord);
+    updatedRecord = metadataSchemaDao.save(existingRecord);
 
     //audit information not captured here as version not changes via PUT
     LOG.trace("Schema record successfully persisted. Updating document URI and returning result.");
-    fixSchemaDocumentUri(record);
-    return new ResponseEntity<>(record, HttpStatus.OK);
+    fixSchemaDocumentUri(updatedRecord);
+
+    String etag = updatedRecord.getEtag();
+    URI locationUri;
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(updatedRecord.getSchemaId(), updatedRecord.getSchemaVersion(), null, null)).toUri();
+
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedRecord);
   }
 
   @Override
-  public ResponseEntity deleteRecord(String schemaId, WebRequest request, HttpServletResponse hsr){
+  public ResponseEntity deleteRecord(String schemaId, WebRequest request, HttpServletResponse hsr) {
     LOG.trace("Performing deleteRecord({}).", schemaId);
 
-    try{
+    try {
       LOG.trace("Obtaining most recent schema record with id {}.", schemaId);
       MetadataSchemaRecord existingRecord = getRecordByIdAndVersion(schemaId);
       LOG.trace("Checking provided ETag.");
@@ -428,7 +438,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
       //will re-activate the record and its version history. Thus, it will be possible again
       //to access previous version of the record. Schema access for these "re-activated" records
       //would fail for older version, if the schema file is deleted.      
-    } catch(ResourceNotFoundException ex){
+    } catch (ResourceNotFoundException ex) {
       //exception is hidden for DELETE
       LOG.debug("No metadata schema with id {} found. Skipping deletion.", schemaId);
     }
@@ -436,15 +446,15 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
-  public MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided){
+  private MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
     //update mime type the schema can be applied to
-    if(!Objects.isNull(provided.getMimeType())){
+    if (!Objects.isNull(provided.getMimeType())) {
       LOG.trace("Updating record mime type from {} to {}.", managed.getMimeType(), provided.getMimeType());
       managed.setMimeType(provided.getMimeType());
     }
 
     //update acl
-    if(provided.getAcl() != null){
+    if (provided.getAcl() != null) {
       LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
       managed.setAcl(provided.getAcl());
     }
@@ -453,16 +463,16 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     return managed;
   }
 
-  private MetadataSchemaRecord getRecordByIdAndVersion(String schemaId) throws ResourceNotFoundException{
+  private MetadataSchemaRecord getRecordByIdAndVersion(String schemaId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(schemaId, null);
   }
 
-  private MetadataSchemaRecord getRecordByIdAndVersion(String schemaId, Long version) throws ResourceNotFoundException{
+  private MetadataSchemaRecord getRecordByIdAndVersion(String schemaId, Long version) throws ResourceNotFoundException {
     Long recordVersion = version;
-    if(recordVersion == null){
+    if (recordVersion == null) {
       LOG.trace("No record version provided. Reading schema record from database.");
       Optional<MetadataSchemaRecord> record = metadataSchemaDao.findById(schemaId);
-      if(record.isEmpty()){
+      if (!record.isPresent()) {
         LOG.error("No metadata schema found for schemaId {}. Returning HTTP 404.", schemaId);
         throw new ResourceNotFoundException("No metadata schema found for schemaId " + schemaId + ".");
       }
@@ -471,7 +481,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
 
     Optional<MetadataSchemaRecord> optRecord = auditService.getResourceByVersion(schemaId, recordVersion);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    if(optRecord.isEmpty()){
+    if (!optRecord.isPresent()) {
       LOG.error("No metadata schema found for schemaId {} and version {}. Returning HTTP 404.", schemaId, version);
       throw new ResourceNotFoundException("No metadata schema found for schemaId " + schemaId + " and version " + version + ".");
     }
@@ -479,7 +489,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController{
     return optRecord.get();
   }
 
-  private void fixSchemaDocumentUri(MetadataSchemaRecord record){
+  private void fixSchemaDocumentUri(MetadataSchemaRecord record) {
     record.setSchemaDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri().toString());
   }
 

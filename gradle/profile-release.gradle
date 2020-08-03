@@ -3,14 +3,6 @@ import java.text.SimpleDateFormat
 ext {
    snippetsDir = file("build/generated-snippets")
 }
-
-test { 
-   outputs.dir snippetsDir
-}
-
-dependencies {
-   compile("edu.kit.datamanager:generic-message-consumer:0.1.0")
-}
    
 asciidoctor {
    attributes "snippets": snippetsDir,
@@ -23,6 +15,7 @@ asciidoctor {
 }
 
 test {
+   outputs.dir snippetsDir
    environment "spring.config.location", "classpath:/config/"
 }
 

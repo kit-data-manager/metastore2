@@ -1,0 +1,515 @@
+= KIT Data Manager Documentation - Metastore2 Service
+v{version}, KIT Data Manager Development Team, {date}
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:highlightjs-theme: github
+:toc: left
+:toclevels: 4
+:sectlinks:
+:sectnums:
+
+[introduction]
+= RESTful API Description
+
+== Introduction
+
+In this documentation, the basics of the KIT Data Manager RESTful API of the Metastore2 Service are described. You will be guided through the first steps of 
+register an XML schema, update it. After that add an appropriate metadata document to metastore2 which may be linked to a data resource.
+
+This documentation assumes, that you have an instance of the KIT Data Manager Metastore2 repository service installed locally. If the repository is running on another
+host or port you should change hostname and/or port accordingly. Furthermore, the examples assume that you are using the repository without authentication
+and authorization, which is provided by another service. If you plan to use this optional service, please refer to its documentation first to see how the 
+examples in this documentation have to be modified in order to work with authentication. Typically, this should be achieved by simple adding an additional header
+entry.
+
+The example structure is identical for all examples below. Each example starts with a CURL command that can be run by copy&paste to your console/terminal window.
+The second part shows the HTTP request sent to the server including arguments and required headers. Finally, the third block shows the response comming from the server.
+In between, special characteristics of the calls are explained together with additional, optional arguments or alternative responses.
+
+[NOTE]
+For technical reasons, all metadata resources shown in the examples contain all fields, e.g. also empty lists or fields with value 'null'. You may ignore most of them
+as long as they are not needed. Some of them will be assigned by the server, others remain empty or null as long as you don't assign any value to them. 
+All fields mandatory at creation time are explained in the resource creation example.
+
+[[ChapterMetadataSchemaHandling]]
+== Schema Registration and Management
+
+In this first section, the handling of schema resources is explained. It all starts with creating your first xml schema resource. The model of a metadata schema record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "schemaId" : "...",
+  "schemaVersion" : 1,
+  "mimeType" : "...",
+  "type" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "schemaDocumentUri" : "...",
+  "schemaHash" : "...",
+  "locked" : false
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label for the schema.
+- mimeType: The resource type must be assigned by the user. For XSD schemas this should be 'application/xml'
+- type: XML or JSON. For XSD schemas this should be 'XML'
+
+In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
+
+=== Registering a Metadata Schema
+
+The following example shows the creation of the first xsd schema only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+schema-record.json:
+{
+  "schemaId" : "my_first_xsd",
+  "mimeType" : "application/xml",
+  "type" : "XML",
+}
+----
+
+include::{snippets}/register-schema/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/register-schema/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/register-schema/http-response.adoc[]
+
+What you see is, that the metadata schema record looks different from the original document. All remaining elements received a value by the server. 
+Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
+
+=== Getting a List of Metadata Schema Records
+
+Obtaining all accessible metadata schema records. 
+
+include::{snippets}/get-all-schemas/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path.
+
+include::{snippets}/get-all-schemas/http-request.adoc[]
+
+As a result, you receive a list of metadata schema records. 
+
+include::{snippets}/get-all-schemas/http-response.adoc[]
+
+[NOTE]
+The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
+If there are more than 20 schemata registered you have to provide page and/or size as additional query parameters.
+
+- page: Number of the page you want to get **(starting with page 0)**
+- size: Number of entries per page.
+
+The modified HTTP request  with pagination looks like follows:
+
+include::{snippets}/get-all-schemas-pagination/http-request.adoc[]
+
+
+=== Getting a Metadata Schema Record
+
+For obtaining one metadata schema record you have to provide the value of the field 'schemaId'.
+[NOTE]
+As 'Accept' field you have to provide 'application/vnd.datamanager.schema-record+json' otherwise you will
+get the metadata schema instead.
+
+include::{snippets}/get-schema-record/curl-request.adoc[]
+
+In the actual HTTP request just access the path of the resource using the base path and the 'schemaid'. Be aware that you also have to provide the 'Accept' field.
+
+include::{snippets}/get-schema-record/http-request.adoc[]
+
+As a result, you receive the metadata schema record send before and again the corresponding ETag in the HTTP response header. 
+
+include::{snippets}/get-schema-record/http-response.adoc[]
+
+=== Getting a Metadata Schema
+
+For obtaining accessible metadata schemas you have multiple options: list all resources, access a single resource using a known identifier or search by example. The following example shows how to obtain a 
+single resource. You may also use the location URL provided during the creation. 
+
+include::{snippets}/get-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the 'schemaId'.
+
+include::{snippets}/get-schema/http-request.adoc[]
+
+As a result, you receive the XSD schema send before. 
+
+include::{snippets}/get-schema/http-response.adoc[]
+
+=== Updating a Metadata Schema
+
+[WARNING]
+This should be used with extreme caution.
+The new schema should only add optional elements otherwise it will break old
+metadata records. Therefor it's not accessible from remote. 
+
+For updating an existing metadata schema (record) a valid ETag is needed. The actual ETag 
+is available via the HTTP GET call of the metadata schema record. (see above)
+Just send an HTTP POST with the updated metadata schema and/or metadata schema record.
+[source,options="nowrap"]
+----
+schema-record.json
+{
+  "schemaId":"my_first_xsd",
+  "mimeType":"application/xml",
+  "type":"XML"
+}
+----
+
+include::{snippets}/update-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the resource identifier.
+
+include::{snippets}/update-schema/http-request.adoc[]
+
+As a result, you receive the XSD schema send before, schema record and in the HTTP response header
+the new location URL and the ETag. 
+
+include::{snippets}/update-schema/http-response.adoc[]
+
+
+=== Getting new Version of Metadata Schema
+
+To get the new version of the metadata schema just send an HTTP GET with the linked
+'schemaId': 
+
+include::{snippets}/get-schemav2/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the 'schemaId'.
+
+include::{snippets}/get-schemav2/http-request.adoc[]
+
+As a result, you receive the XSD schema send before. 
+
+include::{snippets}/get-schemav2/http-response.adoc[]
+
+=== Getting a specific Version of Metadata Schema
+
+To get a specific version of the metadata schema just send an HTTP GET with the linked
+'schemaId' and the version number you are looking for as query parameter: 
+
+include::{snippets}/get-schemav1/curl-request.adoc[]
+
+In the actual HTTP request there is also nothing special. You just access the path of the resource using the base path and the 'schemaId' with the 
+version number as query parameter.
+
+include::{snippets}/get-schemav1/http-request.adoc[]
+
+As a result, you receive the initial XSD schema (version 1). 
+
+include::{snippets}/get-schemav1/http-response.adoc[]
+
+
+=== Validating Metadata Document
+
+Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
+the ingest may be rejected. Select the schema and the version to validate given document.
+On a first step validation with the old schema will be done:
+
+include::{snippets}/validate-document-v1/curl-request.adoc[]
+
+Same for the HTTP request. The version number is set by a query parameter.
+
+include::{snippets}/validate-document-v1/http-request.adoc[]
+
+As a result, you receive 422 as HTTP status and an error message holding some information about the error.
+
+include::{snippets}/validate-document-v1/http-response.adoc[]
+
+The document holds an optional field introduced in the second version of schema.
+Let's try to validate with second version of schema. Only version number will be different. (if no query
+parameter is available the current version will be selected)
+
+include::{snippets}/validate-document-v2/curl-request.adoc[]
+
+Same for the HTTP request.
+
+include::{snippets}/validate-document-v2/http-request.adoc[]
+
+Everything should be fine now. As a result, you receive 204 as HTTP status and no further content. 
+
+include::{snippets}/validate-document-v2/http-response.adoc[]
+
+=== Update Metadata Schema Record
+In case of authorization it may be neccessary to update metadata record to be accessible
+by others. To do so an update has to be made. In this example we introduce a
+user called 'admin' and give him all rights.
+
+[source,options="nowrap"]
+----
+schema-record-acl.json 
+{
+  "schemaId":"my_first_xsd",
+  "mimeType":"application/xml",
+  "type":"XML"
+  "acl":[ 
+    {
+      "id":33,
+      "sid":"SELF",
+      "permission":"ADMINISTRATE"
+    },
+    {
+      "id":null,"
+       sid":"admin",
+         "admin":"ADMINISTRATE"
+    }
+  ]
+}
+----
+include::{snippets}/update-schema-record/curl-request.adoc[]
+
+Same for the HTTP request.
+
+include::{snippets}/update-schema-record/http-request.adoc[]
+
+As a result, you receive 200 as HTTP status, the updated metadata schema record and the 
+updated ETag and location in the HTTP response header.
+
+include::{snippets}/update-schema-record/http-response.adoc[]
+
+After the update the following fields has changed:
+
+- lastUpdate to the date of the last update (set by server)
+- acl additional ACL entry (set during update)
+
+[NOTE]
+Version number will be only updated while changing metadata schema.
+
+== Metadata Management
+After registration of a schema metadata may be added to metastore.
+In this section, the handling of metadata resources is explained. 
+It all starts with creating your first metadata resource. The model of a metadata record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "id" : "...",
+  "relatedResource" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "schemaId" : "...",
+  "recordVersion" : 1,
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "metadataDocumentUri" : "...",
+  "documentHash" : "..."
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label of the schema.
+- relatedResource: The link to the resource. 
+
+In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+
+=== Creating a Metadata Record
+
+The following example shows the creation of the first metadata record and its metadata only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+metadata-record.json:
+{
+    "relatedResource": "anyResourceId",
+    "schemaId": "my_first_xsd"
+}
+----
+The schemaId used while registering metadata schema has to be used to link the metadata with the
+approbriate metadata schema.
+include::{snippets}/create-metadata-record/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/create-metadata-record/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/create-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
+In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
+
+=== Accessing Metadata
+For accessing the metadata the location URL provided before may be used.
+The URL is compiled by the id of the metadata and its version.
+include::{snippets}/get-metadata/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata/http-request.adoc[]
+
+The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-metadata/http-response.adoc[]
+
+What you see is, that the metadata is untouched.
+
+=== Accessing Metadata Record
+For accessing the metadata record the same URL as before has to be used.
+The only difference is the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
+Then the command line looks like this:
+include::{snippets}/get-metadata-record/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-record/http-request.adoc[]
+
+The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-metadata-record/http-response.adoc[]
+
+You also get the metadata record seen before.
+
+
+=== Updating a Metadata Record (edit ACL entries)
+
+The following example shows the update of the metadata record. As mentioned before the
+ETag is needed:
+[source,options="nowrap"]
+----
+metadata-record-acl.json:
+{
+    "relatedResource": "anyResourceId",
+    "schemaId": "my_first_xsd"
+    "acl": [ {
+      "id":null,
+      "sid":"guest",
+      "permission":"READ"
+    } ]
+}
+----
+include::{snippets}/update-metadata-record/curl-request.adoc[]
+
+You can see, that only the ACL entry for "guest" was added. All other properties are still the same. HTTP-wise the call looks as follows: 
+
+include::{snippets}/update-metadata-record/http-request.adoc[]
+
+You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+include::{snippets}/update-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. 
+[NOTE]
+Version number will be only updated while changing metadata. ETag is also untouched.
+
+=== Updating Metadata
+The following example shows the update of the metadata. As mentioned before the
+ETag is needed. As the ETag has changed in the meanwhile you first have to get the
+new ETag.
+include::{snippets}/get-metadata-record-v2/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-record-v2/http-request.adoc[]
+
+You will get the new metadata record with the new ETag.
+include::{snippets}/get-metadata-record-v2/http-response.adoc[]
+
+Now you can update metadata due to new version of schema using the new Etag.
+include::{snippets}/update-metadata/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/update-metadata/http-request.adoc[]
+
+You will get the new metadata record.
+include::{snippets}/update-metadata/http-response.adoc[]
+ 
+
+Now you can access the updated metadata via the URI in the HTTP response header.
+include::{snippets}/get-metadata-v3/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-metadata-v3/http-request.adoc[]
+
+You will get the updated metadata.
+include::{snippets}/get-metadata-v3/http-response.adoc[]
+ 
+ 
+
+=== Find a Metadata Record 
+Search will find all current metadata records.
+There are some filters available which may be combined.
+All filters for the metadata records are set via query parameters.
+The following filters are allowed:
+
+- resourceId
+- from
+- until
+
+[NOTE]
+The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
+If there are more than 20 schemata registered you have to provide page and/or size as additional query parameters.
+
+- page: Number of the page you want to get **(starting with page 0)**
+- size: Number of entries per page.
+
+==== Find by resourceId
+If you want to find all records belonging to an external resource. Metastore may 
+hold multiple metadata documents per resource. (Nevertheless only one per registered 
+schema)
+
+Command line:
+include::{snippets}/find-metadata-record/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-metadata-record/http-request.adoc[]
+
+You will get the current version metadata record. 
+include::{snippets}/find-metadata-record/http-response.adoc[]
+
+==== Find after a specific date
+If you want to find all metadata records updated after a specific date.
+
+Command line:
+include::{snippets}/find-metadata-record-from/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-metadata-record-from/http-request.adoc[]
+
+You will get the current version metadata records updated ln the last 2 hours. 
+include::{snippets}/find-metadata-record-from/http-response.adoc[]
+
+==== Find in a specific date range
+If you want to find all metadata records updated in a specific date range.
+
+Command line:
+include::{snippets}/find-metadata-record-from-to/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-metadata-record-from-to/http-request.adoc[]
+
+You will get an empty array as no metadata record exists in the given range:
+include::{snippets}/find-metadata-record-from-to/http-response.adoc[]
+
+
+
+== Remarks on Working with Versions
+
+While working with versions you should keep some particularities in mind. Access to version is only possible for single resources. There is e.g. no way to obtain all resources in version 2 from the server.
+If a specific version of a resource is returned, the obtained ETag also relates to this specific version. Therefore, you should NOT use this ETag for any update operation as the operation will fail with response 
+code 412 (PRECONDITION FAILED). Consequently, it is also NOT allowed to modify a format version of a resource. If you want to rollback to a previous version, you should obtain the resource and submit a PUT request
+of the entire document which will result in a new version equal to the previous state unless there were changes you are not allowed to apply (anymore), e.g. if permissions have changed. 

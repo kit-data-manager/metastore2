@@ -1,0 +1,18 @@
+[source,http,options="nowrap"]
+----
+PUT /api/v1/metadata/a3de8b05-96df-458c-955b-b14e747f116d?version=1 HTTP/1.1
+Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+If-Match: "-268772164"
+Host: localhost:8080
+
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+Content-Disposition: form-data; name=version
+
+1
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+Content-Disposition: form-data; name=record; filename=metadata-record-acl.json
+Content-Type: application/json
+
+{"id":"a3de8b05-96df-458c-955b-b14e747f116d","pid":null,"relatedResource":"anyResourceId","createdAt":"2020-08-03T06:57:52.501272Z","lastUpdate":"2020-08-03T06:57:52.501272Z","schemaId":"my_first_xsd","recordVersion":1,"acl":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8080/api/v1/metadata/a3de8b05-96df-458c-955b-b14e747f116d?version=1","documentHash":"sha1:63ddd73b983ee265caee93dbe72c1995e813dc9e"}
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
+----

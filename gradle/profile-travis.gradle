@@ -6,10 +6,6 @@ ext {
    snippetsDir = file("build/generated-snippets")
 }
 
-test { 
-   outputs.dir snippetsDir
-}
-
 asciidoctor {
    attributes "snippets": snippetsDir,
             "version": version,
@@ -21,6 +17,7 @@ asciidoctor {
 }
 
 test {
+   outputs.dir snippetsDir
    environment "spring.config.location", "classpath:/config/"
    include '**/*'
 }
@@ -31,13 +28,20 @@ tasks.withType(Test) {
    }
 }
 
-jacoco {
-   toolVersion = "0.8.2"
-}
 
 jacocoTestReport {
-   reports {
-      xml.enabled true
-      html.enabled true
-   }}
-   
+    dependsOn test
+    reports {
+        xml.enabled true
+        html.enabled true
+        html.destination file("${buildDir}/reports/coverage")
+    }
+    afterEvaluate {
+        //exclude some classes/package from code coverage report
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [\
+            '**/SchemaSynchronization*'
+                    ])
+            }))
+    }
+}
