@@ -1,0 +1,33 @@
+[source,http,options="nowrap"]
+----
+POST /api/v1/schemas/ HTTP/1.1
+Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+If-Match: "1205286575"
+Host: localhost:8080
+
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+Content-Disposition: form-data; name=schema
+
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+        xmlns="http://www.example.org/schema/xsd/"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+<xs:element name="metadata">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+      <xs:element name="date" type="xs:date"/>
+      <xs:element name="note" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
+Content-Disposition: form-data; name=record; filename=schema-record.json
+Content-Type: application/json
+
+{"schemaId":"my_first_xsd","schemaVersion":null,"label":null,"definition":null,"comment":null,"mimeType":"application/xml","type":"XML","createdAt":null,"lastUpdate":null,"acl":[],"schemaDocumentUri":null,"schemaHash":null,"locked":false}
+--6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
+----

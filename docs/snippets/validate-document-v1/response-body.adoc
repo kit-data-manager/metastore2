@@ -1,0 +1,4 @@
+[source,options="nowrap"]
+----
+Validation error: cvc-complex-type.2.4.d: Ungültiger Content wurde beginnend mit Element 'example:note' gefunden. An dieser Stelle wird kein untergeordnetes Element erwartet.
+----

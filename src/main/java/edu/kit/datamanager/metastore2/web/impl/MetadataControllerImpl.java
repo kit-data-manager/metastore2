@@ -31,7 +31,6 @@ import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.annotations.Api;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -47,6 +46,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
@@ -55,6 +55,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -69,6 +70,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -80,8 +82,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
-@Api(value = "Metadata Repository")
-public class MetadataControllerImpl implements IMetadataController{
+public class MetadataControllerImpl implements IMetadataController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
 
@@ -96,22 +97,18 @@ public class MetadataControllerImpl implements IMetadataController{
   public ResponseEntity createRecord(
           @RequestPart(name = "record") final MetadataRecord record,
           @RequestPart(name = "document") final MultipartFile document,
-          WebRequest request,
+          HttpServletRequest request,
           HttpServletResponse response,
-          UriComponentsBuilder uriBuilder){
+          UriComponentsBuilder uriBuilder) throws URISyntaxException {
 
-    LOG.trace("Performing createRecord({}, {}).", record, "#document");
+    LOG.trace("Performing createRecord({},...).", record);
 
-    if(record == null || document == null){
-      LOG.error("No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata record and/or metadata document provided.");
-    }
-    if(record.getRelatedResource() == null || record.getSchemaId() == null){
+    if (record.getRelatedResource() == null || record.getSchemaId() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
     }
 
-    if(record.getId() != null){
+    if (record.getId() != null) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not expecting record id to be assigned by user.");
     }
 
@@ -120,61 +117,55 @@ public class MetadataControllerImpl implements IMetadataController{
 
     LOG.trace("Setting random UUID as record id.");
     record.setId(UUID.randomUUID().toString());
-
+    LOG.debug("Test for existing metadata record for given schema and resource");
+    MetadataRecord dummy = new MetadataRecord();
+    dummy.setRelatedResource(record.getRelatedResource());
+    dummy.setSchemaId(record.getSchemaId());
+    Example<MetadataRecord> example = Example.of(dummy);
+    Optional<MetadataRecord> findOne = metadataRecordDao.findOne(example);
+    if (findOne.isPresent()) {
+      LOG.error("Conflict with existing metadata record!");
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
+    }
     //check for re-use of old id
     long versionById = auditService.getCurrentVersion(record.getId());
     long reattempts = 0;
-    while(versionById != 0){
+    while (versionById != 0) {
       reattempts++;
       LOG.warn("UUID collision detected. Assigning another random identifier.");
       record.setId(UUID.randomUUID().toString());
 
-      if(reattempts == 10){
+      if (reattempts == 10) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body("Unable to assign unique, random UUID. Please try again later.");
       }
+      versionById = auditService.getCurrentVersion(record.getId());
     }
 
     LOG.trace("Trying to validate metadata document using one of {} schema registry/registries.", metastoreProperties.getSchemaRegistries().length);
 
-    try{
+    try {
       byte[] data = document.getBytes();
+      if (metastoreProperties.getSchemaRegistries().length == 0) {
+        LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
+        return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
+      }
 
-      for(String schemaRegistry : metastoreProperties.getSchemaRegistries()){
-        URI schemaRegistryUri = URI.create(schemaRegistry);
-        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
+      ResponseEntity<String> responseEntity = validateMetadataDocument(record, data);
 
-        URI finalUri = builder.build().toUri();
-
-        try{
-          HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(data)).postForm(MediaType.MULTIPART_FORM_DATA);
-
-          if(Objects.equals(HttpStatus.NO_CONTENT, status)){
-            LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
-            break;
-          } else{
-            //not valid 
-            LOG.error("Received unexpected status from SchemaRegistry.validate(). Expecting NO_CONTENT but received " + status + ". Aborting operation.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected status " + status + " received from metadata validation. Aborting operation.");
-          }
-        } catch(HttpClientErrorException ce){
-          //not valid 
-          LOG.error("Failed to validate metadata document at schema registry.", ce);
-          return ResponseEntity.status(ce.getRawStatusCode()).body("Failed to validate metadata document against schema " + record.getSchemaId() + " with status " + ce.getStatusCode() + ".");
-        } catch(IOException ex){
-          LOG.error("Failed to access schema registry at " + schemaRegistry + ". Proceeding with next registry.", ex);
-        }
+      if (responseEntity != null) {
+        return responseEntity;
       }
 
       LOG.trace("Setting createdAt and lastUpdate to now().");
       record.setCreatedAt(Instant.now());
       record.setLastUpdate(record.getCreatedAt());
 
-      try{
+      try {
         LOG.trace("Creating metadata document hash and updating record.");
         MessageDigest md = MessageDigest.getInstance("SHA1");
         md.update(data, 0, data.length);
         record.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
-      } catch(NoSuchAlgorithmException ex){
+      } catch (NoSuchAlgorithmException ex) {
         LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
       }
@@ -182,20 +173,20 @@ public class MetadataControllerImpl implements IMetadataController{
       //persist document
       LOG.trace("Writing user-provided metadata file to repository.");
       URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
-      try{
+      try {
         Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), record.getId());
-        if(!Files.exists(metadataDir)){
+        if (!Files.exists(metadataDir)) {
           LOG.trace("Creating metadata directory at {}.", metadataDir);
           Files.createDirectories(metadataDir);
-        } else{
-          if(!Files.isDirectory(metadataDir)){
+        } else {
+          if (!Files.isDirectory(metadataDir)) {
             LOG.error("Metadata directory {} exists but is no folder. Aborting operation.", metadataDir);
             throw new CustomInternalServerError("Illegal metadata registry state detected.");
           }
         }
 
         Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId(), getUniqueRecordHash(record));
-        if(Files.exists(p)){
+        if (Files.exists(p)) {
           LOG.error("Metadata document conflict. A file at path {} already exists.", p);
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
         }
@@ -205,32 +196,35 @@ public class MetadataControllerImpl implements IMetadataController{
         LOG.trace("Schema document successfully persisted. Updating record.");
         record.setMetadataDocumentUri(p.toUri().toString());
         LOG.trace("Metadata record completed.");
-      } catch(URISyntaxException ex){
+      } catch (URISyntaxException ex) {
         LOG.error("Failed to determine schema storage location.", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
+      } catch (IOException ex) {
+        LOG.error("Failed to write metadata to metadata folder. Returning HTTP INSUFFICIENT_STORAGE.", ex);
+        return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to write medata to metadata folder.");
       }
-    } catch(IOException ex){
-      LOG.error("Failed to read medata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read medata from input stream.");
+    } catch (IOException ex) {
+      LOG.error("Failed to read metadata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
+      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read metadata from input stream.");
     }
 
     String callerPrincipal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
     LOG.trace("Checking resource for caller acl entry.");
     //check ACLs for caller
     AclEntry callerEntry = null;
-    for(AclEntry entry : record.getAcl()){
-      if(callerPrincipal.equals(entry.getSid())){
+    for (AclEntry entry : record.getAcl()) {
+      if (callerPrincipal.equals(entry.getSid())) {
         LOG.trace("Acl entry for caller {} found: {}", callerPrincipal, entry);
         callerEntry = entry;
         break;
       }
     }
 
-    if(callerEntry == null){
+    if (callerEntry == null) {
       LOG.debug("Adding caller entry with ADMINISTRATE permissions.");
       callerEntry = new AclEntry(callerPrincipal, PERMISSION.ADMINISTRATE);
       record.getAcl().add(callerEntry);
-    } else{
+    } else {
       LOG.debug("Ensuring ADMINISTRATE permissions for acl entry {}.", callerEntry);
       //make sure at least the caller has administrate permissions
       callerEntry.setPermission(PERMISSION.ADMINISTRATE);
@@ -240,12 +234,19 @@ public class MetadataControllerImpl implements IMetadataController{
     MetadataRecord result = metadataRecordDao.save(record);
 
     LOG.trace("Capturing metadata schema audit information.");
-    auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
+    auditService.captureAuditInformation(result, AuthenticationHelper.getPrincipal());
+
+    LOG.trace("Get ETag of MetadataRecord.");
+    String etag = result.getEtag();
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
     fixMetadataDocumentUri(result);
+
+    URI locationUri;
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
+
     LOG.trace("Schema record successfully persisted. Returning result.");
-    return new ResponseEntity<>(result, HttpStatus.CREATED);
+    return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(result);
   }
 
   @Override
@@ -254,13 +255,13 @@ public class MetadataControllerImpl implements IMetadataController{
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr
-  ){
+  ) {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
     MetadataRecord record = getRecordByIdAndVersion(id, version);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-
+    LOG.trace("Get ETag of MetadataRecord.");
     String etag = record.getEtag();
 
     fixMetadataDocumentUri(record);
@@ -274,7 +275,7 @@ public class MetadataControllerImpl implements IMetadataController{
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr
-  ){
+  ) {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
@@ -283,7 +284,7 @@ public class MetadataControllerImpl implements IMetadataController{
     URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
 
     Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if(!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)){
+    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
       LOG.trace("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Metadata document on server either does not exist or is no file or is not readable.");
     }
@@ -296,7 +297,7 @@ public class MetadataControllerImpl implements IMetadataController{
 
   @Override
   public ResponseEntity<List<MetadataRecord>> getRecords(
-          @RequestParam(value = "resoureId", required = false) List<String> relatedIds,
+          @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @RequestParam(name = "from", required = false) Instant updateFrom,
           @RequestParam(name = "until", required = false) Instant updateUntil,
@@ -304,10 +305,15 @@ public class MetadataControllerImpl implements IMetadataController{
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb
-  ){
+  ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
     Specification<MetadataRecord> spec = SchemaIdSpecification.toSpecification(schemaIds);
-    spec = spec.and(RelatedIdSpecification.toSpecification(relatedIds)).or(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    if (relatedIds != null) {
+      spec = spec.and(RelatedIdSpecification.toSpecification(relatedIds));
+    }
+    if ((updateFrom != null) || (updateUntil != null)) {
+      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    }
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
@@ -334,10 +340,10 @@ public class MetadataControllerImpl implements IMetadataController{
           WebRequest request,
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder
-  ){
+  ) {
     LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
 
-    if(record == null && document == null){
+    if (record == null && document == null) {
       LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Neither metadata record nor metadata document provided.");
     }
@@ -353,73 +359,56 @@ public class MetadataControllerImpl implements IMetadataController{
     LOG.trace("Updating record version.");
     existingRecord.setRecordVersion(existingRecord.getRecordVersion() + 1);
 
-    if(document != null){
+    if (document != null) {
       LOG.trace("Updating metadata document.");
-      try{
+      try {
         byte[] data = document.getBytes();
+        if (metastoreProperties.getSchemaRegistries().length == 0) {
+          LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
+          return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
+        }
+        ResponseEntity<String> responseEntity = validateMetadataDocument(existingRecord, data);
 
-        for(String schemaRegistry : metastoreProperties.getSchemaRegistries()){
-          URI schemaRegistryUri = URI.create(schemaRegistry);
-          UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", existingRecord.getSchemaId(), "validate");
-
-          URI finalUri = builder.build().toUri();
-
-          try{
-            HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(data)).postForm(MediaType.MULTIPART_FORM_DATA);
-
-            if(Objects.equals(HttpStatus.NO_CONTENT, status)){
-              LOG.trace("Successfully validated document against schema {} in registry {}.", existingRecord.getSchemaId(), schemaRegistry);
-              break;
-            } else{
-              //not valid 
-              LOG.error("Received unexpected status from SchemaRegistry.validate(). Expecting NO_CONTENT but received " + status + ". Aborting operation.");
-              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unexpected status " + status + " received from metadata validation. Aborting operation.");
-            }
-          } catch(HttpClientErrorException ce){
-            //not valid 
-            LOG.error("Failed to validate metadata document at schema registry.", ce);
-            return ResponseEntity.status(ce.getRawStatusCode()).body("Failed to validate metadata document against schema " + existingRecord.getSchemaId() + " with status " + ce.getStatusCode() + ".");
-          } catch(IOException ex){
-            LOG.error("Failed to access schema registry at " + schemaRegistry + ". Proceeding with next registry.", ex);
-          }
+        if (responseEntity != null) {
+          return responseEntity;
         }
 
         boolean writeMetadataFile = true;
         String existingDocumentHash = existingRecord.getDocumentHash();
-        try{
+        try {
           LOG.trace("Creating metadata document hash and updating record.");
           MessageDigest md = MessageDigest.getInstance("SHA1");
           md.update(data, 0, data.length);
 
           existingRecord.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
 
-          if(Objects.equals(existingRecord.getDocumentHash(), existingDocumentHash)){
+          if (Objects.equals(existingRecord.getDocumentHash(), existingDocumentHash)) {
             LOG.trace("Metadata file hashes are equal. Skip writing new metadata file.");
             writeMetadataFile = false;
           }
-        } catch(NoSuchAlgorithmException ex){
+        } catch (NoSuchAlgorithmException ex) {
           LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
         }
 
-        if(writeMetadataFile){
+        if (writeMetadataFile) {
           //persist document
           LOG.trace("Writing user-provided metadata file to repository.");
           URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
-          try{
+          try {
             Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
-            if(!Files.exists(metadataDir)){
+            if (!Files.exists(metadataDir)) {
               LOG.trace("Creating metadata directory at {}.", metadataDir);
               Files.createDirectories(metadataDir);
-            } else{
-              if(!Files.isDirectory(metadataDir)){
+            } else {
+              if (!Files.isDirectory(metadataDir)) {
                 LOG.error("Metadata directory {} exists but is no folder. Aborting operation.", metadataDir);
                 throw new CustomInternalServerError("Illegal metadata registry state detected.");
               }
             }
 
             Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getSchemaId(), getUniqueRecordHash(existingRecord));
-            if(Files.exists(p)){
+            if (Files.exists(p)) {
               LOG.error("Metadata document conflict. A file at path {} already exists.", p);
               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
             }
@@ -430,12 +419,12 @@ public class MetadataControllerImpl implements IMetadataController{
             existingRecord.setMetadataDocumentUri(p.toUri().toString());
 
             LOG.trace("Metadata record completed.");
-          } catch(URISyntaxException ex){
+          } catch (URISyntaxException ex) {
             LOG.error("Failed to determine metadata storage location.", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of metadata location.");
           }
         }
-      } catch(IOException ex){
+      } catch (IOException ex) {
         LOG.error("Failed to read medata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read medata from input stream.");
       }
@@ -443,11 +432,17 @@ public class MetadataControllerImpl implements IMetadataController{
 
     LOG.trace("Persisting metadata record.");
     record = metadataRecordDao.save(existingRecord);
+    LOG.trace("Capturing metadata schema audit information.");
+    auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
-    //audit information not captured here as version not changes via PUT
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     fixMetadataDocumentUri(record);
-    return new ResponseEntity<>(record, HttpStatus.OK);
+    String etag = record.getEtag();
+
+    URI locationUri;
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
+
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(record);
   }
 
   @Override
@@ -455,10 +450,10 @@ public class MetadataControllerImpl implements IMetadataController{
           @PathVariable(value = "id") String id,
           WebRequest wr,
           HttpServletResponse hsr
-  ){
+  ) {
     LOG.trace("Performing deleteRecord({}).", id);
 
-    try{
+    try {
       LOG.trace("Obtaining most recent schema record with id {}.", id);
       MetadataRecord existingRecord = getRecordByIdAndVersion(id);
       LOG.trace("Checking provided ETag.");
@@ -472,17 +467,17 @@ public class MetadataControllerImpl implements IMetadataController{
       LOG.trace("Deleting all metadata documents from disk.");
 
       URL schemaFolderUrl = metastoreProperties.getSchemaFolder();
-      try{
+      try {
         Path p = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
         LOG.trace("Deleting schema file(s) from path.", p);
         FileUtils.deleteDirectory(p.toFile());
 
         LOG.trace("All metadata documents for record with id {} deleted.", id);
-      } catch(URISyntaxException | IOException ex){
+      } catch (URISyntaxException | IOException ex) {
         LOG.error("Failed to obtain schema document for schemaId {}. Please remove schema files manually. Skipping deletion.");
       }
 
-    } catch(ResourceNotFoundException ex){
+    } catch (ResourceNotFoundException ex) {
       //exception is hidden for DELETE
       LOG.debug("No metadata schema with id {} found. Skipping deletion.", id);
     }
@@ -491,21 +486,21 @@ public class MetadataControllerImpl implements IMetadataController{
   }
 
   @Bean
-  public RestTemplate restTemplate(){
+  public RestTemplate restTemplate() {
     return new RestTemplate();
   }
 
-  private MetadataRecord getRecordByIdAndVersion(String recordId) throws ResourceNotFoundException{
+  private MetadataRecord getRecordByIdAndVersion(String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(recordId, null);
   }
 
-  private MetadataRecord getRecordByIdAndVersion(String recordId, Long version) throws ResourceNotFoundException{
+  private MetadataRecord getRecordByIdAndVersion(String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     Long recordVersion = version;
-    if(recordVersion == null){
+    if (recordVersion == null) {
       LOG.trace("No record version provided. Reading schema record from database.");
       Optional<MetadataRecord> record = metadataRecordDao.findById(recordId);
-      if(record.isEmpty()){
+      if (!record.isPresent()) {
         LOG.error("No metadata record found for id {}. Returning HTTP 404.", recordId);
         throw new ResourceNotFoundException("No metadata record found for id " + recordId + ".");
       }
@@ -514,7 +509,7 @@ public class MetadataControllerImpl implements IMetadataController{
 
     Optional<MetadataRecord> optRecord = auditService.getResourceByVersion(recordId, recordVersion);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    if(optRecord.isEmpty()){
+    if (!optRecord.isPresent()) {
       LOG.error("No metadata record found for id {} and version {}. Returning HTTP 404.", recordId, version);
       throw new ResourceNotFoundException("No metadata record found for id " + recordId + " and version " + version + ".");
     }
@@ -522,39 +517,41 @@ public class MetadataControllerImpl implements IMetadataController{
     return optRecord.get();
   }
 
-  public MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided){
-    if(!Objects.isNull(provided.getPid())){
-      LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-      managed.setPid(provided.getPid());
-    }
+  public MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
+    if (provided != null) {
+      if (!Objects.isNull(provided.getPid())) {
+        LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
+        managed.setPid(provided.getPid());
+      }
 
-    if(!Objects.isNull(provided.getRelatedResource())){
-      LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-      managed.setRelatedResource(provided.getRelatedResource());
-    }
+      if (!Objects.isNull(provided.getRelatedResource())) {
+        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+        managed.setRelatedResource(provided.getRelatedResource());
+      }
 
-    if(!Objects.isNull(provided.getSchemaId())){
-      LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-      managed.setSchemaId(provided.getSchemaId());
-    }
+      if (!Objects.isNull(provided.getSchemaId())) {
+        LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
+        managed.setSchemaId(provided.getSchemaId());
+      }
 
-    //update acl
-    if(provided.getAcl() != null){
-      LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-      managed.setAcl(provided.getAcl());
+      //update acl
+      if (provided.getAcl() != null) {
+        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+        managed.setAcl(provided.getAcl());
+      }
     }
     LOG.trace("Setting lastUpdate to now().");
     managed.setLastUpdate(Instant.now());
     return managed;
   }
 
-  private void fixMetadataDocumentUri(MetadataRecord record){
-    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getSchemaId(), record.getRecordVersion(), null, null)).toUri().toString());
+  private void fixMetadataDocumentUri(MetadataRecord record) {
+    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
   }
 
-  private String getUniqueRecordHash(MetadataRecord record){
+  private String getUniqueRecordHash(MetadataRecord record) {
     String hash = null;
-    try{
+    try {
       LOG.trace("Creating metadata record hash.");
       MessageDigest md = MessageDigest.getInstance("SHA1");
       md.update(record.getId().getBytes(), 0, record.getId().length());
@@ -562,10 +559,56 @@ public class MetadataControllerImpl implements IMetadataController{
       md.update(record.getSchemaId().getBytes(), 0, record.getSchemaId().length());
       md.update(Long.toString(record.getRecordVersion()).getBytes(), 0, Long.toString(record.getRecordVersion()).length());
       hash = Hex.encodeHexString(md.digest());
-    } catch(NoSuchAlgorithmException ex){
+    } catch (NoSuchAlgorithmException ex) {
       LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
       throw new CustomInternalServerError("Failed to create metadata record hash.");
     }
     return hash;
+  }
+
+  /**
+   * Validate metadata document with given schema.
+   *
+   * @param record metadata of the document.
+   * @param document document
+   * @return ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  private ResponseEntity<String> validateMetadataDocument(MetadataRecord record, byte[] document) {
+    ResponseEntity<String> responseEntity = null;
+    boolean validationSuccess = false;
+    StringBuilder errorMessage = new StringBuilder();
+    for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+      URI schemaRegistryUri = URI.create(schemaRegistry);
+      UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
+
+      URI finalUri = builder.build().toUri();
+
+      try {
+        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(document)).postForm(MediaType.MULTIPART_FORM_DATA);
+
+        if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
+          LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
+          validationSuccess = true;
+          break;
+        }
+      } catch (HttpClientErrorException ce) {
+        //not valid 
+        String message = new String("Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".");
+        LOG.error(message, ce);
+        errorMessage.append(message).append("\n");
+        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
+      } catch (IOException | RestClientException ex) {
+        String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
+        LOG.error(message, ex);
+        errorMessage.append(message).append("\n");
+        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
+      }
+    }
+    if (!validationSuccess) {
+      return responseEntity;
+    }
+
+    return null;
   }
 }

@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.service;
 
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.service.IAuditService;
 import java.util.List;
 import java.util.Optional;
@@ -51,9 +50,9 @@ public class MetadataAuditService implements IAuditService<MetadataRecord>{
 
   @Override
   public void captureAuditInformation(MetadataRecord resource, String principal){
-    LOGGER.trace("Calling captureAuditInformation(MetadataSchemaRecord#{}, {}).", resource.getSchemaId(), principal);
+    LOGGER.trace("Calling captureAuditInformation(MetadataSchemaRecord#{}, {}).", resource.getId(), principal);
     javers.commit(principal, resource);
-    LOGGER.trace("Successfully committed audit information for resource with id {}.", resource.getSchemaId());
+    LOGGER.trace("Successfully committed audit information for resource with id {}.", resource.getId());
   }
 
   @Override
