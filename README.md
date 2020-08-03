@@ -68,7 +68,7 @@ http://localhost:8040/static/docs/documentation.html
 ## More Information
 
 * [Information about KIT Data Manager 2](https://github.com/kit-data-manager/base-repo)
-* [REST Documentation Metastore 2] (restDocu.adoc) (online only)
+* [REST Documentation Metastore 2](restDocu.adoc) (online only)
 
 ## License
 
