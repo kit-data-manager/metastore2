@@ -1,0 +1,11 @@
+[source,bash]
+----
+$ curl 'http://localhost:8080/api/v1/metadata/' -i -X POST \
+    -H 'Content-Type: multipart/form-data' \
+    -F 'record=@metadata-record.json;type=application/json' \
+    -F 'document=<?xml version='1.0' encoding='utf-8'?>
+<example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+</example:metadata>'
+----

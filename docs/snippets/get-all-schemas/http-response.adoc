@@ -1,0 +1,27 @@
+[source,http,options="nowrap"]
+----
+HTTP/1.1 200 OK
+Content-Range: 0-19/1
+Content-Type: application/json
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: DENY
+Content-Length: 469
+
+[ {
+  "schemaId" : "my_first_xsd",
+  "schemaVersion" : 1,
+  "mimeType" : "application/xml",
+  "type" : "XML",
+  "createdAt" : "2020-08-03T06:57:52.194954Z",
+  "lastUpdate" : "2020-08-03T06:57:52.194954Z",
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "SELF",
+    "permission" : "ADMINISTRATE"
+  } ],
+  "schemaDocumentUri" : "http://localhost:8080/api/v1/schemas/my_first_xsd?version=1",
+  "schemaHash" : "sha1:c227b2bf612264da33fe5a695b5450101ce9d766",
+  "locked" : false
+} ]
+----

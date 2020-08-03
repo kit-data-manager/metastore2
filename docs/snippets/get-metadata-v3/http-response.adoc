@@ -1,0 +1,22 @@
+[source,http,options="nowrap"]
+----
+HTTP/1.1 200 OK
+Content-Length: 323
+Accept-Ranges: bytes
+Content-Type: application/json
+X-Content-Type-Options: nosniff
+X-XSS-Protection: 1; mode=block
+X-Frame-Options: DENY
+
+<?xml version="1.0" encoding="UTF-8"?>
+<example:metadata xmlns:example="http://www.example.org/schema/xsd/">
+      
+    <example:title>My first XML document</example:title>
+      
+    <example:date>2018-07-02</example:date>
+      
+    <example:note>since version 2 notes are allowed</example:note>
+    
+</example:metadata>
+
+----
