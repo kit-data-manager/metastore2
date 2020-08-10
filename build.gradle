@@ -27,6 +27,7 @@ apply plugin: 'io.spring.dependency-management'
 
 description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
+
 version = '0.1.0'
 
 println "Building ${name} version: ${version}"
