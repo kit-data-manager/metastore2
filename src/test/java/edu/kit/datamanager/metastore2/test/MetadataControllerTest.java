@@ -172,6 +172,8 @@ public class MetadataControllerTest {
           + "  <dc:creater>Carbon, Seth</dc:creater>\n"
           + "</oai_dc:dc>";
 
+  private static Boolean alreadyInitialized = Boolean.FALSE;
+
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
@@ -189,26 +191,30 @@ public class MetadataControllerTest {
   @Before
   public void setUp() throws Exception {
     metadataRecordDao.deleteAll();
-    metadataSchemaDao.deleteAll();
     try {
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
-        walk.sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
+      // setup mockMvc
+      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+              .addFilters(springSecurityFilterChain)
+              .apply(documentationConfiguration(this.restDocumentation))
+              .build();
+      // Create schema only once.
+      if (!isInitialized()) {
+        metadataSchemaDao.deleteAll();
+        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+          walk.sorted(Comparator.reverseOrder())
+                  .map(Path::toFile)
+                  .forEach(File::delete);
+        }
+        Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+        Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
+        ingestSchemaRecord();
       }
-      Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-      Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
       try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
-      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
-              .apply(documentationConfiguration(this.restDocumentation))
-              .build();
-        ingestSchemaRecord();
     } catch (IOException ex) {
       ex.printStackTrace();
     }
@@ -880,7 +886,12 @@ public class MetadataControllerTest {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-
   }
 
+  public static synchronized boolean isInitialized() {
+    boolean returnValue = alreadyInitialized;
+    alreadyInitialized = Boolean.TRUE;
+
+    return returnValue;
   }
+}
