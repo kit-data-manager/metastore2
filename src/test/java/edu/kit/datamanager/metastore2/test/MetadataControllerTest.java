@@ -80,7 +80,9 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"server.port=41403"})
 public class MetadataControllerTest {
 
-  private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String METADATA_RECORD_ID = "test_id";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
@@ -188,20 +190,25 @@ public class MetadataControllerTest {
   public void setUp() throws Exception {
     metadataRecordDao.deleteAll();
     metadataSchemaDao.deleteAll();
-
     try {
-      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
       Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
               .addFilters(springSecurityFilterChain)
-            .apply(documentationConfiguration(this.restDocumentation))
+              .apply(documentationConfiguration(this.restDocumentation))
               .build();
-      ingestSchemaRecord();
+        ingestSchemaRecord();
     } catch (IOException ex) {
       ex.printStackTrace();
     }
@@ -669,7 +676,6 @@ public class MetadataControllerTest {
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
-    System.out.println("LocationURI: " + locationUri);
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
@@ -835,7 +841,7 @@ public class MetadataControllerTest {
     record = metadataRecordDao.save(record);
     File dcFile = new File("/tmp/dc.xml");
     if (!dcFile.exists()) {
-      try (FileOutputStream fout = new FileOutputStream(dcFile)) {
+      try ( FileOutputStream fout = new FileOutputStream(dcFile)) {
         fout.write(DC_DOCUMENT.getBytes());
         fout.flush();
       }
@@ -877,4 +883,4 @@ public class MetadataControllerTest {
 
   }
 
-}
+  }

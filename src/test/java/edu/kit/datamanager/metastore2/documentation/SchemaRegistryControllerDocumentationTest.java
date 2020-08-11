@@ -184,7 +184,6 @@ public class SchemaRegistryControllerDocumentationTest {
     schemaRecord.setMimeType(MediaType.APPLICATION_XML.toString());
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());
-    System.out.println("xxxx" + mapper.writeValueAsString(schemaRecord) + "xxxx");
 
     MockMultipartFile schemaFile = new MockMultipartFile("schema", EXAMPLE_SCHEMA.getBytes());
     MockMultipartFile recordFile = new MockMultipartFile("record", "schema-record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
@@ -217,7 +216,6 @@ public class SchemaRegistryControllerDocumentationTest {
             andExpect(status().isCreated()).
             andDo(document("update-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andReturn().getResponse().getHeader("ETag");
-    System.out.println(location);
 
     // Get metadata schema version 2
     this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schemav2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();

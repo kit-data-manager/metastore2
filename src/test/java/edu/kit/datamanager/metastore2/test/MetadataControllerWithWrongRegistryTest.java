@@ -35,8 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- *
- * @author Torridity
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
@@ -75,12 +73,6 @@ public class MetadataControllerWithWrongRegistryTest {
 
   @Autowired
   private MockMvc mockMvc;
-  @Autowired
-  private IMetadataRecordDao metadataRecordDao;
-  @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
-  private IAuditService<MetadataRecord> schemaAuditService;
 
   @Before
   public void setUp() throws Exception {
@@ -89,13 +81,8 @@ public class MetadataControllerWithWrongRegistryTest {
   @Test
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
-//    record.setId("my_id");
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
-//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
-//    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
