@@ -1,5 +1,9 @@
 # Metastore 2 repository
 
+[![Build Status](https://api.travis-ci.com/kit-data-manager/metastore2.svg)]
+[![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=ci)](https://coveralls.io/github/kit-data-manager/metastore2?branch=ci)
+![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
+
 General purpose metadata repository and schema registry service
 
 ## How to build
@@ -30,7 +34,7 @@ libraries and finally build the metastore2 microservice itself. As a result, a f
 
 ### Setup
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
-Therefor, copy the file 'settings/application.properties' to your project folder and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
+Therefor, copy the file 'settings/application-example.properties' to your project folder, rename it to 'application.properties' and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
 and the paths of schemata (metastore.schema.schemaFolder) / metadata (metastore.schema.metadataFolder). If you changed the port you also have to adapt the 
 url of the schema registry (metastore.metadata.schemaRegistries) 
 to the repository base path. Also, the property 'repo.messaging.enabled' should be changed to 'true' in case you want to use the messaging feature of the repository.

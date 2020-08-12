@@ -185,15 +185,15 @@ public class MetadataControllerImpl implements IMetadataController {
           }
         }
 
-        Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), record.getSchemaId(), getUniqueRecordHash(record));
+        Path p = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(record));
         if (Files.exists(p)) {
           LOG.error("Metadata document conflict. A file at path {} already exists.", p);
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
         }
 
-        LOG.trace("Persisting valid schema document at {}.", p);
+        LOG.trace("Persisting valid metadata document at {}.", p);
         Files.write(p, data);
-        LOG.trace("Schema document successfully persisted. Updating record.");
+        LOG.trace("Metadata document successfully persisted. Updating record.");
         record.setMetadataDocumentUri(p.toUri().toString());
         LOG.trace("Metadata record completed.");
       } catch (URISyntaxException ex) {
@@ -407,7 +407,7 @@ public class MetadataControllerImpl implements IMetadataController {
               }
             }
 
-            Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getSchemaId(), getUniqueRecordHash(existingRecord));
+            Path p = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(existingRecord));
             if (Files.exists(p)) {
               LOG.error("Metadata document conflict. A file at path {} already exists.", p);
               return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
@@ -466,9 +466,9 @@ public class MetadataControllerImpl implements IMetadataController {
       metadataRecordDao.delete(existingRecord);
       LOG.trace("Deleting all metadata documents from disk.");
 
-      URL schemaFolderUrl = metastoreProperties.getSchemaFolder();
+      URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
       try {
-        Path p = Paths.get(Paths.get(schemaFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
+        Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
         LOG.trace("Deleting schema file(s) from path.", p);
         FileUtils.deleteDirectory(p.toFile());
 

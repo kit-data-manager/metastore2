@@ -74,7 +74,9 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 public class SchemaRegistryControllerTest {
 
-  private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"

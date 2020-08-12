@@ -175,6 +175,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         //validate schema
         if (!applicableValidator.isSchemaValid(new ByteArrayInputStream(schemaBytes))) {
           LOG.error("Failed to validate provided schema document. Returning HTTP UNPROCESSABLE_ENTITY.");
+          LOG.trace(new String(schemaBytes));
           return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to validate provided schema document.");
         }
 
