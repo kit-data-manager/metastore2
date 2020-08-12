@@ -51,7 +51,7 @@ url of the schema registry (metastore.metadata.schemaRegistries)
 to the repository base path. Also, the property 'repo.messaging.enabled' should be changed to 'true' in case you want to use the messaging feature of the repository.
 
 #### Setup database
-See [setup database](installation_postgres.md#setup-database) and [setup for metastore](installation_postgres.md#setup-metastore2-microservice)
+See [setup database](installation_postgres.md#setup-database) and [setup for metastore](installation_postgres.md#setup-metastore2-microservice).
 
 ### Start Metastore2
 As soon as you finished modifying 'application.properties', you may start the repository microservice by executing the following command inside the project folder, 
