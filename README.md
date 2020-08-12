@@ -6,6 +6,13 @@
 
 General purpose metadata repository and schema registry service.
 
+It allows you to 
+- register an (XML) schema
+- update an (XML) schema
+- add metadata linked with a registered schema
+- validate metadata against a registered schema
+- update added metadata
+ 
 ## How to build
 In order to build this microservice you'll need:
 
@@ -34,7 +41,7 @@ libraries and finally build the metastore2 microservice itself. As a result, a f
 
 ### Setup
 
-:NOTE: If metastore should be used standalone (without KIT datamanager) you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
+:information_source: If metastore should be used standalone (without KIT Data Manager) you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
 
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
 Therefor, copy the file 'settings/application-example.properties' to your project folder, rename it to 'application.properties' and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
