@@ -33,6 +33,9 @@ libraries and finally build the metastore2 microservice itself. As a result, a f
   * RabbitMQ 3.7.3 or higher (in case you want to use the messaging feature, which is recommended)
 
 ### Setup
+
+:NOTE: If metastore should be used standalone (without KIT datamanager) you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
+
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
 Therefor, copy the file 'settings/application-example.properties' to your project folder, rename it to 'application.properties' and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
 and the paths of schemata (metastore.schema.schemaFolder) / metadata (metastore.schema.metadataFolder). If you changed the port you also have to adapt the 
