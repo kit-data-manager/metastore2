@@ -1,10 +1,10 @@
 # Metastore 2 repository
 
-[![Build Status](https://api.travis-ci.com/kit-data-manager/metastore2.svg)]
-[![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=ci)](https://coveralls.io/github/kit-data-manager/metastore2?branch=master)
+![Build Status](https://api.travis-ci.com/kit-data-manager/metastore2.svg)
+![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=master)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
 
-General purpose metadata repository and schema registry service
+General purpose metadata repository and schema registry service.
 
 ## How to build
 In order to build this microservice you'll need:
