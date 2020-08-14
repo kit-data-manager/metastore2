@@ -89,8 +89,9 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
 @TestPropertySource(properties = {"server.port=41405"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/schema"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
 public class SchemaRegistryControllerDocumentationTest {
 
   private MockMvc mockMvc;
@@ -104,8 +105,10 @@ public class SchemaRegistryControllerDocumentationTest {
 //  private IDataResourceService dataResourceService;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+  
   private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
-  private final static String TEMP_DIR_4_SCHEMAS = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/";
+  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
@@ -154,8 +157,6 @@ public class SchemaRegistryControllerDocumentationTest {
 
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
-  private IAuditService<MetadataSchemaRecord> schemaAuditService;
 
   @Before
   public void setUp() throws JsonProcessingException {
