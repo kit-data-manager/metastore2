@@ -17,7 +17,7 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import org.springframework.data.rest.core.config.RepositoryRestConfiguration;
 import org.springframework.data.rest.core.mapping.RepositoryDetectionStrategy;
-import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurerAdapter;
+import org.springframework.data.rest.webmvc.config.RepositoryRestConfigurer;
 import org.springframework.stereotype.Component;
 
 /**
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
  * @author jejkal
  */
 @Component
-public class SpringRestConfiguration extends RepositoryRestConfigurerAdapter{
+public class SpringRestConfiguration implements RepositoryRestConfigurer{
 
   @Override
   public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config){
