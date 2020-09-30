@@ -58,6 +58,9 @@ if (project.hasProperty('travis')) {
 } else if (project.hasProperty('release')) {
     println 'Using release profile for building ' + project.getName()
     apply from: 'gradle/profile-release.gradle'   
+} else if (project.hasProperty('docker')) {
+    println 'Using docker profile for building ' + project.getName()
+    apply from: 'gradle/profile-docker.gradle'   
 } 
 
 dependencies {
