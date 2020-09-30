@@ -58,9 +58,6 @@ if (project.hasProperty('travis')) {
 } else if (project.hasProperty('release')) {
     println 'Using release profile for building ' + project.getName()
     apply from: 'gradle/profile-release.gradle'   
-} else if (project.hasProperty('docker')) {
-    println 'Using docker profile for building ' + project.getName()
-    apply from: 'gradle/profile-docker.gradle'   
 } 
 
 dependencies {
@@ -72,7 +69,12 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-data-rest:1.2.34"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:1.2.34"
 
+    // driver for postgres
     implementation "org.postgresql:postgresql:42.2.1"
+    //driver for h2
+    implementation "com.h2database:h2:1.4.200"
+    
+    
     implementation "org.apache.tika:tika-core:1.18"
     implementation "org.javers:javers-core:5.3.2"
    
@@ -88,7 +90,6 @@ dependencies {
     
     runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
 
-    testImplementation "com.h2database:h2:1.4.194"
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
