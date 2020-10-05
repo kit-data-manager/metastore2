@@ -79,7 +79,7 @@ providing mandatory fields mentioned above:
     {
       "schemaId" : "my_first_xsd",
       "mimeType" : "application/xml",
-      "type" : "XML",
+      "type" : "XML"
     }
 
     $ curl 'http://localhost:8080/api/v1/schemas/' -i -X POST \
@@ -623,7 +623,7 @@ example we introduce a user called 'admin' and give him all rights.
     {
       "schemaId":"my_first_xsd",
       "mimeType":"application/xml",
-      "type":"XML"
+      "type":"XML",
       "acl":[
         {
           "id":33,
@@ -949,7 +949,7 @@ mentioned before the ETag is needed:
     metadata-record-acl.json:
     {
         "relatedResource": "anyResourceId",
-        "schemaId": "my_first_xsd"
+        "schemaId": "my_first_xsd",
         "acl": [ {
           "id":null,
           "sid":"guest",
