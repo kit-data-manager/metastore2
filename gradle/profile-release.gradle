@@ -12,6 +12,7 @@ asciidoctor {
    dependsOn test  
    sourceDir "docs/"
    outputDir "build/docs"
+   backends "docbook"
 }
 
 test {
@@ -24,7 +25,7 @@ tasks.withType(Test) {
         events 'started', 'passed'
     }
 }
-
+   
 bootJar {
    manifest {
       attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'

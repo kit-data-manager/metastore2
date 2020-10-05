@@ -42,6 +42,7 @@ import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
 import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
@@ -73,12 +74,12 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/schematest/schema"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SchemaRegistryControllerTest {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/schematest/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
-  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
@@ -130,7 +131,19 @@ public class SchemaRegistryControllerTest {
           + "  <dc:type>info:eu-repo/semantics/other</dc:type>\n"
           + "  <dc:type>dataset</dc:type>\n"
           + "</oai_dc:dc>";
-
+  private final static String INVALID_DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
+            + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
+            + "  <dc:creator>Carbon, Seth</dc:creator>\n"
+            + "  <dc:date>2018-07-02</dc:date>\n"
+            + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
+            + "  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>\n" //bad namespace
+            + "  <dc:id>oai:zenodo.org:3477535</dc:id>\n" //invalid field
+            + "  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>\n"
+            + "  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>\n"
+            + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
+            + "  <dc:type>dataset</dc:type>\n"
+            + "</oai_dc:dc>";
+  
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
@@ -535,18 +548,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testValidateWithInvalidDocument() throws Exception {
     createDcSchema();
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", ("<?xml version='1.0' encoding='utf-8'?>\n"
-            + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-            + "  <dc:creator>Carbon, Seth</dc:creator>\n"
-            + "  <dc:date>2018-07-02</dc:date>\n"
-            + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
-            + "  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>\n" //bad namespace
-            + "  <dc:id>oai:zenodo.org:3477535</dc:id>\n" //invalid field
-            + "  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>\n"
-            + "  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>\n"
-            + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
-            + "  <dc:type>dataset</dc:type>\n"
-            + "</oai_dc:dc>").getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", INVALID_DC_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   @Test
