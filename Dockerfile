@@ -15,6 +15,7 @@ FROM openjdk:11-stretch AS build-env-java
 MAINTAINER webmaster@datamanager.kit.edu
 LABEL stage=build-env
 
+# Install git as additional requirement
 RUN apt-get update && \
     apt-get upgrade --assume-yes && \
     apt-get install --assume-yes git 
@@ -22,7 +23,7 @@ RUN apt-get update && \
 ####################################################
 # Building service
 ####################################################
-FROM build-env-java AS build-metastore2
+FROM build-env-java AS build-service-metastore2
 MAINTAINER webmaster@datamanager.kit.edu
 LABEL stage=build-contains-sources
 
@@ -34,20 +35,17 @@ ARG SERVICE_ROOT_DIRECTORY_DEFAULT
 ENV REPO_NAME=${REPO_NAME_DEFAULT}
 ENV SERVICE_DIRECTORY=$SERVICE_ROOT_DIRECTORY_DEFAULT$REPO_NAME
 
-RUN echo $REPO_NAME
-RUN echo ${REPO_NAME:-"nicht definiert"}
-RUN echo $SERVICE_DIRECTORY
-RUN echo ${SERVICE_DIRECTORY:-"nicht definiert"}
+# Create directory for repo
 RUN mkdir -p /git/${REPO_NAME}
 WORKDIR /git/${REPO_NAME}
 COPY . .
-RUN chmod +x build.sh
+# Build service in given directory
 RUN bash ./build.sh $SERVICE_DIRECTORY
 
 ####################################################
-# Runtime environment
+# Runtime environment 4 metastore2
 ####################################################
-FROM openjdk:11-stretch AS run-metastore2
+FROM openjdk:11-stretch AS run-service-metastore2
 MAINTAINER webmaster@datamanager.kit.edu
 LABEL stage=run
 
@@ -61,9 +59,11 @@ ENV REPO_NAME=${REPO_NAME_DEFAULT}
 ENV SERVICE_DIRECTORY=${SERVICE_ROOT_DIRECTORY_DEFAULT}${REPO_NAME}
 ENV REPO_PORT=${REPO_PORT_DEFAULT}
 
-RUN mkdir -p /git/${REPO_NAME}
-WORKDIR /git/${REPO_NAME}
-COPY --from=build-metastore2 ${SERVICE_DIRECTORY}/* ./
+# Copy service from build container
+RUN mkdir -p ${SERVICE_DIRECTORY}
+WORKDIR ${SERVICE_DIRECTORY}
+COPY --from=build-service-metastore2 ${SERVICE_DIRECTORY} ./
 
+# Define repo port 
 EXPOSE ${REPO_PORT}
-ENTRYPOINT ["sh", "/bin/bash"]
+ENTRYPOINT ["bash", "./run.sh"]
