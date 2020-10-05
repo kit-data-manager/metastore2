@@ -95,5 +95,5 @@ if [ $? -ne 0 ]; then
   usage
 else 
   echo .
-  printInfo Now you can create and start the container by calling docker "run -d p8040:8040 --name metastore4docker $REPO_NAME:$TAG_NAME"
+  printInfo Now you can create and start the container by calling docker "run -d -p8040:8040 --name metastore4docker $REPO_NAME:$TAG_NAME"
 fi

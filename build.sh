@@ -17,6 +17,7 @@
 ################################################################################
 function usage {
 ################################################################################
+  echo Script for creating metastore service.
   echo USAGE:
   echo   $0 [/path/to/installation/dir]
   echo IMPORTANT: Please enter an empty or new directory as installation directory.
@@ -39,6 +40,11 @@ function checkParameters {
     exit 1
   fi
   
+  # Check for invalid flags
+  if [ "${1:0:1}" = "-" ]; then
+    usage
+  fi
+
   INSTALLATION_DIRECTORY=$1
 
   # Check if directory exists
@@ -133,13 +139,23 @@ for file in $INSTALLATION_DIRECTORY/*.jar; do
   jarFile=${file##*/}
 done
 
-echo #!/bin/bash > $INSTALLATION_DIRECTORY/run.sh
-echo cd $INSTALLATION_DIRECTORY                                                       >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################ >> $INSTALLATION_DIRECTORY/run.sh
-echo # Determine directory of script.                                                 >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################ >> $INSTALLATION_DIRECTORY/run.sh
-echo ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"   >> $INSTALLATION_DIRECTORY/run.sh
-echo "java -cp \"$ACTUAL_DIR/.:$ACTUAL_DIR/$jarFile.jar\" -Dloader.path=file://$ACTUAL_DIR/$jarFile,$ACTUAL_DIR/lib/,$ACTUAL_DIR/. -jar $jarFile" >> $INSTALLATION_DIRECTORY/run.sh
+echo #!/bin/bash                                                                                >  $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo # Define jar file                                                                          >> $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo jarFile=$jarFile                                                                           >> $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo # Determine directory of script.                                                           >> $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'           >> $INSTALLATION_DIRECTORY/run.sh
+echo 'cd "$ACTUAL_DIR"'                                                                         >> $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo # Start micro service                                                                      >> $INSTALLATION_DIRECTORY/run.sh
+echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile' >> $INSTALLATION_DIRECTORY/run.sh
+
+# make script executable
+chmod 755 $INSTALLATION_DIRECTORY/run.sh
 
 echo .
 printInfo Now you can start the service by calling "$INSTALLATION_DIRECTORY/run.sh"
