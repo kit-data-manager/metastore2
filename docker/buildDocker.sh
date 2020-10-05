@@ -68,6 +68,10 @@ REPO_NAME=${REPO_URL##*/}
 ################################################################################
 if [ "$1" != "" ]; then
   TAG_NAME=$1
+  # Check for invalid flags
+  if [ "${TAG_NAME:0:1}" = "-" ]; then
+    usage
+  fi
 else
   LAST_TAG=`git describe --abbrev=0 --tags` >> /dev/null
   if [ "$LAST_TAG" = "" ]; then
@@ -88,8 +92,8 @@ docker build -t $REPO_NAME:$TAG_NAME .
 if [ $? -ne 0 ]; then
   echo .
   printInfo "ERROR while building docker container!"
-  exit 1
+  usage
+else 
+  echo .
+  printInfo Now you can create and start the container by calling docker "run -d p8040:8040 --name metastore4docker $REPO_NAME:$TAG_NAME"
 fi
-
-echo .
-printInfo Now you can start the container by calling docker "run $REPO_NAME:$TAG_NAME"
