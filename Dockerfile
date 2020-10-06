@@ -11,8 +11,8 @@ ARG SERVICE_ROOT_DIRECTORY_DEFAULT=/spring/
 ####################################################
 # Building environment (java & git)
 ####################################################
-FROM openjdk:11-stretch AS build-env-java
-MAINTAINER webmaster@datamanager.kit.edu
+FROM openjdk:11-buster AS build-env-java
+LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=build-env
 
 # Install git as additional requirement
@@ -24,7 +24,7 @@ RUN apt-get update && \
 # Building service
 ####################################################
 FROM build-env-java AS build-service-metastore2
-MAINTAINER webmaster@datamanager.kit.edu
+LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=build-contains-sources
 
 # Fetch arguments from above
@@ -45,8 +45,8 @@ RUN bash ./build.sh $SERVICE_DIRECTORY
 ####################################################
 # Runtime environment 4 metastore2
 ####################################################
-FROM openjdk:11-stretch AS run-service-metastore2
-MAINTAINER webmaster@datamanager.kit.edu
+FROM openjdk:11-buster AS run-service-metastore2
+LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=run
 
 # Fetch arguments from above
