@@ -41,7 +41,7 @@ testForCommands="dirname date docker git"
 
 for command in $testForCommands
 do 
-  $command --help >> /dev/null
+  type $command >> /dev/null
   if [ $? -ne 0 ]; then
     echo "Error: command '$command' is not installed!"
     exit 1
