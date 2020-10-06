@@ -134,24 +134,24 @@ mkdir $INSTALLATION_DIRECTORY/lib
 ################################################################################
 printInfo Create run script ...
 
-# Determine name of jar file.
-for file in $INSTALLATION_DIRECTORY/*.jar; do
-  jarFile=${file##*/}
-done
+cd $INSTALLATION_DIRECTORY
 
-echo #!/bin/bash                                                                                >  $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
-echo # Define jar file                                                                          >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+# Determine name of jar file.
+jarFile=(`ls $REPO_NAME*.jar`)
+
+echo "#!/bin/bash"                                                                              >  $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
+echo "# Define jar file"                                                                        >> $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
 echo jarFile=$jarFile                                                                           >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
-echo # Determine directory of script.                                                           >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
+echo "# Determine directory of script."                                                         >> $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
 echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'           >> $INSTALLATION_DIRECTORY/run.sh
 echo 'cd "$ACTUAL_DIR"'                                                                         >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
-echo # Start micro service                                                                      >> $INSTALLATION_DIRECTORY/run.sh
-echo ################################################################################           >> $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
+echo "# Start micro service"                                                                    >> $INSTALLATION_DIRECTORY/run.sh
+echo "################################################################################"         >> $INSTALLATION_DIRECTORY/run.sh
 echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile' >> $INSTALLATION_DIRECTORY/run.sh
 
 # make script executable
