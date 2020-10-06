@@ -83,7 +83,7 @@ testForCommands="dirname git date java javac"
 
 for command in $testForCommands
 do 
-  $command --help >> /dev/null
+  type $command >> /dev/null
   if [ $? -ne 0 ]; then
     echo "Error: command '$command' is not installed!"
     exit 1
