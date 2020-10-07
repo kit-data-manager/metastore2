@@ -7,12 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - Registry for metadata schema and metadata service
 
-## [0.1.1] - date (2020-10-05)
+## [0.1.1] - date (2020-10-07)
 ### Added
 - Dockerization
 ### Fixed
 - Typos in documentation
-
+- Swagger-UI (POST methods now handled correct) 
 ## [0.1.0] - date (2020-08-07)
 ### Added
 - Registry for XSD files and support for XML metadata

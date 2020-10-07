@@ -27,10 +27,11 @@ import java.time.Instant;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.springdoc.core.converters.PageableAsQueryParam;
+import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,7 +60,7 @@ public interface ISchemaRegistryController{
     @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
     @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
     @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
-  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = { MediaType.APPLICATION_JSON_VALUE, MediaType.MULTIPART_FORM_DATA_VALUE })
+  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
@@ -89,7 +90,7 @@ public interface ISchemaRegistryController{
     @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found."),
     @ApiResponse(responseCode = "422", description = "Unprocessable Entity if validation fails.")
   })
-  @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST})
+  @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST}, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
 
   @ResponseBody
   public ResponseEntity<MetadataSchemaRecord> validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
@@ -156,7 +157,7 @@ public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
           responses = {
            @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
-  
+
   @ResponseBody
-  public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
+  public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "id") String id, @Header(name="ETag", required=true)WebRequest wr, HttpServletResponse hsr);
 }
