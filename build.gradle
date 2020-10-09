@@ -65,9 +65,9 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-mail"
    
-    implementation "org.springdoc:springdoc-openapi-ui:1.2.34"
-    implementation "org.springdoc:springdoc-openapi-data-rest:1.2.34"
-    implementation "org.springdoc:springdoc-openapi-webmvc-core:1.2.34"
+    implementation "org.springdoc:springdoc-openapi-ui:1.4.8"
+    implementation "org.springdoc:springdoc-openapi-data-rest:1.4.8"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:1.4.8"
 
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.1"
