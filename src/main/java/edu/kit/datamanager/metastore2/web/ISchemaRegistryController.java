@@ -22,6 +22,7 @@ import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Encoding;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -65,7 +66,8 @@ public interface ISchemaRegistryController {
   @RequestMapping(path = "/", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
+          @Parameter(description = "Json representation of the schema record.", required = true, content = {
+    @Content(encoding = @Encoding(name = "record", contentType = "application/json"))}) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -145,9 +147,9 @@ public interface ISchemaRegistryController {
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record is invalid."),
             @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
-  @Parameters ( {
-    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
-  }  )
+  @Parameters({
+    @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
+  })
   ResponseEntity<MetadataSchemaRecord> updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
           @Parameter(description = "Json representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
@@ -162,9 +164,9 @@ public interface ISchemaRegistryController {
           responses = {
             @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
-  @Parameters ( {
-    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
-  }  )
+  @Parameters({
+    @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
+  })
   @ResponseBody
   public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "id") String id, @Header(name = "ETag", required = true) WebRequest wr, HttpServletResponse hsr);
 }
