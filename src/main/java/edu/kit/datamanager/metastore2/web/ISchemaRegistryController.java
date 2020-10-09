@@ -18,6 +18,8 @@ package edu.kit.datamanager.metastore2.web;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.Parameters;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -50,17 +52,17 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface ISchemaRegistryController{
+public interface ISchemaRegistryController {
 
   @Operation(summary = "Register/replace a schema record.", description = "This endpoint allows to create or replace a metadata schema record. If no metadata record for the schema identifier provided in the record argument "
           + "is found, a new schema record is created. Otherwise, the existing record is updated to a new version. The later use case is meant to be used mainly for schema synchronization from an external authoritive source, "
-          + " as updating a schema document for an existing schema may break the validation of previously assigned and validated metadata documents. That's why schema updates are only possible from the local machine. ",   
+          + " as updating a schema document for an existing schema may break the validation of previously assigned and validated metadata documents. That's why schema updates are only possible from the local machine. ",
           responses = {
-    @ApiResponse(responseCode = "201", description = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
-    @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
-    @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
-    @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
-  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE }, produces = { MediaType.APPLICATION_JSON_VALUE })
+            @ApiResponse(responseCode = "201", description = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
+            @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
+  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
@@ -73,8 +75,8 @@ public interface ISchemaRegistryController{
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden."
           + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.",
           responses = {
-    @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
-    @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+            @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ResponseBody
   public ResponseEntity<MetadataSchemaRecord> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
@@ -85,12 +87,12 @@ public interface ISchemaRegistryController{
   @Operation(summary = "Validate a metadata document.", description = "Validate the provided metadata document using the addressed schema. If all parameters"
           + " are provided, the schema is identified uniquely by schemaId and version. If the version is omitted, the most recent version of the "
           + "schema is used. This endpoint returns HTTP NO_CONTENT if it succeeds. Otherwise, an error response is returned, e.g. HTTP UNPROCESSABLE_ENTITY (422) if validation fails.",
-            responses = {
-    @ApiResponse(responseCode = "204", description = "No Content if validate succeeded."),
-    @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found."),
-    @ApiResponse(responseCode = "422", description = "Unprocessable Entity if validation fails.")
-  })
-  @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST}, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+          responses = {
+            @ApiResponse(responseCode = "204", description = "No Content if validate succeeded."),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found."),
+            @ApiResponse(responseCode = "422", description = "Unprocessable Entity if validation fails.")
+          })
+  @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
 
   @ResponseBody
   public ResponseEntity<MetadataSchemaRecord> validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
@@ -102,9 +104,9 @@ public interface ISchemaRegistryController{
   @Operation(summary = "Get a schema document by schema id.", description = "Obtain is single schema document identified by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the schema document can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.",
-            responses = {
-    @ApiResponse(responseCode = "200", description = "OK and the schema document is returned if the record exists and the user has sufficient permission."),
-    @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the schema document is returned if the record exists and the user has sufficient permission."),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
 
   @ResponseBody
@@ -118,12 +120,12 @@ public interface ISchemaRegistryController{
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
           + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.",
-            responses = {
-    @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataSchemaRecord.class))))})
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataSchemaRecord.class))))})
   @RequestMapping(value = {"/"}, method = {RequestMethod.GET})
   @ResponseBody
   @PageableAsQueryParam
-public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
+  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
           @Parameter(description = "A list of schema ids of returned schemas.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
@@ -137,12 +139,15 @@ public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
           + "The update capabilities for a schema record are quite limited. An update is always related to the most recent version. "
           + "Only the associated mimeType and acl can be changed.  All other fields are updated automatically or are read-only. Updating a record does not affect the version number. "
           + "A new version is only created while POSTing a record including a schema document.",
-  responses = {
-    @ApiResponse(responseCode = "200", description = "OK is returned in case of a successful update."
-            + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
-    @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record is invalid."),
-    @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK is returned in case of a successful update."
+                    + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record is invalid."),
+            @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
+  @Parameters ( {
+    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
+  }  )
   ResponseEntity<MetadataSchemaRecord> updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
           @Parameter(description = "Json representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
@@ -155,9 +160,11 @@ public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
           + "Older versions as well as schema documents are still available and can be accessed. If a new schema with the same schemaId is created later, the version counter will continue with the most recent "
           + "version before deleting the schema.",
           responses = {
-           @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
+            @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
-
+  @Parameters ( {
+    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
+  }  )
   @ResponseBody
-  public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "id") String id, @Header(name="ETag", required=true)WebRequest wr, HttpServletResponse hsr);
+  public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "id") String id, @Header(name = "ETag", required = true) WebRequest wr, HttpServletResponse hsr);
 }
