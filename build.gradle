@@ -67,7 +67,6 @@ dependencies {
    
     implementation "org.springdoc:springdoc-openapi-ui:1.4.8"
     implementation "org.springdoc:springdoc-openapi-data-rest:1.4.8"
-    implementation "org.springdoc:springdoc-openapi-webmvc-core:1.4.8"
 
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.1"
@@ -81,13 +80,6 @@ dependencies {
     // datamanager
     implementation "edu.kit.datamanager:service-base:0.1"
 
-    //Java 11 Support 
-    implementation 'javax.xml.bind:jaxb-api:2.3.1'
-    implementation 'com.sun.xml.bind:jaxb-core:2.3.0.1'
-    implementation 'com.sun.xml.bind:jaxb-impl:2.3.0.1'
-    implementation 'javax.activation:activation:1.1.1'
-    implementation 'org.javassist:javassist:3.23.1-GA'
-    
     runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
 
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc"
