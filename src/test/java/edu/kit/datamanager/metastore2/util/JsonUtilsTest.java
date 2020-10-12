@@ -26,6 +26,44 @@ public class JsonUtilsTest {
   private String jsonSchemaWithversiondraft06 = "{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
   private String jsonSchemaWithversiondraft07 = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
   private String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private String moreComplexExample = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"string\",\n"
+          + "        \"number\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"string\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"The string schema\",\n"
+          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
+          + "            \"default\": \"no default\"\n"
+          + "        },\n"
+          + "        \"number\": {\n"
+          + "            \"$id\": \"#/properties/number\",\n"
+          + "            \"type\": \"integer\",\n"
+          + "            \"title\": \"The number schema\",\n"
+          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
+          + "            \"default\": 0\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
+  private String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
+  private String invalidJsonDocument2 = "{\"string\":2,\"number\":3}";
+  private String invalidJsonDocument3 = "{\"string\":\"2\",\"number\":\"3\"}";
+  private String invalidJsonDocument4 = "{\"tring\":\"any string\",\"number\":3}";
+  private String invalidJsonDocument5 = "{\"string\":\"any string\",\"umber\":3}";
+  private String invalidJsonDocument6 = "{\"number\":3}";
+  private String invalidJsonDocument7 = "{\"string\":\"any string\"}";
+  private String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
 
   public JsonUtilsTest() {
   }
@@ -50,6 +88,7 @@ public class JsonUtilsTest {
   public void testConstructor() {
     assertNotNull(new JsonUtils());
   }
+
   /**
    * Test of validateJsonSchemaDocument method, of class JsonUtils.
    */
@@ -58,8 +97,8 @@ public class JsonUtilsTest {
     System.out.println("testValidateJsonSchemaDocumentWithNull");
     String schemaDocument = null;
     try {
-    JsonUtils.validateJsonSchemaDocument(schemaDocument);
-    assertTrue(false);
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("argument \"content\" is null"));
@@ -224,6 +263,82 @@ public class JsonUtilsTest {
     System.out.println("getJsonNodeFromStringContent");
     String content = jsonSchemaWithversiondraft04;
     JsonNode result = JsonUtils.getJsonNodeFromStringContent(content);
-     assertNotNull(result);
+    assertNotNull(result);
   }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithComplexSchemaDraft201909() {
+    System.out.println("testValidateJsonSchemaDocumentWithComplexSchemaDraft201909");
+    String schemaDocument = moreComplexExample;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonSchemaDocument_String() {
+    System.out.println("validateJsonSchemaDocument");
+    String schemaDocument = "";
+    boolean expResult = false;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
+    assertEquals(expResult, result);
+    // TODO review the generated test code and remove the default call to fail.
+    fail("The test case is a prototype.");
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonSchemaDocument_String_SpecVersionVersionFlag() {
+    System.out.println("validateJsonSchemaDocument");
+    String schemaDocument = "";
+    SpecVersion.VersionFlag version = null;
+    boolean expResult = false;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
+    assertEquals(expResult, result);
+    // TODO review the generated test code and remove the default call to fail.
+    fail("The test case is a prototype.");
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJson() {
+    System.out.println("validateJson");
+    String jsonDocument = validJsonDocument;
+    String jsonSchema = moreComplexExample;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonWithInvalidDocuments() {
+    System.out.println("testValidateJsonWithInvalidDocuments");
+    String[] jsonDocuments = {invalidJsonDocument1, invalidJsonDocument2, invalidJsonDocument3, invalidJsonDocument4, invalidJsonDocument5, invalidJsonDocument6, invalidJsonDocument7, invalidJsonDocument8};
+    String jsonSchema = moreComplexExample;
+    boolean expResult = false;
+//  String jsonDocument = invalidJsonDocument2;
+    for (String jsonDocument : jsonDocuments) {
+      try {
+        boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+        assertEquals(expResult, result);
+      } catch (JsonValidationException jvex) {
+        assertTrue(true);
+        assertTrue(jvex.getMessage().contains("Error validating json"));
+      }
+    }
+  }
+
 }

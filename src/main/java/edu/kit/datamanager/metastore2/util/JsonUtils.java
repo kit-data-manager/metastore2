@@ -22,8 +22,11 @@ import com.networknt.schema.JsonSchemaException;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion.VersionFlag;
 import com.networknt.schema.SpecVersionDetector;
+import com.networknt.schema.ValidationMessage;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.IOException;
+import java.util.Set;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,24 +34,38 @@ import org.slf4j.LoggerFactory;
  * Utility class for handling json documents
  */
 public class JsonUtils {
+
   /**
    * Logger for messages.
    */
   private static final Logger LOG = LoggerFactory.getLogger(JsonUtils.class);
-  /** 
+  /**
    * Mapper for parsing json.
    */
   private static ObjectMapper mapper = new ObjectMapper();
 
   /**
-   * Validate JSON schema document based on detected JSON schema or version 2019-09
-   * if no schema is defined.
+   * Validate JSON schema document based on detected JSON schema or version
+   * 2019-09 if no schema is defined.
    *
    * @see http://json-schema.org/draft/2019-09/json-schema-core.html
    * @param schemaDocument schema document as string
    * @return true if schema is valid.
    */
   public static boolean validateJsonSchemaDocument(String schemaDocument) throws JsonValidationException {
+    VersionFlag version = determineSchemaVersion(schemaDocument);
+    
+    return validateJsonSchemaDocument(schemaDocument, version);
+  }
+
+  /**
+   * Extract schema version from json schema.
+   *
+   * @see VersionFlag
+   * @param schemaDocument schema document as string
+   * @return version of the schema.
+   */
+  private static VersionFlag determineSchemaVersion(String schemaDocument) throws JsonValidationException {
     VersionFlag version = VersionFlag.V201909;
     try {
       JsonNode jsonNode = getJsonNodeFromStringContent(schemaDocument);
@@ -59,8 +76,8 @@ public class JsonUtils {
     } catch (Exception ex) {
       LOG.error("Unknown error", ex);
       throw new JsonValidationException("Error determining JSON schema version: " + ex.getMessage());
-   }
-    return validateJsonSchemaDocument(schemaDocument, version);
+    }
+    return version;
   }
 
   /**
@@ -77,18 +94,53 @@ public class JsonUtils {
     try {
       JsonSchema schema = getJsonSchemaFromStringContent(schemaDocument, version);
       if (schema != null) {
-      if (!schema.getValidators().isEmpty()) {
-        valid = true;
-      }
+        if (!schema.getValidators().isEmpty()) {
+          valid = true;
+        }
       }
     } catch (Exception ex) {
       LOG.error("Unknown error", ex);
       String errorMessage = ex.getMessage();
-      if (version == null)
+      if (version == null) {
         errorMessage = new String("No version defined!");
-     throw new JsonValidationException("Error validating JSON schema: " + errorMessage);
-     }
+      }
+      throw new JsonValidationException("Error validating JSON schema: " + errorMessage);
+    }
     return valid;
+  }
+  /** 
+   * Validate json document by given json schema.
+   * @param jsonDocument json document.
+   * @param jsonSchema  json schema.
+   * @return  true (throws exception if not valid)
+   */
+  public static boolean validateJson(String jsonDocument, String jsonSchema) {
+    VersionFlag version = determineSchemaVersion(jsonSchema);
+
+    return validateJson(jsonDocument, jsonSchema, version);
+  }
+
+  public static boolean validateJson(String jsonDocument, String jsonSchema, VersionFlag version) {
+    boolean returnValue = false;
+    StringBuffer errorMessage = new StringBuffer("Error validating json!\n");
+    try {
+      JsonSchema jsonSchemaFromString = getJsonSchemaFromStringContent(jsonSchema, version);
+      JsonNode jsonNode = getJsonNodeFromStringContent(jsonDocument);
+      Set<ValidationMessage> validate = jsonSchemaFromString.validate(jsonNode);
+      for (ValidationMessage message : validate) {
+        LOG.debug(message.getMessage());
+        errorMessage.append(message.getMessage()).append("\n");
+      }
+      returnValue = validate.isEmpty();
+    } catch (Exception ex) {
+      LOG.error("Error validating json! ", ex);
+      errorMessage.append(ex.getMessage());
+    }
+    if (!returnValue) {
+      throw new JsonValidationException(errorMessage.toString());
+    }
+
+    return returnValue;
   }
 
   protected static JsonSchema getJsonSchemaFromStringContent(String schemaContent, VersionFlag version) throws Exception {
