@@ -18,9 +18,11 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.networknt.schema.JsonSchema;
+import com.networknt.schema.JsonSchemaException;
 import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion.VersionFlag;
 import com.networknt.schema.SpecVersionDetector;
+import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,27 +31,35 @@ import org.slf4j.LoggerFactory;
  * Utility class for handling json documents
  */
 public class JsonUtils {
-
+  /**
+   * Logger for messages.
+   */
   private static final Logger LOG = LoggerFactory.getLogger(JsonUtils.class);
-
+  /** 
+   * Mapper for parsing json.
+   */
   private static ObjectMapper mapper = new ObjectMapper();
 
   /**
-   * Validate JSON schema document based on JSON Schema (version 2019-09).
+   * Validate JSON schema document based on detected JSON schema or version 2019-09
+   * if no schema is defined.
    *
    * @see http://json-schema.org/draft/2019-09/json-schema-core.html
    * @param schemaDocument schema document as string
-   * @return
+   * @return true if schema is valid.
    */
-  public static boolean validateJsonSchemaDocument(String schemaDocument) {
+  public static boolean validateJsonSchemaDocument(String schemaDocument) throws JsonValidationException {
     VersionFlag version = VersionFlag.V201909;
     try {
       JsonNode jsonNode = getJsonNodeFromStringContent(schemaDocument);
       version = SpecVersionDetector.detect(jsonNode);
-    } catch (Exception ex) {
+    } catch (JsonSchemaException jvex) {
       // no version detected use newest version (v201909)
-      LOG.error("Error pasing json schema.", ex);
-    }
+      LOG.warn("Error pasing json schema using newest version.", jvex);
+    } catch (Exception ex) {
+      LOG.error("Unknown error", ex);
+      throw new JsonValidationException("Error determining JSON schema version: " + ex.getMessage());
+   }
     return validateJsonSchemaDocument(schemaDocument, version);
   }
 
@@ -62,28 +72,31 @@ public class JsonUtils {
    * @param version use specific version
    * @return
    */
-  public static boolean validateJsonSchemaDocument(String schemaDocument, VersionFlag version) {
+  public static boolean validateJsonSchemaDocument(String schemaDocument, VersionFlag version) throws JsonValidationException {
     boolean valid = false;
-    JsonSchema schema = getJsonSchemaFromStringContent(schemaDocument, version);
-    if (!schema.getValidators().isEmpty()) {
-      valid = true;
-    }
+    try {
+      JsonSchema schema = getJsonSchemaFromStringContent(schemaDocument, version);
+      if (schema != null) {
+      if (!schema.getValidators().isEmpty()) {
+        valid = true;
+      }
+      }
+    } catch (Exception ex) {
+      LOG.error("Unknown error", ex);
+      String errorMessage = ex.getMessage();
+      if (version == null)
+        errorMessage = new String("No version defined!");
+     throw new JsonValidationException("Error validating JSON schema: " + errorMessage);
+     }
     return valid;
   }
 
-  protected static JsonSchema getJsonSchemaFromStringContent(String schemaContent, VersionFlag version) {
+  protected static JsonSchema getJsonSchemaFromStringContent(String schemaContent, VersionFlag version) throws Exception {
     JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
     return factory.getSchema(schemaContent);
   }
 
-  protected static JsonNode getJsonNodeFromStringContent(String content) throws IOException {
+  protected static JsonNode getJsonNodeFromStringContent(String content) throws Exception {
     return mapper.readTree(content);
-  }
-
-  public static void main(String[] args) {
-    System.out.println("valid? " + validateJsonSchemaDocument("{}"));
-
-    System.out.println("valid? " + validateJsonSchemaDocument("{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}"));
-    System.out.println("Ende");
   }
 }
