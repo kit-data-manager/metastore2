@@ -9,6 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.SpecVersion;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
+import java.io.IOException;
+import java.io.InputStream;
+import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -22,11 +25,12 @@ import static org.junit.Assert.*;
  */
 public class JsonUtilsTest {
 
-  private String jsonSchemaWithversiondraft04 = "{\"$schema\": \"http://json-schema.org/draft-04/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private String jsonSchemaWithversiondraft06 = "{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private String jsonSchemaWithversiondraft07 = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private String moreComplexExample = "{\n"
+  private final String emptySchema = "{}";
+  private final String jsonSchemaWithversiondraft04 = "{\"$schema\": \"http://json-schema.org/draft-04/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft06 = "{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft07 = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String moreComplexExample = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
@@ -55,15 +59,16 @@ public class JsonUtilsTest {
           + "    \"additionalProperties\": false\n"
           + "}";
 
-  private String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
-  private String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
-  private String invalidJsonDocument2 = "{\"string\":2,\"number\":3}";
-  private String invalidJsonDocument3 = "{\"string\":\"2\",\"number\":\"3\"}";
-  private String invalidJsonDocument4 = "{\"tring\":\"any string\",\"number\":3}";
-  private String invalidJsonDocument5 = "{\"string\":\"any string\",\"umber\":3}";
-  private String invalidJsonDocument6 = "{\"number\":3}";
-  private String invalidJsonDocument7 = "{\"string\":\"any string\"}";
-  private String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
+  private final String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
+  private final String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
+  private final String invalidJsonDocument2 = "{\"string\":2,\"number\":3}";
+  private final String invalidJsonDocument3 = "{\"string\":\"2\",\"number\":\"3\"}";
+  private final String invalidJsonDocument4 = "{\"tring\":\"any string\",\"number\":3}";
+  private final String invalidJsonDocument5 = "{\"string\":\"any string\",\"umber\":3}";
+  private final String invalidJsonDocument6 = "{\"number\":3}";
+  private final String invalidJsonDocument7 = "{\"string\":\"any string\"}";
+  private final String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
+  private final static String ENCODING = "UTF-8";
 
   public JsonUtilsTest() {
   }
@@ -109,12 +114,50 @@ public class JsonUtilsTest {
    * Test of validateJsonSchemaDocument method, of class JsonUtils.
    */
   @Test
+  public void testValidateJsonSchemaDocumentStreamWithNull() {
+    System.out.println("testValidateJsonSchemaDocumentStreamWithNull");
+    InputStream schemaDocument = null;
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_READING_INPUT_STREAM));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
   public void testValidateJsonSchemaDocumentWithEmptyString() {
     System.out.println("testValidateJsonSchemaDocumentWithEmptyString");
     String schemaDocument = "";
-    boolean expResult = false;
-    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
-    assertEquals(expResult, result);
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithEmptyStream() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentWithEmptyStream");
+    InputStream schemaDocument = IOUtils.toInputStream("", ENCODING);
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
   }
 
   /**
@@ -124,9 +167,31 @@ public class JsonUtilsTest {
   public void testValidateJsonSchemaDocumentWithEmptyJson() {
     System.out.println("testValidateJsonSchemaDocumentWithEmptyJson");
     String schemaDocument = "{}";
-    boolean expResult = false;
-    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
-    assertEquals(expResult, result);
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithEmptyJsonStream() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentWithEmptyJsonStream");
+    InputStream schemaDocument = IOUtils.toInputStream("{}", ENCODING);
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
   }
 
   /**
@@ -179,11 +244,43 @@ public class JsonUtilsTest {
 
   /**
    * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentAsStreamWithSchemaDraft201909() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentAsStreamWithSchemaDraft201909");
+    InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft201909, ENCODING);
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
    */
   @Test
   public void testValidateJsonSchemaDocumentWithSchemaDraft201909ButWrongVersion() {
     System.out.println("testValidateJsonSchemaDocumentWithSchemaDraft201909ButWrongVersion");
     String schemaDocument = jsonSchemaWithversiondraft201909;
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V4);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithSchemaDraft201909AsStreamButWrongVersion() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentWithSchemaDraft201909AsStreamButWrongVersion");
+    InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft201909, ENCODING);
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V4);
       assertTrue(false);
@@ -211,6 +308,24 @@ public class JsonUtilsTest {
 
   /**
    * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithSchemaDraft04AsStreamButWrongVersion() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentWithSchemaDraft04AsStreamButWrongVersion");
+    InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft04, ENCODING);
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V201909);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
    */
   @Test
   public void testValidateJsonSchemaDocumentWithSchemaButNullVersion() {
@@ -222,7 +337,26 @@ public class JsonUtilsTest {
       assertTrue(false); //should not executed.
     } catch (JsonValidationException jvex) {
       assertTrue(true);
-      assertTrue(jvex.getMessage().contains("No version defined"));
+      assertTrue(jvex.getMessage().contains(JsonUtils.MISSING_SCHEMA_VERSION));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithSchemaAsStreamButNullVersion() throws IOException {
+    System.out.println("testValidateJsonSchemaDocumentWithSchemaAsStreamButNullVersion");
+    try {
+      InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft04, ENCODING);
+      SpecVersion.VersionFlag version = null;
+      JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
+      assertTrue(false); //should not executed.
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.MISSING_SCHEMA_VERSION));
     }
   }
 
@@ -244,25 +378,76 @@ public class JsonUtilsTest {
   }
 
   /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentWithNullSchemaAsStreamButVersion() {
+    System.out.println("testValidateJsonSchemaDocumentWithSchemaAsStreamButNullVersion");
+    try {
+      InputStream schemaDocument = null;
+      SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+      JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
+      assertTrue(false); //should not executed.
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_READING_INPUT_STREAM));
+    }
+  }
+
+  /**
    * Test of getJsonSchemaFromStringContent method, of class JsonUtils.
+   *
+   * @throws java.lang.Exception
+   */
+  @Test
+  public void testValidateJsonSchemaDocument() throws Exception {
+    System.out.println("getJsonSchemaFromStringContent");
+    String schemaContent = jsonSchemaWithversiondraft201909;
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaContent, version);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of getJsonSchemaFromStringContent method, of class JsonUtils.
+   *
+   * @throws java.lang.Exception
+   */
+  @Test
+  public void testValidateJsonSchemaDocumentAsStream() throws Exception {
+    System.out.println("testValidateJsonSchemaDocumentAsStream");
+    InputStream schemaContent = IOUtils.toInputStream(jsonSchemaWithversiondraft201909, ENCODING);
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJsonSchemaDocument(schemaContent, version);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of getJsonSchemaFromStringContent method, of class JsonUtils.
+   *
+   * @throws java.lang.Exception
    */
   @Test
   public void testGetJsonSchemaFromStringContent() throws Exception {
     System.out.println("getJsonSchemaFromStringContent");
     String schemaContent = jsonSchemaWithversiondraft201909;
     SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
-    JsonSchema result = JsonUtils.getJsonSchemaFromStringContent(schemaContent, version);
+    JsonSchema result = JsonUtils.getJsonSchemaFromString(schemaContent, version);
     assertNotNull(result);
   }
 
   /**
    * Test of getJsonNodeFromStringContent method, of class JsonUtils.
+   *
+   * @throws java.lang.Exception
    */
   @Test
   public void testGetJsonNodeFromStringContent() throws Exception {
     System.out.println("getJsonNodeFromStringContent");
     String content = jsonSchemaWithversiondraft04;
-    JsonNode result = JsonUtils.getJsonNodeFromStringContent(content);
+    JsonNode result = JsonUtils.getJsonNodeFromString(content);
     assertNotNull(result);
   }
 
@@ -276,35 +461,6 @@ public class JsonUtilsTest {
     boolean expResult = true;
     boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
     assertEquals(expResult, result);
-  }
-
-  /**
-   * Test of validateJsonSchemaDocument method, of class JsonUtils.
-   */
-  @Test
-  public void testValidateJsonSchemaDocument_String() {
-    System.out.println("validateJsonSchemaDocument");
-    String schemaDocument = "";
-    boolean expResult = false;
-    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
-  }
-
-  /**
-   * Test of validateJsonSchemaDocument method, of class JsonUtils.
-   */
-  @Test
-  public void testValidateJsonSchemaDocument_String_SpecVersionVersionFlag() {
-    System.out.println("validateJsonSchemaDocument");
-    String schemaDocument = "";
-    SpecVersion.VersionFlag version = null;
-    boolean expResult = false;
-    boolean result = JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
   }
 
   /**
@@ -322,6 +478,127 @@ public class JsonUtilsTest {
 
   /**
    * Test of validateJson method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonAsStream() throws IOException {
+    System.out.println("testValidateJsonAsStream");
+    InputStream jsonDocument = IOUtils.toInputStream(validJsonDocument, ENCODING);
+    InputStream jsonSchema = IOUtils.toInputStream(moreComplexExample, ENCODING);
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonWithVersion() {
+    System.out.println("testValidateJsonWithVersion");
+    String jsonDocument = validJsonDocument;
+    String jsonSchema = moreComplexExample;
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonAsStreamWithVersion() throws IOException {
+    System.out.println("testValidateJsonAsStreamWithVersion");
+    InputStream jsonDocument = IOUtils.toInputStream(validJsonDocument, ENCODING);
+    InputStream jsonSchema = IOUtils.toInputStream(moreComplexExample, ENCODING);
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonWithEmptySchema() {
+    System.out.println("testValidateJsonWithEmptySchema");
+    String jsonDocument = validJsonDocument;
+    String jsonSchema = emptySchema;
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    try {
+      JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonAsStreamWithEmptySchema() throws IOException {
+    System.out.println("testValidateJsonAsStreamWithEmptySchema");
+    InputStream jsonDocument = IOUtils.toInputStream(validJsonDocument, ENCODING);
+    InputStream jsonSchema = IOUtils.toInputStream(emptySchema, ENCODING);
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
+    try {
+      JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+    }
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonWithWrongVersion() {
+    System.out.println("testValidateJsonWithWrongVersion");
+    String jsonDocument = validJsonDocument;
+    String jsonSchema = moreComplexExample;
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V7;
+    try {
+      JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
+    }
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   *
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonAsStreamWithWrongVersion() throws IOException {
+    System.out.println("testValidateJsonAsStreamWithWrongVersion");
+    InputStream jsonDocument = IOUtils.toInputStream(validJsonDocument, ENCODING);
+    InputStream jsonSchema = IOUtils.toInputStream(moreComplexExample, ENCODING);
+    SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V7;
+    try {
+      JsonUtils.validateJson(jsonDocument, jsonSchema, version);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
+    }
+  }
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
    */
   @Test
   public void testValidateJsonWithInvalidDocuments() {
@@ -333,12 +610,35 @@ public class JsonUtilsTest {
     for (String jsonDocument : jsonDocuments) {
       try {
         boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+        System.out.println(jsonDocument);
         assertEquals(expResult, result);
       } catch (JsonValidationException jvex) {
         assertTrue(true);
-        assertTrue(jvex.getMessage().contains("Error validating json"));
+        assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_JSON_DOCUMENT));
       }
     }
   }
 
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   * @throws java.io.IOException
+   */
+  @Test
+  public void testValidateJsonWithInvalidDocumentsAsStream() throws IOException {
+    System.out.println("testValidateJsonWithInvalidDocumentsAsStream");
+    String[] jsonDocuments = {invalidJsonDocument1, invalidJsonDocument2, invalidJsonDocument3, invalidJsonDocument4, invalidJsonDocument5, invalidJsonDocument6, invalidJsonDocument7, invalidJsonDocument8};
+    boolean expResult = false;
+//  String jsonDocument = invalidJsonDocument2;
+    for (String jsonDocument : jsonDocuments) {
+      try {
+        InputStream inputStream = IOUtils.toInputStream(jsonDocument, ENCODING);
+        InputStream jsonSchema = IOUtils.toInputStream(moreComplexExample, ENCODING);
+        boolean result = JsonUtils.validateJson(inputStream, jsonSchema);
+        assertEquals(expResult, result);
+      } catch (JsonValidationException jvex) {
+        assertTrue(true);
+        assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_JSON_DOCUMENT));
+      }
+    }
+  }
 }
