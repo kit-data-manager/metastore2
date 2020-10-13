@@ -78,7 +78,7 @@ import org.springframework.web.context.WebApplicationContext;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class JsonSchemaRegistryControllerTest {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/schematest/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/jsontest/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private static final String INVALID_SCHEMA = "invalid_json";
   private final static String JSON_SCHEMA = "{\n" +

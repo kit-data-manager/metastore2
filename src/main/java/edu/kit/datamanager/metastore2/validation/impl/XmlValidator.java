@@ -23,8 +23,7 @@ import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 /**
- *
- * @author Torridity
+ * Class for validating XML files. 
  */
 @Component
 public class XmlValidator implements IValidator{
