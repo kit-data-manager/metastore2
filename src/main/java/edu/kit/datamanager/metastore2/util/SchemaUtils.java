@@ -23,18 +23,19 @@ import java.util.regex.Pattern;
  *
  * @author jejkal
  */
-public class SchemaUtils{
+public class SchemaUtils {
 
-  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("[{\\[].*");
-  private static final Pattern XML_FIRST_BYTE = Pattern.compile("[\\<schema](.|\\s)*");
+  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//^\\s{\\s*\".*");
+  private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w{2,3}:)?schema(.|\\s)*", Pattern.MULTILINE);
 
-  public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema){
+  public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema) {
     Matcher m = JSON_FIRST_BYTE.matcher(new String(schema));
-    if(m.matches()){
+
+    if (m.matches()) {
       return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
-    } else{
+    } else {
       m = XML_FIRST_BYTE.matcher(new String(schema));
-      if(m.matches()){
+      if (m.matches()) {
         return MetadataSchemaRecord.SCHEMA_TYPE.XML;
       }
     }
