@@ -74,7 +74,7 @@ schema-record.json:
 {
   "schemaId" : "my_first_xsd",
   "mimeType" : "application/xml",
-  "type" : "XML",
+  "type" : "XML"
 }
 ----
 
@@ -256,7 +256,7 @@ schema-record-acl.json
 {
   "schemaId":"my_first_xsd",
   "mimeType":"application/xml",
-  "type":"XML"
+  "type":"XML",
   "acl":[ 
     {
       "id":33,
@@ -264,9 +264,9 @@ schema-record-acl.json
       "permission":"ADMINISTRATE"
     },
     {
-      "id":null,"
-       sid":"admin",
-         "admin":"ADMINISTRATE"
+      "id":null,
+      "sid":"admin",
+      "admin":"ADMINISTRATE"
     }
   ]
 }
@@ -390,7 +390,7 @@ ETag is needed:
 metadata-record-acl.json:
 {
     "relatedResource": "anyResourceId",
-    "schemaId": "my_first_xsd"
+    "schemaId": "my_first_xsd",
     "acl": [ {
       "id":null,
       "sid":"guest",
