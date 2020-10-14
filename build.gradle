@@ -131,3 +131,10 @@ test {
 jacoco {
     toolVersion = "0.8.5"
 }
+
+// task for printing project name.
+task printProjectName {
+    doLast {
+        println "${project.name}"
+    }
+}
