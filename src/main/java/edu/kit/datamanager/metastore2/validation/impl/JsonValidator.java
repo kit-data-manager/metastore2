@@ -48,7 +48,7 @@ public class JsonValidator implements IValidator {
 
   @Override
   public boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream) {
-    LOG.trace("Checking metdata document using schema at {}.", schemaFile.getAbsolutePath());
+    LOG.trace("Checking metadata document using schema at {}.", schemaFile.getAbsolutePath());
     boolean valid = false;
     InputStream jsonSchemaDocumentStream;
 
@@ -57,7 +57,7 @@ public class JsonValidator implements IValidator {
       jsonSchemaDocumentStream = FileUtils.openInputStream(schemaFile);
 
       LOG.trace("Validate JSON document");
-      valid = JsonUtils.validateJson(jsonSchemaDocumentStream, metadataDocumentStream);
+      valid = JsonUtils.validateJson(metadataDocumentStream, jsonSchemaDocumentStream);
       LOG.trace("Is JSON document valid? -> {}", valid);
     } catch (IOException ex) {
       LOG.error("Error reading schema at '{}'", schemaFile.getAbsolutePath());
