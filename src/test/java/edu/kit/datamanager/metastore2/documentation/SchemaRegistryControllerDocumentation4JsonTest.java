@@ -85,10 +85,10 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41405"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/schema"})
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
-public class SchemaRegistryControllerDocumentationTest {
+@TestPropertySource(properties = {"server.port=41407"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41407/api/v1/"})
+public class SchemaRegistryControllerDocumentation4JsonTest {
 
   private MockMvc mockMvc;
   @Autowired
@@ -102,24 +102,38 @@ public class SchemaRegistryControllerDocumentationTest {
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
   
-  private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/";
+  private final static String EXAMPLE_SCHEMA_ID = "my_first_json";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
-  private final static String EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<xs:element name=\"metadata\">\n"
-          + "  <xs:complexType>\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "      <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "    </xs:sequence>\n"
-          + "  </xs:complexType>\n"
-          + "</xs:element>\n"
-          + "\n"
-          + "</xs:schema>";
+  private final static String EXAMPLE_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"string\",\n"
+          + "        \"number\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"name\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"The string schema\",\n"
+          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
+          + "            \"default\": \"no default\"\n"
+          + "        },\n"
+          + "        \"number\": {\n"
+          + "            \"$id\": \"#/properties/number\",\n"
+          + "            \"type\": \"integer\",\n"
+          + "            \"title\": \"The number schema\",\n"
+          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
+          + "            \"default\": 0\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
   private final static String NEW_EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
