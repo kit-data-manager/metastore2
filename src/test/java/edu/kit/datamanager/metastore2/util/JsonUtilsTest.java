@@ -58,6 +58,33 @@ public class JsonUtilsTest {
           + "    },\n"
           + "    \"additionalProperties\": false\n"
           + "}";
+  private final static String dateExample =  "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
 
   private final String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
   private final String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
@@ -69,6 +96,9 @@ public class JsonUtilsTest {
   private final String invalidJsonDocument7 = "{\"string\":\"any string\"}";
   private final String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
   private final static String ENCODING = "UTF-8";
+  
+  private final static String validDateDocument = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
+  private final static String invalidDateDocument = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
 
   public JsonUtilsTest() {
   }
@@ -634,6 +664,41 @@ public class JsonUtilsTest {
         InputStream inputStream = IOUtils.toInputStream(jsonDocument, ENCODING);
         InputStream jsonSchema = IOUtils.toInputStream(moreComplexExample, ENCODING);
         boolean result = JsonUtils.validateJson(inputStream, jsonSchema);
+        assertEquals(expResult, result);
+      } catch (JsonValidationException jvex) {
+        assertTrue(true);
+        assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_JSON_DOCUMENT));
+      }
+    }
+  }
+
+
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateDateJson() {
+    System.out.println("validateDateJson");
+    String jsonDocument = validDateDocument;
+    String jsonSchema = dateExample;
+    boolean expResult = true;
+    boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+    assertEquals(expResult, result);
+  }
+  /**
+   * Test of validateJson method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateJsonWithInvalidDateDocument() {
+    System.out.println("testValidateJsonWithInvalidDateDocument");
+    String[] jsonDocuments = {invalidDateDocument};
+    String jsonSchema = dateExample;
+    boolean expResult = false;
+//  String jsonDocument = invalidJsonDocument2;
+    for (String jsonDocument : jsonDocuments) {
+      try {
+        boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
+        System.out.println(jsonDocument);
         assertEquals(expResult, result);
       } catch (JsonValidationException jvex) {
         assertTrue(true);

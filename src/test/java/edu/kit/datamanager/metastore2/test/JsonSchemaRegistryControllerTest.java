@@ -81,7 +81,7 @@ public class JsonSchemaRegistryControllerTest {
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/jsontest/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private static final String INVALID_SCHEMA = "invalid_json";
-  private final static String JSON_SCHEMA = "{\n"
+  private final static String JSON_SCHEMA =  "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
@@ -96,21 +96,21 @@ public class JsonSchemaRegistryControllerTest {
           + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
-          + "            \"description\": \"Title.\"\n"
+          + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
-          + "        \"number\": {\n"
+          + "        \"date\": {\n"
           + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
-          + "            \"title\": \"Submission date\",\n"
-          + "            \"description\": \"Date of submission.\"\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
           + "        }\n"
           + "    },\n"
           + "    \"additionalProperties\": false\n"
           + "}";
-
-  private final static String JSON_DOCUMENT = "{\"string\":\"any string\",\"number\":3}";
-  private final static String INVALID_JSON_DOCUMENT = "{\"string\":\"any string\",\"number\":\"3\"}";
+  
+  private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
+  private final static String INVALID_JSON_DOCUMENT = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
 
   private MockMvc mockMvc;
   @Autowired
