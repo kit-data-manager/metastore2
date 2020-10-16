@@ -56,8 +56,9 @@ ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ################################################################################
 # Determine repo name 
 ################################################################################
-REPO_URL=`git remote get-url origin`
-REPO_NAME=${REPO_URL##*/}
+REPO_NAME=`$ACTUAL_DIR/../gradlew -q printProjectName`
+# Use only last line
+REPO_NAME=${REPO_NAME##*$'\n'}
 
 ################################################################################
 # Determine tag 

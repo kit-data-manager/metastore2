@@ -1,7 +1,7 @@
 # Metastore 2 repository
 
-![Build Status](https://api.travis-ci.com/kit-data-manager/metastore2.svg)
-![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=master)
+[![Build Status](https://travis-ci.com/kit-data-manager/metastore2.svg?branch=master)](https://travis-ci.com/kit-data-manager/metastore2)
+[![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=master)](https://coveralls.io/github/kit-data-manager/metastore2?branch=master)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
 
 General purpose metadata repository and schema registry service.
