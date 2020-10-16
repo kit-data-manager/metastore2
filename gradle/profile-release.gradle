@@ -5,14 +5,13 @@ ext {
 }
    
 asciidoctor {
-   attributes "snippets": snippetsDir,
+  attributes "snippets": snippetsDir,
             "version": jar.version,
             "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
    inputs.dir snippetsDir
    dependsOn test  
    sourceDir "docs/"
    outputDir "build/docs"
-   backends "docbook"
 }
 
 test {
