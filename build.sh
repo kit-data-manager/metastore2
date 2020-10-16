@@ -84,7 +84,7 @@ echo "--------------------------------------------------------------------------
 ################################################################################
 # Test for commands used in this script
 ################################################################################
-testForCommands="dirname git date java javac"
+testForCommands="chmod cp dirname find java javac mkdir"
 
 for command in $testForCommands
 do 
@@ -108,9 +108,9 @@ checkParameters $*
 ################################################################################
 # Determine repo name 
 ################################################################################
-REPO_URL=`git remote get-url origin`
-REPO_NAME=${REPO_URL##*/}
-REPO_NAME=${REPO_NAME%.git}
+REPO_NAME=`./gradlew -q printProjectName`
+# Use only last line
+REPO_NAME=${REPO_NAME##*$'\n'}
 
 printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 
