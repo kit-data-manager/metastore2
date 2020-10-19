@@ -48,7 +48,7 @@ public class JsonValidator implements IValidator {
 
   @Override
   public boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream) {
-    LOG.trace("Checking metadata document using schema at {}.", schemaFile.getAbsolutePath());
+    LOG.trace("Checking metadata document using schema at {}.", schemaFile);
     boolean valid = false;
     InputStream jsonSchemaDocumentStream;
 
@@ -59,8 +59,11 @@ public class JsonValidator implements IValidator {
       LOG.trace("Validate JSON document");
       valid = JsonUtils.validateJson(metadataDocumentStream, jsonSchemaDocumentStream);
       LOG.trace("Is JSON document valid? -> {}", valid);
+    } catch (NullPointerException npe) {
+      errorMessage = "Schema or document are not allowed to be NULL";
+      LOG.error(errorMessage);
     } catch (IOException ex) {
-      LOG.error("Error reading schema at '{}'", schemaFile.getAbsolutePath());
+      LOG.error("Error reading schema at '{}'", schemaFile);
       errorMessage = ex.getMessage();
     } catch (JsonValidationException jvex) {
       LOG.error("Failed to validate JSON document.", jvex);

@@ -21,7 +21,6 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author hartmann-v
  */
 public class JsonUtilsTest {
 
