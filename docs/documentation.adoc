@@ -178,7 +178,7 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/update-schema/http-request.adoc[]
 
-As a result, you receive the XSD schema send before, schema record and in the HTTP response header
+As a result, you receive the updated schema record and in the HTTP response header
 the new location URL and the ETag. 
 
 include::{snippets}/update-schema/http-response.adoc[]
@@ -512,7 +512,7 @@ include::{snippets}/find-metadata-record-from-to/http-response.adoc[]
 [[ChapterMetadataSchemaHandling4Json]]
 === Schema Registration and Management
 
-In this first section, the handling of schema resources is explained. It all starts with creating your first json schema resource. The model of a metadata schema record looks
+In this section, the handling of json schema resources is explained. It all starts with creating your first json schema resource. The model of a metadata schema record looks
 like this:
 [source,options="nowrap"]
 ----
@@ -537,14 +537,14 @@ At least the following elements are expected to be provided by the user:
 
 [point]
 - schemaId: A unique label for the schema.
-- mimeType: The resource type must be assigned by the user. For XSD schemas this should be 'application/xml'
-- type: XML or JSON. For XSD schemas this should be 'XML'
+- mimeType: The resource type must be assigned by the user. For JSON schemas this should be 'application/json'
+- type: XML or JSON. For JSON schemas this should be 'JSON'
 
 In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
 
 === Registering a Metadata Schema
 
-The following example shows the creation of the first xsd schema only providing mandatory fields mentioned above:
+The following example shows the creation of the first json schema only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 schema-record.json:
@@ -624,7 +624,7 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/get-json-schema/http-request.adoc[]
 
-As a result, you receive the XSD schema send before. 
+As a result, you receive the JSON schema send before. 
 
 include::{snippets}/get-json-schema/http-response.adoc[]
 
@@ -654,7 +654,7 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/update-json-schema/http-request.adoc[]
 
-As a result, you receive the XSD schema send before, schema record and in the HTTP response header
+As a result, you receive the updated schema record and in the HTTP response header
 the new location URL and the ETag. 
 
 include::{snippets}/update-json-schema/http-response.adoc[]
@@ -671,7 +671,7 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/get-json-schemav2/http-request.adoc[]
 
-As a result, you receive the XSD schema send before. 
+As a result, you receive the JSON schema send before. 
 
 include::{snippets}/get-json-schemav2/http-response.adoc[]
 
@@ -687,7 +687,7 @@ version number as query parameter.
 
 include::{snippets}/get-json-schemav1/http-request.adoc[]
 
-As a result, you receive the initial XSD schema (version 1). 
+As a result, you receive the initial JSON schema (version 1). 
 
 include::{snippets}/get-json-schemav1/http-response.adoc[]
 

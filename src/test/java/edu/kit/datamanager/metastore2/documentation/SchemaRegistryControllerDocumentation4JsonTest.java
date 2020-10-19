@@ -279,7 +279,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
             file(metadataFile)).andDo(document("create-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn().getResponse().getHeader("Location");
 
     // Get metadata
-    this.mockMvc.perform(get(location).accept("application/xml")).andExpect(status().isOk()).andDo(document("get-json-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get(location).accept("application/json")).andExpect(status().isOk()).andDo(document("get-json-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Get metadata record
     this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andExpect(status().isOk()).andDo(document("get-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
