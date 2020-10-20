@@ -7,8 +7,8 @@
 General purpose metadata repository and schema registry service.
 
 It allows you to 
-- register an (XML) schema
-- update an (XML) schema
+- register an (XML/JSON) schema
+- update an (XML/JSON) schema
 - add metadata linked with a registered schema
 - validate metadata against a registered schema
 - update added metadata

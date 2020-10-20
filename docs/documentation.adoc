@@ -31,9 +31,10 @@ In between, special characteristics of the calls are explained together with add
 For technical reasons, all metadata resources shown in the examples contain all fields, e.g. also empty lists or fields with value 'null'. You may ignore most of them
 as long as they are not needed. Some of them will be assigned by the server, others remain empty or null as long as you don't assign any value to them. 
 All fields mandatory at creation time are explained in the resource creation example.
-
-[[ChapterMetadataSchemaHandling]]
-== Schema Registration and Management
+[[XML]]
+== XML (Schema)
+[[ChapterMetadataSchemaHandling4Xml]]
+=== Schema Registration and Management
 
 In this first section, the handling of schema resources is explained. It all starts with creating your first xml schema resource. The model of a metadata schema record looks
 like this:
@@ -93,7 +94,7 @@ What you see is, that the metadata schema record looks different from the origin
 Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
-=== Getting a List of Metadata Schema Records
+==== Getting a List of Metadata Schema Records
 
 Obtaining all accessible metadata schema records. 
 
@@ -119,7 +120,7 @@ The modified HTTP request  with pagination looks like follows:
 include::{snippets}/get-all-schemas-pagination/http-request.adoc[]
 
 
-=== Getting a Metadata Schema Record
+==== Getting a Metadata Schema Record
 
 For obtaining one metadata schema record you have to provide the value of the field 'schemaId'.
 [NOTE]
@@ -136,7 +137,7 @@ As a result, you receive the metadata schema record send before and again the co
 
 include::{snippets}/get-schema-record/http-response.adoc[]
 
-=== Getting a Metadata Schema
+==== Getting a Metadata Schema
 
 For obtaining accessible metadata schemas you have multiple options: list all resources, access a single resource using a known identifier or search by example. The following example shows how to obtain a 
 single resource. You may also use the location URL provided during the creation. 
@@ -151,7 +152,7 @@ As a result, you receive the XSD schema send before.
 
 include::{snippets}/get-schema/http-response.adoc[]
 
-=== Updating a Metadata Schema
+==== Updating a Metadata Schema
 
 [WARNING]
 This should be used with extreme caution.
@@ -177,13 +178,13 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/update-schema/http-request.adoc[]
 
-As a result, you receive the XSD schema send before, schema record and in the HTTP response header
+As a result, you receive the updated schema record and in the HTTP response header
 the new location URL and the ETag. 
 
 include::{snippets}/update-schema/http-response.adoc[]
 
 
-=== Getting new Version of Metadata Schema
+==== Getting new Version of Metadata Schema
 
 To get the new version of the metadata schema just send an HTTP GET with the linked
 'schemaId': 
@@ -198,7 +199,7 @@ As a result, you receive the XSD schema send before.
 
 include::{snippets}/get-schemav2/http-response.adoc[]
 
-=== Getting a specific Version of Metadata Schema
+==== Getting a specific Version of Metadata Schema
 
 To get a specific version of the metadata schema just send an HTTP GET with the linked
 'schemaId' and the version number you are looking for as query parameter: 
@@ -215,7 +216,7 @@ As a result, you receive the initial XSD schema (version 1).
 include::{snippets}/get-schemav1/http-response.adoc[]
 
 
-=== Validating Metadata Document
+==== Validating Metadata Document
 
 Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
 the ingest may be rejected. Select the schema and the version to validate given document.
@@ -245,7 +246,7 @@ Everything should be fine now. As a result, you receive 204 as HTTP status and n
 
 include::{snippets}/validate-document-v2/http-response.adoc[]
 
-=== Update Metadata Schema Record
+==== Update Metadata Schema Record
 In case of authorization it may be neccessary to update metadata record to be accessible
 by others. To do so an update has to be made. In this example we introduce a
 user called 'admin' and give him all rights.
@@ -290,7 +291,7 @@ After the update the following fields has changed:
 [NOTE]
 Version number will be only updated while changing metadata schema.
 
-== Metadata Management
+=== Metadata Management
 After registration of a schema metadata may be added to metastore.
 In this section, the handling of metadata resources is explained. 
 It all starts with creating your first metadata resource. The model of a metadata record looks
@@ -321,7 +322,7 @@ At least the following elements are expected to be provided by the user:
 
 In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
 
-=== Creating a Metadata Record
+==== Creating a Metadata Record
 
 The following example shows the creation of the first metadata record and its metadata only providing mandatory fields mentioned above:
 [source,options="nowrap"]
@@ -349,7 +350,7 @@ What you see is, that the metadata record looks different from the original docu
 In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
-=== Accessing Metadata
+==== Accessing Metadata
 For accessing the metadata the location URL provided before may be used.
 The URL is compiled by the id of the metadata and its version.
 include::{snippets}/get-metadata/curl-request.adoc[]
@@ -364,7 +365,7 @@ include::{snippets}/get-metadata/http-response.adoc[]
 
 What you see is, that the metadata is untouched.
 
-=== Accessing Metadata Record
+==== Accessing Metadata Record
 For accessing the metadata record the same URL as before has to be used.
 The only difference is the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
 Then the command line looks like this:
@@ -381,7 +382,7 @@ include::{snippets}/get-metadata-record/http-response.adoc[]
 You also get the metadata record seen before.
 
 
-=== Updating a Metadata Record (edit ACL entries)
+==== Updating a Metadata Record (edit ACL entries)
 
 The following example shows the update of the metadata record. As mentioned before the
 ETag is needed:
@@ -411,7 +412,7 @@ What you see is, that the metadata record looks different from the original docu
 [NOTE]
 Version number will be only updated while changing metadata. ETag is also untouched.
 
-=== Updating Metadata
+==== Updating Metadata
 The following example shows the update of the metadata. As mentioned before the
 ETag is needed. As the ETag has changed in the meanwhile you first have to get the
 new ETag.
@@ -447,7 +448,7 @@ include::{snippets}/get-metadata-v3/http-response.adoc[]
  
  
 
-=== Find a Metadata Record 
+==== Find a Metadata Record 
 Search will find all current metadata records.
 There are some filters available which may be combined.
 All filters for the metadata records are set via query parameters.
@@ -464,7 +465,7 @@ If there are more than 20 schemata registered you have to provide page and/or si
 - page: Number of the page you want to get **(starting with page 0)**
 - size: Number of entries per page.
 
-==== Find by resourceId
+===== Find by resourceId
 If you want to find all records belonging to an external resource. Metastore may 
 hold multiple metadata documents per resource. (Nevertheless only one per registered 
 schema)
@@ -479,7 +480,7 @@ include::{snippets}/find-metadata-record/http-request.adoc[]
 You will get the current version metadata record. 
 include::{snippets}/find-metadata-record/http-response.adoc[]
 
-==== Find after a specific date
+===== Find after a specific date
 If you want to find all metadata records updated after a specific date.
 
 Command line:
@@ -492,7 +493,7 @@ include::{snippets}/find-metadata-record-from/http-request.adoc[]
 You will get the current version metadata records updated ln the last 2 hours. 
 include::{snippets}/find-metadata-record-from/http-response.adoc[]
 
-==== Find in a specific date range
+===== Find in a specific date range
 If you want to find all metadata records updated in a specific date range.
 
 Command line:
@@ -504,6 +505,482 @@ include::{snippets}/find-metadata-record-from-to/http-request.adoc[]
 
 You will get an empty array as no metadata record exists in the given range:
 include::{snippets}/find-metadata-record-from-to/http-response.adoc[]
+
+
+[[JSON]]
+== JSON (Schema)
+[[ChapterMetadataSchemaHandling4Json]]
+=== Schema Registration and Management
+
+In this section, the handling of json schema resources is explained. It all starts with creating your first json schema resource. The model of a metadata schema record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "schemaId" : "...",
+  "schemaVersion" : 1,
+  "mimeType" : "...",
+  "type" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "schemaDocumentUri" : "...",
+  "schemaHash" : "...",
+  "locked" : false
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label for the schema.
+- mimeType: The resource type must be assigned by the user. For JSON schemas this should be 'application/json'
+- type: XML or JSON. For JSON schemas this should be 'JSON'
+
+In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
+
+=== Registering a Metadata Schema
+
+The following example shows the creation of the first json schema only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+schema-record.json:
+{
+  "schemaId" : "my_first_json",
+  "mimeType" : "application/json",
+  "type" : "JSON"
+}
+----
+
+include::{snippets}/register-json-schema/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/register-json-schema/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/register-json-schema/http-response.adoc[]
+
+What you see is, that the metadata schema record looks different from the original document. All remaining elements received a value by the server. 
+Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
+
+==== Getting a List of Metadata Schema Records
+
+Obtaining all accessible metadata schema records. 
+
+include::{snippets}/get-all-json-schemas/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path.
+
+include::{snippets}/get-all-json-schemas/http-request.adoc[]
+
+As a result, you receive a list of metadata schema records. 
+
+include::{snippets}/get-all-json-schemas/http-response.adoc[]
+
+[NOTE]
+The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
+If there are more than 20 schemata registered you have to provide page and/or size as additional query parameters.
+
+- page: Number of the page you want to get **(starting with page 0)**
+- size: Number of entries per page.
+
+The modified HTTP request  with pagination looks like follows:
+
+include::{snippets}/get-all-json-schemas-pagination/http-request.adoc[]
+
+
+==== Getting a Metadata Schema Record
+
+For obtaining one metadata schema record you have to provide the value of the field 'schemaId'.
+[NOTE]
+As 'Accept' field you have to provide 'application/vnd.datamanager.schema-record+json' otherwise you will
+get the metadata schema instead.
+
+include::{snippets}/get-json-schema-record/curl-request.adoc[]
+
+In the actual HTTP request just access the path of the resource using the base path and the 'schemaid'. Be aware that you also have to provide the 'Accept' field.
+
+include::{snippets}/get-json-schema-record/http-request.adoc[]
+
+As a result, you receive the metadata schema record send before and again the corresponding ETag in the HTTP response header. 
+
+include::{snippets}/get-json-schema-record/http-response.adoc[]
+
+==== Getting a Metadata Schema
+
+For obtaining accessible metadata schemas you have multiple options: list all resources, access a single resource using a known identifier or search by example. The following example shows how to obtain a 
+single resource. You may also use the location URL provided during the creation. 
+
+include::{snippets}/get-json-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the 'schemaId'.
+
+include::{snippets}/get-json-schema/http-request.adoc[]
+
+As a result, you receive the JSON schema send before. 
+
+include::{snippets}/get-json-schema/http-response.adoc[]
+
+==== Updating a Metadata Schema
+
+[WARNING]
+This should be used with extreme caution.
+The new schema should only add optional elements otherwise it will break old
+metadata records. Therefor it's not accessible from remote. 
+
+For updating an existing metadata schema (record) a valid ETag is needed. The actual ETag 
+is available via the HTTP GET call of the metadata schema record. (see above)
+Just send an HTTP POST with the updated metadata schema and/or metadata schema record.
+[source,options="nowrap"]
+----
+schema-record.json
+{
+  "schemaId":"my_first_json",
+  "mimeType":"application/json",
+  "type":"JSON"
+}
+----
+
+include::{snippets}/update-json-schema/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the resource identifier.
+
+include::{snippets}/update-json-schema/http-request.adoc[]
+
+As a result, you receive the updated schema record and in the HTTP response header
+the new location URL and the ETag. 
+
+include::{snippets}/update-json-schema/http-response.adoc[]
+
+
+==== Getting new Version of Metadata Schema
+
+To get the new version of the metadata schema just send an HTTP GET with the linked
+'schemaId': 
+
+include::{snippets}/get-json-schemav2/curl-request.adoc[]
+
+In the actual HTTP request there is nothing special. You just access the path of the resource using the base path and the 'schemaId'.
+
+include::{snippets}/get-json-schemav2/http-request.adoc[]
+
+As a result, you receive the JSON schema send before. 
+
+include::{snippets}/get-json-schemav2/http-response.adoc[]
+
+==== Getting a specific Version of Metadata Schema
+
+To get a specific version of the metadata schema just send an HTTP GET with the linked
+'schemaId' and the version number you are looking for as query parameter: 
+
+include::{snippets}/get-json-schemav1/curl-request.adoc[]
+
+In the actual HTTP request there is also nothing special. You just access the path of the resource using the base path and the 'schemaId' with the 
+version number as query parameter.
+
+include::{snippets}/get-json-schemav1/http-request.adoc[]
+
+As a result, you receive the initial JSON schema (version 1). 
+
+include::{snippets}/get-json-schemav1/http-response.adoc[]
+
+
+==== Validating Metadata Document
+
+Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
+the ingest may be rejected. Select the schema and the version to validate given document.
+On a first step validation with the old schema will be done:
+
+include::{snippets}/validate-json-document-v1/curl-request.adoc[]
+
+Same for the HTTP request. The version number is set by a query parameter.
+
+include::{snippets}/validate-json-document-v1/http-request.adoc[]
+
+As a result, you receive 422 as HTTP status and an error message holding some information about the error.
+
+include::{snippets}/validate-json-document-v1/http-response.adoc[]
+
+The document holds an optional field introduced in the second version of schema.
+Let's try to validate with second version of schema. Only version number will be different. (if no query
+parameter is available the current version will be selected)
+
+include::{snippets}/validate-json-document-v2/curl-request.adoc[]
+
+Same for the HTTP request.
+
+include::{snippets}/validate-json-document-v2/http-request.adoc[]
+
+Everything should be fine now. As a result, you receive 204 as HTTP status and no further content. 
+
+include::{snippets}/validate-json-document-v2/http-response.adoc[]
+
+==== Update Metadata Schema Record
+In case of authorization it may be neccessary to update metadata record to be accessible
+by others. To do so an update has to be made. In this example we introduce a
+user called 'admin' and give him all rights.
+
+[source,options="nowrap"]
+----
+schema-record-acl.json 
+{
+  "schemaId":"my_first_json",
+  "mimeType":"application/json",
+  "type":"XML",
+  "acl":[ 
+    {
+      "id":33,
+      "sid":"SELF",
+      "permission":"ADMINISTRATE"
+    },
+    {
+      "id":null,
+      "sid":"admin",
+      "admin":"ADMINISTRATE"
+    }
+  ]
+}
+----
+include::{snippets}/update-json-schema-record/curl-request.adoc[]
+
+Same for the HTTP request.
+
+include::{snippets}/update-json-schema-record/http-request.adoc[]
+
+As a result, you receive 200 as HTTP status, the updated metadata schema record and the 
+updated ETag and location in the HTTP response header.
+
+include::{snippets}/update-json-schema-record/http-response.adoc[]
+
+After the update the following fields has changed:
+
+- lastUpdate to the date of the last update (set by server)
+- acl additional ACL entry (set during update)
+
+[NOTE]
+Version number will be only updated while changing metadata schema.
+
+=== Metadata Management
+After registration of a schema metadata may be added to metastore.
+In this section, the handling of metadata resources is explained. 
+It all starts with creating your first metadata resource. The model of a metadata record looks
+like this:
+[source,options="nowrap"]
+----
+{
+  "id" : "...",
+  "relatedResource" : "...",
+  "createdAt" : "...",
+  "lastUpdate" : "...",
+  "schemaId" : "...",
+  "recordVersion" : 1,
+  "acl" : [ {
+    "id" : 1,
+    "sid" : "...",
+    "permission" : "..."
+  } ],
+  "metadataDocumentUri" : "...",
+  "documentHash" : "..."
+}
+----
+At least the following elements are expected to be provided by the user: 
+
+[point]
+- schemaId: A unique label of the schema.
+- relatedResource: The link to the resource. 
+
+In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+
+==== Creating a Metadata Record
+
+The following example shows the creation of the first metadata record and its metadata only providing mandatory fields mentioned above:
+[source,options="nowrap"]
+----
+metadata-record.json:
+{
+    "relatedResource": "anyResourceId",
+    "schemaId": "my_first_json"
+}
+----
+The schemaId used while registering metadata schema has to be used to link the metadata with the
+approbriate metadata schema.
+include::{snippets}/create-json-metadata-record/curl-request.adoc[]
+
+You can see, that most of the sent metadata schema record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
+
+include::{snippets}/create-json-metadata-record/http-request.adoc[]
+
+As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
+
+include::{snippets}/create-json-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
+In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
+all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
+
+==== Accessing Metadata
+For accessing the metadata the location URL provided before may be used.
+The URL is compiled by the id of the metadata and its version.
+include::{snippets}/get-json-metadata/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-json-metadata/http-request.adoc[]
+
+The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-json-metadata/http-response.adoc[]
+
+What you see is, that the metadata is untouched.
+
+==== Accessing Metadata Record
+For accessing the metadata record the same URL as before has to be used.
+The only difference is the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
+Then the command line looks like this:
+include::{snippets}/get-json-metadata-record/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-json-metadata-record/http-request.adoc[]
+
+The linked metadata will be returned. The result is sent back to the user and will look that way:
+
+include::{snippets}/get-json-metadata-record/http-response.adoc[]
+
+You also get the metadata record seen before.
+
+
+==== Updating a Metadata Record (edit ACL entries)
+
+The following example shows the update of the metadata record. As mentioned before the
+ETag is needed:
+[source,options="nowrap"]
+----
+metadata-record-acl.json:
+{
+    "relatedResource": "anyResourceId",
+    "schemaId": "my_first_json",
+    "acl": [ {
+      "id":null,
+      "sid":"guest",
+      "permission":"READ"
+    } ]
+}
+----
+include::{snippets}/update-json-metadata-record/curl-request.adoc[]
+
+You can see, that only the ACL entry for "guest" was added. All other properties are still the same. HTTP-wise the call looks as follows: 
+
+include::{snippets}/update-json-metadata-record/http-request.adoc[]
+
+You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+include::{snippets}/update-json-metadata-record/http-response.adoc[]
+
+What you see is, that the metadata record looks different from the original document. 
+[NOTE]
+Version number will be only updated while changing metadata. ETag is also untouched.
+
+==== Updating Metadata
+The following example shows the update of the metadata. As mentioned before the
+ETag is needed. As the ETag has changed in the meanwhile you first have to get the
+new ETag.
+include::{snippets}/get-json-metadata-record-v2/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-json-metadata-record-v2/http-request.adoc[]
+
+You will get the new metadata record with the new ETag.
+include::{snippets}/get-json-metadata-record-v2/http-response.adoc[]
+
+Now you can update metadata due to new version of schema using the new Etag.
+include::{snippets}/update-json-metadata/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/update-json-metadata/http-request.adoc[]
+
+You will get the new metadata record.
+include::{snippets}/update-json-metadata/http-response.adoc[]
+ 
+
+Now you can access the updated metadata via the URI in the HTTP response header.
+include::{snippets}/get-json-metadata-v3/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/get-json-metadata-v3/http-request.adoc[]
+
+You will get the updated metadata.
+include::{snippets}/get-json-metadata-v3/http-response.adoc[]
+ 
+ 
+
+==== Find a Metadata Record 
+Search will find all current metadata records.
+There are some filters available which may be combined.
+All filters for the metadata records are set via query parameters.
+The following filters are allowed:
+
+- resourceId
+- from
+- until
+
+[NOTE]
+The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
+If there are more than 20 schemata registered you have to provide page and/or size as additional query parameters.
+
+- page: Number of the page you want to get **(starting with page 0)**
+- size: Number of entries per page.
+
+===== Find by resourceId
+If you want to find all records belonging to an external resource. Metastore may 
+hold multiple metadata documents per resource. (Nevertheless only one per registered 
+schema)
+
+Command line:
+include::{snippets}/find-json-metadata-record/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-json-metadata-record/http-request.adoc[]
+
+You will get the current version metadata record. 
+include::{snippets}/find-json-metadata-record/http-response.adoc[]
+
+===== Find after a specific date
+If you want to find all metadata records updated after a specific date.
+
+Command line:
+include::{snippets}/find-json-metadata-record-from/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-json-metadata-record-from/http-request.adoc[]
+
+You will get the current version metadata records updated ln the last 2 hours. 
+include::{snippets}/find-json-metadata-record-from/http-response.adoc[]
+
+===== Find in a specific date range
+If you want to find all metadata records updated in a specific date range.
+
+Command line:
+include::{snippets}/find-metadata-record-from-to/curl-request.adoc[]
+
+HTTP-wise the call looks as follows: 
+
+include::{snippets}/find-json-metadata-record-from-to/http-request.adoc[]
+
+You will get an empty array as no metadata record exists in the given range:
+include::{snippets}/find-json-metadata-record-from-to/http-response.adoc[]
 
 
 

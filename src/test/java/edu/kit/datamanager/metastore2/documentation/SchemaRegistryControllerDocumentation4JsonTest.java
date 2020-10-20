@@ -85,10 +85,10 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41405"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/schema"})
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
-public class SchemaRegistryControllerDocumentationTest {
+@TestPropertySource(properties = {"server.port=41407"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41407/api/v1/"})
+public class SchemaRegistryControllerDocumentation4JsonTest {
 
   private MockMvc mockMvc;
   @Autowired
@@ -102,53 +102,81 @@ public class SchemaRegistryControllerDocumentationTest {
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
   
-  private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/";
+  private final static String EXAMPLE_SCHEMA_ID = "my_first_json";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
-  private final static String EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<xs:element name=\"metadata\">\n"
-          + "  <xs:complexType>\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "      <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "    </xs:sequence>\n"
-          + "  </xs:complexType>\n"
-          + "</xs:element>\n"
-          + "\n"
-          + "</xs:schema>";
-  private final static String NEW_EXAMPLE_SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<xs:element name=\"metadata\">\n"
-          + "  <xs:complexType>\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "      <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "      <xs:element name=\"note\" type=\"xs:string\" minOccurs=\"0\"/>\n"
-          + "    </xs:sequence>\n"
-          + "  </xs:complexType>\n"
-          + "</xs:element>\n"
-          + "\n"
-          + "</xs:schema>";
+  private final static String EXAMPLE_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
 
-  private final static String DC_DOCUMENT_V1 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<example:metadata xmlns:example=\"http://www.example.org/schema/xsd/\" >\n"
-          + "  <example:title>My first XML document</example:title>\n"
-          + "  <example:date>2018-07-02</example:date>\n"
-          + "</example:metadata>";
+  private final static String NEW_EXAMPLE_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        },\n"
+          + "        \"note\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Note\",\n"
+          + "            \"description\": \"Additonal information about object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
 
-  private final static String DC_DOCUMENT_V2 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<example:metadata xmlns:example=\"http://www.example.org/schema/xsd/\" >\n"
-          + "  <example:title>My first XML document</example:title>\n"
-          + "  <example:date>2018-07-02</example:date>\n"
-          + "  <example:note>since version 2 notes are allowed</example:note>\n"
-          + "</example:metadata>";
+  private final static String DC_DOCUMENT_V1 = "{\n"
+          + "\"title\": \"My first JSON document\",\n"
+          + "\"date\": \"2018-07-02\"\n"
+          + "}";
+
+  private final static String DC_DOCUMENT_V2 = "{\n"
+          + "\"title\": \"My first JSON document\",\n"
+          + "\"date\": \"2018-07-02\",\n"
+          + "\"note\": \"since version 2 notes are allowed\"\n"
+          + "}";
   private static final String RELATED_RESOURCE = "anyResourceId";
 
   @Autowired
@@ -177,8 +205,8 @@ public class SchemaRegistryControllerDocumentationTest {
   public void documentSchemaRegistry() throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
-    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    schemaRecord.setMimeType(MediaType.APPLICATION_XML.toString());
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    schemaRecord.setMimeType(MediaType.APPLICATION_JSON.toString());
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());
 
@@ -190,20 +218,20 @@ public class SchemaRegistryControllerDocumentationTest {
             file(schemaFile).
             file(recordFile)).
             andExpect(status().isCreated()).
-            andDo(document("register-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andDo(document("register-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andReturn().getResponse().getHeader("Location");
 
     Assert.assertNotNull(location);
     // List all meatadata schema records
-    this.mockMvc.perform(get("/api/v1/schemas/")).andExpect(status().isOk()).andDo(document("get-all-schemas", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get("/api/v1/schemas/")).andExpect(status().isOk()).andDo(document("get-all-json-schemas", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
-    this.mockMvc.perform(get("/api/v1/schemas/").param("page", Integer.toString(0)).param("size", Integer.toString(20))).andExpect(status().isOk()).andDo(document("get-all-schemas-pagination", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get("/api/v1/schemas/").param("page", Integer.toString(0)).param("size", Integer.toString(20))).andExpect(status().isOk()).andDo(document("get-all-json-schemas-pagination", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Get single metadata schema record
-    String etag = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).accept("application/vnd.datamanager.schema-record+json")).andExpect(status().isOk()).andDo(document("get-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
+    String etag = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).accept("application/vnd.datamanager.schema-record+json")).andExpect(status().isOk()).andDo(document("get-json-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("ETag");
 
     // Get metadata schema
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     //update schema document and create new version
     schemaFile = new MockMultipartFile("schema", NEW_EXAMPLE_SCHEMA.getBytes());
@@ -211,20 +239,20 @@ public class SchemaRegistryControllerDocumentationTest {
             file(schemaFile).
             file(recordFile).header("If-Match", etag)).
             andExpect(status().isCreated()).
-            andDo(document("update-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andDo(document("update-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andReturn().getResponse().getHeader("ETag");
 
     // Get metadata schema version 2
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-schemav2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).andExpect(status().isOk()).andDo(document("get-json-schemav2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Get metadata schema version 1
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).param("version", "1")).andExpect(status().isOk()).andDo(document("get-schemav1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).param("version", "1")).andExpect(status().isOk()).andDo(document("get-json-schemav1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
-    // Validate XML against schema version 1 (is invalid)
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes()).queryParam("version", "1")).andDo(document("validate-document-v1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    // Validate JSON against schema version 1 (is invalid)
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes()).queryParam("version", "1")).andDo(document("validate-json-document-v1", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
-    // Validate XML against schema version 2 (should be valid)
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes())).andDo(document("validate-document-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    // Validate JSON against schema version 2 (should be valid)
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").file("document", DC_DOCUMENT_V2.getBytes())).andDo(document("validate-json-document-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Update metadata record to allow admin to edit schema as well.
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -235,7 +263,7 @@ public class SchemaRegistryControllerDocumentationTest {
     schemaRecord = mapper.readValue(body, MetadataSchemaRecord.class);
     schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
 
-    this.mockMvc.perform(put("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(schemaRecord))).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(put("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(schemaRecord))).andDo(document("update-json-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Create a metadata record.
     MetadataRecord metadataRecord = new MetadataRecord();
@@ -248,13 +276,13 @@ public class SchemaRegistryControllerDocumentationTest {
 
     location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(document("create-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn().getResponse().getHeader("Location");
+            file(metadataFile)).andDo(document("create-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn().getResponse().getHeader("Location");
 
     // Get metadata
-    this.mockMvc.perform(get(location).accept("application/xml")).andExpect(status().isOk()).andDo(document("get-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get(location).accept("application/json")).andExpect(status().isOk()).andDo(document("get-json-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Get metadata record
-    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andExpect(status().isOk()).andDo(document("get-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andExpect(status().isOk()).andDo(document("get-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Update metadata record (add ACL entry)
     result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -267,29 +295,29 @@ public class SchemaRegistryControllerDocumentationTest {
     recordFile = new MockMultipartFile("record", "metadata-record-acl.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
-            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn();
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn();
 
     // Update metadata
     // Get URL
     String newLocation = location.split("[?]")[0];
-    result = this.mockMvc.perform(get(newLocation).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-metadata-record-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get(newLocation).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andDo(document("get-json-metadata-record-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
     etag = result.getResponse().getHeader("ETag");
 
     metadataFile = new MockMultipartFile("document", DC_DOCUMENT_V2.getBytes());
 
     location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
-            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("Location");
+            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andDo(document("update-json-metadata", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse().getHeader("Location");
 
     // get updated metadata
-    this.mockMvc.perform(get(location)).andDo(print()).andDo(document("get-metadata-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get(location)).andDo(print()).andDo(document("get-json-metadata-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
-    this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE)).andDo(print()).andDo(document("find-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE)).andDo(print()).andDo(document("find-json-metadata-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).andDo(print()).andDo(document("find-json-metadata-record-from", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).andDo(document("find-metadata-record-from-to", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).andDo(document("find-json-metadata-record-from-to", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andExpect(status().isOk()).andReturn();
 
   }
 

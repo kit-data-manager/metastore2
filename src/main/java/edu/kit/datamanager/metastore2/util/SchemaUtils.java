@@ -18,23 +18,34 @@ package edu.kit.datamanager.metastore2.util;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jejkal
  */
-public class SchemaUtils{
+public class SchemaUtils {
 
-  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("[{\\[].*");
-  private static final Pattern XML_FIRST_BYTE = Pattern.compile("[\\<schema](.|\\s)*");
+  private static final Logger LOG = LoggerFactory.getLogger(SchemaUtils.class);
+  
+  private static final int MAX_LENGTH_OF_HEADER = 100;
 
-  public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema){
-    Matcher m = JSON_FIRST_BYTE.matcher(new String(schema));
-    if(m.matches()){
+  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//^\\s{\\s*\".*");
+  private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w{2,3}:)?schema(.|\\s)*", Pattern.MULTILINE);
+
+  public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema) {
+    // Cut schema to a maximum of MAX_LENGTH_OF_HEADER characters.
+    int length = schema.length > MAX_LENGTH_OF_HEADER?MAX_LENGTH_OF_HEADER:schema.length;
+    String schemaAsString = new String(schema, 0, length);
+    LOG.trace("Guess type for '{}'",schemaAsString);
+
+    Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);
+    if (m.matches()) {
       return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
-    } else{
-      m = XML_FIRST_BYTE.matcher(new String(schema));
-      if(m.matches()){
+    } else {
+      m = XML_FIRST_BYTE.matcher(schemaAsString);
+      if (m.matches()) {
         return MetadataSchemaRecord.SCHEMA_TYPE.XML;
       }
     }
