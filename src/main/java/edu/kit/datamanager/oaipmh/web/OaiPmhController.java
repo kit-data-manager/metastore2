@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.controller;
+package edu.kit.datamanager.oaipmh.web;
 
 import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.oaipmh.service.AbstractOAIPMHRepository;
