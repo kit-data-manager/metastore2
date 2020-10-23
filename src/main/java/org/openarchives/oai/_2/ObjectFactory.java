@@ -42,7 +42,8 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link OAIPMHtype }
-     * 
+      * @return type of ...
+    * 
      */
     public OAIPMHtype createOAIPMHtype() {
         return new OAIPMHtype();
@@ -50,6 +51,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link AboutType }
+     * @return type of ...
      * 
      */
     public AboutType createAboutType() {
@@ -58,6 +60,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link MetadataFormatType }
+     * @return type of ...
      * 
      */
     public MetadataFormatType createMetadataFormatType() {
@@ -66,6 +69,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link ListRecordsType }
+     * @return type of ...
      * 
      */
     public ListRecordsType createListRecordsType() {
@@ -74,7 +78,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link ListMetadataFormatsType }
-     * 
+     * @return type of ...
      */
     public ListMetadataFormatsType createListMetadataFormatsType() {
         return new ListMetadataFormatsType();
@@ -82,6 +86,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link DescriptionType }
+     * @return type of ...
      * 
      */
     public DescriptionType createDescriptionType() {
@@ -90,6 +95,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link ResumptionTokenType }
+     * @return type of ...
      * 
      */
     public ResumptionTokenType createResumptionTokenType() {
@@ -98,6 +104,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link ListSetsType }
+     * @return type of ...
      * 
      */
     public ListSetsType createListSetsType() {
@@ -106,6 +113,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link ListIdentifiersType }
+     * @return type of ...
      * 
      */
     public ListIdentifiersType createListIdentifiersType() {
@@ -114,6 +122,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link RequestType }
+     * @return type of ...
      * 
      */
     public RequestType createRequestType() {
@@ -122,6 +131,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link RecordType }
+     * @return type of ...
      * 
      */
     public RecordType createRecordType() {
@@ -130,6 +140,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link GetRecordType }
+     * @return type of ...
      * 
      */
     public GetRecordType createGetRecordType() {
@@ -138,6 +149,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link SetType }
+     * @return type of ...
      * 
      */
     public SetType createSetType() {
@@ -146,6 +158,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link IdentifyType }
+     * @return type of ...
      * 
      */
     public IdentifyType createIdentifyType() {
@@ -154,6 +167,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link OAIPMHerrorType }
+     * @return type of ...
      * 
      */
     public OAIPMHerrorType createOAIPMHerrorType() {
@@ -162,7 +176,8 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link HeaderType }
-     * 
+      * @return type of ...
+    * 
      */
     public HeaderType createHeaderType() {
         return new HeaderType();
@@ -170,6 +185,7 @@ public class ObjectFactory {
 
     /**
      * Create an instance of {@link MetadataType }
+     * @return type of ...
      * 
      */
     public MetadataType createMetadataType() {

@@ -74,178 +74,111 @@ public class RequestTypeTest {
    }
 
     /**
-     * Test of setVerb method, of class RequestType.
-     */
-    @Test
-    public void testSetVerb() {
-        System.out.println("setVerb");
-        VerbType value = null;
-        RequestType instance = new RequestType();
-        instance.setVerb(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
      * Test of getIdentifier method, of class RequestType.
      */
     @Test
-    public void testGetIdentifier() {
+    public void testSetAndGetIdentifier() {
         System.out.println("getIdentifier");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getIdentifier();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setIdentifier method, of class RequestType.
-     */
-    @Test
-    public void testSetIdentifier() {
-        System.out.println("setIdentifier");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "Identifier";
+        expResult = value;
         instance.setIdentifier(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getIdentifier();
+        assertEquals(expResult, result);
     }
 
     /**
      * Test of getMetadataPrefix method, of class RequestType.
      */
     @Test
-    public void testGetMetadataPrefix() {
+    public void testSetAndGetMetadataPrefix() {
         System.out.println("getMetadataPrefix");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getMetadataPrefix();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setMetadataPrefix method, of class RequestType.
-     */
-    @Test
-    public void testSetMetadataPrefix() {
-        System.out.println("setMetadataPrefix");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "prefix";
+        expResult = value;
         instance.setMetadataPrefix(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getMetadataPrefix();
+        assertEquals(expResult, result);
     }
 
     /**
      * Test of getFrom method, of class RequestType.
      */
     @Test
-    public void testGetFrom() {
+    public void testSetAndGetFrom() {
         System.out.println("getFrom");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getFrom();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setFrom method, of class RequestType.
-     */
-    @Test
-    public void testSetFrom() {
-        System.out.println("setFrom");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "from";
+        expResult = value;
         instance.setFrom(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getFrom();
+        assertEquals(expResult, result);
     }
 
     /**
      * Test of getUntil method, of class RequestType.
      */
     @Test
-    public void testGetUntil() {
+    public void testSetAndGetUntil() {
         System.out.println("getUntil");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getUntil();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setUntil method, of class RequestType.
-     */
-    @Test
-    public void testSetUntil() {
-        System.out.println("setUntil");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "until";
+        expResult = value;
         instance.setUntil(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getUntil();
+        assertEquals(expResult, result);
     }
 
     /**
      * Test of getSet method, of class RequestType.
      */
     @Test
-    public void testGetSet() {
+    public void testSetAndGetSet() {
         System.out.println("getSet");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getSet();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setSet method, of class RequestType.
-     */
-    @Test
-    public void testSetSet() {
-        System.out.println("setSet");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "set";
+        expResult = value;
         instance.setSet(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getSet();
+        assertEquals(expResult, result);
     }
 
     /**
      * Test of getResumptionToken method, of class RequestType.
      */
     @Test
-    public void testGetResumptionToken() {
+    public void testSetAndGetResumptionToken() {
         System.out.println("getResumptionToken");
         RequestType instance = new RequestType();
-        String expResult = "";
+         String value = null;
+        String expResult = value;
         String result = instance.getResumptionToken();
         assertEquals(expResult, result);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of setResumptionToken method, of class RequestType.
-     */
-    @Test
-    public void testSetResumptionToken() {
-        System.out.println("setResumptionToken");
-        String value = "";
-        RequestType instance = new RequestType();
+        value = "set";
+        expResult = value;
         instance.setResumptionToken(value);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
+        result = instance.getResumptionToken();
+        assertEquals(expResult, result);
     }
     
 }
