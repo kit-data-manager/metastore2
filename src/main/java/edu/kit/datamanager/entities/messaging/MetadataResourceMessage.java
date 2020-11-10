@@ -31,7 +31,8 @@ public class MetadataResourceMessage extends DataResourceMessage {
    * Holds the schema type of the metadata document.
    */
   public static final String DOCUMENT_TYPE_PROPERTY = "documentType";
-
+  public static final String RESOLVING_URL_PROPERTY = "resolvingUrl";
+  
   /**
    * Create Message for create event.
    *
@@ -80,7 +81,7 @@ public class MetadataResourceMessage extends DataResourceMessage {
     MetadataResourceMessage msg = new MetadataResourceMessage();
     Map<String, String> properties = new HashMap<>();
     if (metadataRecord != null) {
-      properties.put(CONTENT_URI_PROPERTY, metadataRecord.getMetadataDocumentUri());
+      properties.put(RESOLVING_URL_PROPERTY, metadataRecord.getMetadataDocumentUri());
       properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchemaId());
       msg.setEntityId(metadataRecord.getId());
     }
