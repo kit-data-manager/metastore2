@@ -247,7 +247,7 @@ public class MetadataControllerImpl implements IMetadataController {
     fixMetadataDocumentUri(result);
 
     LOG.trace("Sending CREATE event.");
-    messagingService.send(MetadataResourceMessage.factoryCreateMetadataMessage(record, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    messagingService.send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
@@ -483,9 +483,13 @@ public class MetadataControllerImpl implements IMetadataController {
         FileUtils.deleteDirectory(p.toFile());
 
         LOG.trace("All metadata documents for record with id {} deleted.", id);
+    
+        LOG.trace("Fix URI for message.");
+        fixMetadataDocumentUri(existingRecord);
       } catch (URISyntaxException | IOException ex) {
         LOG.error("Failed to obtain schema document for schemaId {}. Please remove schema files manually. Skipping deletion.");
       }
+
       LOG.trace("Sending DELETE event.");
       messagingService.send(MetadataResourceMessage.factoryDeleteMetadataMessage(existingRecord, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
