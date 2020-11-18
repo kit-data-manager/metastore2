@@ -300,14 +300,14 @@ public class MetadataResourceMessageTest {
       assertFalse(jsonString.contains("\"entityId\":\""));
     }
     if (uri != null) {
-      assertTrue(jsonString.contains("\"contentUri\":\"" + uri + "\""));
+      assertTrue(jsonString.contains("\"" + MetadataResourceMessage.RESOLVING_URL_PROPERTY + "\":\"" + uri + "\""));
     } else {
-      assertFalse(jsonString.contains("\"contentUri\":\""));
+      assertFalse(jsonString.contains("\"" + MetadataResourceMessage.RESOLVING_URL_PROPERTY + "\":\""));
     }
     if (type != null) {
-      assertTrue(jsonString.contains("\"documentType\":\"" + type + "\""));
+      assertTrue(jsonString.contains("\"" + MetadataResourceMessage.DOCUMENT_TYPE_PROPERTY + "\":\"" + type + "\""));
     } else {
-      assertFalse(jsonString.contains("\"documentType\":\""));
+      assertFalse(jsonString.contains("\"" + MetadataResourceMessage.DOCUMENT_TYPE_PROPERTY + "\":\""));
     }
     
     assertTrue(mdrm.getEntityName().equals("metadata"));
