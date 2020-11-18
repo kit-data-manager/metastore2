@@ -79,6 +79,7 @@ dependencies {
     implementation "com.networknt:json-schema-validator:1.0.43"
   
     // datamanager
+    implementation("edu.kit.datamanager:generic-message-consumer:0.1.2")
     implementation "edu.kit.datamanager:service-base:0.1.2"
 
     runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
