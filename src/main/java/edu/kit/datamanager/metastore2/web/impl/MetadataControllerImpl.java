@@ -174,7 +174,10 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.trace("Writing user-provided metadata file to repository.");
       URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
       try {
-        Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), record.getId());
+        String[] createPathToRecord = record.getId().replace("-", "").split("(?<=\\G.{4})");
+        createPathToRecord[createPathToRecord.length - 1] = record.getId();
+
+        Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), createPathToRecord);
         if (!Files.exists(metadataDir)) {
           LOG.trace("Creating metadata directory at {}.", metadataDir);
           Files.createDirectories(metadataDir);
@@ -185,16 +188,16 @@ public class MetadataControllerImpl implements IMetadataController {
           }
         }
 
-        Path p = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(record));
-        if (Files.exists(p)) {
-          LOG.error("Metadata document conflict. A file at path {} already exists.", p);
+        Path absolutePathToRecord = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(record));
+        if (Files.exists(absolutePathToRecord)) {
+          LOG.error("Metadata document conflict. A file at path {} already exists.", absolutePathToRecord);
           return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
         }
 
-        LOG.trace("Persisting valid metadata document at {}.", p);
-        Files.write(p, data);
+        LOG.trace("Persisting valid metadata document at {}.", absolutePathToRecord);
+        Files.write(absolutePathToRecord, data);
         LOG.trace("Metadata document successfully persisted. Updating record.");
-        record.setMetadataDocumentUri(p.toUri().toString());
+        record.setMetadataDocumentUri(absolutePathToRecord.toUri().toString());
         LOG.trace("Metadata record completed.");
       } catch (URISyntaxException ex) {
         LOG.error("Failed to determine schema storage location.", ex);
@@ -396,7 +399,10 @@ public class MetadataControllerImpl implements IMetadataController {
           LOG.trace("Writing user-provided metadata file to repository.");
           URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
           try {
-            Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
+            String[] createPathToRecord = existingRecord.getId().replace("-", "").split("(?<=\\G.{4})");
+            createPathToRecord[createPathToRecord.length - 1] = existingRecord.getId();
+
+            Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), createPathToRecord);
             if (!Files.exists(metadataDir)) {
               LOG.trace("Creating metadata directory at {}.", metadataDir);
               Files.createDirectories(metadataDir);
@@ -610,5 +616,22 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     return null;
+  }
+
+  public static void main(String[] args) {
+    MetadataControllerImpl metadataControllerImpl = new MetadataControllerImpl();
+    MetadataRecord record = new MetadataRecord();
+    record.setId(UUID.randomUUID().toString());
+    record.setRecordVersion(1L);
+    record.setRelatedResource("some");
+    record.setSchemaId("schema");
+    String uniqueRecordHash = record.getId(); //metadataControllerImpl.getUniqueRecordHash(record);
+    String[] split = uniqueRecordHash.replace("-", "").split("(?<=\\G.{4})");
+    for (String part : split) {
+      System.out.println(part);
+    }
+    split[split.length - 1] = uniqueRecordHash;
+    Path get = Paths.get("/root", split);
+    System.out.println(get.toString());
   }
 }
