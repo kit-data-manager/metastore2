@@ -238,6 +238,40 @@ public class SchemaRegistryControllerTest {
               file(recordFile).
               file(schemaFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
     }
+
+    @Test
+    public void testCreateInvalidMetadataSchemaRecord() throws Exception {
+      String wrongTypeJson = "{\"schemaId\":\"dc\",\"type\":\"Something totally strange!\"}";
+
+      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", wrongTypeJson.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+      String wrongFormatJson = "<metadata><schemaId>dc</schemaId><type>XML</type></metadata>";
+      recordFile = new MockMultipartFile("record", "record.json", "application/json", wrongFormatJson.getBytes());
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+      
+    }
+
+    @Test
+    public void testCreateEmptyMetadataSchemaRecord() throws Exception {
+
+      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", (byte[])null);
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+      
+      recordFile = new MockMultipartFile("record", "record.json", "application/json", " ".getBytes());
+      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+              file(recordFile).
+              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    }
     // @Test 
   public void testCreateSchemaRecordFromExternal() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
