@@ -78,6 +78,24 @@ schema-record.json:
   "type" : "XML"
 }
 ----
+[source,options="nowrap"]
+----
+schema.xsd:
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+            xmlns="http://www.example.org/schema/xsd/"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xs:element name="metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="title" type="xs:string"/>
+        <xs:element name="date" type="xs:date"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+----
 
 include::{snippets}/register-schema/curl-request.adoc[]
 
@@ -171,6 +189,25 @@ schema-record.json
   "type":"XML"
 }
 ----
+[source,options="nowrap"]
+----
+schema_v2.xsd:
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+            xmlns="http://www.example.org/schema/xsd/"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xs:element name="metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="title" type="xs:string"/>
+        <xs:element name="date" type="xs:date"/>
+        <xs:element name="note" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+----
 
 include::{snippets}/update-schema/curl-request.adoc[]
 
@@ -220,6 +257,17 @@ include::{snippets}/get-schemav1/http-response.adoc[]
 
 Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
 the ingest may be rejected. Select the schema and the version to validate given document.
+[source,options="nowrap"]
+----
+metadata_v2.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+  <example:note>since version 2 notes are allowed</example:note>
+</example:metadata>
+----
+
 On a first step validation with the old schema will be done:
 
 include::{snippets}/validate-document-v1/curl-request.adoc[]
@@ -333,6 +381,15 @@ metadata-record.json:
     "schemaId": "my_first_xsd"
 }
 ----
+[source,options="nowrap"]
+----
+metadata.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+</example:metadata>
+----
 The schemaId used while registering metadata schema has to be used to link the metadata with the
 approbriate metadata schema.
 include::{snippets}/create-metadata-record/curl-request.adoc[]
@@ -426,6 +483,17 @@ You will get the new metadata record with the new ETag.
 include::{snippets}/get-metadata-record-v2/http-response.adoc[]
 
 Now you can update metadata due to new version of schema using the new Etag.
+[source,options="nowrap"]
+----
+metadata_v2.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+  <example:note>since version 2 notes are allowed</example:note>
+</example:metadata>
+----
+
 include::{snippets}/update-metadata/curl-request.adoc[]
 
 HTTP-wise the call looks as follows: 
@@ -554,6 +622,37 @@ schema-record.json:
   "type" : "JSON"
 }
 ----
+[source,options="nowrap"]
+----
+schema.json:
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "http://www.example.org/schema/json",
+  "type": "object",
+  "title": "Json schema for tests",
+  "default": {},
+  "required": [
+      "title",
+      "date"
+  ],
+  "properties": {
+    "title": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Title",
+      "description": "Title of object."
+    },
+    "date": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "format": "date",
+      "title": "Date",
+      "description": "Date of object"
+    }
+  },
+  "additionalProperties": false
+}
+----
 
 include::{snippets}/register-json-schema/curl-request.adoc[]
 
@@ -647,6 +746,43 @@ schema-record.json
   "type":"JSON"
 }
 ----
+[source,options="nowrap"]
+----
+schema_v2.json:
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "http://www.example.org/schema/json",
+  "type": "object",
+  "title": "Json schema for tests",
+  "default": {},
+  "required": [
+      "title",
+      "date"
+  ],
+  "properties": {
+    "title": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Title",
+      "description": "Title of object."
+    },
+    "date": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "format": "date",
+      "title": "Date",
+      "description": "Date of object"
+    },
+    "note": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Note",
+      "description": "Additonal information about object"
+    }
+  },
+  "additionalProperties": false
+}
+----
 
 include::{snippets}/update-json-schema/curl-request.adoc[]
 
@@ -696,6 +832,15 @@ include::{snippets}/get-json-schemav1/http-response.adoc[]
 
 Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
 the ingest may be rejected. Select the schema and the version to validate given document.
+[source,options="nowrap"]
+----
+metadata_v2.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
+  "note": "since version 2 notes are allowed"
+}
+----
 On a first step validation with the old schema will be done:
 
 include::{snippets}/validate-json-document-v1/curl-request.adoc[]
@@ -809,6 +954,14 @@ metadata-record.json:
     "schemaId": "my_first_json"
 }
 ----
+[source,options="nowrap"]
+----
+metadata.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
+}
+----
 The schemaId used while registering metadata schema has to be used to link the metadata with the
 approbriate metadata schema.
 include::{snippets}/create-json-metadata-record/curl-request.adoc[]
@@ -913,6 +1066,15 @@ include::{snippets}/update-json-metadata/http-response.adoc[]
  
 
 Now you can access the updated metadata via the URI in the HTTP response header.
+[source,options="nowrap"]
+----
+metadata_v2.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
+  "note": "since version 2 notes are allowed"
+}
+----
 include::{snippets}/get-json-metadata-v3/curl-request.adoc[]
 
 HTTP-wise the call looks as follows: 
