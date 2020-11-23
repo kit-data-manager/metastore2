@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.After;
@@ -158,7 +159,8 @@ public class MetadataSchemaRecordTest {
     Instant expResult = Instant.now();
     instance.setCreatedAt(expResult);
     Instant result = instance.getCreatedAt();
-    assertEquals(expResult, result);
+    assertTrue(result.isBefore(expResult));
+    assertEquals(expResult.truncatedTo(ChronoUnit.MILLIS), result);
   }
 
   /**
@@ -171,7 +173,8 @@ public class MetadataSchemaRecordTest {
     Instant expResult = Instant.now();
     instance.setLastUpdate(expResult);
     Instant result = instance.getLastUpdate();
-    assertEquals(expResult, result);
+    assertTrue(result.isBefore(expResult));
+    assertEquals(expResult.truncatedTo(ChronoUnit.MILLIS), result);
   }
   /**
    * Test of getSchemaDocumentUri method, of class MetadataSchemaRecord.
@@ -255,8 +258,8 @@ public class MetadataSchemaRecordTest {
     MetadataSchemaRecord record = mapper.readValue(metadataSchemaRecordAsJson, MetadataSchemaRecord.class);
     assertEquals("dc", record.getSchemaId());
     assertEquals("application/xml", record.getMimeType());
-    assertEquals(Instant.parse("2020-04-15T05:34:01.5465Z"),record.getCreatedAt());
-    assertEquals(Instant.parse("2020-04-15T05:34:01.546502Z"),record.getLastUpdate());
+    assertEquals(Instant.parse("2020-04-15T05:34:01.5465Z").truncatedTo(ChronoUnit.MILLIS),record.getCreatedAt());
+    assertEquals(Instant.parse("2020-04-15T05:34:01.546502Z").truncatedTo(ChronoUnit.MILLIS),record.getLastUpdate());
     assertEquals("http://localhost/api/v1/schemas/dc",record.getSchemaDocumentUri());
     assertEquals(Boolean.FALSE,record.getLocked());
     //,\"acl\":[{\"id\":11,\"sid\":\"SELF\",\"permission\":\"WRITE\"}],\"schemaDocumentUri\":\"http://localhost/api/v1/schemas/dc\",\"locked\":false}";
