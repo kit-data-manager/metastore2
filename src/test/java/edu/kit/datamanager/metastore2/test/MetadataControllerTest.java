@@ -234,8 +234,8 @@ public class MetadataControllerTest {
 //    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -255,8 +255,8 @@ public class MetadataControllerTest {
 //    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -275,8 +275,8 @@ public class MetadataControllerTest {
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -298,8 +298,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -310,14 +310,14 @@ public class MetadataControllerTest {
     public void testCreateInvalidMetadataRecord() throws Exception {
       String wrongTypeJson = "{\"id\":\"dc\",\"relatedResource\":\"anyResource\",\"createdAt\":\"right now!\"}";
 
-      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", wrongTypeJson.getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+      MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongTypeJson.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
               file(recordFile).
               file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
       String wrongFormatJson = "<metadata><schemaId>dc</schemaId><type>XML</type></metadata>";
-      recordFile = new MockMultipartFile("record", "record.json", "application/json", wrongFormatJson.getBytes());
+      recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongFormatJson.getBytes());
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
               file(recordFile).
               file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
@@ -327,14 +327,14 @@ public class MetadataControllerTest {
     @Test
     public void testCreateEmptyMetadataSchemaRecord() throws Exception {
 
-      MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", (byte[])null);
-      MockMultipartFile schemaFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+      MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[])null);
+      MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
               file(recordFile).
               file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
       
-      recordFile = new MockMultipartFile("record", "record.json", "application/json", " ".getBytes());
+      recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", " ".getBytes());
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
               file(recordFile).
               file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
@@ -347,8 +347,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
     RequestPostProcessor rpp = new RequestPostProcessor() {
       @Override
       public MockHttpServletRequest postProcessRequest(MockHttpServletRequest mhsr) {
@@ -367,8 +367,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile).with(remoteAddr("any.domain.com"))).andDo(print()).andExpect(status().isCreated()).andReturn();
@@ -384,8 +384,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -399,8 +399,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", "<>".getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", "<>".getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -414,8 +414,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_WRONG_NAMESPACE.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_WRONG_NAMESPACE.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -429,8 +429,8 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_INVALID.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_INVALID.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -439,7 +439,7 @@ public class MetadataControllerTest {
 
   @Test
   public void testCreateRecordWithoutRecord() throws Exception {
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(metadataFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
@@ -451,7 +451,7 @@ public class MetadataControllerTest {
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
@@ -464,8 +464,8 @@ public class MetadataControllerTest {
     //schemaId is missing
     record.setRelatedResource(RELATED_RESOURCE);
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -480,8 +480,8 @@ public class MetadataControllerTest {
     record.setSchemaId(SCHEMA_ID);
     //related resource is missing
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -497,8 +497,8 @@ public class MetadataControllerTest {
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -523,8 +523,8 @@ public class MetadataControllerTest {
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -534,7 +534,7 @@ public class MetadataControllerTest {
     Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
 
     record.setRelatedResource(RELATED_RESOURCE_2);
-    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
@@ -676,8 +676,8 @@ public class MetadataControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
             file(recordFile).
@@ -709,8 +709,8 @@ public class MetadataControllerTest {
     record.setAcl(acl);
     ObjectMapper mapper = new ObjectMapper();
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -720,8 +720,8 @@ public class MetadataControllerTest {
     String locationUri = result.getResponse().getHeader("Location");
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile2 = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
-    MockMultipartFile metadataFile2 = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
+    MockMultipartFile recordFile2 = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
+    MockMultipartFile metadataFile2 = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(locationUri).
             file(recordFile2).
@@ -751,8 +751,8 @@ public class MetadataControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
             file(recordFile).
@@ -768,8 +768,8 @@ public class MetadataControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
             file(recordFile).
@@ -785,8 +785,8 @@ public class MetadataControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT_VERSION_2.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -813,7 +813,7 @@ public class MetadataControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -849,8 +849,8 @@ public class MetadataControllerTest {
 //    record.setRelatedResource(RELATED_RESOURCE);
 //    ObjectMapper mapper = new ObjectMapper();
 //
-//    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-//    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+//    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+//    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 //
 //    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
 //            file(recordFile).
@@ -915,9 +915,13 @@ public class MetadataControllerTest {
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
+  
 
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    System.out.println("ooooooooooooooooooooooooo" + mapper.writeValueAsString(record));
+   
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
