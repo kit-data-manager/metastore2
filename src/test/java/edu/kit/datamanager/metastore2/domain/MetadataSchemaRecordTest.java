@@ -159,7 +159,7 @@ public class MetadataSchemaRecordTest {
     Instant expResult = Instant.now();
     instance.setCreatedAt(expResult);
     Instant result = instance.getCreatedAt();
-    assertTrue(result.isBefore(expResult));
+    assertTrue(result.compareTo(expResult) <= 0);
     assertEquals(expResult.truncatedTo(ChronoUnit.MILLIS), result);
   }
 
@@ -173,8 +173,8 @@ public class MetadataSchemaRecordTest {
     Instant expResult = Instant.now();
     instance.setLastUpdate(expResult);
     Instant result = instance.getLastUpdate();
-    assertTrue(result.isBefore(expResult));
-    assertEquals(expResult.truncatedTo(ChronoUnit.MILLIS), result);
+    assertTrue(result.compareTo(expResult) <= 0);
+     assertEquals(expResult.truncatedTo(ChronoUnit.MILLIS), result);
   }
   /**
    * Test of getSchemaDocumentUri method, of class MetadataSchemaRecord.
