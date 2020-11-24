@@ -78,7 +78,7 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41403"})
+	@TestPropertySource(properties = {"server.port=41403"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {
 
@@ -916,9 +916,6 @@ public class MetadataControllerTest {
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
   
-
-    System.out.println("ooooooooooooooooooooooooo" + mapper.writeValueAsString(record));
-   
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
