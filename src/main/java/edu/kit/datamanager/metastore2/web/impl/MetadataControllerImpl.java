@@ -31,6 +31,7 @@ import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.swagger.v3.core.util.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -95,13 +96,23 @@ public class MetadataControllerImpl implements IMetadataController {
 
   @Override
   public ResponseEntity createRecord(
-          @RequestPart(name = "record") final MetadataRecord record,
+          @RequestPart(name = "record") final MultipartFile recordDocument,
           @RequestPart(name = "document") final MultipartFile document,
           HttpServletRequest request,
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) throws URISyntaxException {
 
-    LOG.trace("Performing createRecord({},...).", record);
+    LOG.trace("Performing createRecord({},...).", recordDocument);
+    MetadataRecord record;
+    try {
+      if (recordDocument == null || recordDocument.isEmpty()) {
+        throw new IOException();
+      }
+      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+    } catch (IOException ex) {
+      LOG.error("No metadata record provided. Returning HTTP BAD_REQUEST.");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata record provided.");
+    }
 
     if (record.getRelatedResource() == null || record.getSchemaId() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");

@@ -66,8 +66,7 @@ public interface ISchemaRegistryController {
   @RequestMapping(path = "/", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the schema record.", required = true, content = {
-    @Content(encoding = @Encoding(name = "record", contentType = "application/json"))}) @RequestPart(name = "record", required = true) final MetadataSchemaRecord record,
+          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -81,7 +80,7 @@ public interface ISchemaRegistryController {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ResponseBody
-  public ResponseEntity<MetadataSchemaRecord> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
+  public ResponseEntity getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);
@@ -97,7 +96,7 @@ public interface ISchemaRegistryController {
   @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
 
   @ResponseBody
-  public ResponseEntity<MetadataSchemaRecord> validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
+  public ResponseEntity validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           @Parameter(description = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
           WebRequest wr,
@@ -150,7 +149,7 @@ public interface ISchemaRegistryController {
   @Parameters({
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
-  ResponseEntity<MetadataSchemaRecord> updateRecord(
+  ResponseEntity updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
           @Parameter(description = "Json representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
           final WebRequest request,
