@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Error serializing dates of metadata record
 - Input for REST-API should be a file 
+### Changed
+- Update to service-base version 0.1.3
 
 ### [0.2.0] - date 2020-10-20
 ### Added
