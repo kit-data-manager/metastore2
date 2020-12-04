@@ -5,6 +5,8 @@
  */
 package edu.kit.datamanager.metastore2.validation.impl;
 
+import com.networknt.schema.SpecVersion;
+import com.networknt.schema.SpecVersion.VersionFlag;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import edu.kit.datamanager.metastore2.util.JsonUtils;
@@ -19,7 +21,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Class for validating JSON files.
-  */
+ */
 @Component
 public class JsonValidator implements IValidator {
 
