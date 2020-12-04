@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Docker container loses all data when stopping and restarting the container
+- Update of the schema when the service runs in a docker container is now possible.
 
 ### [0.2.1] - date 2020-11-30
 ### Fixed

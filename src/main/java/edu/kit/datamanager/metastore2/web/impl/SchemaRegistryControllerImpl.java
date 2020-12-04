@@ -48,7 +48,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.servlet.http.HttpServletRequest;
@@ -138,7 +137,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     if (version > 0) {
       try {
         InetAddress addr = InetAddress.getByName(request.getRemoteHost());
-        if (!addr.isAnyLocalAddress() && !addr.isLoopbackAddress()) {
+        if (!addr.isSiteLocalAddress() && !addr.isLoopbackAddress()) {
           LOG.error("Schema updates are only allowed from localhost.");
           return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Schema updates are only allowed from localhost.");
         }
