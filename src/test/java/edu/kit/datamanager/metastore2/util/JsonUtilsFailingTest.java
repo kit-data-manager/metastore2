@@ -30,65 +30,13 @@ import org.powermock.reflect.Whitebox;
 @RunWith(PowerMockRunner.class)
 public class JsonUtilsFailingTest {
 
-  private final String emptySchema = "{}";
-  private final String jsonSchemaWithversiondraft04 = "{\"$schema\": \"http://json-schema.org/draft-04/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft06 = "{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft07 = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String moreComplexExample = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
-          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
-          + "    \"type\": \"object\",\n"
-          + "    \"title\": \"Json schema for tests\",\n"
-          + "    \"default\": {},\n"
-          + "    \"required\": [\n"
-          + "        \"string\",\n"
-          + "        \"number\"\n"
-          + "    ],\n"
-          + "    \"properties\": {\n"
-          + "        \"string\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
-          + "            \"type\": \"string\",\n"
-          + "            \"title\": \"The string schema\",\n"
-          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
-          + "            \"default\": \"no default\"\n"
-          + "        },\n"
-          + "        \"number\": {\n"
-          + "            \"$id\": \"#/properties/number\",\n"
-          + "            \"type\": \"integer\",\n"
-          + "            \"title\": \"The number schema\",\n"
-          + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
-          + "            \"default\": 0\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"additionalProperties\": false\n"
-          + "}";
-  private final static String dateExample = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
-          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
-          + "    \"type\": \"object\",\n"
-          + "    \"title\": \"Json schema for tests\",\n"
-          + "    \"default\": {},\n"
-          + "    \"required\": [\n"
-          + "        \"title\",\n"
-          + "        \"date\"\n"
-          + "    ],\n"
-          + "    \"properties\": {\n"
-          + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
-          + "            \"type\": \"string\",\n"
-          + "            \"title\": \"Title\",\n"
-          + "            \"description\": \"Title of object.\"\n"
-          + "        },\n"
-          + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
-          + "            \"type\": \"string\",\n"
-          + "            \"format\": \"date\",\n"
-          + "            \"title\": \"Date\",\n"
-          + "            \"description\": \"Date of object\"\n"
-          + "        }\n"
-          + "    },\n"
-          + "    \"additionalProperties\": false\n"
+  private final String jsonSchemaWithversiondraft201909 = "{"
+          + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", "
+          + "  \"properties\": {"
+          + "    \"id\": {"
+          + "      \"type\": \"number\""
+          + "    }"
+          + "  }"
           + "}";
   private final String invalidJsonSchemaDocumentWithversiondraft201909 = "{\n"
           + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
@@ -104,19 +52,8 @@ public class JsonUtilsFailingTest {
           + "  },\n"
           + "  \"allOf\": \"nope\"\n"
           + "}";
-  private final String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
-  private final String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
-  private final String invalidJsonDocument2 = "{\"string\":2,\"number\":3}";
-  private final String invalidJsonDocument3 = "{\"string\":\"2\",\"number\":\"3\"}";
-  private final String invalidJsonDocument4 = "{\"tring\":\"any string\",\"number\":3}";
-  private final String invalidJsonDocument5 = "{\"string\":\"any string\",\"umber\":3}";
-  private final String invalidJsonDocument6 = "{\"number\":3}";
-  private final String invalidJsonDocument7 = "{\"string\":\"any string\"}";
-  private final String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
   private final static String ENCODING = "UTF-8";
 
-  private final static String validDateDocument = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
-  private final static String invalidDateDocument = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
 
   public JsonUtilsFailingTest() {
   }

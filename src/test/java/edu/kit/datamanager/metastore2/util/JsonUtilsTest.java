@@ -8,7 +8,6 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.SpecVersion;
-import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,11 +18,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.runner.RunWith;
-import static org.mockito.ArgumentMatchers.any;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  *
@@ -63,7 +57,7 @@ public class JsonUtilsTest {
           + "    },\n"
           + "    \"additionalProperties\": false\n"
           + "}";
-  private final static String dateExample = "{\n"
+  private final String dateExample = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
@@ -115,8 +109,8 @@ public class JsonUtilsTest {
   private final String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
   private final static String ENCODING = "UTF-8";
 
-  private final static String validDateDocument = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
-  private final static String invalidDateDocument = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
+  private final String validDateDocument = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
+  private final String invalidDateDocument = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
 
   public JsonUtilsTest() {
   }

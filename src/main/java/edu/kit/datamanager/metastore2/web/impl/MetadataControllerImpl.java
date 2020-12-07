@@ -185,6 +185,7 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.trace("Writing user-provided metadata file to repository.");
       URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
       try {
+        // Remove all '-' and split resulting string to substrings with 4 characters each.
         String[] createPathToRecord = record.getId().replace("-", "").split("(?<=\\G.{4})");
         createPathToRecord[createPathToRecord.length - 1] = record.getId();
 
@@ -627,22 +628,5 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     return null;
-  }
-
-  public static void main(String[] args) {
-    MetadataControllerImpl metadataControllerImpl = new MetadataControllerImpl();
-    MetadataRecord record = new MetadataRecord();
-    record.setId(UUID.randomUUID().toString());
-    record.setRecordVersion(1L);
-    record.setRelatedResource("some");
-    record.setSchemaId("schema");
-    String uniqueRecordHash = record.getId(); //metadataControllerImpl.getUniqueRecordHash(record);
-    String[] split = uniqueRecordHash.replace("-", "").split("(?<=\\G.{4})");
-    for (String part : split) {
-      System.out.println(part);
-    }
-    split[split.length - 1] = uniqueRecordHash;
-    Path get = Paths.get("/root", split);
-    System.out.println(get.toString());
   }
 }
