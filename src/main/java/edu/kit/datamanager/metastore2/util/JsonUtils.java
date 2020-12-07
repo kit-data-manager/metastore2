@@ -23,24 +23,29 @@ import com.networknt.schema.JsonSchemaFactory;
 import com.networknt.schema.SpecVersion.VersionFlag;
 import com.networknt.schema.SpecVersionDetector;
 import com.networknt.schema.ValidationMessage;
+import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 
 /**
  * Utility class for handling json documents
  */
 public class JsonUtils {
+
   public static final String ERROR_DETERMINE_SCHEMA_VERSION = "Error determining JSON schema version: ";
   public static final String EMPTY_SCHEMA_DETECTED = "Empty JSON schema is not allowed!";
   public static final String ERROR_VALIDATING_SCHEMA = "Error validating JSON schema: ";
   public static final String ERROR_READING_INPUT_STREAM = "Error reading from inputstream: ";
   public static final String ERROR_VALIDATING_JSON_DOCUMENT = "Error validating json!";
   public static final String MISSING_SCHEMA_VERSION = "No version defined!";
-          /**
+  public static final String UNKNOWN_JSON_SCHEMA = "Error: Unknown JSON schema version:";
+  /**
    * Logger for messages.
    */
   private static final Logger LOG = LoggerFactory.getLogger(JsonUtils.class);
@@ -108,6 +113,8 @@ public class JsonUtils {
   public static boolean validateJsonSchemaDocument(String jsonSchema, VersionFlag version) throws JsonValidationException {
     boolean valid = true;
     try {
+      // validate schema with meta schema.
+      validateJson(jsonSchema, getSchema(version));
       JsonSchema schema = getJsonSchemaFromString(jsonSchema, version);
       checkSchema(schema);
     } catch (Exception ex) {
@@ -258,14 +265,58 @@ public class JsonUtils {
     }
     return string;
   }
+
   /**
-   * Test wether the schema has at least one validator. 
-   * 
+   * Test wether the schema has at least one validator.
+   *
    * @param schema schema to check
    */
   protected static void checkSchema(JsonSchema schema) {
-      if (schema.getValidators().isEmpty()) {
-        throw new JsonValidationException(EMPTY_SCHEMA_DETECTED);
-      }
+    if (schema.getValidators().isEmpty()) {
+      throw new JsonValidationException(EMPTY_SCHEMA_DETECTED);
+    }
   }
+
+  /**
+   * Downloads the meta schema of the given version.
+   *
+   * @param version the given version
+   * @return Content of the meta schema as String.
+   */
+  protected static String getSchema(VersionFlag version) {
+    String content = null;
+    URI resourceUrl = null;
+
+    try {
+      switch (version) {
+        case V4:
+          resourceUrl = new URI("http://json-schema.org/draft-04/schema");
+          break;
+        case V6:
+          resourceUrl = new URI("http://json-schema.org/draft-06/schema");
+          break;
+        case V7:
+          resourceUrl = new URI("http://json-schema.org/draft-07/schema");
+          break;
+        case V201909:
+          resourceUrl = new URI("http://json-schema.org/draft/2019-09/schema");
+          break;
+        default:
+          resourceUrl = new URI("http://unknown.json.schema");
+          String message = String.format(UNKNOWN_JSON_SCHEMA + " '%s'", version);
+          LOG.error(message);
+          throw new JsonValidationException(message);
+      }
+      content = SimpleServiceClient
+              .create(resourceUrl.toString())
+              .accept(MediaType.TEXT_PLAIN)
+              .getResource(String.class);
+    } catch (Throwable tw) {
+      LOG.error("Error reading URI '" + resourceUrl.toString() + "'", tw);
+      throw new JsonValidationException("Error downloading resource from '" + resourceUrl.toString() + "'! -> " + tw.getMessage(), tw);
+    }
+
+    return content;
+  }
+
 }
