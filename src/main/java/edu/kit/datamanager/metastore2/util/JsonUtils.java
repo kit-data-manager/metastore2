@@ -44,6 +44,7 @@ public class JsonUtils {
   public static final String ERROR_READING_INPUT_STREAM = "Error reading from inputstream: ";
   public static final String ERROR_VALIDATING_JSON_DOCUMENT = "Error validating json!";
   public static final String MISSING_SCHEMA_VERSION = "No version defined!";
+  public static final String UNKNOWN_JSON_SCHEMA = "Error: Unknown JSON schema version:";
   /**
    * Logger for messages.
    */
@@ -301,7 +302,8 @@ public class JsonUtils {
           resourceUrl = new URI("http://json-schema.org/draft/2019-09/schema");
           break;
         default:
-          String message = String.format("Error: Unknown json schema version: '%s'", version);
+          resourceUrl = new URI("http://unknown.json.schema");
+          String message = String.format(UNKNOWN_JSON_SCHEMA + " '%s'", version);
           LOG.error(message);
           throw new JsonValidationException(message);
       }
@@ -311,7 +313,7 @@ public class JsonUtils {
               .getResource(String.class);
     } catch (Throwable tw) {
       LOG.error("Error reading URI '" + resourceUrl.toString() + "'", tw);
-      throw new JsonValidationException("Error downloading resource from '" + resourceUrl.toString() + "'!", tw);
+      throw new JsonValidationException("Error downloading resource from '" + resourceUrl.toString() + "'! -> " + tw.getMessage(), tw);
     }
 
     return content;

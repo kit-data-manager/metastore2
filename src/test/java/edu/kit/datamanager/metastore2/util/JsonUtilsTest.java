@@ -8,6 +8,7 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.networknt.schema.JsonSchema;
 import com.networknt.schema.SpecVersion;
+import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +19,11 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.runner.RunWith;
+import static org.mockito.ArgumentMatchers.any;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 /**
  *
@@ -57,7 +63,7 @@ public class JsonUtilsTest {
           + "    },\n"
           + "    \"additionalProperties\": false\n"
           + "}";
-  private final static String dateExample =  "{\n"
+  private final static String dateExample = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
@@ -84,7 +90,20 @@ public class JsonUtilsTest {
           + "    },\n"
           + "    \"additionalProperties\": false\n"
           + "}";
-
+  private final String invalidJsonSchemaDocumentWithversiondraft201909 = "{\n"
+          + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "  \"$id\": \"http://localhost:8040/api/v1/schemas/Test\",\n"
+          + "  \"title\": \"Test\",\n"
+          + "  \"type\": \"object\",\n"
+          + "  \"properties\": {\n"
+          + "    \"asd\": {\n"
+          + "      \"type\": \"lllll\",\n"
+          + "      \"pattern\": 100,\n"
+          + "      \"maxLength\": \"asda\"\n"
+          + "    }\n"
+          + "  },\n"
+          + "  \"allOf\": \"nope\"\n"
+          + "}";
   private final String validJsonDocument = "{\"string\":\"any string\",\"number\":3}";
   private final String invalidJsonDocument1 = "{\"string\":\"any string\",\"number\":3,}";
   private final String invalidJsonDocument2 = "{\"string\":2,\"number\":3}";
@@ -95,7 +114,7 @@ public class JsonUtilsTest {
   private final String invalidJsonDocument7 = "{\"string\":\"any string\"}";
   private final String invalidJsonDocument8 = "{\"string\":\"any string\",\"number\":3,\"additional\":1}";
   private final static String ENCODING = "UTF-8";
-  
+
   private final static String validDateDocument = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
   private final static String invalidDateDocument = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
 
@@ -167,7 +186,7 @@ public class JsonUtilsTest {
       assertTrue(false);
     } catch (JsonValidationException jvex) {
       assertTrue(true);
-      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+      assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
     }
   }
 
@@ -185,7 +204,7 @@ public class JsonUtilsTest {
       assertTrue(false);
     } catch (JsonValidationException jvex) {
       assertTrue(true);
-      assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
+      assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
     }
   }
 
@@ -298,6 +317,22 @@ public class JsonUtilsTest {
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
+    }
+  }
+
+  /**
+   * Test of validateJsonSchemaDocument method, of class JsonUtils.
+   */
+  @Test
+  public void testValidateInvalidJsonSchemaDocument() {
+    System.out.println("testValidateJsonSchemaDocumentWithSchemaDraft201909ButWrongVersion");
+    String schemaDocument = invalidJsonSchemaDocumentWithversiondraft201909;
+    try {
+      JsonUtils.validateJsonSchemaDocument(schemaDocument);
+      assertTrue(false);
+    } catch (JsonValidationException jvex) {
+      assertTrue(true);
+      assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
     }
   }
 
@@ -650,6 +685,7 @@ public class JsonUtilsTest {
 
   /**
    * Test of validateJson method, of class JsonUtils.
+   *
    * @throws java.io.IOException
    */
   @Test
@@ -671,7 +707,6 @@ public class JsonUtilsTest {
     }
   }
 
-
   /**
    * Test of validateJson method, of class JsonUtils.
    */
@@ -684,6 +719,7 @@ public class JsonUtilsTest {
     boolean result = JsonUtils.validateJson(jsonDocument, jsonSchema);
     assertEquals(expResult, result);
   }
+
   /**
    * Test of validateJson method, of class JsonUtils.
    */
