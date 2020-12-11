@@ -86,9 +86,9 @@ cd $ACTUAL_DIR/..
 ################################################################################
 # Build local docker
 ################################################################################
-printInfo Build docker container $REPO_NAME:$TAG_NAME 
+printInfo Build docker container kitdm/$REPO_NAME:$TAG_NAME 
 
-docker build -t $REPO_NAME:$TAG_NAME .
+docker build -t kitdm/$REPO_NAME:$TAG_NAME .
 
 if [ $? -ne 0 ]; then
   echo .
@@ -96,5 +96,5 @@ if [ $? -ne 0 ]; then
   usage
 else 
   echo .
-  printInfo Now you can create and start the container by calling docker "run -d -p8040:8040 --name metastore4docker $REPO_NAME:$TAG_NAME"
+  printInfo Now you can create and start the container by calling docker "run -d -p8040:8040 --name metastore4docker kitdm/$REPO_NAME:$TAG_NAME"
 fi

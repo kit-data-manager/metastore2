@@ -31,6 +31,7 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.swagger.v3.core.util.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -96,12 +97,23 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   private EntityManager em;
 
   @Override
-  public ResponseEntity createRecord(MetadataSchemaRecord record, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
-    LOG.trace("Performing createRecord({}, {}).", record, "#document");
+  public ResponseEntity createRecord(MultipartFile recordDocument, MultipartFile document, HttpServletRequest request, HttpServletResponse response, UriComponentsBuilder uriBuilder) {
+    LOG.trace("Performing createRecord({}, {}).", recordDocument, "#document");
     if (document == null || document.isEmpty()) {
       LOG.error("No schema document provided. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No schema document provided.");
     }
+    MetadataSchemaRecord record;
+    try {
+      if (recordDocument == null || recordDocument.isEmpty()) {
+        throw new IOException();
+      }
+      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
+    } catch (IOException ex) {
+      LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
+      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No metadata schema record provided.");
+    }
+
     if (record.getSchemaId() == null) {
       LOG.error("Mandatory attributes schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes schemaId and/or mimeType not found in record.");
@@ -125,7 +137,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     if (version > 0) {
       try {
         InetAddress addr = InetAddress.getByName(request.getRemoteHost());
-        if (!addr.isAnyLocalAddress() && !addr.isLoopbackAddress()) {
+        if (!addr.isSiteLocalAddress() && !addr.isLoopbackAddress()) {
           LOG.error("Schema updates are only allowed from localhost.");
           return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Schema updates are only allowed from localhost.");
         }
@@ -264,7 +276,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         String etag = record.getEtag();
 
         LOG.trace("Schema record successfully persisted. Updating document URI.");
-         fixSchemaDocumentUri(record);
+        fixSchemaDocumentUri(record);
         URI locationUri;
         locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri();
         LOG.warn("uri              " + locationUri);

@@ -26,6 +26,7 @@ import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
@@ -77,9 +78,37 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
 
+  /**
+   * Set new access control list.
+   * @param newAclList new list with acls.
+   */
   public void setAcl(Set<AclEntry> newAclList) {
     acl.clear();
     acl.addAll(newAclList);
+  }
+
+  /**
+   * Set creation date (truncated to milliseconds).
+   * @param instant creation date
+   */
+  public void setCreatedAt(Instant instant) {
+    if (instant != null) {
+    createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
+    } else {
+      createdAt = null;
+    }
+  }
+  
+  /**
+   * Set update date (truncated to milliseconds).
+   * @param instant update date
+   */
+  public void setLastUpdate(Instant instant) {
+    if (instant != null) {
+    lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
+    } else {
+      lastUpdate = null;
+    }
   }
 
   @Override

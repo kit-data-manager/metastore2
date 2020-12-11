@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * Class for validating JSON files.
-  */
+ */
 @Component
 public class JsonValidator implements IValidator {
 

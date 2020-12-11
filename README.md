@@ -57,7 +57,7 @@ On default the created images will be tagged as follows:
 ```
 user@localhost:/home/user/metastore2$ bash docker/buildDocker.sh
 ---------------------------------------------------------------------------
-Build docker container metastore2:0.1.1-2020-10-05
+Build docker container kitdm/metastore2:0.1.1-2020-10-05
 ---------------------------------------------------------------------------
 [...]
 ---------------------------------------------------------------------------
@@ -70,9 +70,9 @@ user@localhost:/home/user/metastore2$
 After building image you have to create (and start) a container for executing microservice:
 ```
 # If you want to use a specific image you may list all possible tags first.
-user@localhost:/home/user/metastore2$ docker images metastore2 --format {{.Tag}}
+user@localhost:/home/user/metastore2$ docker images kitdm/metastore2 --format {{.Tag}}
 0.1.1-2020-10-05
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker metastore2:0.1.1-2020-10-05
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
