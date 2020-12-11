@@ -19,15 +19,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
-import edu.kit.datamanager.service.IMessagingService;
-import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -36,12 +32,10 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- *
- * @author jejkal
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan({"edu.kit.datamanager", "edu.kit.datamanager.messaging.client"})
+@ComponentScan({"edu.kit.datamanager.metastore2", "edu.kit.datamanager.configuration", "edu.kit.datamanager.service"})
 public class Application{
 
   @Bean
@@ -58,31 +52,6 @@ public class Application{
             .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
             .modules(new JavaTimeModule())
             .build();
-  }
-
-//  @Bean
-//  public WebMvcConfigurer corsConfigurer(){
-//    return new WebMvcConfigurer(){
-//      @Override
-//      public void addCorsMappings(CorsRegistry registry){
-//        registry.addMapping("/**").allowedOrigins("http://localhost:8090").exposedHeaders("Content-Length").allowedHeaders("Accept");
-//      }
-//    };
-//  }
-//  @Bean
-//  @Primary
-//  public RequestMappingHandlerAdapter adapter(){
-//    return requestMappingHandlerAdapter;
-//  }
-  @Bean
-  @ConfigurationProperties("repo")
-  public ApplicationProperties metastoreProperties(){
-    return new ApplicationProperties();
-  }
-
-  @Bean
-  public IMessagingService messagingService(){
-    return new RabbitMQMessagingService();
   }
 
   public static void main(String[] args){
