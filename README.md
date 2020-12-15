@@ -119,6 +119,16 @@ Now you can start the service by calling /path/to/empty/installation/directory/r
 ---------------------------------------------------------------------------
 user@localhost:/home/user/metastore2$
 ```
+## Build framework using docker
+The metastore framework consists of the following services:
+- RabbitMQ - messaging service
+- Elasticsearch - indexing service
+- Indexing-service - service transforming metadata documents to json
+- Metastore2 - service managing metadata schema and metadata documents
+To build the whole framework use the shell script ('metatoreFramework.sh'). 
+init - Initialize/Reset the whole framework
+start - Start stopped framework
+stop - Stop framework
 
 ## First steps
 As soon as the microservice is started, you can browse to 
