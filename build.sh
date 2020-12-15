@@ -106,6 +106,15 @@ ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 checkParameters $*
 
 ################################################################################
+# Check inside docker or not
+################################################################################
+CONFIGURATION_SETUP=default
+if grep -q docker /proc/1/cgroup; then 
+   echo Inside docker 
+   CONFIGURATION_SETUP=docker
+fi
+
+################################################################################
 # Determine repo name 
 ################################################################################
 REPO_NAME=`./gradlew -q printProjectName`
@@ -124,7 +133,7 @@ echo Build service...
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find . -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find . -name application-$CONFIGURATION_SETUP.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
 find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
