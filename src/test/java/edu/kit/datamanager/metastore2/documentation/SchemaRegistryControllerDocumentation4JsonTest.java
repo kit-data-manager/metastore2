@@ -86,6 +86,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41407"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41407/api/v1/"})
 public class SchemaRegistryControllerDocumentation4JsonTest {

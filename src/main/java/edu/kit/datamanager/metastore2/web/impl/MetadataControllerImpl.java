@@ -17,6 +17,7 @@ package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
@@ -29,6 +30,7 @@ import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.service.IAuditService;
+import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
@@ -93,6 +95,8 @@ public class MetadataControllerImpl implements IMetadataController {
   private IMetadataRecordDao metadataRecordDao;
   @Autowired
   private IAuditService<MetadataRecord> auditService;
+  @Autowired
+  private IMessagingService messagingService;
 
   @Override
   public ResponseEntity createRecord(
@@ -256,6 +260,9 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
     fixMetadataDocumentUri(result);
+
+    LOG.trace("Sending CREATE event.");
+    messagingService.send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
@@ -457,6 +464,9 @@ public class MetadataControllerImpl implements IMetadataController {
     fixMetadataDocumentUri(record);
     String etag = record.getEtag();
 
+    LOG.trace("Sending UPDATE event.");
+    messagingService.send(MetadataResourceMessage.factoryUpdateMetadataMessage(record, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
 
@@ -491,9 +501,15 @@ public class MetadataControllerImpl implements IMetadataController {
         FileUtils.deleteDirectory(p.toFile());
 
         LOG.trace("All metadata documents for record with id {} deleted.", id);
+    
+        LOG.trace("Fix URI for message.");
+        fixMetadataDocumentUri(existingRecord);
       } catch (URISyntaxException | IOException ex) {
         LOG.error("Failed to obtain schema document for schemaId {}. Please remove schema files manually. Skipping deletion.");
       }
+
+      LOG.trace("Sending DELETE event.");
+      messagingService.send(MetadataResourceMessage.factoryDeleteMetadataMessage(existingRecord, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     } catch (ResourceNotFoundException ex) {
       //exception is hidden for DELETE
