@@ -32,6 +32,8 @@ import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -44,6 +46,7 @@ import org.springframework.http.MediaType;
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"relatedResource", "schemaId"})})
 public class MetadataRecord implements EtagSupport, Serializable {
 
   public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.metadata-record+json");
