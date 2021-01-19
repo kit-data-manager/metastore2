@@ -132,13 +132,11 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Setting random UUID as record id.");
     record.setId(UUID.randomUUID().toString());
+
     LOG.debug("Test for existing metadata record for given schema and resource");
-    MetadataRecord dummy = new MetadataRecord();
-    dummy.setRelatedResource(record.getRelatedResource());
-    dummy.setSchemaId(record.getSchemaId());
-    Example<MetadataRecord> example = Example.of(dummy);
-    Optional<MetadataRecord> findOne = metadataRecordDao.findOne(example);
-    if (findOne.isPresent()) {
+    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource(), record.getSchemaId());
+
+    if (recordAlreadyExists) {
       LOG.error("Conflict with existing metadata record!");
       return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
     }
@@ -501,7 +499,7 @@ public class MetadataControllerImpl implements IMetadataController {
         FileUtils.deleteDirectory(p.toFile());
 
         LOG.trace("All metadata documents for record with id {} deleted.", id);
-    
+
         LOG.trace("Fix URI for message.");
         fixMetadataDocumentUri(existingRecord);
       } catch (URISyntaxException | IOException ex) {
