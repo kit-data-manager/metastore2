@@ -14,5 +14,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @author Torridity
  */
 public interface IMetadataRecordDao extends JpaRepository<MetadataRecord, String>, JpaSpecificationExecutor<MetadataRecord>{
+  boolean existsMetadataRecordByRelatedResourceAndSchemaId(String relatedResource, String schemaId);
   
 }
