@@ -21,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.kit.datamanager.entities.EtagSupport;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import java.io.Serializable;

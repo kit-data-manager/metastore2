@@ -27,7 +27,8 @@ import edu.kit.datamanager.metastore2.dao.spec.RelatedIdSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
@@ -263,7 +264,7 @@ public class MetadataControllerImpl implements IMetadataController {
     messagingService.send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     URI locationUri;
-    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
 
     LOG.trace("Schema record successfully persisted. Returning result.");
     return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(result);

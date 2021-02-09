@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.service.IAuditService;
 import java.util.HashSet;
 import java.util.Set;

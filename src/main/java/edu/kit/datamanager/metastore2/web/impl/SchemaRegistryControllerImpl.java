@@ -24,7 +24,7 @@ import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.MimeTypeSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.metastore2.util.SchemaUtils;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;

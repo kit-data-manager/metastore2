@@ -35,7 +35,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @SpringBootApplication
 @EnableScheduling
-@ComponentScan({"edu.kit.datamanager.metastore2", "edu.kit.datamanager.configuration", "edu.kit.datamanager.service"})
+@ComponentScan({"edu.kit.datamanager","edu.kit.datamanager.dao","edu.kit.datamanager.repo.domain"})
 public class Application{
 
   @Bean

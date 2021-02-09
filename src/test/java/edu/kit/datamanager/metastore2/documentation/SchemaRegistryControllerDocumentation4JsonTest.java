@@ -22,7 +22,7 @@ import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;

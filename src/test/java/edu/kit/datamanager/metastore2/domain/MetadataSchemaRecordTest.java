@@ -7,7 +7,7 @@ package edu.kit.datamanager.metastore2.domain;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
