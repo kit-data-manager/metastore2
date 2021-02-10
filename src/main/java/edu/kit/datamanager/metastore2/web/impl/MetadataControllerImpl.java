@@ -21,20 +21,32 @@ import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
-import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
+import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.RelatedIdSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
+import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
+import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.ContentInformation;
+import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.service.IContentInformationService;
+import edu.kit.datamanager.repo.service.IDataResourceService;
+import edu.kit.datamanager.repo.service.IRepoStorageService;
+import edu.kit.datamanager.repo.service.IRepoVersioningService;
+import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
+import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
@@ -48,18 +60,18 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.FileUtils;
+import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -86,18 +98,115 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
+@Schema(description = "Metadata Resource Management")
 public class MetadataControllerImpl implements IMetadataController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
+ @Autowired
+  private final Javers javers;
+  @Autowired
+  private final IDataResourceService dataResourceService;
+  @Autowired
+  private final IContentInformationService contentInformationService;
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
+  @Autowired
+  private ApplicationProperties applicationProperties;
+  @Autowired
+  private IRepoVersioningService[] versioningServices;
+  @Autowired
+  private IRepoStorageService[] storageServices;
 
+  private final IAuditService<DataResource> auditServiceDataResource;
+  private final IAuditService<ContentInformation> contentAuditService;
   @Autowired
-  private ApplicationProperties metastoreProperties;
-  @Autowired
-  private IMetadataRecordDao metadataRecordDao;
+  private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IAuditService<MetadataRecord> auditService;
   @Autowired
   private IMessagingService messagingService;
+ 
+  private MetastoreConfiguration metastoreProperties;
+  @Autowired
+  private IDataResourceDao dataResourceDao;
+ 
+  /**
+   *
+   * @param applicationProperties
+   * @param javers
+   * @param dataResourceService
+   * @param contentInformationService
+   * @param versioningServices
+   * @param storageServices
+   * @param eventPublisher
+   */
+  public MetadataControllerImpl(ApplicationProperties applicationProperties,
+          Javers javers,
+          IDataResourceService dataResourceService,
+          IDataResourceDao dataResourceDao,
+          IContentInformationService contentInformationService,
+          IRepoVersioningService[] versioningServices,
+          IRepoStorageService[] storageServices,
+          ApplicationEventPublisher eventPublisher
+  ) {
+    System.out.println("kkkkkkkkkkkkkkkkkkkk");
+    System.out.println("javers -> " + javers);
+    System.out.println(" dataResourceService-> " + dataResourceService);
+    System.out.println("dataResourceDao -> " + dataResourceDao);
+    System.out.println("contentInformationService -> " + contentInformationService);
+    System.out.println("eventPublisher -> " + eventPublisher);
+    System.out.println("versioningServices -> " + versioningServices);
+    this.applicationProperties = applicationProperties;
+    this.javers = javers;
+    this.dataResourceDao = dataResourceDao;
+    this.dataResourceService = dataResourceService;
+    this.contentInformationService = contentInformationService;
+    this.versioningServices = versioningServices;
+    this.storageServices = storageServices;
+    MetastoreConfiguration rbc = new MetastoreConfiguration();
+    rbc.setBasepath(applicationProperties.getMetadataFolder());
+    rbc.setReadOnly(false);
+    rbc.setDataResourceService(this.dataResourceService);
+    rbc.setContentInformationService(contentInformationService);
+    rbc.setEventPublisher(eventPublisher);
+    for (IRepoVersioningService versioningService : versioningServices) {
+      if ("simple".equals(versioningService.getServiceName())) {
+        LOG.info("Set versioning service: {}", versioningService.getServiceName());
+        rbc.setVersioningService(versioningService);
+        break;
+      }
+    }
+    for (IRepoStorageService storageService : storageServices) {
+      if ("dateBased".equals(storageService.getServiceName())) {
+        LOG.info("Set storage service: {}", storageService.getServiceName());
+        rbc.setStorageService(storageService);
+        break;
+      }
+    }
+    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
+    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
+//    dataResourceService = new DataResourceService();
+    dataResourceService.configure(rbc);
+//    contentInformationService = new ContentInformationService();
+    contentInformationService.configure(rbc);
+    metastoreProperties = rbc;
+    metastoreProperties.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+//    ContentInformationAuditService cias = new ContentInformationAuditService(javers, metastoreProperties);
+//    metastoreProperties.setContentInformationAuditService(cias);
+//    metastoreProperties.setContentInformationService(contentInformationService);
+//     metastoreProperties.setReadOnly(false);
+//    metastoreProperties.setStorageService(new DateBasedStorageService());
+//    metastoreProperties.setVersioningService(new SimpleDataVersioningService());
+//   RepoBaseConfiguration rbc = metastoreProperties;
+//    rbc.setEventPublisher(eventPublisher);
+//    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
+//   metastoreProperties.setAuditService(auditServiceDataResource);
+//    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
+//    dataResourceService = new DataResourceService();
+//    dataResourceService.configure(rbc);
+//    contentInformationService = new ContentInformationService();
+//    contentInformationService.configure(rbc);
+  }
 
   @Override
   public ResponseEntity createRecord(
@@ -186,7 +295,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
       //persist document
       LOG.trace("Writing user-provided metadata file to repository.");
-      URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
+      URL metadataFolderUrl = applicationProperties.getMetadataFolder();
       try {
         // Remove all '-' and split resulting string to substrings with 4 characters each.
         String[] createPathToRecord = record.getId().replace("-", "").split("(?<=\\G.{4})");
@@ -249,8 +358,9 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     LOG.trace("Persisting metadata record.");
-    MetadataRecord result = metadataRecordDao.save(record);
-
+    LinkedMetadataRecord lmr = null;
+    lmr = metadataRecordDao.save(new LinkedMetadataRecord(record));
+    MetadataRecord result = record;
     LOG.trace("Capturing metadata schema audit information.");
     auditService.captureAuditInformation(result, AuthenticationHelper.getPrincipal());
 
@@ -280,7 +390,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    MetadataRecord record = getRecordByIdAndVersion(id, version);
+    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id, version);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of MetadataRecord.");
     String etag = record.getEtag();
@@ -300,7 +410,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    MetadataRecord record = getRecordByIdAndVersion(id, version);
+    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id, version);
 
     URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
 
@@ -370,7 +480,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     LOG.trace("Obtaining most recent metadata record with id {}.", id);
-    MetadataRecord existingRecord = getRecordByIdAndVersion(id);
+    MetadataRecord existingRecord = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id);
     //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
 
     LOG.trace("Checking provided ETag.");
@@ -415,7 +525,7 @@ public class MetadataControllerImpl implements IMetadataController {
         if (writeMetadataFile) {
           //persist document
           LOG.trace("Writing user-provided metadata file to repository.");
-          URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
+          URL metadataFolderUrl = applicationProperties.getMetadataFolder();
           try {
             String[] createPathToRecord = existingRecord.getId().replace("-", "").split("(?<=\\G.{4})");
             createPathToRecord[createPathToRecord.length - 1] = existingRecord.getId();
@@ -455,7 +565,8 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     LOG.trace("Persisting metadata record.");
-    record = metadataRecordDao.save(existingRecord);
+    LinkedMetadataRecord lmr = null;
+    lmr = metadataRecordDao.save(new LinkedMetadataRecord(existingRecord));
     LOG.trace("Capturing metadata schema audit information.");
     auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
@@ -482,7 +593,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
     try {
       LOG.trace("Obtaining most recent schema record with id {}.", id);
-      MetadataRecord existingRecord = getRecordByIdAndVersion(id);
+      MetadataRecord existingRecord = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id);
       LOG.trace("Checking provided ETag.");
       ControllerUtils.checkEtag(wr, existingRecord);
 
@@ -490,10 +601,11 @@ public class MetadataControllerImpl implements IMetadataController {
       auditService.deleteAuditInformation(AuthenticationHelper.getPrincipal(), existingRecord);
 
       LOG.trace("Removing schema from database.");
-      metadataRecordDao.delete(existingRecord);
+      LinkedMetadataRecord lmr = null;
+      lmr = metadataRecordDao.save(new LinkedMetadataRecord(existingRecord));
       LOG.trace("Deleting all metadata documents from disk.");
 
-      URL metadataFolderUrl = metastoreProperties.getMetadataFolder();
+      URL metadataFolderUrl = applicationProperties.getMetadataFolder();
       try {
         Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
         LOG.trace("Deleting schema file(s) from path.", p);
@@ -521,33 +633,6 @@ public class MetadataControllerImpl implements IMetadataController {
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();
-  }
-
-  private MetadataRecord getRecordByIdAndVersion(String recordId) throws ResourceNotFoundException {
-    return getRecordByIdAndVersion(recordId, null);
-  }
-
-  private MetadataRecord getRecordByIdAndVersion(String recordId, Long version) throws ResourceNotFoundException {
-    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    Long recordVersion = version;
-    if (recordVersion == null) {
-      LOG.trace("No record version provided. Reading schema record from database.");
-      Optional<MetadataRecord> record = metadataRecordDao.findById(recordId);
-      if (!record.isPresent()) {
-        LOG.error("No metadata record found for id {}. Returning HTTP 404.", recordId);
-        throw new ResourceNotFoundException("No metadata record found for id " + recordId + ".");
-      }
-      return record.get();
-    }
-
-    Optional<MetadataRecord> optRecord = auditService.getResourceByVersion(recordId, recordVersion);
-    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    if (!optRecord.isPresent()) {
-      LOG.error("No metadata record found for id {} and version {}. Returning HTTP 404.", recordId, version);
-      throw new ResourceNotFoundException("No metadata record found for id " + recordId + " and version " + version + ".");
-    }
-
-    return optRecord.get();
   }
 
   public MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {

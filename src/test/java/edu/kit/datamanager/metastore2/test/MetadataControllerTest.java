@@ -7,11 +7,21 @@ package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
+import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
+import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
+import edu.kit.datamanager.repo.dao.IContentInformationDao;
+import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.service.IDataResourceService;
+import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
+import edu.kit.datamanager.repo.service.impl.DataResourceService;
+import edu.kit.datamanager.repo.service.impl.NoneDataVersioningService;
 import edu.kit.datamanager.service.IAuditService;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,14 +39,18 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.apache.commons.codec.binary.Hex;
+import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -71,6 +85,9 @@ import org.springframework.web.context.WebApplicationContext;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
+@EntityScan("edu.kit.datamanager")
+@EnableJpaRepositories("edu.kit.datamanager")
+@ComponentScan({"edu.kit.datamanager"})
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
   DependencyInjectionTestExecutionListener.class,
@@ -182,16 +199,39 @@ public class MetadataControllerTest {
   @Autowired
   private FilterChainProxy springSecurityFilterChain;
   @Autowired
-  private IMetadataRecordDao metadataRecordDao;
+  private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
   private IAuditService<MetadataRecord> schemaAuditService;
+
+  @Autowired
+  private IDataResourceDao dataResourceDao;
+  @Autowired
+  Javers javers = null;
+  private IDataResourceService dataResourceService;
+  @Autowired
+  private IContentInformationDao contentInformationDao;
+
+  private IAuditService<ContentInformation> contentInformationAuditService;
+  @Autowired
+  private MetastoreConfiguration applicationProperties;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
   @Before
   public void setUp() throws Exception {
+    RepoBaseConfiguration rbc = new RepoBaseConfiguration();
+    rbc.setBasepath(applicationProperties.getBasepath());
+    rbc.setReadOnly(applicationProperties.isReadOnly());
+    rbc.setVersioningService(new NoneDataVersioningService());
+    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
+    contentInformationDao.deleteAll();
+    dataResourceDao.deleteAll();
+    dataResourceService = new DataResourceService();
+    dataResourceService.configure(rbc);
+    rbc.setDataResourceService(dataResourceService);
+
     metadataRecordDao.deleteAll();
     try {
       // setup mockMvc
@@ -880,7 +920,8 @@ public class MetadataControllerTest {
     } catch (NoSuchAlgorithmException ex) {
       // ignore
     }
-    record = metadataRecordDao.save(record);
+    LinkedMetadataRecord lmr = null;
+    lmr = metadataRecordDao.save(new LinkedMetadataRecord(record));
     File dcFile = new File("/tmp/dc.xml");
     if (!dcFile.exists()) {
       try ( FileOutputStream fout = new FileOutputStream(dcFile)) {

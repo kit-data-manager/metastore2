@@ -43,10 +43,8 @@ import org.springframework.http.MediaType;
  *
  * @author jejkal
  */
-@Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"relatedResource", "schemaId"})})
 public class MetadataRecord implements EtagSupport, Serializable {
 
   public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.metadata-record+json");

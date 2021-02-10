@@ -5,6 +5,7 @@
  */
 package edu.kit.datamanager.metastore2.dao;
 
+import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -13,7 +14,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  *
  * @author Torridity
  */
-public interface IMetadataRecordDao extends JpaRepository<MetadataRecord, String>, JpaSpecificationExecutor<MetadataRecord>{
+public interface ILinkedMetadataRecordDao extends JpaRepository<LinkedMetadataRecord, String>, JpaSpecificationExecutor<MetadataRecord>{
   boolean existsMetadataRecordByRelatedResourceAndSchemaId(String relatedResource, String schemaId);
   
 }

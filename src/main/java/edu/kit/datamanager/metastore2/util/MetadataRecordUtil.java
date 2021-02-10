@@ -20,6 +20,7 @@ import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -45,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import static org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers.data;
 import org.slf4j.Logger;
@@ -252,4 +254,17 @@ public class MetadataRecordUtil {
     return;
   }
  
+  public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId) throws ResourceNotFoundException {
+    return getRecordByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
+    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    
+    return migrateToMetadataRecord(metastoreProperties, dataResource);
+   }
+
 }

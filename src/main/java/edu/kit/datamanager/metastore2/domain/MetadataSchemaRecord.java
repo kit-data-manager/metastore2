@@ -33,7 +33,7 @@ import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -85,8 +85,7 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @NotNull(message = "A list of access control entries for resticting access.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @Transient
   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;
