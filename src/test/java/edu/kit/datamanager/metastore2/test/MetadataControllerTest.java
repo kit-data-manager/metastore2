@@ -13,10 +13,12 @@ import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
+import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IDataResourceService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
@@ -921,6 +923,8 @@ public class MetadataControllerTest {
       // ignore
     }
     LinkedMetadataRecord lmr = null;
+    DataResource migrateToDataResource = MetadataRecordUtil.migrateToDataResource(applicationProperties, record);
+    dataResourceDao.save(migrateToDataResource);
     lmr = metadataRecordDao.save(new LinkedMetadataRecord(record));
     File dcFile = new File("/tmp/dc.xml");
     if (!dcFile.exists()) {

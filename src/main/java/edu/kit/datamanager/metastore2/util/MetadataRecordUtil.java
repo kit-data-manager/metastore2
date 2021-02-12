@@ -17,10 +17,10 @@ package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.clients.SimpleServiceClient;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
+import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -30,31 +30,23 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
-import edu.kit.datamanager.util.AuthenticationHelper;
 import io.swagger.v3.core.util.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import static org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers.data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -81,9 +73,9 @@ public class MetadataRecordUtil {
   public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument, MultipartFile document) {
     MetadataRecord result = null;
-     MetadataRecord record;
-     
-     // Do some checks first.
+    MetadataRecord record;
+
+    // Do some checks first.
     try {
       if (recordDocument == null || recordDocument.isEmpty()) {
         throw new IOException();
@@ -102,7 +94,7 @@ public class MetadataRecordUtil {
     }
 
     if (record.getId() != null) {
-       String message = "Not expecting record id to be assigned by user.";
+      String message = "Not expecting record id to be assigned by user.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
@@ -117,38 +109,45 @@ public class MetadataRecordUtil {
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
-    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, document, document.getOriginalFilename(), null, true, (t) -> {return "somethingStupid";});
-    
-    return migrateToMetadataRecord(applicationProperties, dataResource);
+    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, (t) -> {
+      return "somethingStupid";
+    });
+
+    return migrateToMetadataRecord(applicationProperties, createResource);
   }
 
-  private static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
+  public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
           MetadataRecord metadataRecord) {
-    DataResource dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
-    if (dataResource == null) {
-      dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+    DataResource dataResource;
+    if (metadataRecord.getId() != null) {
+      try {
+        dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
+      } catch (ResourceNotFoundException rnfe) {
+        dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+      }
+    } else {
+      dataResource = new DataResource();
     }
     dataResource.setAcls(metadataRecord.getAcl());
-    Set<Date> dates = dataResource.getDates();
-    boolean createDateExists = false;
-    for (edu.kit.datamanager.repo.domain.Date d : dates) {
-      if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-        LOG.trace("Creation date entry found.");
-        createDateExists = true;
-        break;
+    if (metadataRecord.getCreatedAt() != null) {
+      boolean createDateExists = false;
+      Set<Date> dates = dataResource.getDates();
+      for (edu.kit.datamanager.repo.domain.Date d : dates) {
+        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
+          LOG.trace("Creation date entry found.");
+          createDateExists = true;
+          break;
+        }
       }
-    }
-    if (!createDateExists) {
-      dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
-    }
-    if (metadataRecord.getMetadataDocumentUri() != null) {
-
+      if (!createDateExists) {
+        dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
+      }
     }
     if (metadataRecord.getPid() != null) {
       dataResource.setIdentifier(PrimaryIdentifier.factoryPrimaryIdentifier(metadataRecord.getPid()));
     }
-
-    metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+    boolean relationFound = false;
+    boolean schemaIdFound = false;
     for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
         LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
@@ -159,6 +158,17 @@ public class MetadataRecordUtil {
         relatedIds.setValue(metadataRecord.getSchemaId());
       }
     }
+    if (!relationFound) {
+      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource(), null, null);
+      dataResource.getRelatedIdentifiers().add(relatedResource);
+    }
+    if (!schemaIdFound) {
+      RelatedIdentifier schemaId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchemaId(), null, null);
+      dataResource.getRelatedIdentifiers().add(schemaId);
+    }
+    
+    dataResource.getTitles().add(Title.factoryTitle("Metadata 4 metastore", Title.TYPE.OTHER));
+    dataResource.setResourceType(ResourceType.createResourceType("metadata"));
 
     return dataResource;
   }
@@ -200,7 +210,8 @@ public class MetadataRecordUtil {
       }
     }
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
-    ContentInformation info = ContentInformation.createContentInformation(dataResource.getId(), null);
+    ContentInformation info = new ContentInformation();
+    info.setParentResource(dataResource);
     List<ContentInformation> listOfFiles = contentInformationService.findAll(info, PageRequest.of(0, 1)).getContent();
     if (!listOfFiles.isEmpty()) {
       info = listOfFiles.get(0);
@@ -209,6 +220,7 @@ public class MetadataRecordUtil {
     }
     return metadataRecord;
   }
+
   /**
    * Validate metadata document with given schema.
    *
@@ -218,7 +230,7 @@ public class MetadataRecordUtil {
    * @throws IOException Error reading document.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MetadataRecord record, 
+          MetadataRecord record,
           byte[] document) {
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
@@ -248,12 +260,12 @@ public class MetadataRecordUtil {
       }
     }
     if (!validationSuccess) {
-      throw new BadArgumentException(errorMessage.toString());
+      throw new UnprocessableEntityException(errorMessage.toString());
     }
 
     return;
   }
- 
+
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null);
@@ -263,8 +275,8 @@ public class MetadataRecordUtil {
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
-    
+
     return migrateToMetadataRecord(metastoreProperties, dataResource);
-   }
+  }
 
 }

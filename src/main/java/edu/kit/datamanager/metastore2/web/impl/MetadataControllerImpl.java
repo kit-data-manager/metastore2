@@ -126,9 +126,9 @@ public class MetadataControllerImpl implements IMetadataController {
   @Autowired
   private IMessagingService messagingService;
  
-  private MetastoreConfiguration metastoreProperties;
+  private final MetastoreConfiguration metastoreProperties;
   @Autowired
-  private IDataResourceDao dataResourceDao;
+  private final IDataResourceDao dataResourceDao;
  
   /**
    *
@@ -149,13 +149,6 @@ public class MetadataControllerImpl implements IMetadataController {
           IRepoStorageService[] storageServices,
           ApplicationEventPublisher eventPublisher
   ) {
-    System.out.println("kkkkkkkkkkkkkkkkkkkk");
-    System.out.println("javers -> " + javers);
-    System.out.println(" dataResourceService-> " + dataResourceService);
-    System.out.println("dataResourceDao -> " + dataResourceDao);
-    System.out.println("contentInformationService -> " + contentInformationService);
-    System.out.println("eventPublisher -> " + eventPublisher);
-    System.out.println("versioningServices -> " + versioningServices);
     this.applicationProperties = applicationProperties;
     this.javers = javers;
     this.dataResourceDao = dataResourceDao;
@@ -167,7 +160,7 @@ public class MetadataControllerImpl implements IMetadataController {
     rbc.setBasepath(applicationProperties.getMetadataFolder());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(this.dataResourceService);
-    rbc.setContentInformationService(contentInformationService);
+    rbc.setContentInformationService(this.contentInformationService);
     rbc.setEventPublisher(eventPublisher);
     for (IRepoVersioningService versioningService : versioningServices) {
       if ("simple".equals(versioningService.getServiceName())) {
@@ -250,134 +243,15 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.error("Conflict with existing metadata record!");
       return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
     }
-    //check for re-use of old id
-    long versionById = auditService.getCurrentVersion(record.getId());
-    long reattempts = 0;
-    while (versionById != 0) {
-      reattempts++;
-      LOG.warn("UUID collision detected. Assigning another random identifier.");
-      record.setId(UUID.randomUUID().toString());
-
-      if (reattempts == 10) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body("Unable to assign unique, random UUID. Please try again later.");
-      }
-      versionById = auditService.getCurrentVersion(record.getId());
-    }
-
-    LOG.trace("Trying to validate metadata document using one of {} schema registry/registries.", metastoreProperties.getSchemaRegistries().length);
-
-    try {
-      byte[] data = document.getBytes();
-      if (metastoreProperties.getSchemaRegistries().length == 0) {
-        LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
-        return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
-      }
-
-      ResponseEntity<String> responseEntity = validateMetadataDocument(record, data);
-
-      if (responseEntity != null) {
-        return responseEntity;
-      }
-
-      LOG.trace("Setting createdAt and lastUpdate to now().");
-      record.setCreatedAt(Instant.now());
-      record.setLastUpdate(record.getCreatedAt());
-
-      try {
-        LOG.trace("Creating metadata document hash and updating record.");
-        MessageDigest md = MessageDigest.getInstance("SHA1");
-        md.update(data, 0, data.length);
-        record.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
-      } catch (NoSuchAlgorithmException ex) {
-        LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
-      }
-
-      //persist document
-      LOG.trace("Writing user-provided metadata file to repository.");
-      URL metadataFolderUrl = applicationProperties.getMetadataFolder();
-      try {
-        // Remove all '-' and split resulting string to substrings with 4 characters each.
-        String[] createPathToRecord = record.getId().replace("-", "").split("(?<=\\G.{4})");
-        createPathToRecord[createPathToRecord.length - 1] = record.getId();
-
-        Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), createPathToRecord);
-        if (!Files.exists(metadataDir)) {
-          LOG.trace("Creating metadata directory at {}.", metadataDir);
-          Files.createDirectories(metadataDir);
-        } else {
-          if (!Files.isDirectory(metadataDir)) {
-            LOG.error("Metadata directory {} exists but is no folder. Aborting operation.", metadataDir);
-            throw new CustomInternalServerError("Illegal metadata registry state detected.");
-          }
-        }
-
-        Path absolutePathToRecord = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(record));
-        if (Files.exists(absolutePathToRecord)) {
-          LOG.error("Metadata document conflict. A file at path {} already exists.", absolutePathToRecord);
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
-        }
-
-        LOG.trace("Persisting valid metadata document at {}.", absolutePathToRecord);
-        Files.write(absolutePathToRecord, data);
-        LOG.trace("Metadata document successfully persisted. Updating record.");
-        record.setMetadataDocumentUri(absolutePathToRecord.toUri().toString());
-        LOG.trace("Metadata record completed.");
-      } catch (URISyntaxException ex) {
-        LOG.error("Failed to determine schema storage location.", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of schema location.");
-      } catch (IOException ex) {
-        LOG.error("Failed to write metadata to metadata folder. Returning HTTP INSUFFICIENT_STORAGE.", ex);
-        return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to write medata to metadata folder.");
-      }
-    } catch (IOException ex) {
-      LOG.error("Failed to read metadata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
-      return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read metadata from input stream.");
-    }
-
-    String callerPrincipal = (String) AuthenticationHelper.getAuthentication().getPrincipal();
-    LOG.trace("Checking resource for caller acl entry.");
-    //check ACLs for caller
-    AclEntry callerEntry = null;
-    for (AclEntry entry : record.getAcl()) {
-      if (callerPrincipal.equals(entry.getSid())) {
-        LOG.trace("Acl entry for caller {} found: {}", callerPrincipal, entry);
-        callerEntry = entry;
-        break;
-      }
-    }
-
-    if (callerEntry == null) {
-      LOG.debug("Adding caller entry with ADMINISTRATE permissions.");
-      callerEntry = new AclEntry(callerPrincipal, PERMISSION.ADMINISTRATE);
-      record.getAcl().add(callerEntry);
-    } else {
-      LOG.debug("Ensuring ADMINISTRATE permissions for acl entry {}.", callerEntry);
-      //make sure at least the caller has administrate permissions
-      callerEntry.setPermission(PERMISSION.ADMINISTRATE);
-    }
-
-    LOG.trace("Persisting metadata record.");
-    LinkedMetadataRecord lmr = null;
-    lmr = metadataRecordDao.save(new LinkedMetadataRecord(record));
-    MetadataRecord result = record;
-    LOG.trace("Capturing metadata schema audit information.");
-    auditService.captureAuditInformation(result, AuthenticationHelper.getPrincipal());
-
-    LOG.trace("Get ETag of MetadataRecord.");
-    String etag = result.getEtag();
-
-    LOG.trace("Schema record successfully persisted. Updating document URI.");
-    fixMetadataDocumentUri(result);
-
-    LOG.trace("Sending CREATE event.");
-    messagingService.send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metastoreProperties, recordDocument, document);
+    // Successfully created metadata record.
+    metadataRecordDao.save(new LinkedMetadataRecord(result));
+    
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
 
     LOG.trace("Schema record successfully persisted. Returning result.");
-    return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(result);
+    return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
 
   @Override
