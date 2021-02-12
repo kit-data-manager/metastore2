@@ -230,12 +230,6 @@ public class MetadataControllerImpl implements IMetadataController {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not expecting record id to be assigned by user.");
     }
 
-    LOG.trace("Setting initial metadata version to {}.", 1l);
-    record.setRecordVersion(1l);
-
-    LOG.trace("Setting random UUID as record id.");
-    record.setId(UUID.randomUUID().toString());
-
     LOG.debug("Test for existing metadata record for given schema and resource");
     boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource(), record.getSchemaId());
 

@@ -211,6 +211,7 @@ public class MetadataControllerTest {
   private IDataResourceDao dataResourceDao;
   @Autowired
   Javers javers = null;
+  @Autowired
   private IDataResourceService dataResourceService;
   @Autowired
   private IContentInformationDao contentInformationDao;
@@ -223,16 +224,16 @@ public class MetadataControllerTest {
 
   @Before
   public void setUp() throws Exception {
-    RepoBaseConfiguration rbc = new RepoBaseConfiguration();
+    MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(applicationProperties.getBasepath());
     rbc.setReadOnly(applicationProperties.isReadOnly());
     rbc.setVersioningService(new NoneDataVersioningService());
     contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
-    dataResourceService = new DataResourceService();
     dataResourceService.configure(rbc);
     rbc.setDataResourceService(dataResourceService);
+    applicationProperties = rbc;
 
     metadataRecordDao.deleteAll();
     try {
@@ -933,7 +934,6 @@ public class MetadataControllerTest {
         fout.flush();
       }
     }
-    schemaAuditService.captureAuditInformation(record, "TEST");
   }
 
   private static RequestPostProcessor remoteAddr(final String remoteAddr) { // it's nice to extract into a helper
