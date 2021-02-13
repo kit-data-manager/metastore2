@@ -42,6 +42,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -114,6 +115,13 @@ public class MetadataRecordUtil {
     });
 
     return migrateToMetadataRecord(applicationProperties, createResource);
+  }
+
+  public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
+           String id, 
+           String eTag,
+           Function<String, String> supplier) {
+    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,

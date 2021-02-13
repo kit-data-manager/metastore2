@@ -16,10 +16,8 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
@@ -29,7 +27,6 @@ import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -60,11 +57,10 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
+import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.io.FileUtils;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,6 +87,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
+
 
 /**
  *
@@ -149,6 +146,13 @@ public class MetadataControllerImpl implements IMetadataController {
           IRepoStorageService[] storageServices,
           ApplicationEventPublisher eventPublisher
   ) {
+    System.out.println("kkkk" + applicationProperties);
+    System.out.println("kkkk" + javers);
+    System.out.println("kkkk" + dataResourceDao);
+    System.out.println("kkkk" + dataResourceService);
+    System.out.println("kkkk" + contentInformationService);
+    System.out.println("kkkk" + versioningServices);
+    System.out.println("kkkk" + storageServices);
     this.applicationProperties = applicationProperties;
     this.javers = javers;
     this.dataResourceDao = dataResourceDao;
@@ -182,8 +186,11 @@ public class MetadataControllerImpl implements IMetadataController {
     dataResourceService.configure(rbc);
 //    contentInformationService = new ContentInformationService();
     contentInformationService.configure(rbc);
+//    rbc.setContentInformationAuditService(contentInformationAuditService);
+    rbc.setAuditService(auditServiceDataResource);
     metastoreProperties = rbc;
     metastoreProperties.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+    System.out.println("kkkk" + metastoreProperties);
 //    ContentInformationAuditService cias = new ContentInformationAuditService(javers, metastoreProperties);
 //    metastoreProperties.setContentInformationAuditService(cias);
 //    metastoreProperties.setContentInformationService(contentInformationService);
@@ -458,42 +465,12 @@ public class MetadataControllerImpl implements IMetadataController {
           HttpServletResponse hsr
   ) {
     LOG.trace("Performing deleteRecord({}).", id);
-
-    try {
-      LOG.trace("Obtaining most recent schema record with id {}.", id);
-      MetadataRecord existingRecord = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id);
-      LOG.trace("Checking provided ETag.");
-      ControllerUtils.checkEtag(wr, existingRecord);
-
-      LOG.trace("Removing audit information of schema with id {}.", id);
-      auditService.deleteAuditInformation(AuthenticationHelper.getPrincipal(), existingRecord);
-
-      LOG.trace("Removing schema from database.");
-      LinkedMetadataRecord lmr = null;
-      lmr = metadataRecordDao.save(new LinkedMetadataRecord(existingRecord));
-      LOG.trace("Deleting all metadata documents from disk.");
-
-      URL metadataFolderUrl = applicationProperties.getMetadataFolder();
-      try {
-        Path p = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), existingRecord.getId());
-        LOG.trace("Deleting schema file(s) from path.", p);
-        FileUtils.deleteDirectory(p.toFile());
-
-        LOG.trace("All metadata documents for record with id {} deleted.", id);
-
-        LOG.trace("Fix URI for message.");
-        fixMetadataDocumentUri(existingRecord);
-      } catch (URISyntaxException | IOException ex) {
-        LOG.error("Failed to obtain schema document for schemaId {}. Please remove schema files manually. Skipping deletion.");
-      }
-
-      LOG.trace("Sending DELETE event.");
-      messagingService.send(MetadataResourceMessage.factoryDeleteMetadataMessage(existingRecord, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
-    } catch (ResourceNotFoundException ex) {
-      //exception is hidden for DELETE
-      LOG.debug("No metadata schema with id {} found. Skipping deletion.", id);
-    }
+    Function<String, String> getById;
+    getById = (t) -> {
+      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, 1l, wr, hsr)).toString();
+    };
+    String eTag = ControllerUtils.getEtagFromHeader(wr);
+    MetadataRecordUtil.deleteMetadataRecord(metastoreProperties, id, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }

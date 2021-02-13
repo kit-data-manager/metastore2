@@ -231,7 +231,6 @@ public class MetadataControllerTest {
     contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
-    dataResourceService.configure(rbc);
     rbc.setDataResourceService(dataResourceService);
     applicationProperties = rbc;
 
@@ -873,6 +872,18 @@ public class MetadataControllerTest {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+  }
+
+  @Test
+  public void testDeleteRecordWithoutAuthentication() throws Exception {
+    createDCMetadataRecord();
+
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + METADATA_RECORD_ID).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+
+    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
+    //delete second time
+    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID)).andDo(print()).andExpect(status().isForbidden()).andReturn();
   }
 
   @Test
