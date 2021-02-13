@@ -78,7 +78,7 @@ public class MetadataRecordUtil {
 
     // Do some checks first.
     try {
-      if (recordDocument == null || recordDocument.isEmpty()) {
+      if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
         throw new IOException();
       }
       record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
@@ -87,8 +87,8 @@ public class MetadataRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-
-    if (record.getRelatedResource() == null || record.getSchemaId() == null) {
+      
+  if (record.getRelatedResource() == null || record.getSchemaId() == null) {
       String message = "Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
@@ -240,6 +240,7 @@ public class MetadataRecordUtil {
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MetadataRecord record,
           byte[] document) {
+    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, record, document);
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
     for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {

@@ -6,41 +6,42 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.exceptions.CustomInternalServerError;
+import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
-import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
-import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.service.IDataResourceService;
+import edu.kit.datamanager.repo.service.IRepoStorageService;
+import edu.kit.datamanager.repo.service.IRepoVersioningService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
-import edu.kit.datamanager.repo.service.impl.DataResourceService;
-import edu.kit.datamanager.repo.service.impl.NoneDataVersioningService;
+import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
+import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.service.IAuditService;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
-import org.apache.commons.codec.binary.Hex;
 import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -51,6 +52,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
@@ -80,6 +82,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
@@ -97,7 +100,7 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-	@TestPropertySource(properties = {"server.port=41403"})
+@TestPropertySource(properties = {"server.port=41403"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {
 
@@ -197,6 +200,8 @@ public class MetadataControllerTest {
 
   private MockMvc mockMvc;
   @Autowired
+  private ApplicationProperties applicationProperties;
+  @Autowired
   private WebApplicationContext context;
   @Autowired
   private FilterChainProxy springSecurityFilterChain;
@@ -215,24 +220,63 @@ public class MetadataControllerTest {
   private IDataResourceService dataResourceService;
   @Autowired
   private IContentInformationDao contentInformationDao;
+  @Autowired
+  private IContentInformationService contentInformationService;
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
 
   private IAuditService<ContentInformation> contentInformationAuditService;
   @Autowired
-  private MetastoreConfiguration applicationProperties;
+  private MetastoreConfiguration metastoreProperties;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+  @Autowired
+  private IRepoVersioningService[] versioningServices;
+  @Autowired
+  private IRepoStorageService[] storageServices;
+
+  private IAuditService<DataResource> auditServiceDataResource;
+  private IAuditService<ContentInformation> contentAuditService;
 
   @Before
   public void setUp() throws Exception {
     MetastoreConfiguration rbc = new MetastoreConfiguration();
-    rbc.setBasepath(applicationProperties.getBasepath());
-    rbc.setReadOnly(applicationProperties.isReadOnly());
-    rbc.setVersioningService(new NoneDataVersioningService());
-    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
-    contentInformationDao.deleteAll();
-    dataResourceDao.deleteAll();
-    rbc.setDataResourceService(dataResourceService);
-    applicationProperties = rbc;
+    System.out.println("kkkkk schema registry: " + applicationProperties.getSchemaRegistries());
+    rbc.setBasepath(applicationProperties.getMetadataFolder());
+    rbc.setReadOnly(false);
+    rbc.setDataResourceService(this.dataResourceService);
+    rbc.setContentInformationService(this.contentInformationService);
+    rbc.setEventPublisher(eventPublisher);
+    for (IRepoVersioningService versioningService : versioningServices) {
+      if ("simple".equals(versioningService.getServiceName())) {
+        rbc.setVersioningService(versioningService);
+        break;
+      }
+    }
+    for (IRepoStorageService storageService : storageServices) {
+      if ("dateBased".equals(storageService.getServiceName())) {
+        rbc.setStorageService(storageService);
+        break;
+      }
+    }
+    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
+    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
+//    dataResourceService = new DataResourceService();
+    dataResourceService.configure(rbc);
+//    contentInformationService = new ContentInformationService();
+    contentInformationService.configure(rbc);
+//    rbc.setContentInformationAuditService(contentInformationAuditService);
+    rbc.setAuditService(auditServiceDataResource);
+    rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+//    MetastoreConfiguration rbc = new MetastoreConfiguration();
+//    rbc.setBasepath(applicationProperties.getBasepath());
+//    rbc.setReadOnly(applicationProperties.isReadOnly());
+//    rbc.setVersioningService(new NoneDataVersioningService());
+//    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
+//    contentInformationDao.deleteAll();
+//    dataResourceDao.deleteAll();
+//    rbc.setDataResourceService(dataResourceService);
+    metastoreProperties = rbc;
 
     metadataRecordDao.deleteAll();
     try {
@@ -244,7 +288,7 @@ public class MetadataControllerTest {
       // Create schema only once.
       if (!isInitialized()) {
         metadataSchemaDao.deleteAll();
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -253,7 +297,7 @@ public class MetadataControllerTest {
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
         ingestSchemaRecord();
       }
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -348,39 +392,39 @@ public class MetadataControllerTest {
             file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
-    @Test
-    public void testCreateInvalidMetadataRecord() throws Exception {
-      String wrongTypeJson = "{\"id\":\"dc\",\"relatedResource\":\"anyResource\",\"createdAt\":\"right now!\"}";
+  @Test
+  public void testCreateInvalidMetadataRecord() throws Exception {
+    String wrongTypeJson = "{\"id\":\"dc\",\"relatedResource\":\"anyResource\",\"createdAt\":\"right now!\"}";
 
-      MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongTypeJson.getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongTypeJson.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
-      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
-              file(recordFile).
-              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
-      String wrongFormatJson = "<metadata><schemaId>dc</schemaId><type>XML</type></metadata>";
-      recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongFormatJson.getBytes());
-      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
-              file(recordFile).
-              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
-      
-    }
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    String wrongFormatJson = "<metadata><schemaId>dc</schemaId><type>XML</type></metadata>";
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", wrongFormatJson.getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
 
-    @Test
-    public void testCreateEmptyMetadataSchemaRecord() throws Exception {
+  }
 
-      MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[])null);
-      MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+  @Test
+  public void testCreateEmptyMetadataSchemaRecord() throws Exception {
 
-      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
-              file(recordFile).
-              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
-      
-      recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", " ".getBytes());
-      this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
-              file(recordFile).
-              file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
-    }
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[]) null);
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", " ".getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+  }
 
   // @Test 
   public void testCreateRecordFromExternal() throws Exception {
@@ -881,9 +925,7 @@ public class MetadataControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + METADATA_RECORD_ID).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
-    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
-    //delete second time
-    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID)).andDo(print()).andExpect(status().isForbidden()).andReturn();
+    this.mockMvc.perform(delete("/api/v1/metadata/" + METADATA_RECORD_ID).header("If-Match", etag)).andDo(print()).andExpect(status().isForbidden()).andReturn();
   }
 
   @Test
@@ -913,7 +955,6 @@ public class MetadataControllerTest {
 
   private void createDCMetadataRecord() throws FileNotFoundException, IOException {
     MetadataRecord record = new MetadataRecord();
-    record.setId(METADATA_RECORD_ID);
     record.setCreatedAt(Instant.now());
     record.setLastUpdate(Instant.now());
     record.setSchemaId(SCHEMA_ID);
@@ -926,26 +967,22 @@ public class MetadataControllerTest {
     acl.add(entry);
     record.setAcl(acl);
     record.setMetadataDocumentUri("file:///tmp/dc.xml");
-    try {
-      MessageDigest md = MessageDigest.getInstance("SHA1");
-      byte[] data = DC_DOCUMENT.getBytes();
-      md.update(data, 0, data.length);
-      record.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
-    } catch (NoSuchAlgorithmException ex) {
-      // ignore
+     // create record.
+    DataResource dataResource = MetadataRecordUtil.migrateToDataResource(metastoreProperties, record);
+    dataResource.getAlternateIdentifiers().add(Identifier.factoryIdentifier(METADATA_RECORD_ID, Identifier.IDENTIFIER_TYPE.OTHER));
+    DataResource result = metastoreProperties.getDataResourceService().create(dataResource,
+            "testUser", "test", "user");
+    //DataResource createResource = DataResourceUtils.createResource(metastoreProperties, dataResource);
+   //metastoreProperties.getAuditService().captureAuditInformation(result, AuthenticationHelper.getPrincipal());
+
+    MultipartFile file = new MockMultipartFile("dc.xml",
+            "dc.xml", "text/plain", DC_DOCUMENT.getBytes());
+ try {
+       metastoreProperties.getContentInformationService().create(null, result, "dc.xml", file.getInputStream(), false);
+    } catch (IOException ex) {
+      throw new CustomInternalServerError("Unable to read from stream. Upload canceled.");
     }
-    LinkedMetadataRecord lmr = null;
-    DataResource migrateToDataResource = MetadataRecordUtil.migrateToDataResource(applicationProperties, record);
-    dataResourceDao.save(migrateToDataResource);
-    lmr = metadataRecordDao.save(new LinkedMetadataRecord(record));
-    File dcFile = new File("/tmp/dc.xml");
-    if (!dcFile.exists()) {
-      try ( FileOutputStream fout = new FileOutputStream(dcFile)) {
-        fout.write(DC_DOCUMENT.getBytes());
-        fout.flush();
-      }
-    }
-  }
+  } 
 
   private static RequestPostProcessor remoteAddr(final String remoteAddr) { // it's nice to extract into a helper
     return (MockHttpServletRequest request) -> {
@@ -971,7 +1008,6 @@ public class MetadataControllerTest {
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
-  
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
