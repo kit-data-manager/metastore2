@@ -17,6 +17,7 @@ package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.clients.SimpleServiceClient;
+import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -25,6 +26,8 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
+import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
+import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
@@ -35,19 +38,35 @@ import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
+import edu.kit.datamanager.util.AuthenticationHelper;
+import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -116,7 +135,114 @@ public class MetadataRecordUtil {
 
     return migrateToMetadataRecord(applicationProperties, createResource);
   }
+ 
+  public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
+          String resourceId, String eTag, MultipartFile recordDocument, MultipartFile document) {
+     MetadataRecord record;
 
+    // Do some checks first.
+    try {
+      if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
+        throw new IOException();
+      }
+      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+    } catch (IOException ex) {
+      String message = "Neither metadata record nor metadata document provided.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
+    
+
+    LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
+    MetadataRecord existingRecord = MetadataRecordUtil.getRecordByIdAndVersion(applicationProperties, resourceId);
+    //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
+
+    LOG.trace("Checking provided ETag.");
+    ControllerUtils.checkEtag(eTag, existingRecord);
+    mergeRecords(existingRecord, record);
+
+    LOG.trace("Updating record version.");
+    existingRecord.setRecordVersion(existingRecord.getRecordVersion() + 1);
+
+    if (document != null) {
+      LOG.trace("Updating metadata document.");
+      try {
+        byte[] data = document.getBytes();
+        if (metastoreProperties.getSchemaRegistries().length == 0) {
+          LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
+          return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
+        }
+        ResponseEntity<String> responseEntity = validateMetadataDocument(existingRecord, data);
+
+        if (responseEntity != null) {
+          return responseEntity;
+        }
+
+        boolean writeMetadataFile = true;
+        String existingDocumentHash = existingRecord.getDocumentHash();
+        try {
+          LOG.trace("Creating metadata document hash and updating record.");
+          MessageDigest md = MessageDigest.getInstance("SHA1");
+          md.update(data, 0, data.length);
+
+          existingRecord.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
+
+          if (Objects.equals(existingRecord.getDocumentHash(), existingDocumentHash)) {
+            LOG.trace("Metadata file hashes are equal. Skip writing new metadata file.");
+            writeMetadataFile = false;
+          }
+        } catch (NoSuchAlgorithmException ex) {
+          LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
+          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
+        }
+
+        if (writeMetadataFile) {
+          //persist document
+          LOG.trace("Writing user-provided metadata file to repository.");
+          URL metadataFolderUrl = applicationProperties.getMetadataFolder();
+          try {
+            String[] createPathToRecord = existingRecord.getId().replace("-", "").split("(?<=\\G.{4})");
+            createPathToRecord[createPathToRecord.length - 1] = existingRecord.getId();
+
+            Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), createPathToRecord);
+            if (!Files.exists(metadataDir)) {
+              LOG.trace("Creating metadata directory at {}.", metadataDir);
+              Files.createDirectories(metadataDir);
+            } else {
+              if (!Files.isDirectory(metadataDir)) {
+                LOG.error("Metadata directory {} exists but is no folder. Aborting operation.", metadataDir);
+                throw new CustomInternalServerError("Illegal metadata registry state detected.");
+              }
+            }
+
+            Path p = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(existingRecord));
+            if (Files.exists(p)) {
+              LOG.error("Metadata document conflict. A file at path {} already exists.", p);
+              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
+            }
+
+            LOG.trace("Persisting valid metadata document at {}.", p);
+            Files.write(p, data);
+            LOG.trace("Metadata document successfully persisted. Updating record.");
+            existingRecord.setMetadataDocumentUri(p.toUri().toString());
+
+            LOG.trace("Metadata record completed.");
+          } catch (URISyntaxException ex) {
+            LOG.error("Failed to determine metadata storage location.", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of metadata location.");
+          }
+        }
+      } catch (IOException ex) {
+        LOG.error("Failed to read medata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read medata from input stream.");
+      }
+    }
+
+    LOG.trace("Persisting metadata record.");
+    LOG.trace("Sending UPDATE event.");
+    messagingService.send(MetadataResourceMessage.factoryUpdateMetadataMessage(record, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
+} 
   public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
            String id, 
            String eTag,
@@ -181,11 +307,12 @@ public class MetadataRecordUtil {
     return dataResource;
   }
 
-  private static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
+  public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     MetadataRecord metadataRecord = new MetadataRecord();
     if (dataResource != null) {
       metadataRecord.setId(dataResource.getId());
+      metadataRecord.setETag(dataResource.getEtag());
       metadataRecord.setAcl(dataResource.getAcls());
 
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {

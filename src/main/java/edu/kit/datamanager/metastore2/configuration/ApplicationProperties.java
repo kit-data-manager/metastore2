@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
-import edu.kit.datamanager.configuration.GenericPluginProperties;
+import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
 import java.util.List;
 import lombok.Data;
@@ -36,7 +36,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RefreshScope
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericPluginProperties{
+public class ApplicationProperties extends GenericApplicationProperties{
 
   @edu.kit.datamanager.annotations.LocalFolderURL
   @Value("${metastore.schema.schemaFolder}")

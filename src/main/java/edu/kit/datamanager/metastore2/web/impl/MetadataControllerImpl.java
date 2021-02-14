@@ -21,15 +21,15 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
-import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
 import edu.kit.datamanager.metastore2.dao.spec.RelatedIdSpecification;
-import edu.kit.datamanager.metastore2.dao.spec.SchemaIdSpecification;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
+import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.service.IContentInformationService;
@@ -55,6 +55,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -146,13 +147,6 @@ public class MetadataControllerImpl implements IMetadataController {
           IRepoStorageService[] storageServices,
           ApplicationEventPublisher eventPublisher
   ) {
-    System.out.println("kkkk" + applicationProperties);
-    System.out.println("kkkk" + javers);
-    System.out.println("kkkk" + dataResourceDao);
-    System.out.println("kkkk" + dataResourceService);
-    System.out.println("kkkk" + contentInformationService);
-    System.out.println("kkkk" + versioningServices);
-    System.out.println("kkkk" + storageServices);
     this.applicationProperties = applicationProperties;
     this.javers = javers;
     this.dataResourceDao = dataResourceDao;
@@ -313,9 +307,16 @@ public class MetadataControllerImpl implements IMetadataController {
           UriComponentsBuilder ucb
   ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
-    Specification<MetadataRecord> spec = SchemaIdSpecification.toSpecification(schemaIds);
+        Specification<DataResource> spec = Specification.where(null);
+    List<String> allRelatedIdentifiers = new ArrayList<>();
+    if (schemaIds != null) {
+      allRelatedIdentifiers.addAll(schemaIds);
+    }
     if (relatedIds != null) {
-      spec = spec.and(RelatedIdSpecification.toSpecification(relatedIds));
+      allRelatedIdentifiers.addAll(relatedIds);
+    }
+    if (!allRelatedIdentifiers.isEmpty()) {
+       spec = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
     }
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
@@ -323,24 +324,27 @@ public class MetadataControllerImpl implements IMetadataController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    Page<MetadataRecord> records = metadataRecordDao.findAll(spec, pgbl);
+    Page<DataResource> records = dataResourceDao.findAll(spec, pgbl);
 
-    LOG.trace("Cleaning up schemaDocumentUri of query result.");
-    List<MetadataRecord> recordList = records.getContent();
-
+    LOG.trace("Transforming Dataresource to MetadataRecord");
+    List<DataResource> recordList = records.getContent();
+    List<MetadataRecord> metadataList = new ArrayList<>();
+    System.out.println("oooooodataResourceDao size: " + dataResourceDao.count());
+     System.out.println("Get Records -> found: " + recordList.size());
     recordList.forEach((record) -> {
-      fixMetadataDocumentUri(record);
+      metadataList.add(MetadataRecordUtil.migrateToMetadataRecord(metastoreProperties, record));
+      System.out.println("id: " + record.getId());
     });
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
 
-    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(records.getContent());
+    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
   }
 
   @Override
   public ResponseEntity updateRecord(
           @PathVariable("id") String id,
-          @RequestPart(name = "record", required = false) MetadataRecord record,
+          @RequestPart(name = "record", required = false) MultipartFile record,
           @RequestPart(name = "document", required = false)
           final MultipartFile document,
           WebRequest request,
@@ -349,108 +353,13 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
 
-    if (record == null && document == null) {
-      LOG.error("No metadata schema record provided. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Neither metadata record nor metadata document provided.");
-    }
+    String eTag = ControllerUtils.getEtagFromHeader(request);
+     MetadataRecordUtil.updateMetadataRecord(metastoreProperties, eTag, record, document);
 
-    LOG.trace("Obtaining most recent metadata record with id {}.", id);
-    MetadataRecord existingRecord = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id);
-    //if authorization enabled, check principal -> return HTTP UNAUTHORIZED or FORBIDDEN if not matching
-
-    LOG.trace("Checking provided ETag.");
-    ControllerUtils.checkEtag(request, existingRecord);
-    mergeRecords(existingRecord, record);
-
-    LOG.trace("Updating record version.");
-    existingRecord.setRecordVersion(existingRecord.getRecordVersion() + 1);
-
-    if (document != null) {
-      LOG.trace("Updating metadata document.");
-      try {
-        byte[] data = document.getBytes();
-        if (metastoreProperties.getSchemaRegistries().length == 0) {
-          LOG.error("Failed to validate metadata document at schema registry. No schema registry available!");
-          return ResponseEntity.status(HttpStatus.INSUFFICIENT_STORAGE).body("Failed to validate metadata document at schema registry. No schema registry available!");
-        }
-        ResponseEntity<String> responseEntity = validateMetadataDocument(existingRecord, data);
-
-        if (responseEntity != null) {
-          return responseEntity;
-        }
-
-        boolean writeMetadataFile = true;
-        String existingDocumentHash = existingRecord.getDocumentHash();
-        try {
-          LOG.trace("Creating metadata document hash and updating record.");
-          MessageDigest md = MessageDigest.getInstance("SHA1");
-          md.update(data, 0, data.length);
-
-          existingRecord.setDocumentHash("sha1:" + Hex.encodeHexString(md.digest()));
-
-          if (Objects.equals(existingRecord.getDocumentHash(), existingDocumentHash)) {
-            LOG.trace("Metadata file hashes are equal. Skip writing new metadata file.");
-            writeMetadataFile = false;
-          }
-        } catch (NoSuchAlgorithmException ex) {
-          LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
-          return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to initialize SHA1 MessageDigest.");
-        }
-
-        if (writeMetadataFile) {
-          //persist document
-          LOG.trace("Writing user-provided metadata file to repository.");
-          URL metadataFolderUrl = applicationProperties.getMetadataFolder();
-          try {
-            String[] createPathToRecord = existingRecord.getId().replace("-", "").split("(?<=\\G.{4})");
-            createPathToRecord[createPathToRecord.length - 1] = existingRecord.getId();
-
-            Path metadataDir = Paths.get(Paths.get(metadataFolderUrl.toURI()).toAbsolutePath().toString(), createPathToRecord);
-            if (!Files.exists(metadataDir)) {
-              LOG.trace("Creating metadata directory at {}.", metadataDir);
-              Files.createDirectories(metadataDir);
-            } else {
-              if (!Files.isDirectory(metadataDir)) {
-                LOG.error("Metadata directory {} exists but is no folder. Aborting operation.", metadataDir);
-                throw new CustomInternalServerError("Illegal metadata registry state detected.");
-              }
-            }
-
-            Path p = Paths.get(metadataDir.toAbsolutePath().toString(), getUniqueRecordHash(existingRecord));
-            if (Files.exists(p)) {
-              LOG.error("Metadata document conflict. A file at path {} already exists.", p);
-              return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal filename conflict.");
-            }
-
-            LOG.trace("Persisting valid metadata document at {}.", p);
-            Files.write(p, data);
-            LOG.trace("Metadata document successfully persisted. Updating record.");
-            existingRecord.setMetadataDocumentUri(p.toUri().toString());
-
-            LOG.trace("Metadata record completed.");
-          } catch (URISyntaxException ex) {
-            LOG.error("Failed to determine metadata storage location.", ex);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Internal misconfiguration of metadata location.");
-          }
-        }
-      } catch (IOException ex) {
-        LOG.error("Failed to read medata from input stream. Returning HTTP UNPROCESSABLE_ENTITY.");
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body("Failed to read medata from input stream.");
-      }
-    }
-
-    LOG.trace("Persisting metadata record.");
-    LinkedMetadataRecord lmr = null;
-    lmr = metadataRecordDao.save(new LinkedMetadataRecord(existingRecord));
-    LOG.trace("Capturing metadata schema audit information.");
-    auditService.captureAuditInformation(record, AuthenticationHelper.getPrincipal());
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
-    fixMetadataDocumentUri(record);
+//    fixMetadataDocumentUri(record);
     String etag = record.getEtag();
-
-    LOG.trace("Sending UPDATE event.");
-    messagingService.send(MetadataResourceMessage.factoryUpdateMetadataMessage(record, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();

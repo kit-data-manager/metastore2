@@ -41,7 +41,6 @@ public class LinkedMetadataRecord implements Serializable {
   public LinkedMetadataRecord(MetadataRecord record) {
     schemaId = record.getSchemaId();
     relatedResource = record.getRelatedResource();
-    System.out.println("LINKEDMETA -> " + schemaId + "/" + relatedResource);
   }
   @Id
    @GeneratedValue

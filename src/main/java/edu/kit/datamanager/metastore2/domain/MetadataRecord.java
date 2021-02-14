@@ -78,7 +78,8 @@ public class MetadataRecord implements EtagSupport, Serializable {
   private String metadataDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
-
+  @JsonIgnore
+  private String eTag;
   /**
    * Set new access control list.
    * @param newAclList new list with acls.
@@ -115,6 +116,6 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @Override
   @JsonIgnore
   public String getEtag() {
-    return Integer.toString(hashCode());
+    return eTag;
   }
 }
