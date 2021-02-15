@@ -131,7 +131,7 @@ public interface IMetadataController {
   }  )
   ResponseEntity updateRecord(
           @Parameter(description = "The record identifier of related resource identifier.", required = true) @PathVariable("id") String id,
-          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MetadataRecord record,
+          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema defined in the record.", required = false) @RequestPart(name = "document", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response,

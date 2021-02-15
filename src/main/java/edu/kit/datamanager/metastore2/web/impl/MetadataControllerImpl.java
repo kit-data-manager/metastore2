@@ -239,6 +239,7 @@ public class MetadataControllerImpl implements IMetadataController {
       return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
     }
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metastoreProperties, recordDocument, document);
+    fixMetadataDocumentUri(result);
     // Successfully created metadata record.
     metadataRecordDao.save(new LinkedMetadataRecord(result));
     
@@ -352,19 +353,22 @@ public class MetadataControllerImpl implements IMetadataController {
           UriComponentsBuilder uriBuilder
   ) {
     LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
-
+    Function<String, String> getById;
+    getById = (t) -> {
+      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
+    };
     String eTag = ControllerUtils.getEtagFromHeader(request);
-     MetadataRecordUtil.updateMetadataRecord(metastoreProperties, eTag, record, document);
+    MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metastoreProperties, id, eTag, record, document, getById);
 
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
-//    fixMetadataDocumentUri(record);
-    String etag = record.getEtag();
+    String etag = updateMetadataRecord.getEtag();
+    fixMetadataDocumentUri(updateMetadataRecord);
 
     URI locationUri;
-    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(record.getId(), record.getRecordVersion(), null, null)).toUri();
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateMetadataRecord.getId(), updateMetadataRecord.getRecordVersion(), null, null)).toUri();
 
-    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(record);
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateMetadataRecord);
   }
 
   @Override
@@ -376,7 +380,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing deleteRecord({}).", id);
     Function<String, String> getById;
     getById = (t) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, 1l, wr, hsr)).toString();
+      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
     };
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     MetadataRecordUtil.deleteMetadataRecord(metastoreProperties, id, eTag, getById);
@@ -387,34 +391,6 @@ public class MetadataControllerImpl implements IMetadataController {
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();
-  }
-
-  public MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
-    if (provided != null) {
-      if (!Objects.isNull(provided.getPid())) {
-        LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-        managed.setPid(provided.getPid());
-      }
-
-      if (!Objects.isNull(provided.getRelatedResource())) {
-        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-        managed.setRelatedResource(provided.getRelatedResource());
-      }
-
-      if (!Objects.isNull(provided.getSchemaId())) {
-        LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-        managed.setSchemaId(provided.getSchemaId());
-      }
-
-      //update acl
-      if (provided.getAcl() != null) {
-        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-        managed.setAcl(provided.getAcl());
-      }
-    }
-    LOG.trace("Setting lastUpdate to now().");
-    managed.setLastUpdate(Instant.now());
-    return managed;
   }
 
   private void fixMetadataDocumentUri(MetadataRecord record) {

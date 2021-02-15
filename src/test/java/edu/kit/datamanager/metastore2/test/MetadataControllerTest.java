@@ -775,13 +775,21 @@ public class MetadataControllerTest {
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = DC_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
+
+    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
   }
 
   @Test
