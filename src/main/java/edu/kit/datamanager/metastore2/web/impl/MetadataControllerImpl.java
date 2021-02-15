@@ -16,12 +16,11 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
-import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
-import edu.kit.datamanager.metastore2.dao.spec.RelatedIdSpecification;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -40,7 +39,6 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
-import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,7 +46,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -127,6 +124,8 @@ public class MetadataControllerImpl implements IMetadataController {
   private final MetastoreConfiguration metastoreProperties;
   @Autowired
   private final IDataResourceDao dataResourceDao;
+  
+  private final String guestToken;
  
   /**
    *
@@ -184,7 +183,14 @@ public class MetadataControllerImpl implements IMetadataController {
     rbc.setAuditService(auditServiceDataResource);
     metastoreProperties = rbc;
     metastoreProperties.setSchemaRegistries(applicationProperties.getSchemaRegistries());
-    System.out.println("kkkk" + metastoreProperties);
+      LOG.trace("Create guest token");
+    guestToken = edu.kit.datamanager.util.JwtBuilder.createUserToken("guest", RepoUserRole.GUEST).
+            addSimpleClaim("email", "metastore@localhost").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
+    MetadataRecordUtil.setToken(guestToken);
+
 //    ContentInformationAuditService cias = new ContentInformationAuditService(javers, metastoreProperties);
 //    metastoreProperties.setContentInformationAuditService(cias);
 //    metastoreProperties.setContentInformationService(contentInformationService);
@@ -395,68 +401,5 @@ public class MetadataControllerImpl implements IMetadataController {
 
   private void fixMetadataDocumentUri(MetadataRecord record) {
     record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
-  }
-
-  private String getUniqueRecordHash(MetadataRecord record) {
-    String hash = null;
-    try {
-      LOG.trace("Creating metadata record hash.");
-      MessageDigest md = MessageDigest.getInstance("SHA1");
-      md.update(record.getId().getBytes(), 0, record.getId().length());
-      md.update(record.getRelatedResource().getBytes(), 0, record.getRelatedResource().length());
-      md.update(record.getSchemaId().getBytes(), 0, record.getSchemaId().length());
-      md.update(Long.toString(record.getRecordVersion()).getBytes(), 0, Long.toString(record.getRecordVersion()).length());
-      hash = Hex.encodeHexString(md.digest());
-    } catch (NoSuchAlgorithmException ex) {
-      LOG.error("Failed to initialize SHA1 MessageDigest.", ex);
-      throw new CustomInternalServerError("Failed to create metadata record hash.");
-    }
-    return hash;
-  }
-
-  /**
-   * Validate metadata document with given schema.
-   *
-   * @param record metadata of the document.
-   * @param document document
-   * @return ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
-   */
-  private ResponseEntity<String> validateMetadataDocument(MetadataRecord record, byte[] document) {
-    ResponseEntity<String> responseEntity = null;
-    boolean validationSuccess = false;
-    StringBuilder errorMessage = new StringBuilder();
-    for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
-      URI schemaRegistryUri = URI.create(schemaRegistry);
-      UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
-
-      URI finalUri = builder.build().toUri();
-
-      try {
-        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(document)).postForm(MediaType.MULTIPART_FORM_DATA);
-
-        if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
-          LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
-          validationSuccess = true;
-          break;
-        }
-      } catch (HttpClientErrorException ce) {
-        //not valid 
-        String message = new String("Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".");
-        LOG.error(message, ce);
-        errorMessage.append(message).append("\n");
-        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
-      } catch (IOException | RestClientException ex) {
-        String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
-        LOG.error(message, ex);
-        errorMessage.append(message).append("\n");
-        responseEntity = ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorMessage.toString());
-      }
-    }
-    if (!validationSuccess) {
-      return responseEntity;
-    }
-
-    return null;
   }
 }

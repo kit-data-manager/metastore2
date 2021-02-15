@@ -23,7 +23,7 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
@@ -58,52 +58,43 @@ import org.springframework.web.util.UriComponentsBuilder;
 /**
  * Utility class for handling json documents
  */
-public class MetadataRecordUtil {
+public class MetadataSchemaRecordUtil {
 
   /**
    * Logger for messages.
    */
-  private static final Logger LOG = LoggerFactory.getLogger(MetadataRecordUtil.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MetadataSchemaRecordUtil.class);
   /**
    * Encoding for strings/inputstreams.
    */
   private static final String ENCODING = "UTF-8";
- private static String  guestToken = null;
+  /**
+   * Mapper for parsing json.
+   */
+  private static ObjectMapper mapper = new ObjectMapper();
+  private static String  guestToken = null;
 
-  public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
+  public static MetadataSchemaRecord createMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument, MultipartFile document) {
-    MetadataRecord result = null;
-    MetadataRecord record;
+    MetadataSchemaRecord result = null;
+    MetadataSchemaRecord record;
 
     // Do some checks first.
     try {
       if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
         throw new IOException();
       }
-      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
     } catch (IOException ex) {
       String message = "No metadata record provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
 
-    if (record.getRelatedResource() == null || record.getSchemaId() == null) {
-      String message = "Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.";
+    if (record.getSchemaId() != null) {
+      String message = "Not expecting schemaId to be assigned by user.";
       LOG.error(message);
       throw new BadArgumentException(message);
-    }
-
-    if (record.getId() != null) {
-      String message = "Not expecting record id to be assigned by user.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-    // validate document
-    try {
-      validateMetadataDocument(applicationProperties, record, document.getBytes());
-    } catch (IOException ex) {
-      LOG.error(null, ex);
-      throw new CustomInternalServerError(ex.getMessage());
     }
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
@@ -113,17 +104,17 @@ public class MetadataRecordUtil {
       return "somethingStupid";
     });
 
-    return migrateToMetadataRecord(applicationProperties, createResource);
+    return migrateToMetadataSchemaRecord(applicationProperties, createResource);
   }
 
-  public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
+  public static MetadataSchemaRecord updateMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
           String resourceId,
           String eTag,
           MultipartFile recordDocument,
           MultipartFile document,
           Function<String, String> supplier) {
-    MetadataRecord record = null;
-    MetadataRecord existingRecord;
+    MetadataSchemaRecord record = null;
+    MetadataSchemaRecord existingRecord;
     DataResource newResource;
 
     // Do some checks first.
@@ -134,9 +125,9 @@ public class MetadataRecordUtil {
     }
     if (!(recordDocument == null || recordDocument.isEmpty())) {
       try {
-        record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+        record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
       } catch (IOException ex) {
-        String message = "Can't map record document to MetadataRecord";
+        String message = "Can't map record document to MetadataSchemaRecord";
         LOG.error(message);
         throw new BadArgumentException(message);
       }
@@ -147,7 +138,7 @@ public class MetadataRecordUtil {
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (record != null) {
-      existingRecord = migrateToMetadataRecord(applicationProperties, dataResource);
+      existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     }
@@ -160,10 +151,10 @@ public class MetadataRecordUtil {
 
       ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
     }
-    return migrateToMetadataRecord(applicationProperties, dataResource);
+    return migrateToMetadataSchemaRecord(applicationProperties, dataResource);
   }
 
-  public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
+  public static void deleteMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
           String id,
           String eTag,
           Function<String, String> supplier) {
@@ -171,20 +162,20 @@ public class MetadataRecordUtil {
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
-          MetadataRecord metadataRecord) {
+          MetadataSchemaRecord metadataSchemaRecord) {
     DataResource dataResource;
-    if (metadataRecord.getId() != null) {
+    if (metadataSchemaRecord.getSchemaId() != null) {
       try {
-        dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
+        dataResource = applicationProperties.getDataResourceService().findById(metadataSchemaRecord.getSchemaId(), metadataSchemaRecord.getSchemaVersion());
         dataResource = DataResourceUtils.copyDataResource(dataResource);
       } catch (ResourceNotFoundException rnfe) {
-        dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+        dataResource = DataResource.factoryNewDataResource(metadataSchemaRecord.getSchemaId());
       }
     } else {
       dataResource = new DataResource();
     }
-    dataResource.setAcls(metadataRecord.getAcl());
-    if (metadataRecord.getCreatedAt() != null) {
+    dataResource.setAcls(metadataSchemaRecord.getAcl());
+    if (metadataSchemaRecord.getCreatedAt() != null) {
       boolean createDateExists = false;
       Set<Date> dates = dataResource.getDates();
       for (edu.kit.datamanager.repo.domain.Date d : dates) {
@@ -195,35 +186,13 @@ public class MetadataRecordUtil {
         }
       }
       if (!createDateExists) {
-        dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
+        dataResource.getDates().add(Date.factoryDate(metadataSchemaRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
       }
     }
-    if (metadataRecord.getPid() != null) {
-      dataResource.setIdentifier(PrimaryIdentifier.factoryPrimaryIdentifier(metadataRecord.getPid()));
+    if (metadataSchemaRecord.getPid() != null) {
+      dataResource.setIdentifier(PrimaryIdentifier.factoryPrimaryIdentifier(metadataSchemaRecord.getPid()));
     }
-    boolean relationFound = false;
-    boolean schemaIdFound = false;
-    for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-        LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
-        relatedIds.setValue(metadataRecord.getRelatedResource());
-        relationFound = true;
-      }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        LOG.trace("Set schemaId to '{}'", metadataRecord.getSchemaId());
-        relatedIds.setValue(metadataRecord.getSchemaId());
-        schemaIdFound = true;
-      }
-    }
-    if (!relationFound) {
-      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource(), null, null);
-      dataResource.getRelatedIdentifiers().add(relatedResource);
-    }
-    if (!schemaIdFound) {
-      RelatedIdentifier schemaId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchemaId(), null, null);
-      dataResource.getRelatedIdentifiers().add(schemaId);
-    }
-    String defaultTitle = "Metadata 4 metastore";
+    String defaultTitle = "Metadata schema 4 metastore";
     boolean titleExists = false;
     for (Title title : dataResource.getTitles()) {
       if (title.getTitleType() == Title.TYPE.OTHER && title.getValue().equals(defaultTitle)) {
@@ -238,51 +207,41 @@ public class MetadataRecordUtil {
     return dataResource;
   }
 
-  public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
+  public static MetadataSchemaRecord migrateToMetadataSchemaRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
-    MetadataRecord metadataRecord = new MetadataRecord();
+    MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecord();
     if (dataResource != null) {
-      metadataRecord.setId(dataResource.getId());
-      metadataRecord.setETag(dataResource.getEtag());
-      metadataRecord.setAcl(dataResource.getAcls());
+      metadataSchemaRecord.setSchemaId(dataResource.getId());
+      metadataSchemaRecord.setETag(dataResource.getEtag());
+      metadataSchemaRecord.setAcl(dataResource.getAcls());
 
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
         if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
           LOG.trace("Creation date entry found.");
-          metadataRecord.setCreatedAt(d.getValue());
+          metadataSchemaRecord.setCreatedAt(d.getValue());
           break;
         }
       }
       if (dataResource.getLastUpdate() != null) {
-        metadataRecord.setLastUpdate(dataResource.getLastUpdate());
+        metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
     }
     if (dataResource.getIdentifier() != null) {
       PrimaryIdentifier identifier = dataResource.getIdentifier();
       if (identifier.hasDoi()) {
-        metadataRecord.setPid(identifier.getValue());
+        metadataSchemaRecord.setPid(identifier.getValue());
       }
     }
-    metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
-    for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-        LOG.trace("Set relation to '{}'", relatedIds.getValue());
-        metadataRecord.setRelatedResource(relatedIds.getValue());
-      }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
-        metadataRecord.setSchemaId(relatedIds.getValue());
-      }
-    }
+    metadataSchemaRecord.setSchemaVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+
     ContentInformation info;
     info = getContentInformationOfResource(applicationProperties, dataResource);
 
     if (info != null) {
-      metadataRecord.setDocumentHash(info.getHash());
-      metadataRecord.setMetadataDocumentUri(info.getContentUri());
+      metadataSchemaRecord.setSchemaDocumentUri(info.getContentUri());
     }
-    return metadataRecord;
+    return metadataSchemaRecord;
   }
 
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
@@ -316,7 +275,7 @@ public class MetadataRecordUtil {
    * @throws IOException Error reading document.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MetadataRecord record,
+          MetadataSchemaRecord record,
           byte[] document) {
     LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, record, document);
     boolean validationSuccess = false;
@@ -353,34 +312,24 @@ public class MetadataRecordUtil {
     return;
   }
 
-  public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+  public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null);
   }
 
-  public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+  public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
 
-    return migrateToMetadataRecord(metastoreProperties, dataResource);
+    return migrateToMetadataSchemaRecord(metastoreProperties, dataResource);
   }
 
-  public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
+  public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
     if (provided != null) {
       if (!Objects.isNull(provided.getPid())) {
         LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
         managed.setPid(provided.getPid());
-      }
-
-      if (!Objects.isNull(provided.getRelatedResource())) {
-        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-        managed.setRelatedResource(provided.getRelatedResource());
-      }
-
-      if (!Objects.isNull(provided.getSchemaId())) {
-        LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-        managed.setSchemaId(provided.getSchemaId());
       }
 
       //update acl

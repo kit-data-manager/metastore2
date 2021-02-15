@@ -58,6 +58,8 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @Id
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
+  @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
+  private String pid;
   @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
           + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
   private Long schemaVersion;
@@ -93,6 +95,8 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   private String schemaHash;
   @NotBlank(message = "The schema can be synchronized from a central registry. If 'true', synchronization will be skipped.")
   private Boolean locked = false;
+  @JsonIgnore
+  private String eTag;
 
   /**
    * Set new access control list.
