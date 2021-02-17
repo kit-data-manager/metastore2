@@ -48,7 +48,9 @@ import org.springframework.http.MediaType;
 @Data
 public class MetadataSchemaRecord implements EtagSupport, Serializable {
 
-  public final static MediaType METADATA_SCHEMA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.schema-record+json");
+  public final static String RESOURCE_TYPE = "application/vnd.datamanager.schema-record+json";
+
+  public final static MediaType METADATA_SCHEMA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   public enum SCHEMA_TYPE {
     JSON,
@@ -133,6 +135,6 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @Override
   @JsonIgnore
   public String getEtag() {
-    return Integer.toString(hashCode());
+    return eTag;
   }
 }

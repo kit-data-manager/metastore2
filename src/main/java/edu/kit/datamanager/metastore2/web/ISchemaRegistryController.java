@@ -151,7 +151,8 @@ public interface ISchemaRegistryController {
   })
   ResponseEntity updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("id") final String schemaId,
-          @Parameter(description = "Json representation of the schema record.", required = false) @RequestBody final MetadataSchemaRecord record,
+          @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
+          @Parameter(description = "The metadata schema document associated with the record.", required = false) @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response
   );

@@ -7,9 +7,22 @@ package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.repo.dao.IContentInformationDao;
+import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.ContentInformation;
+import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.service.IContentInformationService;
+import edu.kit.datamanager.repo.service.IDataResourceService;
+import edu.kit.datamanager.repo.service.IRepoStorageService;
+import edu.kit.datamanager.repo.service.IRepoVersioningService;
+import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
+import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.service.IAuditService;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,14 +37,19 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -66,7 +84,10 @@ import org.springframework.web.context.WebApplicationContext;
  * @author Torridity
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@EntityScan("edu.kit.datamanager")
+@EnableJpaRepositories("edu.kit.datamanager")
+@ComponentScan({"edu.kit.datamanager"})
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
   DependencyInjectionTestExecutionListener.class,
@@ -74,6 +95,7 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"server.port=41409"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/schematest/schema"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SchemaRegistryControllerTest {
@@ -143,6 +165,12 @@ public class SchemaRegistryControllerTest {
             + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
             + "  <dc:type>dataset</dc:type>\n"
             + "</oai_dc:dc>";
+
+  private String adminToken;
+  private String userToken;
+  private String otherUserToken;
+  private String guestToken;
+
   
   private MockMvc mockMvc;
   @Autowired
@@ -153,11 +181,82 @@ public class SchemaRegistryControllerTest {
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
   private IAuditService<MetadataSchemaRecord> schemaAuditService;
+
+ @Autowired
+  private ApplicationProperties applicationProperties;
+  @Autowired
+  private ILinkedMetadataRecordDao metadataRecordDao;
+
+  @Autowired
+  private IDataResourceDao dataResourceDao;
+  @Autowired
+  Javers javers = null;
+  @Autowired
+  private IDataResourceService schemaResourceService;
+  @Autowired
+  private IContentInformationDao contentInformationDao;
+  @Autowired
+  private IContentInformationService contentInformationService;
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
+
+  private IAuditService<ContentInformation> contentInformationAuditService;
+  @Autowired
+  private MetastoreConfiguration metastoreProperties;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+  @Autowired
+  private IRepoVersioningService[] versioningServices;
+  @Autowired
+  private IRepoStorageService[] storageServices;
+
+  private IAuditService<DataResource> auditServiceDataResource;
+  private IAuditService<ContentInformation> contentAuditService;
 
   @Before
   public void setUp() throws Exception {
+    MetastoreConfiguration rbc = new MetastoreConfiguration();
+    rbc.setBasepath(applicationProperties.getSchemaFolder());
+    rbc.setReadOnly(false);
+    rbc.setDataResourceService(this.schemaResourceService);
+    rbc.setContentInformationService(this.contentInformationService);
+    rbc.setEventPublisher(eventPublisher);
+    for (IRepoVersioningService versioningService : versioningServices) {
+      if ("simple".equals(versioningService.getServiceName())) {
+        rbc.setVersioningService(versioningService);
+        System.out.println("setup versioning: " + versioningService.getServiceName());
+        break;
+      }
+    }
+    for (IRepoStorageService storageService : storageServices) {
+      if ("simple".equals(storageService.getServiceName())) {
+        rbc.setStorageService(storageService);
+        System.out.println("setup storage: " + storageService.getServiceName());
+        break;
+      }
+    }
+    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
+    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
+//    dataResourceService = new DataResourceService();
+    //schemaResourceService.configure(rbc);
+//    contentInformationService = new ContentInformationService();
+//    contentInformationService.configure(rbc);
+//    rbc.setContentInformationAuditService(contentInformationAuditService);
+    rbc.setAuditService(auditServiceDataResource);
+//    MetastoreConfiguration rbc = new MetastoreConfiguration();
+//    rbc.setBasepath(applicationProperties.getBasepath());
+//    rbc.setReadOnly(applicationProperties.isReadOnly());
+//    rbc.setVersioningService(new NoneDataVersioningService());
+//    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
+//    contentInformationDao.deleteAll();
+//    dataResourceDao.deleteAll();
+//    rbc.setDataResourceService(dataResourceService);
+    System.out.println("kkkk metastore Test" + metastoreProperties);
+    metastoreProperties = rbc;
+    System.out.println("kkkk metastore" + rbc);
+
+    contentInformationDao.deleteAll();
+    dataResourceDao.deleteAll();
     metadataSchemaDao.deleteAll();
     try {
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
@@ -189,7 +288,7 @@ public class SchemaRegistryControllerTest {
       ObjectMapper mapper = new ObjectMapper();
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", DC_SCHEMA.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
@@ -209,7 +308,7 @@ public class SchemaRegistryControllerTest {
       ObjectMapper mapper = new ObjectMapper();
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", DC_SCHEMA.getBytes());
 
       MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
@@ -232,7 +331,7 @@ public class SchemaRegistryControllerTest {
       ObjectMapper mapper = new ObjectMapper();
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
@@ -244,7 +343,7 @@ public class SchemaRegistryControllerTest {
       String wrongTypeJson = "{\"schemaId\":\"dc\",\"type\":\"Something totally strange!\"}";
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", wrongTypeJson.getBytes());
-      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
@@ -261,7 +360,7 @@ public class SchemaRegistryControllerTest {
     public void testCreateEmptyMetadataSchemaRecord() throws Exception {
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", (byte[])null);
-      MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+      MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
@@ -281,7 +380,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
     RequestPostProcessor rpp = new RequestPostProcessor() {
       @Override
       public MockHttpServletRequest postProcessRequest(MockHttpServletRequest mhsr) {
@@ -303,7 +402,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile).with(remoteAddr("any.domain.com"))).andDo(print()).andExpect(status().isCreated()).andReturn();
@@ -321,7 +420,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -336,7 +435,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -395,7 +494,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testCreateSchemaRecordWithoutRecord() throws Exception {
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
@@ -423,7 +522,7 @@ public class SchemaRegistryControllerTest {
     record.setMimeType(MediaType.APPLICATION_XML.toString());
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -439,7 +538,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -659,7 +758,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -738,7 +837,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema",  "schema.json", "application/json", DC_SCHEMA.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).

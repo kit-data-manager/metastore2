@@ -15,8 +15,6 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
@@ -41,6 +39,9 @@ import io.swagger.v3.core.util.Json;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -76,13 +77,15 @@ public class MetadataRecordUtil {
     MetadataRecord record;
 
     // Do some checks first.
-    try {
       if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
-        throw new IOException();
-      }
-      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+      String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+     }
+     try {
+     record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
-      String message = "No metadata record provided. Returning HTTP BAD_REQUEST.";
+      String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
@@ -233,7 +236,7 @@ public class MetadataRecordUtil {
     if (!titleExists) {
       dataResource.getTitles().add(Title.factoryTitle(defaultTitle, Title.TYPE.OTHER));
     }
-    dataResource.setResourceType(ResourceType.createResourceType("metadata"));
+    dataResource.setResourceType(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
 
     return dataResource;
   }
@@ -364,6 +367,26 @@ public class MetadataRecordUtil {
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
 
     return migrateToMetadataRecord(metastoreProperties, dataResource);
+  }
+
+  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId) throws ResourceNotFoundException {
+    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
+    MetadataRecord record = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+
+    URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
+
+    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+    }
+    return metadataDocumentPath;
   }
 
   public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
