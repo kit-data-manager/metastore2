@@ -28,25 +28,33 @@ import org.slf4j.LoggerFactory;
 public class SchemaUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaUtils.class);
-  
+
   private static final int MAX_LENGTH_OF_HEADER = 100;
 
   private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//^\\s{\\s*\".*");
   private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w{2,3}:)?schema(.|\\s)*", Pattern.MULTILINE);
 
+  /**
+   * Guess type of schema document.
+   *
+   * @param schema schema document.
+   * @return Schema type of document.
+   */
   public static MetadataSchemaRecord.SCHEMA_TYPE guessType(byte[] schema) {
     // Cut schema to a maximum of MAX_LENGTH_OF_HEADER characters.
-    int length = schema.length > MAX_LENGTH_OF_HEADER?MAX_LENGTH_OF_HEADER:schema.length;
-    String schemaAsString = new String(schema, 0, length);
-    LOG.trace("Guess type for '{}'",schemaAsString);
+    if (schema != null) {
+      int length = schema.length > MAX_LENGTH_OF_HEADER ? MAX_LENGTH_OF_HEADER : schema.length;
+      String schemaAsString = new String(schema, 0, length);
+      LOG.trace("Guess type for '{}'", schemaAsString);
 
-    Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);
-    if (m.matches()) {
-      return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
-    } else {
-      m = XML_FIRST_BYTE.matcher(schemaAsString);
+      Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);
       if (m.matches()) {
-        return MetadataSchemaRecord.SCHEMA_TYPE.XML;
+        return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
+      } else {
+        m = XML_FIRST_BYTE.matcher(schemaAsString);
+        if (m.matches()) {
+          return MetadataSchemaRecord.SCHEMA_TYPE.XML;
+        }
       }
     }
     return null;

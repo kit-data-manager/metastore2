@@ -218,10 +218,14 @@ public class MetadataControllerTest {
   Javers javers = null;
   @Autowired
   private IDataResourceService dataResourceService;
-  @Autowired
+    @Autowired
+  private IDataResourceService schemaResourceService;
+@Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
   private IContentInformationService contentInformationService;
+ @Autowired
+  private IContentInformationService schemaInformationService;
   @Autowired
   private ApplicationEventPublisher eventPublisher;
 
@@ -977,11 +981,9 @@ public class MetadataControllerTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
-      System.out.println("kkkk record before");
    MvcResult andReturn = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
-     System.out.println("kkkk record after");
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
     return result.getId();
   } 
@@ -1013,11 +1015,9 @@ public class MetadataControllerTest {
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
-    System.out.println("kkkk ingestSchema before");
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-     System.out.println("kkkk ingestSchema after");
  }
 
   public static synchronized boolean isInitialized() {

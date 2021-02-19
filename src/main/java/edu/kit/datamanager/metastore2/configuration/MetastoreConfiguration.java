@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
+import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 
 /**
@@ -23,6 +24,9 @@ import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 public class MetastoreConfiguration extends RepoBaseConfiguration {
 
   private String[] schemaRegistries;
+  
+  private IValidator[] validators;
+
 
   /**
    * @return the schemaRegistries
@@ -36,6 +40,20 @@ public class MetastoreConfiguration extends RepoBaseConfiguration {
    */
   public void setSchemaRegistries(String[] schemaRegistries) {
     this.schemaRegistries = schemaRegistries;
+  }
+
+  /**
+   * @return the validators
+   */
+  public IValidator[] getValidators() {
+    return validators;
+  }
+
+  /**
+   * @param validators the validators to set
+   */
+  public void setValidators(IValidator[] validators) {
+    this.validators = validators;
   }
  
 }

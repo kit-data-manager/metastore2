@@ -15,18 +15,15 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.AlternateIdentifierSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.InternalIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
 import edu.kit.datamanager.repo.domain.ContentInformation;
@@ -39,7 +36,6 @@ import edu.kit.datamanager.repo.service.IRepoVersioningService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.service.IAuditService;
-import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.URI;
@@ -49,7 +45,6 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -61,7 +56,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpHeaders;
@@ -70,7 +64,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -88,12 +81,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl.class);
- @Autowired
+  @Autowired
   private final Javers javers;
   @Autowired
   private final IDataResourceService schemaResourceService;
   @Autowired
-  private final IContentInformationService contentInformationService;
+  private final IContentInformationService schemaInformationService;
   @Autowired
   private ApplicationEventPublisher eventPublisher;
   @Autowired
@@ -105,20 +98,21 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private final IAuditService<DataResource> auditServiceDataResource;
   private final IAuditService<ContentInformation> contentAuditService;
- 
+
   private final MetastoreConfiguration metastoreProperties;
   @Autowired
   private final IDataResourceDao dataResourceDao;
 
   @Autowired
   private IValidator[] validators;
+
   /**
    *
    * @param applicationProperties
    * @param javers
    * @param schemaResourceService
    * @param dataResourceDao
-   * @param contentInformationService
+   * @param schemaInformationService
    * @param versioningServices
    * @param storageServices
    * @param eventPublisher
@@ -127,24 +121,26 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           Javers javers,
           IDataResourceService schemaResourceService,
           IDataResourceDao dataResourceDao,
-          IContentInformationService contentInformationService,
+          IContentInformationService schemaInformationService,
           IRepoVersioningService[] versioningServices,
           IRepoStorageService[] storageServices,
-          ApplicationEventPublisher eventPublisher
+          ApplicationEventPublisher eventPublisher,
+          IValidator[] validators
   ) {
     this.applicationProperties = applicationProperties;
     this.javers = javers;
     this.dataResourceDao = dataResourceDao;
     this.schemaResourceService = schemaResourceService;
-    this.contentInformationService = contentInformationService;
+    this.schemaInformationService = schemaInformationService;
     this.versioningServices = versioningServices;
     this.storageServices = storageServices;
     this.eventPublisher = eventPublisher;
+    this.validators = validators;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(this.schemaResourceService);
-    rbc.setContentInformationService(this.contentInformationService);
+    rbc.setContentInformationService(this.schemaInformationService);
     rbc.setEventPublisher(this.eventPublisher);
     for (IRepoVersioningService versioningService : this.versioningServices) {
       if ("simple".equals(versioningService.getServiceName())) {
@@ -152,9 +148,6 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         rbc.setVersioningService(versioningService);
         break;
       }
-    }
-    for (IRepoStorageService storageService : this.storageServices) {
-      System.out.println("storageServices: " + storageService.getServiceName());
     }
     for (IRepoStorageService storageService : this.storageServices) {
       if ("simple".equals(storageService.getServiceName())) {
@@ -166,25 +159,26 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
     contentAuditService = new ContentInformationAuditService(this.javers, rbc);
 //    dataResourceService = new DataResourceService();
-    schemaResourceService.configure(rbc);
+    this.schemaResourceService.configure(rbc);
 //    contentInformationService = new ContentInformationService();
-    contentInformationService.configure(rbc);
+    this.schemaInformationService.configure(rbc);
 //    rbc.setContentInformationAuditService(contentInformationAuditService);
     rbc.setAuditService(auditServiceDataResource);
     metastoreProperties = rbc;
     metastoreProperties.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+    metastoreProperties.setValidators(validators);
   }
 
   @Override
   public ResponseEntity createRecord(
-          @RequestPart(name = "record") final MultipartFile recordDocument, 
-          @RequestPart(name = "schema") MultipartFile document, 
-          HttpServletRequest request, 
-          HttpServletResponse response, 
+          @RequestPart(name = "record") final MultipartFile recordDocument,
+          @RequestPart(name = "schema") MultipartFile document,
+          HttpServletRequest request,
+          HttpServletResponse response,
           UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({},....", recordDocument);
     MetadataSchemaRecord record = MetadataSchemaRecordUtil.createMetadataSchemaRecord(metastoreProperties, recordDocument, document);
-        LOG.trace("Schema record successfully persisted. Returning result.");
+    LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = record.getEtag();
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
@@ -424,9 +418,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Override
   public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
-   MetadataSchemaRecordUtil.validateMetadataDocument(metastoreProperties, document, schemaId, version, validators);
-          LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
-          return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    MetadataSchemaRecordUtil.validateMetadataDocument(metastoreProperties, document, schemaId, version);
+    LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
+    return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
 
   @Override
@@ -436,7 +430,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
     //one of given ids.
     if ((schemaIds != null) && !schemaIds.isEmpty()) {
-      spec = spec.and(AlternateIdentifierSpec.toSpecification(schemaIds.toArray(new String[schemaIds.size()])));
+      spec = spec.and(InternalIdentifierSpec.toSpecification(schemaIds.toArray(new String[schemaIds.size()])));
     }
     if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
       spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
@@ -444,10 +438,16 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
-    
+
     LOG.debug("Performing query for records.");
-    Page<DataResource> records = dataResourceDao.findAll(spec, pgbl);
-   List<DataResource> recordList = records.getContent();
+    Page<DataResource> records = null;
+    try {
+      records = dataResourceDao.findAll(spec, pgbl);
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      throw ex;
+    }
+    List<DataResource> recordList = records.getContent();
     LOG.trace("Cleaning up schemaDocumentUri of query result.");
     List<MetadataSchemaRecord> schemaList = new ArrayList<>();
     recordList.forEach((record) -> {
@@ -463,9 +463,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity updateRecord(
-          @PathVariable("id") final String schemaId, 
-            @RequestPart(name = "record", required = false) MultipartFile record,
-          @RequestPart(name = "schema", required = false)final MultipartFile document,
+          @PathVariable("id") final String schemaId,
+          @RequestPart(name = "record", required = false) MultipartFile record,
+          @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
     LOG.trace("Performing updateMetadataSchemaRecord({}, {}).", schemaId, record);
     Function<String, String> getById;
@@ -480,8 +480,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     fixSchemaDocumentUri(updatedSchemaRecord);
 
     URI locationUri;
-    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updatedSchemaRecord.getSchemaId(), updatedSchemaRecord.getSchemaVersion(), null, null)).toUri();
-
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(updatedSchemaRecord.getSchemaId(), updatedSchemaRecord.getSchemaVersion(), null, null)).toUri();
+    LOG.trace("Set locationUri to '{}'", locationUri.toString());
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedSchemaRecord);
   }
 
@@ -499,6 +499,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   private void fixSchemaDocumentUri(MetadataSchemaRecord record) {
+    LOG.trace("Fix schema document Uri '{}'",record.getSchemaDocumentUri());
     record.setSchemaDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri().toString());
   }
 
