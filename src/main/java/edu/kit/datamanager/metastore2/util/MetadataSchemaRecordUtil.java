@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -36,7 +35,6 @@ import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -49,16 +47,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Utility class for handling json documents
@@ -259,20 +251,20 @@ public class MetadataSchemaRecordUtil {
         metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
-    }
-    if (dataResource.getIdentifier() != null) {
-      PrimaryIdentifier identifier = dataResource.getIdentifier();
-      if (identifier.hasDoi()) {
-        metadataSchemaRecord.setPid(identifier.getValue());
+      if (dataResource.getIdentifier() != null) {
+        PrimaryIdentifier identifier = dataResource.getIdentifier();
+        if (identifier.hasDoi()) {
+          metadataSchemaRecord.setPid(identifier.getValue());
+        }
       }
-    }
-    metadataSchemaRecord.setSchemaVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+      metadataSchemaRecord.setSchemaVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
 
-    ContentInformation info;
-    info = getContentInformationOfResource(applicationProperties, dataResource);
+      ContentInformation info;
+      info = getContentInformationOfResource(applicationProperties, dataResource);
 
-    if (info != null) {
-      metadataSchemaRecord.setSchemaDocumentUri(info.getContentUri());
+      if (info != null) {
+        metadataSchemaRecord.setSchemaDocumentUri(info.getContentUri());
+      }
     }
     return metadataSchemaRecord;
   }

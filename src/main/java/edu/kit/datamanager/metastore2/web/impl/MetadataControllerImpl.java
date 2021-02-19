@@ -27,15 +27,9 @@ import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
-import edu.kit.datamanager.repo.domain.ContentInformation;
+import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.service.IContentInformationService;
-import edu.kit.datamanager.repo.service.IDataResourceService;
-import edu.kit.datamanager.repo.service.IRepoStorageService;
-import edu.kit.datamanager.repo.service.IRepoVersioningService;
-import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
-import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
-import edu.kit.datamanager.service.IAuditService;
+import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -49,11 +43,9 @@ import java.util.List;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
@@ -84,89 +76,34 @@ public class MetadataControllerImpl implements IMetadataController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
   @Autowired
-  private final Javers javers;
-  @Autowired
-  private final IDataResourceService dataResourceService;
-  @Autowired
-  private final IContentInformationService contentInformationService;
-  @Autowired
-  private ApplicationEventPublisher eventPublisher;
-  @Autowired
   private ApplicationProperties applicationProperties;
-  @Autowired
-  private IRepoVersioningService[] versioningServices;
-  @Autowired
-  private IRepoStorageService[] storageServices;
 
-  private final IAuditService<DataResource> auditServiceDataResource;
-  private final IAuditService<ContentInformation> contentAuditService;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
 
-  private final MetastoreConfiguration metastoreProperties;
+  private final MetastoreConfiguration metadataConfig;
   @Autowired
   private final IDataResourceDao dataResourceDao;
 
   private final String guestToken;
 
-  /**
-   *
-   * @param applicationProperties
-   * @param javers
-   * @param dataResourceService
-   * @param dataResourceDao
-   * @param contentInformationService
-   * @param versioningServices
-   * @param storageServices
-   * @param eventPublisher
-   */
+/**
+ * 
+ * @param applicationProperties
+ * @param metadataConfig
+ * @param metadataRecordDao
+ * @param dataResourceDao 
+ */
   public MetadataControllerImpl(ApplicationProperties applicationProperties,
-          Javers javers,
-          IDataResourceService dataResourceService,
-          IDataResourceDao dataResourceDao,
-          IContentInformationService contentInformationService,
-          IRepoVersioningService[] versioningServices,
-          IRepoStorageService[] storageServices,
-          ApplicationEventPublisher eventPublisher
-  ) {
-    this.applicationProperties = applicationProperties;
-    this.javers = javers;
+          MetastoreConfiguration metadataConfig,
+          ILinkedMetadataRecordDao metadataRecordDao,
+          IDataResourceDao dataResourceDao) {
+    this.metadataConfig = metadataConfig;
+    this.metadataRecordDao = metadataRecordDao;
     this.dataResourceDao = dataResourceDao;
-    this.dataResourceService = dataResourceService;
-    this.contentInformationService = contentInformationService;
-    this.versioningServices = versioningServices;
-    this.storageServices = storageServices;
-    this.eventPublisher = eventPublisher;
-    MetastoreConfiguration rbc = new MetastoreConfiguration();
-    rbc.setBasepath(this.applicationProperties.getMetadataFolder());
-    rbc.setReadOnly(false);
-    rbc.setDataResourceService(this.dataResourceService);
-    rbc.setContentInformationService(this.contentInformationService);
-    rbc.setEventPublisher(this.eventPublisher);
-    for (IRepoVersioningService versioningService : this.versioningServices) {
-      if ("simple".equals(versioningService.getServiceName())) {
-        LOG.info("Set versioning service: {}", versioningService.getServiceName());
-        rbc.setVersioningService(versioningService);
-        break;
-      }
-    }
-    for (IRepoStorageService storageService : this.storageServices) {
-      if ("dateBased".equals(storageService.getServiceName())) {
-        LOG.info("Set storage service: {}", storageService.getServiceName());
-        rbc.setStorageService(storageService);
-        break;
-      }
-    }
-    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
-    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
-    dataResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
-    contentInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
-    rbc.setAuditService(auditServiceDataResource);
-    metastoreProperties = rbc;
-    metastoreProperties.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+    LOG.info("------------------------------------------------------");
+    LOG.info("------{}", this.metadataConfig);
+    LOG.info("------------------------------------------------------");
     LOG.trace("Create guest token");
     guestToken = edu.kit.datamanager.util.JwtBuilder.createUserToken("guest", RepoUserRole.GUEST).
             addSimpleClaim("email", "metastore@localhost").
@@ -215,15 +152,15 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.error("Conflict with existing metadata record!");
       return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
     }
-    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metastoreProperties, recordDocument, document);
-    fixMetadataDocumentUri(result);
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
+    LOG.trace("Metadata record successfully persisted. Returning result.");
+    fixMetadataDocumentUri(result);
     metadataRecordDao.save(new LinkedMetadataRecord(result));
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
 
-    LOG.trace("Schema record successfully persisted. Returning result.");
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
 
@@ -237,13 +174,13 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metastoreProperties, id, version);
+    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of MetadataRecord.");
     String etag = record.getEtag();
-
     fixMetadataDocumentUri(record);
-    LOG.trace("Document URI successfully updated. Returning result.");
+
     return ResponseEntity.ok().eTag("\"" + etag + "\"").body(record);
   }
 
@@ -256,7 +193,7 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
-    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metastoreProperties, id, version);
+    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
 
     return ResponseEntity.
             ok().
@@ -276,7 +213,8 @@ public class MetadataControllerImpl implements IMetadataController {
           UriComponentsBuilder ucb
   ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
-    Specification<DataResource> spec = Specification.where(null);
+    // Search for resource type of MetadataSchemaRecord
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
     List<String> allRelatedIdentifiers = new ArrayList<>();
     if (schemaIds != null) {
       allRelatedIdentifiers.addAll(schemaIds);
@@ -285,7 +223,7 @@ public class MetadataControllerImpl implements IMetadataController {
       allRelatedIdentifiers.addAll(relatedIds);
     }
     if (!allRelatedIdentifiers.isEmpty()) {
-      spec = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
+      spec = spec.and(RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()])));
     }
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
@@ -299,7 +237,7 @@ public class MetadataControllerImpl implements IMetadataController {
     List<DataResource> recordList = records.getContent();
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metastoreProperties, record);
+      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record);
       fixMetadataDocumentUri(item);
       metadataList.add(item);
     });
@@ -324,7 +262,7 @@ public class MetadataControllerImpl implements IMetadataController {
       return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     };
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metastoreProperties, id, eTag, record, document, getById);
+    MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metadataConfig, id, eTag, record, document, getById);
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateMetadataRecord.getEtag();
@@ -348,7 +286,7 @@ public class MetadataControllerImpl implements IMetadataController {
       return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
     };
     String eTag = ControllerUtils.getEtagFromHeader(wr);
-    MetadataRecordUtil.deleteMetadataRecord(metastoreProperties, id, eTag, getById);
+    MetadataRecordUtil.deleteMetadataRecord(metadataConfig, id, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
@@ -359,6 +297,8 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   private void fixMetadataDocumentUri(MetadataRecord record) {
+    String metadataDocumentUri = record.getMetadataDocumentUri();
     record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
+     LOG.trace("Fix metadata document Uri '{}' -> '{}'",metadataDocumentUri, record.getMetadataDocumentUri());
   }
 }

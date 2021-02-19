@@ -200,87 +200,24 @@ public class MetadataControllerTest {
 
   private MockMvc mockMvc;
   @Autowired
-  private ApplicationProperties applicationProperties;
-  @Autowired
   private WebApplicationContext context;
-  @Autowired
+ @Autowired
   private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
-  private IAuditService<MetadataRecord> schemaAuditService;
-
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
-  Javers javers = null;
-  @Autowired
-  private IDataResourceService dataResourceService;
-    @Autowired
-  private IDataResourceService schemaResourceService;
-@Autowired
   private IContentInformationDao contentInformationDao;
-  @Autowired
-  private IContentInformationService contentInformationService;
- @Autowired
-  private IContentInformationService schemaInformationService;
-  @Autowired
-  private ApplicationEventPublisher eventPublisher;
-
-  private IAuditService<ContentInformation> contentInformationAuditService;
-  @Autowired
-  private MetastoreConfiguration metastoreProperties;
-  @Rule
+@Autowired
+  private MetastoreConfiguration metadataConfig;
+ @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-  @Autowired
-  private IRepoVersioningService[] versioningServices;
-  @Autowired
-  private IRepoStorageService[] storageServices;
-
-  private IAuditService<DataResource> auditServiceDataResource;
-  private IAuditService<ContentInformation> contentAuditService;
-
   @Before
   public void setUp() throws Exception {
-    MetastoreConfiguration rbc = new MetastoreConfiguration();
-    System.out.println("kkkkk schema registry: " + applicationProperties.getSchemaRegistries());
-    rbc.setBasepath(applicationProperties.getMetadataFolder());
-    rbc.setReadOnly(false);
-    rbc.setDataResourceService(this.dataResourceService);
-    rbc.setContentInformationService(this.contentInformationService);
-    rbc.setEventPublisher(eventPublisher);
-    for (IRepoVersioningService versioningService : versioningServices) {
-      if ("simple".equals(versioningService.getServiceName())) {
-        rbc.setVersioningService(versioningService);
-        break;
-      }
-    }
-    for (IRepoStorageService storageService : storageServices) {
-      if ("dateBased".equals(storageService.getServiceName())) {
-        rbc.setStorageService(storageService);
-        break;
-      }
-    }
-    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
-    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
-    dataResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
-    contentInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
-    rbc.setAuditService(auditServiceDataResource);
-    rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
-//    MetastoreConfiguration rbc = new MetastoreConfiguration();
-//    rbc.setBasepath(applicationProperties.getBasepath());
-//    rbc.setReadOnly(applicationProperties.isReadOnly());
-//    rbc.setVersioningService(new NoneDataVersioningService());
-//    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
-//    contentInformationDao.deleteAll();
-//    dataResourceDao.deleteAll();
-//    rbc.setDataResourceService(dataResourceService);
-    metastoreProperties = rbc;
+    System.out.println("------MetadataControllerTest--------------------------");
+    System.out.println("------" + this.metadataConfig);
+    System.out.println("------------------------------------------------------");
 
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
@@ -293,8 +230,6 @@ public class MetadataControllerTest {
               .apply(documentationConfiguration(this.restDocumentation))
               .build();
       // Create schema only once.
-      if (!isInitialized()) {
-        metadataSchemaDao.deleteAll();
         try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
@@ -303,7 +238,6 @@ public class MetadataControllerTest {
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
         ingestSchemaRecord();
-      }
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)

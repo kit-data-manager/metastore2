@@ -182,81 +182,23 @@ public class SchemaRegistryControllerTest {
   private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
-  private IAuditService<MetadataSchemaRecord> schemaAuditService;
-
-  @Autowired
-  private ApplicationProperties applicationProperties;
-  @Autowired
-  private ILinkedMetadataRecordDao metadataRecordDao;
 
   @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
-  Javers javers = null;
-  @Autowired
-  private IDataResourceService schemaResourceService;
-  @Autowired
   private IContentInformationDao contentInformationDao;
-  @Autowired
-  private IContentInformationService schemaInformationService;
-  @Autowired
-  private ApplicationEventPublisher eventPublisher;
 
   @Autowired
-  private MetastoreConfiguration metastoreProperties;
+  private MetastoreConfiguration schemaConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-  @Autowired
-  private IRepoVersioningService[] versioningServices;
-  @Autowired
-  private IRepoStorageService[] storageServices;
-
-  private IAuditService<DataResource> auditServiceDataResource;
-  private IAuditService<ContentInformation> contentAuditService;
 
   @Before
   public void setUp() throws Exception {
-    MetastoreConfiguration rbc = new MetastoreConfiguration();
-    rbc.setBasepath(applicationProperties.getSchemaFolder());
-    rbc.setReadOnly(false);
-    rbc.setDataResourceService(this.schemaResourceService);
-    rbc.setContentInformationService(this.schemaInformationService);
-    rbc.setEventPublisher(eventPublisher);
-    for (IRepoVersioningService versioningService : versioningServices) {
-      if ("simple".equals(versioningService.getServiceName())) {
-        rbc.setVersioningService(versioningService);
-        System.out.println("setup versioning: " + versioningService.getServiceName());
-        break;
-      }
-    }
-    for (IRepoStorageService storageService : storageServices) {
-      if ("simple".equals(storageService.getServiceName())) {
-        rbc.setStorageService(storageService);
-        System.out.println("setup storage: " + storageService.getServiceName());
-        break;
-      }
-    }
-    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
-    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
-    //schemaResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
-//    contentInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
-    rbc.setAuditService(auditServiceDataResource);
-//    MetastoreConfiguration rbc = new MetastoreConfiguration();
-//    rbc.setBasepath(applicationProperties.getBasepath());
-//    rbc.setReadOnly(applicationProperties.isReadOnly());
-//    rbc.setVersioningService(new NoneDataVersioningService());
-//    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
-//    contentInformationDao.deleteAll();
-//    dataResourceDao.deleteAll();
-//    rbc.setDataResourceService(dataResourceService);
-    System.out.println("kkkk metastore Test" + metastoreProperties);
-    metastoreProperties = rbc;
-    System.out.println("kkkk metastore" + rbc);
 
+    System.out.println("------SchemaRegistryControllerTest--------------------");
+    System.out.println("------" + this.schemaConfig);
+    System.out.println("------------------------------------------------------");
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     metadataSchemaDao.deleteAll();
