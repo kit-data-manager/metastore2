@@ -158,7 +158,7 @@ public class Application {
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(schemaResourceService);
-    rbc.setContentInformationService(this.schemaInformationService);
+    rbc.setContentInformationService(schemaInformationService);
     rbc.setEventPublisher(eventPublisher);
     for (IRepoVersioningService versioningService : this.versioningServices) {
       if ("simple".equals(versioningService.getServiceName())) {
@@ -176,11 +176,8 @@ public class Application {
     }
     auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
     contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
     schemaResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
     schemaInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
     rbc.setAuditService(auditServiceDataResource);
     rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
     rbc.setValidators(validators);
@@ -217,11 +214,8 @@ public class Application {
     }
     auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
     contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
-    schemaResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
-    schemaInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
+    dataResourceService.configure(rbc);
+    contentInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
     rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
     rbc.setValidators(validators);
