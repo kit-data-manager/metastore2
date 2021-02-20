@@ -15,29 +15,22 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.spec.LastUpdateSpecification;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
-import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
+import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.InternalIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
-import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.service.IContentInformationService;
-import edu.kit.datamanager.repo.service.IDataResourceService;
-import edu.kit.datamanager.repo.service.IRepoStorageService;
-import edu.kit.datamanager.repo.service.IRepoVersioningService;
-import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
-import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
-import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -46,13 +39,12 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,15 +78,19 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   private final MetastoreConfiguration schemaConfig;
   @Autowired
   private final IDataResourceDao dataResourceDao;
+  @Autowired
+  private IContentInformationDao contentInformationDao;
 
   /**
    *
    * @param schemaConfig
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
-          IDataResourceDao dataResourceDao) {
+          IDataResourceDao dataResourceDao,
+          IContentInformationDao contentInformationDao) {
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
+    this.contentInformationDao = contentInformationDao;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
     LOG.info("------------------------------------------------------");

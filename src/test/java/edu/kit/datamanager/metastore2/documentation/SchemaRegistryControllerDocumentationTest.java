@@ -86,8 +86,9 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41405"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc;DB_CLOSE_DELAY=-1"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/schema"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_xml_doc;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/xml/schema"})
+@TestPropertySource(properties = {"metastore.schema.metadataFolder=file:///tmp/metastore2/restdocu/xml/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
 public class SchemaRegistryControllerDocumentationTest {
 
@@ -96,10 +97,6 @@ public class SchemaRegistryControllerDocumentationTest {
   private WebApplicationContext context;
   @Autowired
   private FilterChainProxy springSecurityFilterChain;
-//  @Autowired
-//  private IDataResourceDao dataResourceDao;
-//  @Autowired
-//  private IDataResourceService dataResourceService;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
   
@@ -152,12 +149,8 @@ public class SchemaRegistryControllerDocumentationTest {
           + "</example:metadata>";
   private static final String RELATED_RESOURCE = "anyResourceId";
 
-  @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
-
   @Before
   public void setUp() throws JsonProcessingException {
-    metadataSchemaDao.deleteAll();
     try {
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
@@ -208,10 +201,9 @@ public class SchemaRegistryControllerDocumentationTest {
 
     //update schema document and create new version
     schemaFile = new MockMultipartFile("schema", "schema_v2.xsd", "application/xml", NEW_EXAMPLE_SCHEMA.getBytes());
-    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(schemaFile).
-            file(recordFile).header("If-Match", etag)).
-            andExpect(status().isCreated()).
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            file(schemaFile).header("If-Match", etag).with(putMultipart())).
+            andExpect(status().isOk()).
             andDo(document("update-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andReturn().getResponse().getHeader("ETag");
 
@@ -237,7 +229,9 @@ public class SchemaRegistryControllerDocumentationTest {
     schemaRecord = mapper.readValue(body, MetadataSchemaRecord.class);
     schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
 
-    this.mockMvc.perform(put("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(schemaRecord))).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(document("update-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Create a metadata record.
     MetadataRecord metadataRecord = new MetadataRecord();

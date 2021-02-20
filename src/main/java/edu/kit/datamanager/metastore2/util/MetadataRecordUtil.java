@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -69,7 +70,7 @@ public class MetadataRecordUtil {
    * Encoding for strings/inputstreams.
    */
   private static final String ENCODING = "UTF-8";
- private static String  guestToken = null;
+  private static String guestToken = null;
 
   public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument, MultipartFile document) {
@@ -77,13 +78,13 @@ public class MetadataRecordUtil {
     MetadataRecord record;
 
     // Do some checks first.
-      if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
+    if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
       String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
-     }
-     try {
-     record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+    }
+    try {
+      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
@@ -102,12 +103,7 @@ public class MetadataRecordUtil {
       throw new BadArgumentException(message);
     }
     // validate document
-    try {
-      validateMetadataDocument(applicationProperties, record, document.getBytes());
-    } catch (IOException ex) {
-      LOG.error(null, ex);
-      throw new CustomInternalServerError(ex.getMessage());
-    }
+    validateMetadataDocument(applicationProperties, record, document);
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
@@ -157,6 +153,8 @@ public class MetadataRecordUtil {
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (document != null) {
+      record = migrateToMetadataRecord(applicationProperties, dataResource);
+      validateMetadataDocument(applicationProperties, record, document);
       LOG.trace("Updating metadata document.");
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
@@ -320,10 +318,18 @@ public class MetadataRecordUtil {
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MetadataRecord record,
-          byte[] document) {
+          MultipartFile document) {
     LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, record, document);
+    if (document == null || document.isEmpty()) {
+      String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
+    if (metastoreProperties.getSchemaRegistries().length == 0) {
+      throw new CustomInternalServerError("No schema registries defined! ");
+    }
     for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
       URI schemaRegistryUri = URI.create(schemaRegistry);
       UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
@@ -331,7 +337,7 @@ public class MetadataRecordUtil {
       URI finalUri = builder.build().toUri();
 
       try {
-        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", new ByteArrayInputStream(document)).postForm(MediaType.MULTIPART_FORM_DATA);
+        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", document.getInputStream()).postForm(MediaType.MULTIPART_FORM_DATA);
 
         if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
           LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
@@ -340,7 +346,7 @@ public class MetadataRecordUtil {
         }
       } catch (HttpClientErrorException ce) {
         //not valid 
-        String message = new String("Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".");
+        String message = "Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".";
         LOG.error(message, ce);
         errorMessage.append(message).append("\n");
       } catch (IOException | RestClientException ex) {

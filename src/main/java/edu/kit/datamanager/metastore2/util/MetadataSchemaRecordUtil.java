@@ -156,9 +156,11 @@ public class MetadataSchemaRecordUtil {
       existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
-    }
+    } 
+    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (schemaDocument != null) {
+      record = migrateToMetadataSchemaRecord(applicationProperties, dataResource);
       validateMetadataSchemaDocument(applicationProperties, record, schemaDocument);
       LOG.trace("Updating metadata document.");
       ContentInformation info;
@@ -166,7 +168,6 @@ public class MetadataSchemaRecordUtil {
 
       ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, info.getRelativePath(), null, true, supplier);
     }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
     return migrateToMetadataSchemaRecord(applicationProperties, dataResource);
   }
 
@@ -409,7 +410,7 @@ public class MetadataSchemaRecordUtil {
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, MetadataSchemaRecord schemaRecord, MultipartFile document) {
     if (document == null || document.isEmpty()) {
-      String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
+      String message = "Missing metadata schema document in body. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }

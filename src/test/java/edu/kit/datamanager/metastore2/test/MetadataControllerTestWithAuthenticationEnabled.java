@@ -16,8 +16,12 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.Agent;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.service.IDataResourceService;
@@ -27,12 +31,14 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.service.IAuditService;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -97,6 +103,7 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41408"})
 @TestPropertySource(properties = {"server.auth.enabled=true"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41408/api/v1/"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestWithAuthenticationEnabled {
 
@@ -211,80 +218,24 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
-  private IAuditService<MetadataRecord> schemaAuditService;
-
-  @Autowired
   private IDataResourceDao dataResourceDao;
-  @Autowired
-  Javers javers = null;
-  @Autowired
-  private IDataResourceService dataResourceService;
   @Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
-  private IContentInformationService contentInformationService;
-  @Autowired
-  private ApplicationEventPublisher eventPublisher;
-
-  private IAuditService<ContentInformation> contentInformationAuditService;
-  @Autowired
-  private MetastoreConfiguration metastoreProperties;
+  private MetastoreConfiguration metadataConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-  @Autowired
-  private IRepoVersioningService[] versioningServices;
-  @Autowired
-  private IRepoStorageService[] storageServices;
-
-  private IAuditService<DataResource> auditServiceDataResource;
-  private IAuditService<ContentInformation> contentAuditService;
 
   @Before
   public void setUp() throws Exception {
-    MetastoreConfiguration rbc = new MetastoreConfiguration();
-    System.out.println("kkkkk schema registry: " + applicationProperties.getSchemaRegistries());
-    rbc.setBasepath(applicationProperties.getMetadataFolder());
-    rbc.setReadOnly(false);
-    rbc.setDataResourceService(this.dataResourceService);
-    rbc.setContentInformationService(this.contentInformationService);
-    rbc.setEventPublisher(eventPublisher);
-    for (IRepoVersioningService versioningService : versioningServices) {
-      if ("simple".equals(versioningService.getServiceName())) {
-        rbc.setVersioningService(versioningService);
-        break;
-      }
-    }
-    for (IRepoStorageService storageService : storageServices) {
-      if ("dateBased".equals(storageService.getServiceName())) {
-        rbc.setStorageService(storageService);
-        break;
-      }
-    }
-    auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
-    contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-//    dataResourceService = new DataResourceService();
-    dataResourceService.configure(rbc);
-//    contentInformationService = new ContentInformationService();
-    contentInformationService.configure(rbc);
-//    rbc.setContentInformationAuditService(contentInformationAuditService);
-    rbc.setAuditService(auditServiceDataResource);
-    rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
-//    MetastoreConfiguration rbc = new MetastoreConfiguration();
-//    rbc.setBasepath(applicationProperties.getBasepath());
-//    rbc.setReadOnly(applicationProperties.isReadOnly());
-//    rbc.setVersioningService(new NoneDataVersioningService());
-//    contentInformationAuditService = new ContentInformationAuditService(javers, rbc);
-//    contentInformationDao.deleteAll();
-//    dataResourceDao.deleteAll();
-//    rbc.setDataResourceService(dataResourceService);
-    metastoreProperties = rbc;
+    System.out.println("------MetadataControllerTest--------------------------");
+    System.out.println("------" + this.metadataConfig);
+    System.out.println("------------------------------------------------------");
 
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     metadataRecordDao.deleteAll();
-    
+
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
@@ -292,17 +243,14 @@ public class MetadataControllerTestWithAuthenticationEnabled {
               .apply(documentationConfiguration(this.restDocumentation))
               .build();
       // Create schema only once.
-      if (!isInitialized()) {
-        metadataSchemaDao.deleteAll();
-        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
-          walk.sorted(Comparator.reverseOrder())
-                  .map(Path::toFile)
-                  .forEach(File::delete);
-        }
-        Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-        Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        ingestSchemaRecord();
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
       }
+      Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
+      ingestSchemaRecord();
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
@@ -1089,42 +1037,41 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   private void ingestSchemaRecord() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId(SCHEMA_ID);
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
+    DataResource schemaRecord = DataResource.factoryNewDataResource(SCHEMA_ID);
+    schemaRecord.getCreators().add(Agent.factoryAgent(null, "SELF"));
+    schemaRecord.getTitles().add(Title.factoryTitle(MediaType.APPLICATION_XML.toString(), Title.TYPE.OTHER));
+    schemaRecord.setPublisher("SELF");
+    Instant now = Instant.now();
+    schemaRecord.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
+    schemaRecord.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+          schemaRecord.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
+      schemaRecord.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
+      schemaRecord.setLastUpdate(now);
+      schemaRecord.setState(DataResource.State.VOLATILE);
+     Set<AclEntry> aclEntries = schemaRecord.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
-
-    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
-
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile).header(HttpHeaders.AUTHORIZATION,
-            "Bearer " + userToken)).andDo(print()).andExpect(status().isCreated()).andReturn();
-  }
-  private void ingestDCMetadataRecord() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId(SCHEMA_ID);
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test", PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
-
-    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
-
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-            file(recordFile).
-            file(schemaFile).header(HttpHeaders.AUTHORIZATION,
-            "Bearer " + userToken)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    ContentInformation ci = ContentInformation.createContentInformation(
+            SCHEMA_ID, "schema.xsd", (String [])null);
+    ci.setVersion(1);
+    ci.setFileVersion("1");
+    ci.setVersioningService("simple");
+    ci.setDepth(1);
+    ci.setContentUri("file:/tmp/schema_dc.xsd");
+    ci.setUploader("SELF");
+    ci.setMediaType("text/plain");
+    ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
+    ci.setSize(1097);
+    
+    dataResourceDao.save(schemaRecord);
+    contentInformationDao.save(ci);
+    File dcFile = new File("/tmp/schema_dc.xsd");
+    if (!dcFile.exists()) {
+      try (FileOutputStream fout = new FileOutputStream(dcFile)) {
+        fout.write(DC_SCHEMA.getBytes());
+        fout.flush();
+      }
+    }    
   }
 
   public static synchronized boolean isInitialized() {

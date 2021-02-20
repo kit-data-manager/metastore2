@@ -88,7 +88,7 @@ public class MetadataControllerWithoutRegistryTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isInsufficientStorage()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
 
 }
