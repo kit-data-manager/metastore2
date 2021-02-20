@@ -511,6 +511,25 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testCreateRecordWithoutDocument() throws Exception {
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchemaId(SCHEMA_ID);
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+//    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+  }
+
+  @Test
   public void testCreateTwoVersionsOfSameRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
