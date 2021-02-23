@@ -97,7 +97,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
   private FilterChainProxy springSecurityFilterChain;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-  
+
   private final static String EXAMPLE_SCHEMA_ID = "my_first_json";
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
@@ -227,7 +227,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
 
     //update schema document and create new version
     schemaFile = new MockMultipartFile("schema", "schema_v2.json", "application/json", NEW_EXAMPLE_SCHEMA.getBytes());
-    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/"+ EXAMPLE_SCHEMA_ID).
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
             file(schemaFile).header("If-Match", etag).with(putMultipart())).
             andExpect(status().isOk()).
             andDo(document("update-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
@@ -255,8 +255,8 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     schemaRecord = mapper.readValue(body, MetadataSchemaRecord.class);
     schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
 
-     recordFile = new MockMultipartFile("record", "schema-record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
-     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+    recordFile = new MockMultipartFile("record", "schema-record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(document("update-json-schema-record", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).andReturn().getResponse();
 
     // Create a metadata record.

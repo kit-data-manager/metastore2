@@ -21,6 +21,8 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
+import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
@@ -64,17 +66,20 @@ public class MetadataRecordUtil {
    * Logger for messages.
    */
   private static final Logger LOG = LoggerFactory.getLogger(MetadataRecordUtil.class);
+
+  private static MetastoreConfiguration schemaConfig;
   /**
    * Encoding for strings/inputstreams.
    */
   private static final String ENCODING = "UTF-8";
   private static String guestToken = null;
 
+  private static IDataRecordDao dataRecordDao;
+
   public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument, MultipartFile document) {
     MetadataRecord result = null;
     MetadataRecord record;
-
     // Do some checks first.
     if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
       String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
@@ -101,14 +106,28 @@ public class MetadataRecordUtil {
       throw new BadArgumentException(message);
     }
     // validate document
+    long nano1 = System.nanoTime() / 1000000;
     validateMetadataDocument(applicationProperties, record, document);
+    long nano2 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
+    long nano3 = System.nanoTime() / 1000000;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
+    long nano4 = System.nanoTime() / 1000000;
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, (t) -> {
       return "somethingStupid";
     });
+    long nano5 = System.nanoTime() / 1000000;
+    // Create schema record
+    DataRecord dataRecord = new DataRecord();
+    dataRecord.setSchemaId(createResource.getId());
+    dataRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+    dataRecord.setSchemaDocumentUri(contentInformation.getContentUri());
+    dataRecord.setDocumentHash(contentInformation.getHash());
+    dataRecordDao.save(dataRecord);
+    long nano6 = System.nanoTime() / 1000000;
+    LOG.error("Create Record times, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1);
 
     return migrateToMetadataRecord(applicationProperties, createResource);
   }
@@ -157,7 +176,12 @@ public class MetadataRecordUtil {
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
-      ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+      ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+      if (record != null) {
+        DataRecord dataRecord = dataRecordDao.findTopBySchemaIdOrderByVersionDesc(dataResource.getId());
+        dataRecord.setSchemaDocumentUri(addFile.getContentUri());
+        dataRecordDao.save(dataRecord);
+      }
     }
     return migrateToMetadataRecord(applicationProperties, dataResource);
   }
@@ -167,6 +191,8 @@ public class MetadataRecordUtil {
           String eTag,
           Function<String, String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
+    List<DataRecord> listOfDataIds = dataRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    dataRecordDao.deleteAll(listOfDataIds);
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
@@ -239,6 +265,7 @@ public class MetadataRecordUtil {
 
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
+    long nano1 = System.nanoTime() / 1000000;
     MetadataRecord metadataRecord = new MetadataRecord();
     if (dataResource != null) {
       metadataRecord.setId(dataResource.getId());
@@ -256,41 +283,57 @@ public class MetadataRecordUtil {
         metadataRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
-    }
-    if (dataResource.getIdentifier() != null) {
-      PrimaryIdentifier identifier = dataResource.getIdentifier();
-      if (identifier.hasDoi()) {
-        metadataRecord.setPid(identifier.getValue());
+      if (dataResource.getIdentifier() != null) {
+        PrimaryIdentifier identifier = dataResource.getIdentifier();
+        if (identifier.hasDoi()) {
+          metadataRecord.setPid(identifier.getValue());
+        }
       }
-    }
-    metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
-    for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-        LOG.trace("Set relation to '{}'", relatedIds.getValue());
-        metadataRecord.setRelatedResource(relatedIds.getValue());
+      long nano2 = System.nanoTime() / 1000000;
+      metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+      long nano3 = System.nanoTime() / 1000000;
+      for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
+        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
+          LOG.trace("Set relation to '{}'", relatedIds.getValue());
+          metadataRecord.setRelatedResource(relatedIds.getValue());
+        }
+        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+          LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
+          metadataRecord.setSchemaId(relatedIds.getValue());
+        }
       }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
-        metadataRecord.setSchemaId(relatedIds.getValue());
+      DataRecord dataRecord = null;
+      long nano4 = System.nanoTime() / 1000000;
+      try {
+        dataRecord = dataRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataRecord.getRecordVersion());
+        metadataRecord.setMetadataDocumentUri(dataRecord.getSchemaDocumentUri());
+        metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
+      } catch (NullPointerException npe) {
+        ContentInformation info;
+        info = getContentInformationOfResource(applicationProperties, dataResource);
+        if (info != null) {
+          metadataRecord.setDocumentHash(info.getHash());
+          metadataRecord.setMetadataDocumentUri(info.getContentUri());
+          saveNewDataRecord(metadataRecord);
+        }
       }
+      long nano5 = System.nanoTime() / 1000000;
+      LOG.error("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
     }
-    ContentInformation info;
-    info = getContentInformationOfResource(applicationProperties, dataResource);
 
-    if (info != null) {
-      metadataRecord.setDocumentHash(info.getHash());
-      metadataRecord.setMetadataDocumentUri(info.getContentUri());
-    }
     return metadataRecord;
   }
 
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     ContentInformation returnValue = null;
+    long nano1 = System.nanoTime() / 1000000;
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
     ContentInformation info = new ContentInformation();
     info.setParentResource(dataResource);
+    long nano2 = System.nanoTime() / 1000000;
     List<ContentInformation> listOfFiles = contentInformationService.findAll(info, PageRequest.of(0, 100)).getContent();
+    long nano3 = System.nanoTime() / 1000000;
     if (LOG.isTraceEnabled()) {
       LOG.trace("Found {} files for resource '{}'", listOfFiles.size(), dataResource.getId());
       for (ContentInformation ci : listOfFiles) {
@@ -303,6 +346,7 @@ public class MetadataRecordUtil {
     if (!listOfFiles.isEmpty()) {
       returnValue = listOfFiles.get(0);
     }
+    LOG.error("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 
@@ -326,31 +370,44 @@ public class MetadataRecordUtil {
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
     if (metastoreProperties.getSchemaRegistries().length == 0) {
-      throw new CustomInternalServerError("No schema registries defined! ");
-    }
-    for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
-      URI schemaRegistryUri = URI.create(schemaRegistry);
-      UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
-
-      URI finalUri = builder.build().toUri();
-
-      try {
-        HttpStatus status = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", document.getInputStream()).postForm(MediaType.MULTIPART_FORM_DATA);
-
-        if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
-          LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
+      LOG.trace("No external schema registries defined. Try to use internal one...");
+      if (schemaConfig != null) {
+        try {
+          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, record.getSchemaId(), null);
           validationSuccess = true;
-          break;
+        } catch (Exception ex) {
+          String message = "Error validating document!";
+          LOG.error(message, ex);
+          errorMessage.append(ex.getMessage()).append("\n");
         }
-      } catch (HttpClientErrorException ce) {
-        //not valid 
-        String message = "Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".";
-        LOG.error(message, ce);
-        errorMessage.append(message).append("\n");
-      } catch (IOException | RestClientException ex) {
-        String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
-        LOG.error(message, ex);
-        errorMessage.append(message).append("\n");
+      } else {
+        throw new CustomInternalServerError("No schema registries defined! ");
+      }
+    } else {
+      for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        URI schemaRegistryUri = URI.create(schemaRegistry);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
+
+        URI finalUri = builder.build().toUri();
+
+        try {
+          HttpStatus status = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", document.getInputStream()).postForm(MediaType.MULTIPART_FORM_DATA);
+
+          if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
+            LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
+            validationSuccess = true;
+            break;
+          }
+        } catch (HttpClientErrorException ce) {
+          //not valid 
+          String message = "Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".";
+          LOG.error(message, ce);
+          errorMessage.append(message).append("\n");
+        } catch (IOException | RestClientException ex) {
+          String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
+          LOG.error(message, ex);
+          errorMessage.append(message).append("\n");
+        }
       }
     }
     if (!validationSuccess) {
@@ -367,10 +424,16 @@ public class MetadataRecordUtil {
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
-    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
-
-    return migrateToMetadataRecord(metastoreProperties, dataResource);
+    long nanoTime = System.nanoTime();
+    long detectedVersion = version == null ? metastoreProperties.getAuditService().getCurrentVersion(recordId) : version;
+    Optional<DataResource> dataResource = metastoreProperties.getAuditService().getResourceByVersion(recordId, detectedVersion);
+    if (dataResource.isEmpty()) {
+      throw new ResourceNotFoundException("No resource found for '" + recordId + "' and version '" + detectedVersion + "'!");
+    }
+    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource.get());
+    long nanoTime2 = System.nanoTime();
+    LOG.error("findByIAnyIdentifier," + ((System.nanoTime() - nanoTime2) / 1000000) + ", " + ((nanoTime2 - nanoTime) / 1000000));
+    return result;
   }
 
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
@@ -423,5 +486,37 @@ public class MetadataRecordUtil {
 
   public static void setToken(String bearerToken) {
     guestToken = bearerToken;
+  }
+
+  /**
+   * @param aSchemaConfig the schemaConfig to set
+   */
+  public static void setSchemaConfig(MetastoreConfiguration aSchemaConfig) {
+    schemaConfig = aSchemaConfig;
+  }
+
+  /**
+   * @param aDataRecordDao the dataRecordDao to set
+   */
+  public static void setDataRecordDao(IDataRecordDao aDataRecordDao) {
+    dataRecordDao = aDataRecordDao;
+  }
+
+  private static void saveNewDataRecord(MetadataRecord result) {
+    if (dataRecordDao != null) {
+      // Create shortcut for access.
+      LOG.trace("Found new schema record!");
+      DataRecord dataRecord = new DataRecord();
+      dataRecord.setSchemaId(result.getSchemaId());
+      dataRecord.setVersion(result.getRecordVersion());
+      dataRecord.setDocumentHash(result.getDocumentHash());
+      dataRecord.setSchemaDocumentUri(result.getMetadataDocumentUri());
+      try {
+        dataRecordDao.save(dataRecord);
+      } catch (Exception ex) {
+        LOG.error("Error saving data record", ex);
+      }
+      LOG.trace("Data record: {}", dataRecord);
+    }
   }
 }

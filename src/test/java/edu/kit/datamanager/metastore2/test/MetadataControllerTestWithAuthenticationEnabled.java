@@ -10,9 +10,12 @@ import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
+import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.Agent;
@@ -93,7 +96,7 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41408"})
 @TestPropertySource(properties = {"server.auth.enabled=true"})
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41408/api/v1/"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestWithAuthenticationEnabled {
 
@@ -209,6 +212,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IDataResourceDao dataResourceDao;
+ @Autowired
+  private IDataRecordDao dataRecordDao;
+  @Autowired
+  private ISchemaRecordDao schemaRecordDao;
   @Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
@@ -225,6 +232,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     metadataRecordDao.deleteAll();
+    schemaRecordDao.deleteAll();
+    dataRecordDao.deleteAll();
 
     try {
       // setup mockMvc
@@ -936,7 +945,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     body = result.getResponse().getContentAsString();
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
-    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
@@ -1027,18 +1036,18 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   private void ingestSchemaRecord() throws Exception {
-    DataResource schemaRecord = DataResource.factoryNewDataResource(SCHEMA_ID);
-    schemaRecord.getCreators().add(Agent.factoryAgent(null, "SELF"));
-    schemaRecord.getTitles().add(Title.factoryTitle(MediaType.APPLICATION_XML.toString(), Title.TYPE.OTHER));
-    schemaRecord.setPublisher("SELF");
+    DataResource dataResource = DataResource.factoryNewDataResource(SCHEMA_ID);
+    dataResource.getCreators().add(Agent.factoryAgent(null, "SELF"));
+    dataResource.getTitles().add(Title.factoryTitle(MediaType.APPLICATION_XML.toString(), Title.TYPE.OTHER));
+    dataResource.setPublisher("SELF");
     Instant now = Instant.now();
-    schemaRecord.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
-    schemaRecord.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
-          schemaRecord.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
-      schemaRecord.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
-      schemaRecord.setLastUpdate(now);
-      schemaRecord.setState(DataResource.State.VOLATILE);
-     Set<AclEntry> aclEntries = schemaRecord.getAcls();
+    dataResource.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
+    dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+          dataResource.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
+      dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
+      dataResource.setLastUpdate(now);
+      dataResource.setState(DataResource.State.VOLATILE);
+     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     ContentInformation ci = ContentInformation.createContentInformation(
@@ -1053,8 +1062,14 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
     
-    dataResourceDao.save(schemaRecord);
+    dataResourceDao.save(dataResource);
     contentInformationDao.save(ci);
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaId(dataResource.getId());
+    schemaRecord.setVersion(1l);
+    schemaRecord.setSchemaDocumentUri(ci.getContentUri());
+    schemaRecordDao.save(schemaRecord);
+
     File dcFile = new File("/tmp/schema_dc.xsd");
     if (!dcFile.exists()) {
       try (FileOutputStream fout = new FileOutputStream(dcFile)) {

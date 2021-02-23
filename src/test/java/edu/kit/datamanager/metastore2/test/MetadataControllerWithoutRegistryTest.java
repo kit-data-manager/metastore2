@@ -7,6 +7,7 @@ package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,6 +75,7 @@ public class MetadataControllerWithoutRegistryTest {
 
   @Before
   public void setUp() throws Exception {
+    MetadataRecordUtil.setSchemaConfig(null);
   }
 
   @Test

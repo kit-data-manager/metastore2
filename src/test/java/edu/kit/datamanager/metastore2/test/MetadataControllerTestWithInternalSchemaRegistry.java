@@ -91,9 +91,10 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41403"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
+@TestPropertySource(properties = {"server.port=41410"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class MetadataControllerTest {
+public class MetadataControllerTestWithInternalSchemaRegistry {
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
@@ -204,7 +205,7 @@ public class MetadataControllerTest {
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IDataResourceDao dataResourceDao;
-  @Autowired
+ @Autowired
   private IDataRecordDao dataRecordDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
@@ -969,15 +970,15 @@ public class MetadataControllerTest {
     Instant now = Instant.now();
     dataResource.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
     dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
-    dataResource.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
-    dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
-    dataResource.setLastUpdate(now);
-    dataResource.setState(DataResource.State.VOLATILE);
-    Set<AclEntry> aclEntries = dataResource.getAcls();
+          dataResource.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
+      dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
+      dataResource.setLastUpdate(now);
+      dataResource.setState(DataResource.State.VOLATILE);
+     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     ContentInformation ci = ContentInformation.createContentInformation(
-            SCHEMA_ID, "schema.xsd", (String[]) null);
+            SCHEMA_ID, "schema.xsd", (String [])null);
     ci.setVersion(1);
     ci.setFileVersion("1");
     ci.setVersioningService("simple");
@@ -987,10 +988,11 @@ public class MetadataControllerTest {
     ci.setMediaType("text/plain");
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
-
+    
     dataResource = dataResourceDao.save(dataResource);
     ci = contentInformationDao.save(ci);
-    
+    schemaConfig.getAuditService().captureAuditInformation(dataResource, "SELF");
+    schemaConfig.getContentInformationAuditService().captureAuditInformation(ci, "SELF");
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId());
     schemaRecord.setVersion(1l);
@@ -1003,7 +1005,7 @@ public class MetadataControllerTest {
         fout.write(DC_SCHEMA.getBytes());
         fout.flush();
       }
-    }
+    }    
   }
 
   public static synchronized boolean isInitialized() {

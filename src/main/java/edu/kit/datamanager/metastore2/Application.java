@@ -21,6 +21,10 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
+import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
@@ -84,6 +88,10 @@ public class Application {
   private MetastoreConfiguration metastoreProperties;
   @Autowired
   private IDataResourceDao dataResourceDao;
+  @Autowired
+  private ISchemaRecordDao schemaRecordDao;
+  @Autowired
+  private IDataRecordDao dataRecordDao;
 
   @Autowired
   private IValidator[] validators;
@@ -184,6 +192,9 @@ public class Application {
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", rbc);
     LOG.info("------------------------------------------------------");
+    MetadataRecordUtil.setSchemaConfig(rbc);
+    MetadataRecordUtil.setDataRecordDao(dataRecordDao);
+    MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     return rbc;
   }
 
@@ -193,7 +204,7 @@ public class Application {
     IAuditService<DataResource> auditServiceDataResource;
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
-    rbc.setBasepath(applicationProperties.getSchemaFolder());
+    rbc.setBasepath(applicationProperties.getMetadataFolder());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(dataResourceService);
     rbc.setContentInformationService(contentInformationService);
@@ -206,7 +217,7 @@ public class Application {
       }
     }
     for (IRepoStorageService storageService : this.storageServices) {
-      if ("simple".equals(storageService.getServiceName())) {
+      if ("dateBased".equals(storageService.getServiceName())) {
         LOG.info("Set storage service: {}", storageService.getServiceName());
         rbc.setStorageService(storageService);
         break;
