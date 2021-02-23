@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -85,6 +86,8 @@ public class MetadataRecordUtilTest {
   @Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
+  private IAllIdentifiersDao allIdentifiersDao;
+  @Autowired
   private MetastoreConfiguration metadataConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
@@ -109,6 +112,7 @@ public class MetadataRecordUtilTest {
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     metadataRecordDao.deleteAll();
+    allIdentifiersDao.deleteAll();
 
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)

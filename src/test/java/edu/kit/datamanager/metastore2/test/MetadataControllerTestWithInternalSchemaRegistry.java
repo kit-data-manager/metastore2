@@ -14,6 +14,7 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.Agent;
@@ -212,6 +213,8 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   @Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
+  private IAllIdentifiersDao allIdentifiersDao;
+  @Autowired
   private MetastoreConfiguration metadataConfig;
   @Autowired
   private MetastoreConfiguration schemaConfig;
@@ -229,6 +232,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     metadataRecordDao.deleteAll();
     schemaRecordDao.deleteAll();
     dataRecordDao.deleteAll();
+    allIdentifiersDao.deleteAll();
 
     try {
       // setup mockMvc
@@ -989,9 +993,9 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
     
-    dataResource = dataResourceDao.save(dataResource);
+    schemaConfig.getDataResourceService().create(dataResource, "SELF");
+//    dataResource = dataResourceDao.save(dataResource);
     ci = contentInformationDao.save(ci);
-    schemaConfig.getAuditService().captureAuditInformation(dataResource, "SELF");
     schemaConfig.getContentInformationAuditService().captureAuditInformation(ci, "SELF");
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId());

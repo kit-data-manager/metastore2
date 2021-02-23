@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.Agent;
@@ -184,6 +185,8 @@ public class JsonSchemaRegistryControllerTest {
   @Autowired
   private IContentInformationDao contentInformationDao;
   @Autowired
+  private IAllIdentifiersDao allIdentifiersDao;
+  @Autowired
   private MetastoreConfiguration schemaConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
@@ -196,6 +199,7 @@ public class JsonSchemaRegistryControllerTest {
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     schemaRecordDao.deleteAll();
+    allIdentifiersDao.deleteAll();
     try {
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
@@ -881,8 +885,10 @@ public class JsonSchemaRegistryControllerTest {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
 
-    dataResourceDao.save(schemaRecord);
+    schemaConfig.getDataResourceService().create(dataResource, "SELF");
+//    dataResourceDao.save(dataResource);
     contentInformationDao.save(ci);
+    
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId());
     schemaRecord.setVersion(1l);

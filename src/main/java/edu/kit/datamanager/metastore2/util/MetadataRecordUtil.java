@@ -424,13 +424,11 @@ public class MetadataRecordUtil {
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
+    //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nanoTime = System.nanoTime();
-    long detectedVersion = version == null ? metastoreProperties.getAuditService().getCurrentVersion(recordId) : version;
-    Optional<DataResource> dataResource = metastoreProperties.getAuditService().getResourceByVersion(recordId, detectedVersion);
-    if (dataResource.isEmpty()) {
-      throw new ResourceNotFoundException("No resource found for '" + recordId + "' and version '" + detectedVersion + "'!");
-    }
-    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource.get());
+    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+
+    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource);
     long nanoTime2 = System.nanoTime();
     LOG.error("findByIAnyIdentifier," + ((System.nanoTime() - nanoTime2) / 1000000) + ", " + ((nanoTime2 - nanoTime) / 1000000));
     return result;

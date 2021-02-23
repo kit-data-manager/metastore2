@@ -47,7 +47,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -213,14 +212,11 @@ public class MetadataSchemaRecordUtil {
     DataResource dataResource = null;
     if (metadataSchemaRecord != null) {
       if (metadataSchemaRecord.getSchemaId() != null) {
-        Optional<DataResource> result;
-        long version = metadataSchemaRecord.getSchemaVersion() == null ? applicationProperties.getAuditService().getCurrentVersion(metadataSchemaRecord.getSchemaId()) : metadataSchemaRecord.getSchemaVersion();
-        result = applicationProperties.getAuditService().getResourceByVersion(metadataSchemaRecord.getSchemaId(), version);
-        if (!result.isEmpty()) {
-          dataResource = result.get();
+        try {
+          dataResource = applicationProperties.getDataResourceService().findById(metadataSchemaRecord.getSchemaId(), metadataSchemaRecord.getSchemaVersion());
           dataResource = DataResourceUtils.copyDataResource(dataResource);
-        } else {
-          LOG.error("Error catching DataResource for '{}'", metadataSchemaRecord.getSchemaId());
+        } catch (ResourceNotFoundException | NullPointerException rnfe) {
+          LOG.error("Error catching DataResource for " + metadataSchemaRecord.getSchemaId() + " -> " + rnfe.getMessage());
           dataResource = DataResource.factoryNewDataResource(metadataSchemaRecord.getSchemaId());
         }
       } else {
@@ -352,11 +348,11 @@ public class MetadataSchemaRecordUtil {
       throw new BadArgumentException(message);
     }
     MetadataSchemaRecord schemaRecord = getRecordByIdAndVersion(metastoreProperties, schemaId, version);
-    long nano2 = System.nanoTime() / 1000000;
+    long nano2= System.nanoTime() / 1000000;
     try {
       //obtain validator for type
       IValidator applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
-      long nano3 = System.nanoTime() / 1000000;
+    long nano3= System.nanoTime() / 1000000;
 
       if (applicableValidator == null) {
         String message = "No validator found for schema type " + schemaRecord.getType();
@@ -372,20 +368,20 @@ public class MetadataSchemaRecordUtil {
         }
 
         LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), applicableValidator);
-        long nano4 = System.nanoTime() / 1000000;
-        if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), document.getInputStream())) {
+     long nano4= System.nanoTime() / 1000000;
+       if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), document.getInputStream())) {
           LOG.warn("Metadata document validation failed.");
           throw new UnprocessableEntityException(applicableValidator.getErrorMessage());
         }
-        long nano5 = System.nanoTime() / 1000000;
-        LOG.error("Validate document, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1);
+    long nano5= System.nanoTime() / 1000000;
+      LOG.error("Validate document, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1);
       }
     } catch (IOException ex) {
       String message = "Failed to read metadata document from input stream.";
       LOG.error(message, ex);
       throw new UnprocessableEntityException(message);
     }
-    LOG.trace("Metadata document validation succeeded.");
+  LOG.trace("Metadata document validation succeeded.");
   }
 
   public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
@@ -397,12 +393,8 @@ public class MetadataSchemaRecordUtil {
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nanoTime = System.nanoTime();
-    long detectedVersion = version == null ? metastoreProperties.getAuditService().getCurrentVersion(recordId) : version;
-    Optional<DataResource> dataResource = metastoreProperties.getAuditService().getResourceByVersion(recordId, detectedVersion);
-    if (dataResource.isEmpty()) {
-      throw new ResourceNotFoundException("No resource found for '" + recordId + "' and version '" + detectedVersion + "'!");
-    }
-    MetadataSchemaRecord result = migrateToMetadataSchemaRecord(metastoreProperties, dataResource.get());
+    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    MetadataSchemaRecord result = migrateToMetadataSchemaRecord(metastoreProperties, dataResource);
     long nanoTime2 = System.nanoTime();
     LOG.error("findByIAnyIdentifier," + ((System.nanoTime() - nanoTime2) / 1000000) + ", " + ((nanoTime2 - nanoTime) / 1000000));
     return result;

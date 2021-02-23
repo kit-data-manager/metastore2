@@ -8,10 +8,10 @@ package edu.kit.datamanager.metastore2.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.Agent;
@@ -195,6 +195,8 @@ public class SchemaRegistryControllerTest {
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
   private IContentInformationDao contentInformationDao;
+  @Autowired
+  private IAllIdentifiersDao allIdentifiersDao;
 
   @Autowired
   private MetastoreConfiguration schemaConfig;
@@ -210,6 +212,7 @@ public class SchemaRegistryControllerTest {
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     schemaRecordDao.deleteAll();
+    allIdentifiersDao.deleteAll();
     try {
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
@@ -927,7 +930,8 @@ public class SchemaRegistryControllerTest {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
 
-    dataResource = dataResourceDao.save(dataResource);
+    schemaConfig.getDataResourceService().create(dataResource, "SELF");
+//    dataResource = dataResourceDao.save(dataResource);
     ci = contentInformationDao.save(ci);
 
     SchemaRecord schemaRecord = new SchemaRecord();
