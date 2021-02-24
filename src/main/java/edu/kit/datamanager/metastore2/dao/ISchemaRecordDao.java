@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @author Torridity
  */
 public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, JpaSpecificationExecutor<SchemaRecord>{
+  boolean existsSchemaRecordBySchemaIdAndVersion(String schemaId, Long version);
   SchemaRecord findBySchemaIdAndVersion(String schemaId, Long version);
   List<SchemaRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
   SchemaRecord findTopBySchemaIdOrderByVersionDesc(String schemaId);

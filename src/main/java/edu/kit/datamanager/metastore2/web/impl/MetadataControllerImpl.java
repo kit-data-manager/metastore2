@@ -121,7 +121,8 @@ public class MetadataControllerImpl implements IMetadataController {
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) throws URISyntaxException {
 
-    LOG.trace("Performing createRecord({},...).", recordDocument);
+     long nano1 = System.nanoTime() / 1000000;
+   LOG.trace("Performing createRecord({},...).", recordDocument);
     MetadataRecord record;
     if (recordDocument == null || recordDocument.isEmpty()) {
       String message = "No metadata record provided. Returning HTTP BAD_REQUEST.";
@@ -135,6 +136,7 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
+    long nano2 = System.nanoTime() / 1000000;
 
     if (record.getRelatedResource() == null || record.getSchemaId() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
@@ -147,6 +149,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.debug("Test for existing metadata record for given schema and resource");
     boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource(), record.getSchemaId());
+    long nano3 = System.nanoTime() / 1000000;
 
     if (recordAlreadyExists) {
       LOG.error("Conflict with existing metadata record!");
@@ -154,12 +157,17 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
+    long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
     fixMetadataDocumentUri(result);
+    long nano5 = System.nanoTime() / 1000000;
     metadataRecordDao.save(new LinkedMetadataRecord(result));
+    long nano6 = System.nanoTime() / 1000000;
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
+    long nano7 = System.nanoTime() / 1000000;
+    LOG.error("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }

@@ -80,6 +80,7 @@ public class MetadataRecordUtil {
           MultipartFile recordDocument, MultipartFile document) {
     MetadataRecord result = null;
     MetadataRecord record;
+    long nano1 = System.nanoTime() / 1000000;
     // Do some checks first.
     if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
       String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
@@ -106,19 +107,19 @@ public class MetadataRecordUtil {
       throw new BadArgumentException(message);
     }
     // validate document
-    long nano1 = System.nanoTime() / 1000000;
-    validateMetadataDocument(applicationProperties, record, document);
     long nano2 = System.nanoTime() / 1000000;
+    validateMetadataDocument(applicationProperties, record, document);
+    long nano3 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
-    long nano3 = System.nanoTime() / 1000000;
-    DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     long nano4 = System.nanoTime() / 1000000;
+    DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
+    long nano5 = System.nanoTime() / 1000000;
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, (t) -> {
       return "somethingStupid";
     });
-    long nano5 = System.nanoTime() / 1000000;
+    long nano6 = System.nanoTime() / 1000000;
     // Create schema record
     DataRecord dataRecord = new DataRecord();
     dataRecord.setSchemaId(createResource.getId());
@@ -126,8 +127,8 @@ public class MetadataRecordUtil {
     dataRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
     dataRecordDao.save(dataRecord);
-    long nano6 = System.nanoTime() / 1000000;
-    LOG.error("Create Record times, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1);
+    long nano7 = System.nanoTime() / 1000000;
+    LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
     return migrateToMetadataRecord(applicationProperties, createResource);
   }
@@ -425,12 +426,13 @@ public class MetadataRecordUtil {
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    long nanoTime = System.nanoTime();
+    long nanoTime = System.nanoTime() / 1000000;
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    long nanoTime2 = System.nanoTime() / 1000000;
 
     MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource);
-    long nanoTime2 = System.nanoTime();
-    LOG.error("findByIAnyIdentifier," + ((System.nanoTime() - nanoTime2) / 1000000) + ", " + ((nanoTime2 - nanoTime) / 1000000));
+    long nanoTime3 = System.nanoTime() / 1000000;
+    LOG.error("getRecordByIdAndVersion," + nanoTime + ", " + (nanoTime2 - nanoTime) + ", " + (nanoTime3 - nanoTime));
     return result;
   }
 

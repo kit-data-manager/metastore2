@@ -262,13 +262,19 @@ public class MetadataSchemaRecordUtil {
   public static MetadataSchemaRecord migrateToMetadataSchemaRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecord();
+    long nano = 0, nano1 = 0, nano2 = 0, nano3 = 0, nano4 = 0, nano5 = 0, nano6 = 0;
     if (dataResource != null) {
+     nano1 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setSchemaId(dataResource.getId());
       MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
       metadataSchemaRecord.setType(schemaType);
+     nano2 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setMimeType(dataResource.getTitles().iterator().next().getValue());
-      metadataSchemaRecord.setETag(dataResource.getEtag());
+      nano3 = System.nanoTime() / 1000000;
+     metadataSchemaRecord.setETag(dataResource.getEtag());
+     nano4 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setAcl(dataResource.getAcls());
+     nano5 = System.nanoTime() / 1000000;
 
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
         if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
@@ -277,6 +283,7 @@ public class MetadataSchemaRecordUtil {
           break;
         }
       }
+     nano6 = System.nanoTime() / 1000000;
       if (dataResource.getLastUpdate() != null) {
         metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
       }
@@ -291,6 +298,7 @@ public class MetadataSchemaRecordUtil {
 
       SchemaRecord schemaRecord = null;
       try {
+     LOG.error("findByIDAndVersion {},{}", dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         metadataSchemaRecord.setSchemaDocumentUri(schemaRecord.getSchemaDocumentUri());
       } catch (NullPointerException npe) {
@@ -302,16 +310,20 @@ public class MetadataSchemaRecordUtil {
         }
       }
     }
+      long nano7 = System.nanoTime() / 1000000;
+     LOG.error("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
     return metadataSchemaRecord;
   }
 
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     ContentInformation returnValue = null;
+    long nano1 = System.nanoTime() / 1000000;
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
     ContentInformation info = new ContentInformation();
     info.setParentResource(dataResource);
     List<ContentInformation> listOfFiles = contentInformationService.findAll(info, PageRequest.of(0, 100)).getContent();
+    long nano2 = System.nanoTime() / 1000000;
     if (LOG.isTraceEnabled()) {
       LOG.trace("Found {} files for resource '{}'", listOfFiles.size(), dataResource.getId());
       for (ContentInformation ci : listOfFiles) {
@@ -324,6 +336,8 @@ public class MetadataSchemaRecordUtil {
     if (!listOfFiles.isEmpty()) {
       returnValue = listOfFiles.get(0);
     }
+    long nano3 = System.nanoTime() / 1000000;
+     LOG.error("Content information of resource, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 
@@ -392,11 +406,12 @@ public class MetadataSchemaRecordUtil {
   public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    long nanoTime = System.nanoTime();
+    long nanoTime = System.nanoTime() / 1000000;
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    long nanoTime2 = System.nanoTime() / 1000000;
     MetadataSchemaRecord result = migrateToMetadataSchemaRecord(metastoreProperties, dataResource);
-    long nanoTime2 = System.nanoTime();
-    LOG.error("findByIAnyIdentifier," + ((System.nanoTime() - nanoTime2) / 1000000) + ", " + ((nanoTime2 - nanoTime) / 1000000));
+    long nanoTime3 = System.nanoTime() / 1000000;
+    LOG.error("getRecordByIDAndVersion," + nanoTime + ", " + (nanoTime2  - nanoTime) + ", " + (nanoTime3 - nanoTime));
     return result;
   }
 
