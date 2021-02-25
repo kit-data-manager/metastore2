@@ -17,6 +17,8 @@ package edu.kit.datamanager.metastore2.domain;
 
 import java.io.Serializable;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -43,6 +45,9 @@ public class SchemaRecord implements Serializable {
   @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
           + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
   private Long version;
+  @Enumerated(EnumType.STRING)
+  @NotBlank(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
+  private MetadataSchemaRecord.SCHEMA_TYPE type;
 
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;

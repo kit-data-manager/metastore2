@@ -121,7 +121,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
-    MetadataSchemaRecord record = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
+    MetadataSchemaRecord record = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version, true);
     String etag = record.getEtag();
 
     fixSchemaDocumentUri(record);
@@ -191,7 +191,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Cleaning up schemaDocumentUri of query result.");
     List<MetadataSchemaRecord> schemaList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record);
+      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
       fixSchemaDocumentUri(item);
       schemaList.add(item);
     });
