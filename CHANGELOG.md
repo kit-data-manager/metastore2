@@ -5,7 +5,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+- The code is now completely relying on the library of the kit-data-manager.
+- Metadata (schema) records now also versioned.
 ## [0.2.4] - date 2020-12-16
 ### Added
 - Support for messaging

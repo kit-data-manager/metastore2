@@ -333,11 +333,9 @@ include::{snippets}/update-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
-
-[NOTE]
-Version number will be only updated while changing metadata schema.
 
 === Metadata Management
 After registration of a schema metadata may be added to metastore.
@@ -462,12 +460,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-metadata-record/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
 include::{snippets}/update-metadata-record/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
-[NOTE]
-Version number will be only updated while changing metadata. ETag is also untouched.
 
 ==== Updating Metadata
 The following example shows the update of the metadata. As mentioned before the
@@ -906,11 +902,9 @@ include::{snippets}/update-json-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
-
-[NOTE]
-Version number will be only updated while changing metadata schema.
 
 === Metadata Management
 After registration of a schema metadata may be added to metastore.
@@ -1034,12 +1028,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-json-metadata-record/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
 include::{snippets}/update-json-metadata-record/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
-[NOTE]
-Version number will be only updated while changing metadata. ETag is also untouched.
 
 ==== Updating Metadata
 The following example shows the update of the metadata. As mentioned before the
