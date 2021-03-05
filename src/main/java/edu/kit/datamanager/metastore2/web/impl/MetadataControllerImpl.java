@@ -182,7 +182,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of MetadataRecord.");
@@ -245,7 +245,7 @@ public class MetadataControllerImpl implements IMetadataController {
     List<DataResource> recordList = records.getContent();
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record);
+      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record, false);
       fixMetadataDocumentUri(item);
       metadataList.add(item);
     });

@@ -130,7 +130,7 @@ public class MetadataRecordUtil {
     long nano7 = System.nanoTime() / 1000000;
     LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
-    return migrateToMetadataRecord(applicationProperties, createResource);
+    return migrateToMetadataRecord(applicationProperties, createResource, true);
   }
 
   public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
@@ -164,14 +164,14 @@ public class MetadataRecordUtil {
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (record != null) {
-      existingRecord = migrateToMetadataRecord(applicationProperties, dataResource);
+      existingRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (document != null) {
-      record = migrateToMetadataRecord(applicationProperties, dataResource);
+      record = migrateToMetadataRecord(applicationProperties, dataResource, false);
       validateMetadataDocument(applicationProperties, record, document);
       LOG.trace("Updating metadata document.");
       ContentInformation info;
@@ -184,7 +184,7 @@ public class MetadataRecordUtil {
         dataRecordDao.save(dataRecord);
       }
     }
-    return migrateToMetadataRecord(applicationProperties, dataResource);
+    return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
   public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
@@ -265,12 +265,15 @@ public class MetadataRecordUtil {
   }
 
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
-          DataResource dataResource) {
+          DataResource dataResource,
+          boolean provideETag) {
     long nano1 = System.nanoTime() / 1000000;
     MetadataRecord metadataRecord = new MetadataRecord();
     if (dataResource != null) {
       metadataRecord.setId(dataResource.getId());
-      metadataRecord.setETag(dataResource.getEtag());
+      if (provideETag) {
+        metadataRecord.setETag(dataResource.getEtag());
+      }
       metadataRecord.setAcl(dataResource.getAcls());
 
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
@@ -420,17 +423,22 @@ public class MetadataRecordUtil {
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
-    return getRecordByIdAndVersion(metastoreProperties, recordId, null);
+    return getRecordByIdAndVersion(metastoreProperties, recordId, null, false);
   }
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
+    return getRecordByIdAndVersion(metastoreProperties, recordId, version, false);
+  }
+
+  public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nanoTime = System.nanoTime() / 1000000;
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
     long nanoTime2 = System.nanoTime() / 1000000;
 
-    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource);
+    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource, supportEtag);
     long nanoTime3 = System.nanoTime() / 1000000;
     LOG.error("getRecordByIdAndVersion," + nanoTime + ", " + (nanoTime2 - nanoTime) + ", " + (nanoTime3 - nanoTime));
     return result;
