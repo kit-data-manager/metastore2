@@ -17,10 +17,11 @@ package edu.kit.datamanager.oaipmh.service;
 
 import edu.kit.datamanager.entities.repo.DataResource;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
 import edu.kit.datamanager.util.xml.DataCiteMapper;
@@ -111,6 +112,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
+  private IMetadataFormatDao metadataFormatDao;
+  @Autowired
   private OaiPmhConfiguration oaiConfigProperties;
 
   /**
@@ -195,6 +198,16 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
     //@TODO extend by other formats
     builder.addMetadataFormat(DC_SCHEMA);
     builder.addMetadataFormat(DATACITE_SCHEMA);
+    List<MetadataFormat> allXmlSchemas = metadataFormatDao.findAll();
+    // add also the schema registered in the schema registry
+    for (MetadataFormat metadataFormat : allXmlSchemas) {
+      MetadataFormatType item = new MetadataFormatType();
+      item.setMetadataNamespace(metadataFormat.getMetadataNamespace());
+      item.setMetadataPrefix(metadataFormat.getMetadataPrefix());
+      item.setSchema(metadataFormat.getSchema());
+      builder.addMetadataFormat(item);
+    }
+    
   }
 
   @Override

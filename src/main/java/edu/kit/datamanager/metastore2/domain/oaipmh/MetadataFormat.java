@@ -15,29 +15,12 @@
  */
 package edu.kit.datamanager.metastore2.domain.oaipmh;
 
-import edu.kit.datamanager.metastore2.domain.*;
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import edu.kit.datamanager.entities.EtagSupport;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
-import edu.kit.datamanager.util.json.CustomInstantDeserializer;
-import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import java.io.Serializable;
-import java.time.Instant;
-import java.util.HashSet;
-import java.util.Set;
 import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
-import org.springframework.http.MediaType;
 
 /**
  *
