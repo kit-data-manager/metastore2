@@ -215,7 +215,7 @@ public class ObjectFactoryTest {
     public void testCreateOAIPMHerrorType() {
         System.out.println("createOAIPMHerrorType");
         ObjectFactory instance = new ObjectFactory();
-        OAIPMHerrorType expResult = null;
+        OAIPMHerrorType expResult = new OAIPMHerrorType();
         OAIPMHerrorType result = instance.createOAIPMHerrorType();
         assertEquals(expResult.getClass(), result.getClass());
     }

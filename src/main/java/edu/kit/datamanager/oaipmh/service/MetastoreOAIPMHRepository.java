@@ -15,8 +15,12 @@
  */
 package edu.kit.datamanager.oaipmh.service;
 
-import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import edu.kit.datamanager.entities.repo.DataResource;
+import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
+import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
 import edu.kit.datamanager.util.xml.DataCiteMapper;
@@ -91,21 +95,30 @@ import org.xml.sax.SAXException;
  * @author jejkal
  */
 @Component
-public class SimpleOAIPMHRepository extends AbstractOAIPMHRepository{
+public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
 
-  private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(SimpleOAIPMHRepository.class);
+  private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetastoreOAIPMHRepository.class);
 
   private MetadataFormatType DC_SCHEMA;
   private MetadataFormatType DATACITE_SCHEMA;
 
   private OaiPmhConfiguration pluginConfiguration;
 
+  @Autowired
+  private ApplicationProperties metastoreProperties;
+  @Autowired
+  private IMetadataRecordDao metadataRecordDao;
+  @Autowired
+  private IMetadataSchemaDao metadataSchemaDao;
+  @Autowired
+  private OaiPmhConfiguration oaiConfigProperties;
+
   /**
    * Default constructor.
    */
   @Autowired
-  public SimpleOAIPMHRepository(OaiPmhConfiguration pluginConfiguration){
-    this("DefaultRepository", pluginConfiguration);
+  public MetastoreOAIPMHRepository(OaiPmhConfiguration pluginConfiguration){
+    this("MetastoreRepository", pluginConfiguration);
   }
 
   /**
@@ -113,18 +126,9 @@ public class SimpleOAIPMHRepository extends AbstractOAIPMHRepository{
    *
    * @param name The repository name.
    */
-  private SimpleOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration){
+  private MetastoreOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration){
     super(name);
     this.pluginConfiguration = pluginConfiguration;
-    DC_SCHEMA = new MetadataFormatType();
-    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
-    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
-    DC_SCHEMA.setMetadataPrefix("oai_dc");
-
-    DATACITE_SCHEMA = new MetadataFormatType();
-    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
-    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
-    DATACITE_SCHEMA.setMetadataPrefix("datacite");
   }
 
   @Override
@@ -159,7 +163,15 @@ public class SimpleOAIPMHRepository extends AbstractOAIPMHRepository{
 
   @Override
   public boolean isPrefixSupported(String prefix){
-    //@TODO extend by other formats
+      boolean exists = false;
+      List<MetadataSchemaRecord> findAll = metadataSchemaDao.findAll();
+    for (MetadataSchemaRecord item: findAll) {
+        System.out.println(".");
+        if (prefix.equalsIgnoreCase(item.getSchemaId())) {
+            exists = true;
+            break;
+        }
+    }
     return DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
   }
 
