@@ -82,8 +82,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   private IContentInformationDao contentInformationDao;
 
   /**
-   *
+   * 
    * @param schemaConfig
+   * @param dataResourceDao
+   * @param contentInformationDao 
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao,

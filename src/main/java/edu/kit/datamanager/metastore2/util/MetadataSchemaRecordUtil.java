@@ -346,11 +346,12 @@ public class MetadataSchemaRecordUtil {
 
   /**
    * Validate metadata document with given schema.
-   *
-   * @param record metadata of the document.
-   * @param document document
-   * @return ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
+   * 
+   * @param metastoreProperties
+   * @param document document to validate.
+   * @param schemaId schemaId of schema.
+   * @param version Version of the document.
+   * @throws Exception Error validating document.
    */
   public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MultipartFile document,

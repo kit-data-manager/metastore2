@@ -122,7 +122,7 @@ public class MetadataRecordUtil {
     long nano6 = System.nanoTime() / 1000000;
     // Create schema record
     DataRecord dataRecord = new DataRecord();
-    dataRecord.setSchemaId(createResource.getId());
+    dataRecord.setMetadataId(createResource.getId());
     dataRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     dataRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
@@ -515,7 +515,7 @@ public class MetadataRecordUtil {
       // Create shortcut for access.
       LOG.trace("Found new schema record!");
       DataRecord dataRecord = new DataRecord();
-      dataRecord.setSchemaId(result.getSchemaId());
+      dataRecord.setMetadataId(result.getId());
       dataRecord.setVersion(result.getRecordVersion());
       dataRecord.setDocumentHash(result.getDocumentHash());
       dataRecord.setSchemaDocumentUri(result.getMetadataDocumentUri());
