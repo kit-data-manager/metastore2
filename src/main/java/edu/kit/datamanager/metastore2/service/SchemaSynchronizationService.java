@@ -17,11 +17,12 @@ package edu.kit.datamanager.metastore2.service;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.configuration.SynchronizationSource;
-import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaSynchronizationEventDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaSynchronizationEvent;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,11 +57,12 @@ public class SchemaSynchronizationService{
   @Autowired
   private ApplicationProperties applicationProperties;
   @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
-  @Autowired
   private ISchemaSynchronizationEventDao schemaSynchronizationEventDao;
   @Autowired
   Environment environment;
+
+  @Autowired
+  private MetastoreConfiguration schemaConfig;
 
   @Scheduled(cron = "${repo.schema.synchronization.cron.value:-}")
   public void performSynchronization(){
@@ -126,7 +128,14 @@ public class SchemaSynchronizationService{
           for(MetadataSchemaRecord record : receivedRecords){
             LOGGER.trace("Checking record with schema with id {} in local schema registry.", record.getSchemaId());
             //obtain local schema
-            Optional<MetadataSchemaRecord> optRecord = metadataSchemaDao.findById(record.getSchemaId());
+            //
+            MetadataSchemaRecord foundRecord = null;
+            try {
+            foundRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, record.getSchemaId());
+            } catch (Exception ex) {
+              //  do nothing
+            }
+            Optional<MetadataSchemaRecord> optRecord = Optional.ofNullable(foundRecord);
             if(!optRecord.isPresent()){
               LOGGER.trace("New schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
               createOrUpdateSchema(source.getBaseUrl(), localBaseUrl, record, event);

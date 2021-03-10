@@ -6,13 +6,8 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
-import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
-import edu.kit.datamanager.service.IAuditService;
-import java.util.HashSet;
-import java.util.Set;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,6 +75,7 @@ public class MetadataControllerWithoutRegistryTest {
 
   @Before
   public void setUp() throws Exception {
+    MetadataRecordUtil.setSchemaConfig(null);
   }
 
   @Test
@@ -94,7 +90,7 @@ public class MetadataControllerWithoutRegistryTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isInsufficientStorage()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
 
 }

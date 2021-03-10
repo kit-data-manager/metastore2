@@ -78,6 +78,24 @@ schema-record.json:
   "type" : "XML"
 }
 ----
+[source,options="nowrap"]
+----
+schema.xsd:
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+            xmlns="http://www.example.org/schema/xsd/"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xs:element name="metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="title" type="xs:string"/>
+        <xs:element name="date" type="xs:date"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+----
 
 include::{snippets}/register-schema/curl-request.adoc[]
 
@@ -171,6 +189,25 @@ schema-record.json
   "type":"XML"
 }
 ----
+[source,options="nowrap"]
+----
+schema_v2.xsd:
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+            xmlns="http://www.example.org/schema/xsd/"
+            xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+  <xs:element name="metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element name="title" type="xs:string"/>
+        <xs:element name="date" type="xs:date"/>
+        <xs:element name="note" type="xs:string" minOccurs="0"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
+----
 
 include::{snippets}/update-schema/curl-request.adoc[]
 
@@ -220,6 +257,17 @@ include::{snippets}/get-schemav1/http-response.adoc[]
 
 Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
 the ingest may be rejected. Select the schema and the version to validate given document.
+[source,options="nowrap"]
+----
+metadata_v2.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+  <example:note>since version 2 notes are allowed</example:note>
+</example:metadata>
+----
+
 On a first step validation with the old schema will be done:
 
 include::{snippets}/validate-document-v1/curl-request.adoc[]
@@ -285,11 +333,9 @@ include::{snippets}/update-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
-
-[NOTE]
-Version number will be only updated while changing metadata schema.
 
 === Metadata Management
 After registration of a schema metadata may be added to metastore.
@@ -332,6 +378,15 @@ metadata-record.json:
     "relatedResource": "anyResourceId",
     "schemaId": "my_first_xsd"
 }
+----
+[source,options="nowrap"]
+----
+metadata.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+</example:metadata>
 ----
 The schemaId used while registering metadata schema has to be used to link the metadata with the
 approbriate metadata schema.
@@ -405,12 +460,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-metadata-record/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
 include::{snippets}/update-metadata-record/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
-[NOTE]
-Version number will be only updated while changing metadata. ETag is also untouched.
 
 ==== Updating Metadata
 The following example shows the update of the metadata. As mentioned before the
@@ -426,6 +479,17 @@ You will get the new metadata record with the new ETag.
 include::{snippets}/get-metadata-record-v2/http-response.adoc[]
 
 Now you can update metadata due to new version of schema using the new Etag.
+[source,options="nowrap"]
+----
+metadata_v2.xml:
+<?xml version='1.0' encoding='utf-8'?>
+  <example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+  <example:title>My first XML document</example:title>
+  <example:date>2018-07-02</example:date>
+  <example:note>since version 2 notes are allowed</example:note>
+</example:metadata>
+----
+
 include::{snippets}/update-metadata/curl-request.adoc[]
 
 HTTP-wise the call looks as follows: 
@@ -554,6 +618,37 @@ schema-record.json:
   "type" : "JSON"
 }
 ----
+[source,options="nowrap"]
+----
+schema.json:
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "http://www.example.org/schema/json",
+  "type": "object",
+  "title": "Json schema for tests",
+  "default": {},
+  "required": [
+      "title",
+      "date"
+  ],
+  "properties": {
+    "title": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Title",
+      "description": "Title of object."
+    },
+    "date": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "format": "date",
+      "title": "Date",
+      "description": "Date of object"
+    }
+  },
+  "additionalProperties": false
+}
+----
 
 include::{snippets}/register-json-schema/curl-request.adoc[]
 
@@ -647,6 +742,43 @@ schema-record.json
   "type":"JSON"
 }
 ----
+[source,options="nowrap"]
+----
+schema_v2.json:
+{
+  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$id": "http://www.example.org/schema/json",
+  "type": "object",
+  "title": "Json schema for tests",
+  "default": {},
+  "required": [
+      "title",
+      "date"
+  ],
+  "properties": {
+    "title": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Title",
+      "description": "Title of object."
+    },
+    "date": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "format": "date",
+      "title": "Date",
+      "description": "Date of object"
+    },
+    "note": {
+      "$id": "#/properties/string",
+      "type": "string",
+      "title": "Note",
+      "description": "Additonal information about object"
+    }
+  },
+  "additionalProperties": false
+}
+----
 
 include::{snippets}/update-json-schema/curl-request.adoc[]
 
@@ -696,6 +828,15 @@ include::{snippets}/get-json-schemav1/http-response.adoc[]
 
 Before an ingest of metadata is made the metadata should be successfully validated. Otherwise 
 the ingest may be rejected. Select the schema and the version to validate given document.
+[source,options="nowrap"]
+----
+metadata_v2.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
+  "note": "since version 2 notes are allowed"
+}
+----
 On a first step validation with the old schema will be done:
 
 include::{snippets}/validate-json-document-v1/curl-request.adoc[]
@@ -761,11 +902,9 @@ include::{snippets}/update-json-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
-
-[NOTE]
-Version number will be only updated while changing metadata schema.
 
 === Metadata Management
 After registration of a schema metadata may be added to metastore.
@@ -807,6 +946,14 @@ metadata-record.json:
 {
     "relatedResource": "anyResourceId",
     "schemaId": "my_first_json"
+}
+----
+[source,options="nowrap"]
+----
+metadata.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
 }
 ----
 The schemaId used while registering metadata schema has to be used to link the metadata with the
@@ -881,12 +1028,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-json-metadata-record/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. The 'lastUpdate' and the 'recordVersion' are modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
 include::{snippets}/update-json-metadata-record/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
-[NOTE]
-Version number will be only updated while changing metadata. ETag is also untouched.
 
 ==== Updating Metadata
 The following example shows the update of the metadata. As mentioned before the
@@ -913,6 +1058,15 @@ include::{snippets}/update-json-metadata/http-response.adoc[]
  
 
 Now you can access the updated metadata via the URI in the HTTP response header.
+[source,options="nowrap"]
+----
+metadata_v2.json:
+{
+  "title": "My first JSON document",
+  "date": "2018-07-02",
+  "note": "since version 2 notes are allowed"
+}
+----
 include::{snippets}/get-json-metadata-v3/curl-request.adoc[]
 
 HTTP-wise the call looks as follows: 

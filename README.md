@@ -57,7 +57,7 @@ On default the created images will be tagged as follows:
 ```
 user@localhost:/home/user/metastore2$ bash docker/buildDocker.sh
 ---------------------------------------------------------------------------
-Build docker container metastore2:0.1.1-2020-10-05
+Build docker container kitdm/metastore2:0.1.1-2020-10-05
 ---------------------------------------------------------------------------
 [...]
 ---------------------------------------------------------------------------
@@ -70,9 +70,9 @@ user@localhost:/home/user/metastore2$
 After building image you have to create (and start) a container for executing microservice:
 ```
 # If you want to use a specific image you may list all possible tags first.
-user@localhost:/home/user/metastore2$ docker images metastore2 --format {{.Tag}}
+user@localhost:/home/user/metastore2$ docker images kitdm/metastore2 --format {{.Tag}}
 0.1.1-2020-10-05
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker metastore2:0.1.1-2020-10-05
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
@@ -119,6 +119,16 @@ Now you can start the service by calling /path/to/empty/installation/directory/r
 ---------------------------------------------------------------------------
 user@localhost:/home/user/metastore2$
 ```
+## Build framework using docker
+The metastore framework consists of the following services:
+- RabbitMQ - messaging service
+- Elasticsearch - indexing service
+- Indexing-service - service transforming metadata documents to json
+- Metastore2 - service managing metadata schema and metadata documents
+To build the whole framework use the shell script ('metatoreFramework.sh'). 
+init - Initialize/Reset the whole framework
+start - Start stopped framework
+stop - Stop framework
 
 ## First steps
 As soon as the microservice is started, you can browse to 

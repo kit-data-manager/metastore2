@@ -21,18 +21,19 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.kit.datamanager.entities.EtagSupport;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import lombok.Data;
@@ -47,7 +48,9 @@ import org.springframework.http.MediaType;
 @Data
 public class MetadataSchemaRecord implements EtagSupport, Serializable {
 
-  public final static MediaType METADATA_SCHEMA_RECORD_MEDIA_TYPE = MediaType.valueOf("application/vnd.datamanager.schema-record+json");
+  public final static String RESOURCE_TYPE = "application/vnd.datamanager.schema-record+json";
+
+  public final static MediaType METADATA_SCHEMA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   public enum SCHEMA_TYPE {
     JSON,
@@ -57,6 +60,8 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @Id
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
+  @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
+  private String pid;
   @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
           + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
   private Long schemaVersion;
@@ -84,8 +89,7 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @NotNull(message = "A list of access control entries for resticting access.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @Transient
   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;
@@ -93,15 +97,44 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   private String schemaHash;
   @NotBlank(message = "The schema can be synchronized from a central registry. If 'true', synchronization will be skipped.")
   private Boolean locked = false;
+  @JsonIgnore
+  private String eTag;
 
+  /**
+   * Set new access control list.
+   * @param newAclList new list with acls.
+   */
   public void setAcl(Set<AclEntry> newAclList) {
     acl.clear();
     acl.addAll(newAclList);
+  }
+  /**
+   * Set creation date (truncated to milliseconds).
+   * @param instant creation date
+   */
+  public void setCreatedAt(Instant instant) {
+    if (instant != null) {
+    createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
+    } else {
+      createdAt = null;
+    }
+  }
+  
+  /**
+   * Set update date (truncated to milliseconds).
+   * @param instant update date
+   */
+  public void setLastUpdate(Instant instant) {
+    if (instant != null) {
+    lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
+    } else {
+      lastUpdate = null;
+    }
   }
 
   @Override
   @JsonIgnore
   public String getEtag() {
-    return Integer.toString(hashCode());
+    return eTag;
   }
 }
