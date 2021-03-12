@@ -123,9 +123,10 @@ public class MetadataRecordUtil {
     // Create schema record
     DataRecord dataRecord = new DataRecord();
     dataRecord.setMetadataId(createResource.getId());
-    dataRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
-    dataRecord.setSchemaDocumentUri(contentInformation.getContentUri());
+    dataRecord.setSchemaId(record.getSchemaId());
+    dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
+    dataRecord.setLastUpdate(dataResource.getLastUpdate());
     dataRecordDao.save(dataRecord);
     long nano7 = System.nanoTime() / 1000000;
     LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
@@ -179,8 +180,9 @@ public class MetadataRecordUtil {
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
       if (record != null) {
-        DataRecord dataRecord = dataRecordDao.findTopBySchemaIdOrderByVersionDesc(dataResource.getId());
-        dataRecord.setSchemaDocumentUri(addFile.getContentUri());
+        DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+        dataRecord.setMetadataDocumentUri(addFile.getContentUri());
+        dataRecord.setLastUpdate(dataResource.getLastUpdate());
         dataRecordDao.save(dataRecord);
       }
     }
@@ -192,8 +194,8 @@ public class MetadataRecordUtil {
           String eTag,
           Function<String, String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    List<DataRecord> listOfDataIds = dataRecordDao.findBySchemaIdOrderByVersionDesc(id);
-    dataRecordDao.deleteAll(listOfDataIds);
+    DataRecord listOfDataIds = dataRecordDao.findByMetadataId(id);
+    dataRecordDao.delete(listOfDataIds);
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
@@ -309,8 +311,8 @@ public class MetadataRecordUtil {
       DataRecord dataRecord = null;
       long nano4 = System.nanoTime() / 1000000;
       try {
-        dataRecord = dataRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataRecord.getRecordVersion());
-        metadataRecord.setMetadataDocumentUri(dataRecord.getSchemaDocumentUri());
+        dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+        metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
       } catch (NullPointerException npe) {
         ContentInformation info;
@@ -516,9 +518,10 @@ public class MetadataRecordUtil {
       LOG.trace("Found new schema record!");
       DataRecord dataRecord = new DataRecord();
       dataRecord.setMetadataId(result.getId());
-      dataRecord.setVersion(result.getRecordVersion());
+      dataRecord.setSchemaId(result.getSchemaId());
       dataRecord.setDocumentHash(result.getDocumentHash());
-      dataRecord.setSchemaDocumentUri(result.getMetadataDocumentUri());
+      dataRecord.setMetadataDocumentUri(result.getMetadataDocumentUri());
+      dataRecord.setLastUpdate(result.getLastUpdate());
       try {
         dataRecordDao.save(dataRecord);
       } catch (Exception ex) {

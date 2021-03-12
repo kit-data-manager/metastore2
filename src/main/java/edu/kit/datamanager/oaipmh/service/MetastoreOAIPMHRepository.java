@@ -17,8 +17,8 @@ package edu.kit.datamanager.oaipmh.service;
 
 import edu.kit.datamanager.entities.repo.DataResource;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
-import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -108,7 +108,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
   @Autowired
   private ApplicationProperties metastoreProperties;
   @Autowired
-  private IMetadataRecordDao metadataRecordDao;
+  private IDataRecordDao metadataRecordDao;
   @Autowired
   private IMetadataSchemaDao metadataSchemaDao;
   @Autowired
@@ -408,6 +408,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
     int currentCursor = 0;
     int overallCount;
     //check resumption token
+    metadataRecordDao.findBySchemaId(prefix);
 
     if(resumptionToken != null){
       try{

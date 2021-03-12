@@ -22,6 +22,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
+import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
@@ -92,6 +93,8 @@ public class Application {
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
   private IDataRecordDao dataRecordDao;
+  @Autowired
+  private IMetadataFormatDao metadataFormatDao;
 
   @Autowired
   private IValidator[] validators;
@@ -195,6 +198,8 @@ public class Application {
     MetadataRecordUtil.setSchemaConfig(rbc);
     MetadataRecordUtil.setDataRecordDao(dataRecordDao);
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
+    MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
+    
     return rbc;
   }
 

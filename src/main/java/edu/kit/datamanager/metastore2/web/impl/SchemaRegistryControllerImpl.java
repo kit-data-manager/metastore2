@@ -28,9 +28,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.ControllerUtils;
-import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,8 +36,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -79,7 +77,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Autowired
   private final IDataResourceDao dataResourceDao;
   @Autowired
-  private IContentInformationDao contentInformationDao;
+  private final IContentInformationDao contentInformationDao;
 
   /**
    * 
@@ -106,7 +104,11 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({},....", recordDocument);
-    MetadataSchemaRecord record = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document);
+    BiFunction<String, Long, String> getSchemaDocumentById;
+    getSchemaDocumentById = (schema, version) -> {
+      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
+    };
+    MetadataSchemaRecord record = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = record.getEtag();
 
@@ -220,7 +222,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
     fixSchemaDocumentUri(updatedSchemaRecord);
-
+    // Fix Url for OAI PMH entry
+    MetadataSchemaRecordUtil.updateMetadataFormat(updatedSchemaRecord);
+    
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(updatedSchemaRecord.getSchemaId(), updatedSchemaRecord.getSchemaVersion(), null, null)).toUri();
     LOG.trace("Set locationUri to '{}'", locationUri.toString());

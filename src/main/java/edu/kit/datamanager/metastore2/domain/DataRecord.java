@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import java.io.Serializable;
+import java.time.Instant;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -31,21 +32,20 @@ import lombok.Data;
  */
 @Entity
 @Data
-@Table(uniqueConstraints = {
-  @UniqueConstraint(columnNames = {"version", "schemaId"})})
 public class DataRecord implements Serializable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
-  @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
+  @NotBlank(message = "The unqiue identifier of the metadata.")
   private String metadataId;
-  @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
-          + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
-  private Long version;
+  @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
+  private String schemaId;
+  @NotBlank(message = "The timestamp of the last update on this resource.")
+  private Instant lastUpdate;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
-  private String schemaDocumentUri;
+  private String metadataDocumentUri;
 
 }

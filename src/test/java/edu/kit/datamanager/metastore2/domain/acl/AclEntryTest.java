@@ -6,6 +6,7 @@
 package edu.kit.datamanager.metastore2.domain.acl;
 
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

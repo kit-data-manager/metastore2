@@ -16,10 +16,20 @@
 package edu.kit.datamanager.metastore2.util;
 
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -58,5 +68,21 @@ public class SchemaUtils {
       }
     }
     return null;
+  }
+
+  public static String getTargetNamespaceFromSchema(byte[] schema) {
+    String namespace = null;
+    try {
+      DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+      documentBuilderFactory.setNamespaceAware(true);
+      DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+      Document document = documentBuilder.parse(new ByteArrayInputStream(schema));
+      NamedNodeMap map = ((Element) document.getDocumentElement()).getAttributes();
+      namespace = map.getNamedItem("targetNamespace").getNodeValue();
+    } catch (ParserConfigurationException | SAXException | IOException ex) {
+      java.util.logging.Logger.getLogger(SchemaUtils.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    return namespace;
+
   }
 }

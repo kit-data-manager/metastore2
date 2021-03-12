@@ -21,9 +21,11 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
@@ -47,7 +49,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -76,8 +80,22 @@ public class MetadataSchemaRecordUtil {
 
   private static ISchemaRecordDao schemaRecordDao;
 
+  private static IMetadataFormatDao metadataFormatDao;
+
   public static MetadataSchemaRecord createMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
-          MultipartFile recordDocument, MultipartFile document) {
+          MultipartFile recordDocument,
+          MultipartFile document) {
+    BiFunction<String, Long, String> dummy;
+    dummy = (schema, version) -> {
+      return schema + version;
+    };
+    return createMetadataSchemaRecord(applicationProperties, recordDocument, document, dummy);
+  }
+
+  public static MetadataSchemaRecord createMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
+          MultipartFile recordDocument,
+          MultipartFile document,
+          BiFunction<String, Long, String> getSchemaDocumentById) {
     MetadataSchemaRecord result = null;
     MetadataSchemaRecord record;
 
@@ -135,6 +153,21 @@ public class MetadataSchemaRecordUtil {
       LOG.error("Schema record saved: " + schemaRecord);
     } catch (Exception npe) {
       LOG.error("Can't save schema record: " + schemaRecord, npe);
+    }
+    // Settings for OAI PMH
+    if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
+      try {
+        MetadataFormat metadataFormat = new MetadataFormat();
+        metadataFormat.setMetadataPrefix(schemaRecord.getSchemaId());
+        metadataFormat.setSchema(getSchemaDocumentById.apply(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
+        String metadataNamespace = SchemaUtils.getTargetNamespaceFromSchema(document.getBytes());
+        metadataFormat.setMetadataNamespace(metadataNamespace);
+        metadataFormatDao.save(metadataFormat);
+      } catch (IOException ex) {
+        String message = "Failed to read metadata document from input stream.";
+        LOG.error(message, ex);
+        throw new UnprocessableEntityException(message);
+      }
     }
 
     return migrateToMetadataSchemaRecord(applicationProperties, createResource, true);
@@ -346,7 +379,7 @@ public class MetadataSchemaRecordUtil {
 
   /**
    * Validate metadata document with given schema.
-   * 
+   *
    * @param metastoreProperties
    * @param document document to validate.
    * @param schemaId schemaId of schema.
@@ -378,21 +411,21 @@ public class MetadataSchemaRecordUtil {
     }
     long nano2 = System.nanoTime() / 1000000;
     try {
-        LOG.trace("Checking local schema file.");
-        Path schemaDocumentPath = Paths.get(URI.create(schemaRecord.getSchemaDocumentUri()));
+      LOG.trace("Checking local schema file.");
+      Path schemaDocumentPath = Paths.get(URI.create(schemaRecord.getSchemaDocumentUri()));
 
-        if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-          LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaId(), schemaDocumentPath);
-          throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-        }
+      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
+        LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaId(), schemaDocumentPath);
+        throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
+      }
       LOG.trace("obtain validator for type");
       IValidator applicableValidator;
       if (schemaRecord.getType() == null) {
-          byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
+        byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
         applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, schemaDocument);
         schemaRecordDao.save(schemaRecord);
-      } else  {
-       applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
+      } else {
+        applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
       }
       long nano3 = System.nanoTime() / 1000000;
 
@@ -557,6 +590,13 @@ public class MetadataSchemaRecordUtil {
     schemaRecordDao = aSchemaRecordDao;
   }
 
+  /**
+   * @param aSchemaRecordDao the schemaRecordDao to set
+   */
+  public static void setMetadataFormatDao(IMetadataFormatDao aMetadataFormatDao) {
+    metadataFormatDao = aMetadataFormatDao;
+  }
+
   private static void saveNewSchemaRecord(MetadataSchemaRecord result) {
     if (schemaRecordDao != null) {
       // Create shortcut for access.
@@ -573,5 +613,15 @@ public class MetadataSchemaRecordUtil {
       }
       LOG.trace("Schema record saved: {}", schemaRecord);
     }
+  }
+
+  public static void updateMetadataFormat(MetadataSchemaRecord record) {
+    Optional<MetadataFormat> metadataFormat = metadataFormatDao.findById(record.getSchemaId());
+    if (metadataFormat.isPresent()) {
+      MetadataFormat mf = metadataFormat.get();
+      mf.setSchema(record.getSchemaDocumentUri());
+      metadataFormatDao.save(mf);
+    }
+
   }
 }

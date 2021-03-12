@@ -15,8 +15,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
  * @author Torridity
  */
 public interface IDataRecordDao extends JpaRepository<DataRecord, String>, JpaSpecificationExecutor<DataRecord>{
-  boolean existsDataRecordBySchemaIdAndVersion(String schemaId, Long version);
-  DataRecord findBySchemaIdAndVersion(String schemaId, Long version);
-  List<DataRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
-  DataRecord findTopBySchemaIdOrderByVersionDesc(String schemaId);
+  DataRecord findByMetadataId(String metadataId);
+  List<DataRecord> findBySchemaId(String schemaId);
 }
