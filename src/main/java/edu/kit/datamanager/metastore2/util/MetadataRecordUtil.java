@@ -182,6 +182,7 @@ public class MetadataRecordUtil {
       if (record != null) {
         DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
         dataRecord.setMetadataDocumentUri(addFile.getContentUri());
+        dataRecord.setDocumentHash(addFile.getHash());
         dataRecord.setLastUpdate(dataResource.getLastUpdate());
         dataRecordDao.save(dataRecord);
       }

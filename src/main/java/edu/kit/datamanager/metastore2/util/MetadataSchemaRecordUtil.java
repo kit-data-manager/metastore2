@@ -84,16 +84,6 @@ public class MetadataSchemaRecordUtil {
 
   public static MetadataSchemaRecord createMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument,
-          MultipartFile document) {
-    BiFunction<String, Long, String> dummy;
-    dummy = (schema, version) -> {
-      return schema + version;
-    };
-    return createMetadataSchemaRecord(applicationProperties, recordDocument, document, dummy);
-  }
-
-  public static MetadataSchemaRecord createMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
-          MultipartFile recordDocument,
           MultipartFile document,
           BiFunction<String, Long, String> getSchemaDocumentById) {
     MetadataSchemaRecord result = null;
@@ -473,26 +463,6 @@ public class MetadataSchemaRecordUtil {
     long nanoTime3 = System.nanoTime() / 1000000;
     LOG.error("getRecordByIDAndVersion," + nanoTime + ", " + (nanoTime2 - nanoTime) + ", " + (nanoTime3 - nanoTime));
     return result;
-  }
-
-  public static Path getSchemaDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
-    return getSchemaDocumentByIdAndVersion(metastoreProperties, recordId, null);
-  }
-
-  public static Path getSchemaDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version) throws ResourceNotFoundException {
-    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
-    MetadataSchemaRecord record = getRecordByIdAndVersion(metastoreProperties, recordId, version);
-
-    URI schemaDocument = URI.create(record.getSchemaDocumentUri());
-
-    Path schemaDocumentPath = Paths.get(schemaDocument);
-    if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-      LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-      throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-    }
-    return schemaDocumentPath;
   }
 
   public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
