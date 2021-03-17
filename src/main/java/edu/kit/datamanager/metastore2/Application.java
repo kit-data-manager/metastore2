@@ -127,10 +127,10 @@ public class Application {
     return new MetastoreConfiguration();
   }
 
-  @Bean
-  public IdBasedStorageProperties idBasedStorageProperties() {
-    return new IdBasedStorageProperties();
-  }
+//  @Bean
+//  public IdBasedStorageProperties idBasedStorageProperties() {
+//    return new IdBasedStorageProperties();
+//  }
 
   @Bean
   public DateBasedStorageProperties dateBasedStorageProperties() {

@@ -10,6 +10,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -59,6 +60,11 @@ public class IDataRecordDaoTest {
   private IDataRecordDao dataRecordDao;
   private IDataRecordDao instance;
 
+  private static final Instant MIN = LocalDateTime.parse("2021-03-01T00:00", DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+          .atZone(ZoneId.of("UTC"))
+          .toInstant();
+  private static final Instant MAX = Instant.now().plus(1, ChronoUnit.DAYS);
+
   public IDataRecordDaoTest() {
   }
 
@@ -87,13 +93,13 @@ public class IDataRecordDaoTest {
   @Test
   public void testFindByMetadataId() {
     System.out.println("findByMetadataId");
-    String metadataId = "";
+    String metadataId = "metadataId1";
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
-    DataRecord expResult = null;
     DataRecord result = instance.findByMetadataId(metadataId);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+    assertNotNull(result);
+
+    result = instance.findByMetadataId("unknownId");
+    assertNull(result);
   }
 
   /**
@@ -102,13 +108,11 @@ public class IDataRecordDaoTest {
   @Test
   public void testFindBySchemaId() {
     System.out.println("findBySchemaId");
-    String schemaId = "";
-//    IDataRecordDao instance = new IDataRecordDaoImpl();
-    List<DataRecord> expResult = null;
+    String schemaId = "schemaId";
     List<DataRecord> result = instance.findBySchemaId(schemaId);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+    assertEquals(6, result.size());
+    result = instance.findBySchemaId("invalidId");
+    assertEquals(0, result.size());
   }
 
   /**
@@ -117,14 +121,17 @@ public class IDataRecordDaoTest {
   @Test
   public void testFindBySchemaIdAndLastUpdateAfter() {
     System.out.println("findBySchemaIdAndLastUpdateAfter");
-    String schemaId = "";
-    Instant from = null;
-//    IDataRecordDao instance = new IDataRecordDaoImpl();
-    List<DataRecord> expResult = null;
+    String schemaId = "schemaId";
+    String fromAsString = "2021-03-15T15:00";
+    String untilAsString = "2021-03-15T17:00";
+    Instant from = LocalDateTime.parse(fromAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
+    Instant until = LocalDateTime.parse(untilAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
     List<DataRecord> result = instance.findBySchemaIdAndLastUpdateAfter(schemaId, from);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+    assertEquals(3, result.size());
   }
 
   /**
@@ -133,14 +140,17 @@ public class IDataRecordDaoTest {
   @Test
   public void testFindBySchemaIdAndLastUpdateBefore() {
     System.out.println("findBySchemaIdAndLastUpdateBefore");
-    String schemaId = "";
-    Instant until = null;
-//    IDataRecordDao instance = new IDataRecordDaoImpl();
-    List<DataRecord> expResult = null;
+    String schemaId = "schemaId";
+    String fromAsString = "2021-03-15T15:00";
+    String untilAsString = "2021-03-15T17:00";
+    Instant from = LocalDateTime.parse(fromAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
+    Instant until = LocalDateTime.parse(untilAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
     List<DataRecord> result = instance.findBySchemaIdAndLastUpdateBefore(schemaId, until);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+    assertEquals(4, result.size());
   }
 
   /**
@@ -152,7 +162,8 @@ public class IDataRecordDaoTest {
     String schemaId = "schemaId";
     String fromAsString = "2021-03-15T15:00";
     String untilAsString = "2021-03-15T17:00";
-    Pageable pgbl = PageRequest.of(0, 20);
+    Pageable page1 = PageRequest.of(0, 20);
+    Pageable page2 = PageRequest.of(1, 3);
     Instant from = LocalDateTime.parse(fromAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
             .atZone(ZoneId.of("UTC"))
             .toInstant();
@@ -161,22 +172,69 @@ public class IDataRecordDaoTest {
             .toInstant();
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
     List<DataRecord> expResult = null;
-    List<DataRecord> result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, until, pgbl);
+    List<DataRecord> result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, until, page1);
     assertEquals(3, result.size());
-    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, Instant.MAX, pgbl);
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page1);
     assertEquals(4, result.size());
-    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, Instant.MIN, until, pgbl);
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page1);
     assertEquals(5, result.size());
+    page1 = PageRequest.of(0, 3);
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, until, page1);
+    assertEquals(3, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page1);
+    assertEquals(3, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page2);
+    assertEquals(1, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page1);
+    assertEquals(3, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page2);
+    assertEquals(2, result.size());
+  }
+
+  @Test
+  public void testFindBySchemaIdAndLastUpdateBetweenWithWrongSchemaId() {
+    System.out.println("findBySchemaIdAndLastUpdateBetweenWithWrongSchemaId");
+    String schemaId = "wrongSchemaId";
+    String fromAsString = "2021-03-15T15:00";
+    String untilAsString = "2021-03-15T17:00";
+    Pageable page1 = PageRequest.of(0, 20);
+    Pageable page2 = PageRequest.of(1, 3);
+    Instant from = LocalDateTime.parse(fromAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
+    Instant until = LocalDateTime.parse(untilAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
+            .atZone(ZoneId.of("UTC"))
+            .toInstant();
+//    IDataRecordDao instance = new IDataRecordDaoImpl();
+    List<DataRecord> expResult = null;
+    List<DataRecord> result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, until, page1);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page1);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page1);
+    assertEquals(0, result.size());
+    page1 = PageRequest.of(0, 3);
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, until, page1);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page1);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, from, MAX, page2);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page1);
+    assertEquals(0, result.size());
+    result = instance.findBySchemaIdAndLastUpdateBetween(schemaId, MIN, until, page2);
+    assertEquals(0, result.size());
   }
 
   private void prepareDataBase() {
     String[][] datasets = {
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T13:00"},
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T14:00"},
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T15:00"},
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T16:00"},
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T17:00"},
-      {"metadataId", "documentUri", "123", "schemaId", "2021-03-15T18:00"},};
+      {"metadataId1", "documentUri", "123", "schemaId", "2021-03-15T13:00"},
+      {"metadataId2", "documentUri", "123", "schemaId", "2021-03-15T14:00"},
+      {"metadataId3", "documentUri", "123", "schemaId", "2021-03-15T15:00"},
+      {"metadataId4", "documentUri", "123", "schemaId", "2021-03-15T16:00"},
+      {"metadataId5", "documentUri", "123", "schemaId", "2021-03-15T17:00"},
+      {"metadataId6", "documentUri", "123", "schemaId", "2021-03-15T18:00"},};
+    dataRecordDao.deleteAll();
     for (String[] dataset : datasets) {
       saveDataRecord(dataset[0], dataset[1], dataset[2], dataset[3], dataset[4]);
     }
@@ -190,7 +248,7 @@ public class IDataRecordDaoTest {
     Instant instant = LocalDateTime.parse(instantAsString, DateTimeFormatter.ofPattern("uuuu-MM-dd'T'HH:mm"))
             .atZone(ZoneId.of("UTC"))
             .toInstant();
-    
+
     DataRecord dataRecord = new DataRecord();
     dataRecord.setDocumentHash(documentHash);
     dataRecord.setMetadataId(metadataId);

@@ -64,9 +64,9 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-mail"
 
     // springdoc
-    implementation("org.springdoc:springdoc-openapi-ui:1.5.4")
-    implementation("org.springdoc:springdoc-openapi-data-rest:1.5.4")
-    implementation("org.springdoc:springdoc-openapi-webmvc-core:1.5.4")
+    implementation("org.springdoc:springdoc-openapi-ui:1.5.6")
+    implementation("org.springdoc:springdoc-openapi-data-rest:1.5.6")
+    implementation("org.springdoc:springdoc-openapi-webmvc-core:1.5.6")
 
 
     // driver for postgres
