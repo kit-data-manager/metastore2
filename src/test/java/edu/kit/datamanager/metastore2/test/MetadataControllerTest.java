@@ -188,12 +188,7 @@ public class MetadataControllerTest {
           + "  <dc:creater>Carbon, Seth</dc:creater>\n"
           + "</oai_dc:dc>";
 
-  private String adminToken;
-  private String userToken;
-  private String otherUserToken;
-  private String guestToken;
 
-  private DataResource sampleResource;
   private static Boolean alreadyInitialized = Boolean.FALSE;
 
   private MockMvc mockMvc;

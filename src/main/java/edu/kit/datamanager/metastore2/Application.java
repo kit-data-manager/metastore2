@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
@@ -95,7 +96,8 @@ public class Application {
   private IDataRecordDao dataRecordDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
-
+  @Autowired
+  private OaiPmhConfiguration oaiPmhConfiguration;
   @Autowired
   private IValidator[] validators;
   @Autowired
@@ -133,6 +135,11 @@ public class Application {
   @Bean
   public DateBasedStorageProperties dateBasedStorageProperties() {
     return new DateBasedStorageProperties();
+  }
+
+  @Bean
+  public OaiPmhConfiguration oaiPmhConfiguration() {
+    return new OaiPmhConfiguration();
   }
 
   @Bean

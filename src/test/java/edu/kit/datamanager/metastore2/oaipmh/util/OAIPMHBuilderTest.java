@@ -3,11 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.kit.datamanager.oaipmh.util;
+package edu.kit.datamanager.metastore2.oaipmh.util;
 
-import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
-import edu.kit.datamanager.oaipmh.service.AbstractOAIPMHRepository;
-import edu.kit.datamanager.oaipmh.service.MetastoreOAIPMHRepository;
+import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
+import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
+import edu.kit.datamanager.metastore2.oaipmh.service.MetastoreOAIPMHRepository;
 import java.util.Date;
 import java.util.List;
 import org.junit.After;

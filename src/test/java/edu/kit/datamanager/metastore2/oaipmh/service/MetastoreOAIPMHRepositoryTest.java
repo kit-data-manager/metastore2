@@ -3,9 +3,9 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package edu.kit.datamanager.oaipmh.service;
+package edu.kit.datamanager.metastore2.oaipmh.service;
 
-import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
+import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import java.util.List;
 import org.junit.After;
 import org.junit.AfterClass;

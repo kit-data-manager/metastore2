@@ -13,19 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.configuration;
+package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.configuration.GenericPluginProperties;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
 /**
  *
  * @author jejkal
  */
-@Configuration
+@ConfigurationProperties(prefix = "metastore")
+@Component
 @Data
+@Validated
+@RefreshScope
+@EqualsAndHashCode(callSuper = true)
 public class OaiPmhConfiguration extends GenericPluginProperties{
 
   @Value("${repo.plugin.oaipmh.adminEmail:none}")

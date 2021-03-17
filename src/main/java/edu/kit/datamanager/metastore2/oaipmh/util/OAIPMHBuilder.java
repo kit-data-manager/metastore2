@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.util;
+package edu.kit.datamanager.metastore2.oaipmh.util;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -37,15 +37,14 @@ import org.openarchives.oai._2.RecordType;
 import org.openarchives.oai._2.RequestType;
 import org.openarchives.oai._2.SetType;
 import org.openarchives.oai._2.VerbType;
-import edu.kit.datamanager.oaipmh.service.AbstractOAIPMHRepository;
+import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import org.openarchives.oai._2.ResumptionTokenType;
 import org.slf4j.LoggerFactory;
 
 /**
- *
- * @author jejkal
+ * Helper class for collecting request parameters and building OAI-PMH response.
  */
 public class OAIPMHBuilder{
 
@@ -55,13 +54,13 @@ public class OAIPMHBuilder{
   private VerbType verb = null;
   private AbstractOAIPMHRepository repository;
   private String resumptionToken = null;
-  RequestType requestType;
-  IdentifyType identifyType;
-  ListMetadataFormatsType listMetadataFormatsType;
-  ListSetsType listSetsType;
-  GetRecordType getRecordType;
-  ListIdentifiersType listIdentifiers;
-  ListRecordsType listRecordsType;
+  private RequestType requestType;
+  private IdentifyType identifyType;
+  private ListMetadataFormatsType listMetadataFormatsType;
+  private ListSetsType listSetsType;
+  private GetRecordType getRecordType;
+  private ListIdentifiersType listIdentifiers;
+  private ListRecordsType listRecordsType;
 
   public OAIPMHBuilder(){
     response = new OAIPMHtype();

@@ -13,30 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.service;
+package edu.kit.datamanager.metastore2.oaipmh.service;
 
-import edu.kit.datamanager.entities.repo.DataResource;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
+import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
+import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
-import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
-import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
+import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
+import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
+import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.xml.DataCiteMapper;
 import edu.kit.datamanager.util.xml.DublinCoreMapper;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Function;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
@@ -44,6 +53,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.datacite.schema.kernel_4.Resource;
 import org.openarchives.oai._2.DeletedRecordType;
 import org.openarchives.oai._2.DescriptionType;
@@ -54,16 +65,9 @@ import org.openarchives.oai._2.ResumptionTokenType;
 import org.purl.dc.elements._1.ElementContainer;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.springframework.web.util.UriComponentsBuilder;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -96,7 +100,7 @@ import org.xml.sax.SAXException;
  * @author jejkal
  */
 @Component
-public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
+public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetastoreOAIPMHRepository.class);
 
@@ -115,12 +119,14 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
   private OaiPmhConfiguration oaiConfigProperties;
+  @Autowired
+  private MetastoreConfiguration metadataConfig;
 
   /**
    * Default constructor.
    */
   @Autowired
-  public MetastoreOAIPMHRepository(OaiPmhConfiguration pluginConfiguration){
+  public MetastoreOAIPMHRepository(OaiPmhConfiguration pluginConfiguration) {
     this("MetastoreRepository", pluginConfiguration);
   }
 
@@ -129,63 +135,72 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
    *
    * @param name The repository name.
    */
-  private MetastoreOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration){
+  private MetastoreOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration) {
     super(name);
     this.pluginConfiguration = pluginConfiguration;
+    DC_SCHEMA = new MetadataFormatType();
+    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
+    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
+    DC_SCHEMA.setMetadataPrefix("oai_dc");
+
+    DATACITE_SCHEMA = new MetadataFormatType();
+    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
+    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
+    DATACITE_SCHEMA.setMetadataPrefix("datacite");
   }
 
   @Override
-  public List<DescriptionType> getRepositoryDescription(){
+  public List<DescriptionType> getRepositoryDescription() {
     return new ArrayList<>();
   }
 
   @Override
-  public DeletedRecordType getDeletedRecordSupport(){
+  public DeletedRecordType getDeletedRecordSupport() {
     return DeletedRecordType.NO;
   }
 
   @Override
-  public List<String> getAdminEmail(){
+  public List<String> getAdminEmail() {
     return Arrays.asList(pluginConfiguration.getAdminEmail());
   }
 
   @Override
-  public String getEarliestDatestamp(){
+  public String getEarliestDatestamp() {
     return getDateFormat().format(new Date(0l));
   }
 
   @Override
-  public GranularityType getGranularity(){
+  public GranularityType getGranularity() {
     return GranularityType.YYYY_MM_DD_THH_MM_SS_Z;
   }
 
   @Override
-  public String getBaseUrl(){
+  public String getBaseUrl() {
     return ServletUriComponentsBuilder.fromCurrentRequest().toUriString();
   }
 
   @Override
-  public boolean isPrefixSupported(String prefix){
-      boolean exists = false;
-      List<MetadataSchemaRecord> findAll = metadataSchemaDao.findAll();
-    for (MetadataSchemaRecord item: findAll) {
-        System.out.println(".");
-        if (prefix.equalsIgnoreCase(item.getSchemaId())) {
-            exists = true;
-            break;
-        }
+  public boolean isPrefixSupported(String prefix) {
+    boolean exists = false;
+    List<MetadataSchemaRecord> findAll = metadataSchemaDao.findAll();
+    for (MetadataSchemaRecord item : findAll) {
+      System.out.println(".");
+      if (prefix.equalsIgnoreCase(item.getSchemaId())) {
+        exists = true;
+        break;
+      }
     }
     return DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
   }
 
   @Override
-  public void identify(OAIPMHBuilder builder){
+  public void identify(OAIPMHBuilder builder) {
     LOGGER.trace("Performing identify().");
     //should already been handled in builder...modification of response possible here
   }
 
   @Override
-  public void listSets(OAIPMHBuilder builder){
+  public void listSets(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listSets().");
     //@TODO support collections?
     //builder.addSet("default", "default");
@@ -193,7 +208,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
   }
 
   @Override
-  public void listMetadataFormats(OAIPMHBuilder builder){
+  public void listMetadataFormats(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listMetadataFormats().");
     //@TODO extend by other formats
     builder.addMetadataFormat(DC_SCHEMA);
@@ -207,15 +222,15 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
       item.setSchema(metadataFormat.getSchema());
       builder.addMetadataFormat(item);
     }
-    
+
   }
 
   @Override
-  public void listIdentifiers(OAIPMHBuilder builder){
+  public void listIdentifiers(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listIdentifiers().");
-    List<DataResource> results = getEntities(builder);
-    if(results.isEmpty()){
-      if(!builder.isError()){
+    List<DataRecord> results = getEntities(builder);
+    if (results.isEmpty()) {
+      if (!builder.isError()) {
         LOGGER.error("No results obtained. Returning OAI-PMH error NO_RECORDS_MATCH.");
         builder.addError(OAIPMHerrorcodeType.NO_RECORDS_MATCH, null);
       }
@@ -226,24 +241,24 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
     results.stream().forEach((result) -> {
       //TODO get proper date
       Date changeDate = new Date(0l);
-      if(result.getLastUpdate() != null){
+      if (result.getLastUpdate() != null) {
         changeDate = Date.from(result.getLastUpdate());
       }
 
-      builder.addRecord(result.getId(), changeDate, Arrays.asList("default"));
+      builder.addRecord(result.getMetadataId(), changeDate, Arrays.asList("default"));
     });
   }
 
   @Override
-  public void getRecord(OAIPMHBuilder builder){
+  public void getRecord(OAIPMHBuilder builder) {
     //only get record entries for prefix
     LOGGER.trace("Performing getRecord().");
-    DataResource resource = getEntity(builder);
+    DataRecord resource = getEntity(builder);
 
-    if(resource != null){
+    if (resource != null) {
       LOGGER.trace("Adding single record to result.");
       addRecordEntry(resource, builder);
-    } else{
+    } else {
       LOGGER.error("No result obtained. Returning OAI-PMH error ID_DOES_NOT_EXIST.");
       builder.addError(OAIPMHerrorcodeType.ID_DOES_NOT_EXIST, "No object for identifier " + builder.getIdentifier() + " found.");
     }
@@ -251,11 +266,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
   }
 
   @Override
-  public void listRecords(OAIPMHBuilder builder){
+  public void listRecords(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listRecords().");
-    List<DataResource> results = getEntities(builder);
-    if(results.isEmpty()){
-      if(!builder.isError()){
+    List<DataRecord> results = getEntities(builder);
+    if (results.isEmpty()) {
+      if (!builder.isError()) {
         LOGGER.error("No results obtained. Returning OAI-PMH error NO_RECORDS_MATCH.");
         builder.addError(OAIPMHerrorcodeType.NO_RECORDS_MATCH, null);
       }
@@ -283,46 +298,70 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
    *
    * @return The metadata document or null.
    */
-  private Document getMetadataDocument(DataResource object, String schemaId){
+  private Document getMetadataDocument(DataRecord object, String schemaId) {
     LOGGER.trace("Obtaining metadata document for schema {} and resource identifier {}", schemaId, object.getId());
     ByteArrayOutputStream bout = new ByteArrayOutputStream();
-    boolean wasError = false;
-    if(DC_SCHEMA.getMetadataPrefix().equals(schemaId)){
+    boolean wasError = true;
+    if (DC_SCHEMA.getMetadataPrefix().equals(schemaId)) {
       //create DC document on the fly
       LOGGER.info("Creating Dublin Core document on the fly.", object.getId());
       //create DC metadata
-      try{
-        ElementContainer container = DublinCoreMapper.dataResourceToDublinCoreContainer(object);
+      try {
+        Function<String, String> dummy;
+        dummy = (t) -> {
+          return "dummy" + t;
+        };
+        edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
+        ElementContainer container = DublinCoreMapper.dataResourceToDublinCoreContainer(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(ElementContainer.class);
         Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.marshal(container, bout);
-      } catch(JAXBException ex){
+        wasError = false;
+      } catch (JAXBException ex) {
         LOGGER.error("Failed to build Dublin Core document.", ex);
-        wasError = true;
       }
-    } else if(DATACITE_SCHEMA.getMetadataPrefix().equals(schemaId)){
+    } else if (DATACITE_SCHEMA.getMetadataPrefix().equals(schemaId)) {
       LOGGER.info("Creating Datacite document on the fly.", object.getId());
-      try{
-        Resource resource = DataCiteMapper.dataResourceToDataciteResource(object);
+      try {
+        Function<String, String> dummy;
+        dummy = (t) -> {
+          return "dummy" + t;
+        };
+        edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
+        Resource resource = DataCiteMapper.dataResourceToDataciteResource(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(Resource.class);
         Marshaller marshaller = jaxbContext.createMarshaller();
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
         marshaller.marshal(resource, bout);
-      } catch(JAXBException ex){
+        wasError = false;
+      } catch (JAXBException ex) {
         LOGGER.error("Failed to build Datacite document.", ex);
-        wasError = true;
       }
+    } else if (object.getSchemaId().equals(schemaId)) {
+      LOGGER.info("Return stored document of resource '{}'.", object.getMetadataId());
+      try {
+        URL url = new URL(object.getMetadataDocumentUri());
+        byte[] readFileToByteArray = FileUtils.readFileToByteArray(Paths.get(url.toURI()).toFile());
+        try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)){
+          IOUtils.copy(inputStream, bout);
+          wasError = false;
+        }
+      } catch (URISyntaxException | IOException ex) {
+        LOGGER.error("Error while reading document", ex);
+      }
+    }else {
+      LOGGER.error("No valid schema '{}' found for resource '{}'", schemaId, object.getMetadataId() );
     }
 
     Document doc = null;
-    if(!wasError){
-      try{
+    if (!wasError) {
+      try {
         DocumentBuilderFactory fac = DocumentBuilderFactory.newInstance();
         fac.setNamespaceAware(true);
         DocumentBuilder docBuilder = fac.newDocumentBuilder();
         doc = docBuilder.parse(new ByteArrayInputStream(bout.toByteArray()));
-      } catch(SAXException | IOException | ParserConfigurationException ex){
+      } catch (SAXException | IOException | ParserConfigurationException ex) {
         LOGGER.error("Failed to create w3c document from serialized metadata of schema " + schemaId + ".", ex);
       }
     }
@@ -340,17 +379,17 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
    * @param result The digital object to add a record for.
    * @param builder The OAIPMHBuilder.
    */
-  private void addRecordEntry(DataResource result, OAIPMHBuilder builder){
+  private void addRecordEntry(DataRecord result, OAIPMHBuilder builder) {
     LOGGER.trace("Adding record for object identifier {} to response.", result.getId());
     Document doc = getMetadataDocument(result, builder.getMetadataPrefix());
-    if(doc != null){
+    if (doc != null) {
       LOGGER.trace("Adding record using obtained metadata document.");
       Date resourceDate = new Date(0l);
-      if(result.getLastUpdate() != null){
+      if (result.getLastUpdate() != null) {
         resourceDate = Date.from(result.getLastUpdate());
       }
-      builder.addRecord(result.getId(), resourceDate, Arrays.asList("default"), doc.getDocumentElement());
-    } else{
+      builder.addRecord(result.getMetadataId(), resourceDate, Arrays.asList("default"), doc.getDocumentElement());
+    } else {
       LOGGER.error("No metadata document found for prefix {} and object identifier {}. Returning OAI-PMH error CANNOT_DISSEMINATE_FORMAT.", builder.getMetadataPrefix(), result.getId());
       builder.addError(OAIPMHerrorcodeType.CANNOT_DISSEMINATE_FORMAT, null);
     }
@@ -364,24 +403,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
    *
    * @return A entity which might be null.
    */
-  private DataResource getEntity(OAIPMHBuilder builder){
+  private DataRecord getEntity(OAIPMHBuilder builder) {
     LOGGER.trace("Performing getEntity().");
 
-    RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
+    DataRecord entity = metadataRecordDao.findByMetadataId(builder.getIdentifier());
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-
-    UriComponentsBuilder uriBuilder = UriComponentsBuilder.
-            fromHttpUrl(pluginConfiguration.getRepositoryBaseUrl() + builder.getIdentifier());
-
-    LOGGER.trace("Sending GET request to URI {}.", uriBuilder.toUriString());
-
-    //get all metadata resources
-    ResponseEntity<DataResource> restResponse = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, DataResource.class);
-    LOGGER.trace("Returning response body.");
-    return restResponse.getBody();
+    return entity;
 
   }
 
@@ -398,97 +425,72 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository{
    *
    * @return A list of entities which might be empty.
    */
-  private List<DataResource> getEntities(OAIPMHBuilder builder){
-    List<DataResource> results = new ArrayList<>();
+  private List<DataRecord> getEntities(OAIPMHBuilder builder) {
+    List<DataRecord> results;
 
     String prefix = builder.getMetadataPrefix();
     LOGGER.trace("Getting entities for metadata prefix {} from repository.", prefix);
     LOGGER.trace("Checking request for resumption token");
     String resumptionToken = builder.getResumptionToken();
     int currentCursor = 0;
-    int overallCount;
+    int overallCount = Integer.MAX_VALUE;
+    Instant from = builder.getFromDate() != null ? builder.getFromDate().toInstant() : Instant.MIN.plus(366, ChronoUnit.DAYS);
+    Instant until = builder.getUntilDate() != null ? builder.getUntilDate().toInstant() : Instant.now();
     //check resumption token
-    metadataRecordDao.findBySchemaId(prefix);
-
-    if(resumptionToken != null){
-      try{
+    if (resumptionToken != null) {
+      try {
         String tokenValue = new String(Base64.decodeBase64(URLDecoder.decode(resumptionToken, "UTF-8")));
         LOGGER.trace("Found token with value {}", tokenValue);
         String[] elements = tokenValue.split("/");
-        if(elements.length != 2){
+        if (elements.length != 2) {
           LOGGER.error("Invalid resumption token. Returning OAI-PMH error BAD_RESUMPTION_TOKEN.");
           builder.addError(OAIPMHerrorcodeType.BAD_RESUMPTION_TOKEN, null);
           return new ArrayList<>();
         }
-        try{
+        try {
           LOGGER.trace("Parsing token values.");
           currentCursor = Integer.parseInt(elements[0]);
           overallCount = Integer.parseInt(elements[1]);
           LOGGER.trace("Obtained {} as current cursor from token. Overall element count is {}.", currentCursor, overallCount);
-        } catch(NumberFormatException ex){
+        } catch (NumberFormatException ex) {
           //log error
           builder.addError(OAIPMHerrorcodeType.BAD_RESUMPTION_TOKEN, null);
           return new ArrayList<>();
         }
-      } catch(UnsupportedEncodingException ex){
+      } catch (UnsupportedEncodingException ex) {
         LOGGER.error("Failed to get results from repository. Returning empty list.", ex);
       }
-    } else{
+    } else {
       LOGGER.trace("No resumption token found.");
     }
 
-    RestTemplate restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-    HttpEntity<String> entity = new HttpEntity<>(headers);
-
-    UriComponentsBuilder uriBuilder = UriComponentsBuilder.
-            fromHttpUrl(pluginConfiguration.getRepositoryBaseUrl()).
-            queryParam("from", (builder.getFromDate() == null) ? new Date(0l).toInstant() : builder.getFromDate().toInstant());
-    if(builder.getUntilDate() != null){
-      uriBuilder = uriBuilder.queryParam("until", builder.getUntilDate().toInstant());
-    }
     int maxElementsPerList = pluginConfiguration.getMaxElementsPerList();
 
     int page = currentCursor / maxElementsPerList;
-    uriBuilder = uriBuilder.queryParam("page", page).queryParam("size", maxElementsPerList);
-
-    //get all metadata resources
-    ResponseEntity<DataResource[]> restResponse = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, entity, DataResource[].class);
-
-    List<String> contentRange = restResponse.getHeaders().get("Content-Range");
-    if(contentRange != null && contentRange.size() >= 1){
-      overallCount = Integer.parseInt(contentRange.get(0).substring(contentRange.get(0).indexOf("/") + 1));
-    } else{
-      overallCount = currentCursor + maxElementsPerList;
-      LOGGER.warn("No Content-Range header found. Unable to determine resource count. Using current element with value {}.", overallCount);
-    }
-
-    List<DataResource> res = Arrays.asList(restResponse.getBody());
+    results = metadataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
     LOGGER.trace("Setting next resumption token.");
-    if(currentCursor + maxElementsPerList > overallCount){
+    if (results.size() < maxElementsPerList) {
       LOGGER.debug("New cursor {} exceeds element count {}, no more elements available. Setting resumption token to 'null'.", (currentCursor + maxElementsPerList), overallCount);
       //lsit complete, add no resumptiontoken
       builder.setResumptionToken(null);
-    } else{
+    } else {
       ResumptionTokenType token = new ResumptionTokenType();
       //set list size
-      token.setCompleteListSize(BigInteger.valueOf(overallCount));
+      token.setCompleteListSize(BigInteger.valueOf(Long.MAX_VALUE));
       //set current cursor
-      token.setCursor(BigInteger.valueOf(currentCursor + res.size()));
+      token.setCursor(BigInteger.valueOf(currentCursor + results.size()));
       LOGGER.trace("Setting new resumption token with cursor at position {}.", token.getCursor());
       //we set no expiration as the token never expires
       String value = token.getCursor().intValue() + "/" + token.getCompleteListSize().intValue();
       LOGGER.trace("Setting resumption token value to {}.", value);
-      try{
+      try {
         token.setValue(URLEncoder.encode(Base64.encodeBase64String(value.getBytes()), "UTF-8"));
         builder.setResumptionToken(token);
-      } catch(UnsupportedEncodingException ex){
+      } catch (UnsupportedEncodingException ex) {
         LOGGER.error("Failed to get results from repository. Returning empty list.", ex);
       }
     }
 
-    return res;
+    return results;
   }
 }

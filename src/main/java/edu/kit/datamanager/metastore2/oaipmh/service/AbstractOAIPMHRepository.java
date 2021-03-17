@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.service;
+package edu.kit.datamanager.metastore2.oaipmh.service;
 
-import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
+import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;

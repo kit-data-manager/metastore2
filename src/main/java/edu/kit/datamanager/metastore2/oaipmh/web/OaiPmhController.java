@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.oaipmh.web;
+package edu.kit.datamanager.metastore2.oaipmh.web;
 
-import edu.kit.datamanager.oaipmh.configuration.OaiPmhConfiguration;
-import edu.kit.datamanager.oaipmh.service.AbstractOAIPMHRepository;
-import edu.kit.datamanager.oaipmh.util.OAIPMHBuilder;
+import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
+import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
+import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.io.ByteArrayOutputStream;
 import java.text.ParseException;
@@ -75,6 +75,7 @@ public class OaiPmhController{
       LOGGER.warn("Verb '" + verb + "' is invalid. OAI-PMH error will be returned.", ex);
     }
 
+    try{
     Date fromDate = null;
     Date untilDate = null;
     boolean wrongDateFormat = false;
@@ -120,8 +121,7 @@ public class OaiPmhController{
 
     //build the result and return it.
     LOGGER.trace("Building and returning OAI-PMH response.");
-    try{
-      JAXBContext jaxbContext = JAXBContext.newInstance(OAIPMHtype.class);
+     JAXBContext jaxbContext = JAXBContext.newInstance(OAIPMHtype.class);
       Marshaller marshaller = jaxbContext.createMarshaller();
       marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
       ByteArrayOutputStream bout = new ByteArrayOutputStream();
@@ -131,6 +131,6 @@ public class OaiPmhController{
     } catch(Exception e){
       LOGGER.error("Failed to serialize OAIPMHtype.", e);
       return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).body("Unable to serialize XML response.");
-    }
+   }
   }
 }
