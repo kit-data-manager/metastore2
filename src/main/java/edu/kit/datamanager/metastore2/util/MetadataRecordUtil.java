@@ -271,7 +271,7 @@ public class MetadataRecordUtil {
           DataResource dataResource,
           boolean provideETag) {
     long nano1 = System.nanoTime() / 1000000;
-    MetadataRecord metadataRecord = new MetadataRecord();
+    MetadataRecord metadataRecord = new MetadataRecord(); 
     if (dataResource != null) {
       metadataRecord.setId(dataResource.getId());
       if (provideETag) {

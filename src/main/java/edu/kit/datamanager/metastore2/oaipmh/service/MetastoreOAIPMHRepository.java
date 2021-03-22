@@ -112,9 +112,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   @Autowired
   private ApplicationProperties metastoreProperties;
   @Autowired
-  private IDataRecordDao metadataRecordDao;
-  @Autowired
-  private IMetadataSchemaDao metadataSchemaDao;
+  private IDataRecordDao dataRecordDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
@@ -181,16 +179,19 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   @Override
   public boolean isPrefixSupported(String prefix) {
-    boolean exists = false;
-    List<MetadataSchemaRecord> findAll = metadataSchemaDao.findAll();
-    for (MetadataSchemaRecord item : findAll) {
-      System.out.println(".");
-      if (prefix.equalsIgnoreCase(item.getSchemaId())) {
-        exists = true;
-        break;
+    boolean exists = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
+    System.out.println(prefix + ": " + exists);  
+    if (!exists) {
+      List<MetadataFormat> findAll = metadataFormatDao.findAll();
+      for (MetadataFormat item : findAll) {
+        System.out.println("." + item.getMetadataPrefix());
+        if (prefix.equalsIgnoreCase(item.getMetadataPrefix())) {
+          exists = true;
+          break;
+        }
       }
     }
-    return DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
+    return exists;
   }
 
   @Override
@@ -343,15 +344,15 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       try {
         URL url = new URL(object.getMetadataDocumentUri());
         byte[] readFileToByteArray = FileUtils.readFileToByteArray(Paths.get(url.toURI()).toFile());
-        try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)){
+        try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)) {
           IOUtils.copy(inputStream, bout);
           wasError = false;
         }
       } catch (URISyntaxException | IOException ex) {
         LOGGER.error("Error while reading document", ex);
       }
-    }else {
-      LOGGER.error("No valid schema '{}' found for resource '{}'", schemaId, object.getMetadataId() );
+    } else {
+      LOGGER.error("No valid schema '{}' found for resource '{}'", schemaId, object.getMetadataId());
     }
 
     Document doc = null;
@@ -406,7 +407,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   private DataRecord getEntity(OAIPMHBuilder builder) {
     LOGGER.trace("Performing getEntity().");
 
-    DataRecord entity = metadataRecordDao.findByMetadataId(builder.getIdentifier());
+    DataRecord entity = dataRecordDao.findByMetadataId(builder.getIdentifier());
 
     return entity;
 
@@ -434,8 +435,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     String resumptionToken = builder.getResumptionToken();
     int currentCursor = 0;
     int overallCount = Integer.MAX_VALUE;
-    Instant from = builder.getFromDate() != null ? builder.getFromDate().toInstant() : Instant.MIN.plus(366, ChronoUnit.DAYS);
-    Instant until = builder.getUntilDate() != null ? builder.getUntilDate().toInstant() : Instant.now();
+    Instant from = builder.getFromDate() != null ? builder.getFromDate().toInstant() : Instant.now().minus(36500, ChronoUnit.DAYS);
+    Instant until = builder.getUntilDate() != null ? builder.getUntilDate().toInstant() : Instant.now().plus(1, ChronoUnit.SECONDS);
     //check resumption token
     if (resumptionToken != null) {
       try {
@@ -467,7 +468,28 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     int maxElementsPerList = pluginConfiguration.getMaxElementsPerList();
 
     int page = currentCursor / maxElementsPerList;
-    results = metadataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
+    boolean predefinedPrefix = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
+    if (predefinedPrefix) {
+      List<String> findMetadataPrefix = metadataFormatDao.getAllIds();
+    if (LOGGER.isTraceEnabled()) {
+      for (String item: findMetadataPrefix) {
+        System.out.println("SchemaID: " + item);
+      }
+    }
+    LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", findMetadataPrefix, from, until, page, maxElementsPerList);
+     results = dataRecordDao.findBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until, PageRequest.of(page, maxElementsPerList));
+    System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+    } else {
+    LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", prefix, from, until, page, maxElementsPerList);
+    results = dataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
+    System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+    }
+    if (LOGGER.isTraceEnabled()) {
+      List<DataRecord> findAll = dataRecordDao.findAll();
+      for (DataRecord item: findAll) {
+        System.out.println(item);
+      }
+    }
     LOGGER.trace("Setting next resumption token.");
     if (results.size() < maxElementsPerList) {
       LOGGER.debug("New cursor {} exceeds element count {}, no more elements available. Setting resumption token to 'null'.", (currentCursor + maxElementsPerList), overallCount);

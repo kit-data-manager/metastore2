@@ -68,6 +68,7 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -291,7 +292,7 @@ public class OaiPmhControllerTest {
 
   }
   @Test
-  public void testProcessRequestWithSchemaEntries() throws Exception {
+  public void testProcessRequestListAllIdentifiersWithSchemaEntries() throws Exception {
     MvcResult res;
     OAIPMHtype result;
     System.out.println("Start OAI-PMH test");
@@ -301,8 +302,19 @@ public class OaiPmhControllerTest {
     String schema1 = String.format(SCHEMA, SCHEMA_ID_1);
     String schema2 = String.format(SCHEMA, SCHEMA_ID_2);
     String schema3 = String.format(SCHEMA, SCHEMA_ID_3);
+    String metadata1_1 = String.format(XML_DOCUMENT, SCHEMA_ID_1, "Title 1.1");
+    String metadata1_2 = String.format(XML_DOCUMENT, SCHEMA_ID_1, "Title 1.2");
+    String metadata1_3 = String.format(XML_DOCUMENT, SCHEMA_ID_1, "Title 1.3");
+    String metadata2_1 = String.format(XML_DOCUMENT, SCHEMA_ID_2, "Title 2.1");
+    String metadata2_2 = String.format(XML_DOCUMENT, SCHEMA_ID_2, "Title 2.2");
+    String metadata2_3 = String.format(XML_DOCUMENT, SCHEMA_ID_2, "Title 2.3");
+    String metadata3_1 = String.format(XML_DOCUMENT, SCHEMA_ID_3, "Title 3.1");
+    String metadata3_2 = String.format(XML_DOCUMENT, SCHEMA_ID_3, "Title 3.2");
+    String metadata3_3 = String.format(XML_DOCUMENT, SCHEMA_ID_3, "Title 3.3");
     String jsonSchema1 = JSON_SCHEMA;
     System.out.println("Add schemas!");
+    Instant startDate = truncateDate(Instant.now());
+    
     System.out.println("--------------------------------------------------------------------");
     // ADD ANOTHER SCHEMA *******************************************************
     ingestSchemaRecord(SCHEMA_ID_1, MetadataSchemaRecord.SCHEMA_TYPE.XML, schema1);
@@ -344,14 +356,56 @@ public class OaiPmhControllerTest {
     result = getResponse(res);
     Assert.assertNotNull(result);
     Assert.assertEquals(1, result.getError().size());
-    System.out.println("Known metadataFormat");
+    System.out.println("Known metadataFormat but no entries");
     res = this.mockMvc.perform(get("/oaipmh").param("verb", VerbType.LIST_IDENTIFIERS.value()).param("metadataPrefix", "oai_dc")).andDo(print()).andExpect(status().isOk()).andReturn();
     result = getResponse(res);
 
     Assert.assertNotNull(result);
     Assert.assertEquals(1, result.getError().size());  // No values available
 
+    System.out.println("Add first entry...");
+    ingestMetadataRecord(SCHEMA_ID_1, metadata1_1);
+    System.out.println("Known metadataFormat with one entry");
+    checkResponseListIdentifiers(SCHEMA_ID_1, null, null, 1);
+    checkResponseListIdentifiers(SCHEMA_ID_1, startDate, null, 1);
+    checkResponseListIdentifiers(SCHEMA_ID_1, null, startDate, 0);
+    checkResponseListIdentifiers(SCHEMA_ID_1, Instant.now(), null, 0);
+    System.out.println("Generic metadataFormat with one entry");
+    checkResponseListIdentifiers("oai_dc", null, null, 1);
+    checkResponseListIdentifiers("oai_dc", startDate, null, 1);
+    checkResponseListIdentifiers("oai_dc", null, startDate, 0);
+    checkResponseListIdentifiers("oai_dc", Instant.now(), null, 0);
+    System.out.println("Generic metadataFormat with one entry");
+    checkResponseListIdentifiers("datacite", null, null, 1);
+    checkResponseListIdentifiers("datacite", startDate, null, 1);
+    checkResponseListIdentifiers("datacite", null, startDate, 0);
+    checkResponseListIdentifiers("datacite", Instant.now(), null, 0);
+    System.out.println("metadataFormat with no entry");
+    checkResponseListIdentifiers(SCHEMA_ID_2, null, null, 0);
+    checkResponseListIdentifiers(SCHEMA_ID_2, startDate, null, 0);
+    checkResponseListIdentifiers(SCHEMA_ID_2, null, startDate, 0);
+    checkResponseListIdentifiers(SCHEMA_ID_2, Instant.now(), null, 0);
+    
+  }
+  
+  private void checkResponseListIdentifiers(String metadataPrefix, Instant from, Instant until, int noOfExpectedItems) throws Exception {
+    MockHttpServletRequestBuilder param = get("/oaipmh").param("verb", VerbType.LIST_IDENTIFIERS.value());
+    param = param.param("metadataPrefix", metadataPrefix);
+    if (until != null) {
+      param = param.param("until", until.toString());
+    }
+    if (from != null) {
+      param = param.param("from", from.toString());
+    }
+     MvcResult res = this.mockMvc.perform(param).andDo(print()).andExpect(status().isOk()).andReturn();
+    OAIPMHtype result = getResponse(res);
 
+    Assert.assertNotNull(result);
+    if (noOfExpectedItems == 0) {
+      Assert.assertEquals(1, result.getError().size());
+    }  else {
+      Assert.assertEquals(noOfExpectedItems, result.getListIdentifiers().getHeader().size());
+    }     
   }
 
   private void ingestSchemaRecord(String schemaId, MetadataSchemaRecord.SCHEMA_TYPE type, String schemaDocument) throws Exception {
@@ -420,6 +474,10 @@ public class OaiPmhControllerTest {
     JAXBElement<OAIPMHtype> root = jaxbUnmarshaller.unmarshal(source, OAIPMHtype.class);
     result = root.getValue();
     return result;
+  }
+  
+  private Instant truncateDate(Instant date) {
+    return date.truncatedTo(ChronoUnit.SECONDS);
   }
 
 }
