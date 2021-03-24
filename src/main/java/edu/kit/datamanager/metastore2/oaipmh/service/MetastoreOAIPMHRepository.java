@@ -180,7 +180,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   @Override
   public boolean isPrefixSupported(String prefix) {
     boolean exists = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
-    System.out.println(prefix + ": " + exists);  
+    System.out.println(prefix + ": " + exists);
     if (!exists) {
       List<MetadataFormat> findAll = metadataFormatDao.findAll();
       for (MetadataFormat item : findAll) {
@@ -434,7 +434,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     LOGGER.trace("Checking request for resumption token");
     String resumptionToken = builder.getResumptionToken();
     int currentCursor = 0;
-    int overallCount = Integer.MAX_VALUE;
+    long overallCount;
     Instant from = builder.getFromDate() != null ? builder.getFromDate().toInstant() : Instant.now().minus(36500, ChronoUnit.DAYS);
     Instant until = builder.getUntilDate() != null ? builder.getUntilDate().toInstant() : Instant.now().plus(1, ChronoUnit.SECONDS);
     //check resumption token
@@ -471,34 +471,38 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     boolean predefinedPrefix = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
     if (predefinedPrefix) {
       List<String> findMetadataPrefix = metadataFormatDao.getAllIds();
-    if (LOGGER.isTraceEnabled()) {
-      for (String item: findMetadataPrefix) {
-        System.out.println("SchemaID: " + item);
+      if (LOGGER.isTraceEnabled()) {
+        for (String item : findMetadataPrefix) {
+          System.out.println("SchemaID: " + item);
+        }
       }
-    }
-    LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", findMetadataPrefix, from, until, page, maxElementsPerList);
-     results = dataRecordDao.findBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until, PageRequest.of(page, maxElementsPerList));
-    System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", findMetadataPrefix, from, until, page, maxElementsPerList);
+      overallCount = dataRecordDao.countBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until);
+      results = dataRecordDao.findBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until, PageRequest.of(page, maxElementsPerList));
+      System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
     } else {
-    LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", prefix, from, until, page, maxElementsPerList);
-    results = dataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
-    System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", prefix, from, until, page, maxElementsPerList);
+      overallCount = dataRecordDao.countBySchemaIdAndLastUpdateBetween(prefix, from, until);
+      results = dataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
+      System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
     }
     if (LOGGER.isTraceEnabled()) {
       List<DataRecord> findAll = dataRecordDao.findAll();
-      for (DataRecord item: findAll) {
+      for (DataRecord item : findAll) {
         System.out.println(item);
       }
     }
     LOGGER.trace("Setting next resumption token.");
-    if (results.size() < maxElementsPerList) {
+    int cursor = currentCursor + results.size();
+            
+    if (cursor == overallCount) {
       LOGGER.debug("New cursor {} exceeds element count {}, no more elements available. Setting resumption token to 'null'.", (currentCursor + maxElementsPerList), overallCount);
       //lsit complete, add no resumptiontoken
       builder.setResumptionToken(null);
     } else {
       ResumptionTokenType token = new ResumptionTokenType();
       //set list size
-      token.setCompleteListSize(BigInteger.valueOf(Long.MAX_VALUE));
+      token.setCompleteListSize(BigInteger.valueOf(overallCount));
       //set current cursor
       token.setCursor(BigInteger.valueOf(currentCursor + results.size()));
       LOGGER.trace("Setting new resumption token with cursor at position {}.", token.getCursor());

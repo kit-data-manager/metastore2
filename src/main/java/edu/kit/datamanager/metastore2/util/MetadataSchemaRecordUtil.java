@@ -76,7 +76,6 @@ public class MetadataSchemaRecordUtil {
    * Mapper for parsing json.
    */
   private static ObjectMapper mapper = new ObjectMapper();
-  private static String guestToken = null;
 
   private static ISchemaRecordDao schemaRecordDao;
 
@@ -491,10 +490,6 @@ public class MetadataSchemaRecordUtil {
 //    LOG.trace("Setting lastUpdate to now().");
 //    managed.setLastUpdate(Instant.now());
     return managed;
-  }
-
-  public static void setToken(String bearerToken) {
-    guestToken = bearerToken;
   }
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {

@@ -24,4 +24,6 @@ public interface IDataRecordDao extends JpaRepository<DataRecord, String>, JpaSp
   List<DataRecord> findBySchemaIdAndLastUpdateBefore(String schemaId, Instant until);
   List<DataRecord> findBySchemaIdInAndLastUpdateBetween(List<String> schemaId, Instant from, Instant until, Pageable pageable);
   List<DataRecord> findBySchemaIdAndLastUpdateBetween(String schemaId, Instant from, Instant until, Pageable pageable);
+  long             countBySchemaIdInAndLastUpdateBetween(List<String> schemaId, Instant from, Instant until);
+  long             countBySchemaIdAndLastUpdateBetween(String schemaId, Instant from, Instant until);
 }
