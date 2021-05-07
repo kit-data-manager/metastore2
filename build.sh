@@ -84,7 +84,7 @@ echo "--------------------------------------------------------------------------
 ################################################################################
 # Test for commands used in this script
 ################################################################################
-testForCommands="chmod cp dirname find java javac mkdir"
+testForCommands="chmod cp dirname find java javac mkdir git"
 
 for command in $testForCommands
 do 
@@ -114,6 +114,25 @@ REPO_NAME=${REPO_NAME##*$'\n'}
 
 printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 
+
+################################################################################
+# Build dependencies service-base -> repo-core -> metastore
+################################################################################
+# service-base -> branch: refactoringServiceBase
+###################################
+git clone https://github.com/VolkerHartmann/service-base.git
+cd service-base
+git checkout refactoringServiceBase
+./gradlew clean build install
+cd ..
+
+# repo-core -> branch: development
+###################################
+git clone https://github.com/VolkerHartmann/repo-core.git
+cd repo-core
+git checkout development
+./gradlew clean build install
+cd ..
 
 ################################################################################
 # Build service
