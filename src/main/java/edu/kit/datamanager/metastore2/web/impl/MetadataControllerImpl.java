@@ -30,6 +30,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -209,8 +210,38 @@ public class MetadataControllerImpl implements IMetadataController {
             body(new FileSystemResource(metadataDocumentPath.toFile()));
   }
 
+  public ResponseEntity<List<MetadataRecord>> getAllVersions(
+          @PathVariable(value = "id") String id,
+          Pageable pgbl,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          UriComponentsBuilder ucb
+  ) {
+    LOG.trace("Performing getAllVersions({}).", id);
+    // Search for resource type of MetadataSchemaRecord
+
+    //if security is enabled, include principal in query
+    LOG.debug("Performing query for records.");
+    Page<DataResource> records = DataResourceUtils.readAllVersionsOfResource(metadataConfig, id, pgbl);
+    
+
+    LOG.trace("Transforming Dataresource to MetadataRecord");
+    List<DataResource> recordList = records.getContent();
+    List<MetadataRecord> metadataList = new ArrayList<>();
+    recordList.forEach((record) -> {
+      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record, false);
+      fixMetadataDocumentUri(item);
+      metadataList.add(item);
+    });
+
+    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
+
+    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
+  }
+
   @Override
   public ResponseEntity<List<MetadataRecord>> getRecords(
+          @RequestParam(value = "id", required = false) String id,
           @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @RequestParam(name = "from", required = false) Instant updateFrom,
@@ -221,6 +252,9 @@ public class MetadataControllerImpl implements IMetadataController {
           UriComponentsBuilder ucb
   ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
+    if (id != null) {
+      return getAllVersions(id, pgbl, wr, hsr, ucb);
+    } 
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
     List<String> allRelatedIdentifiers = new ArrayList<>();
