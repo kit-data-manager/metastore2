@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
@@ -28,6 +27,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.net.URI;
@@ -160,6 +160,35 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
             body(new FileSystemResource(schemaDocumentPath.toFile()));
   }
 
+  public ResponseEntity<List<MetadataSchemaRecord>> getAllVersions(
+          @PathVariable(value = "id") String id,
+          Pageable pgbl,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          UriComponentsBuilder ucb
+  ) {
+    LOG.trace("Performing getAllVersions({}).", id);
+    // Search for resource type of MetadataSchemaRecord
+
+    //if security is enabled, include principal in query
+    LOG.debug("Performing query for records.");
+    Page<DataResource> records = DataResourceUtils.readAllVersionsOfResource(schemaConfig, id, pgbl);
+    
+
+    LOG.trace("Transforming Dataresource to MetadataRecord");
+    List<DataResource> recordList = records.getContent();
+    List<MetadataSchemaRecord> metadataList = new ArrayList<>();
+    recordList.forEach((record) -> {
+      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
+      fixSchemaDocumentUri(item);
+      metadataList.add(item);
+    });
+
+    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
+
+    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
+  }
+
   @Override
   public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
@@ -169,14 +198,14 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(List<String> schemaIds, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
-    LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaIds, mimeTypes, updateFrom, updateUntil);
+  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(String schemaId, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+    LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaId, mimeTypes, updateFrom, updateUntil);
+    if (schemaId != null) {
+      return getAllVersions(schemaId, pgbl, wr, hsr, ucb);
+    }
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
-    //one of given ids.
-    if ((schemaIds != null) && !schemaIds.isEmpty()) {
-      spec = spec.and(InternalIdentifierSpec.toSpecification(schemaIds.toArray(new String[schemaIds.size()])));
-    }
+    //one of given mimetypes.
     if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
       spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
     }

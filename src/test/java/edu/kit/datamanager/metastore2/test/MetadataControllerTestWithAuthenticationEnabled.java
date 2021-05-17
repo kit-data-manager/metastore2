@@ -40,6 +40,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
+import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -211,6 +212,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   private WebApplicationContext context;
   @Autowired
   private FilterChainProxy springSecurityFilterChain;
+  @Autowired
+  Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
@@ -1011,7 +1014,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     String metadataRecordId = createDCMetadataRecord();
     // Get version of record as array
     // Read all versions (only 1 version available)
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(get("/api/v1/metadata/" ).param("id", metadataRecordId).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
 
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header(HttpHeaders.AUTHORIZATION,
@@ -1053,7 +1056,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     // Get version of record as array
     // Read all versions (only 1 version available)
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header(HttpHeaders.AUTHORIZATION,
+    this.mockMvc.perform(get("/api/v1/metadata/").param("id", metadataRecordId).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(2)));
   }
 
@@ -1076,6 +1079,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             file(metadataFile).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
+    // Add versioning 
+    javers.commit("admin", result);
+    
     return result.getId();
   } 
 

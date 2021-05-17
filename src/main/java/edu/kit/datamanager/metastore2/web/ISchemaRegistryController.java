@@ -94,7 +94,6 @@ public interface ISchemaRegistryController {
             @ApiResponse(responseCode = "422", description = "Unprocessable Entity if validation fails.")
           })
   @RequestMapping(value = {"/{id}/validate"}, method = {RequestMethod.POST}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
-
   @ResponseBody
   public ResponseEntity validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
@@ -116,8 +115,9 @@ public interface ISchemaRegistryController {
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @Operation(summary = "Get all schema records.", description = "List all schema records in a paginated and/or sorted form. The result can be refined by providing a list of one or more mimetypes returned schema(s) are linked to  and/or one or more schema identifier valid records must match. "
-          + "If both parameters are provided, a record matches if its associated mime type AND the schema id are matching. "
+  @Operation(summary = "Get all schema records.", description = "List all schema records in a paginated and/or sorted form. The result can be refined by providing schemaId, a list of one or more mimetypes and/or a date range. Returned schema record(s) must match. "
+          + "if 'schemaId' is provided all other parameters were skipped and all versions of the given schemaId record will be returned."
+          + "If 'mimetype' is provided, a record matches if its associated mime type matchs. "
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
           + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.",
@@ -127,7 +127,7 @@ public interface ISchemaRegistryController {
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
-          @Parameter(description = "A list of schema ids of returned schemas.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
+          @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false)  String schemaId,
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,

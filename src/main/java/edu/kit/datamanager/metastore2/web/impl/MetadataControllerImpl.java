@@ -210,7 +210,6 @@ public class MetadataControllerImpl implements IMetadataController {
             body(new FileSystemResource(metadataDocumentPath.toFile()));
   }
 
-  @Override
   public ResponseEntity<List<MetadataRecord>> getAllVersions(
           @PathVariable(value = "id") String id,
           Pageable pgbl,
@@ -242,6 +241,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
   @Override
   public ResponseEntity<List<MetadataRecord>> getRecords(
+          @RequestParam(value = "id", required = false) String id,
           @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @RequestParam(name = "from", required = false) Instant updateFrom,
@@ -252,6 +252,9 @@ public class MetadataControllerImpl implements IMetadataController {
           UriComponentsBuilder ucb
   ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
+    if (id != null) {
+      return getAllVersions(id, pgbl, wr, hsr, ucb);
+    } 
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
     List<String> allRelatedIdentifiers = new ArrayList<>();

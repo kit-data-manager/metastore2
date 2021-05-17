@@ -84,6 +84,7 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_json;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/jsontest/schema"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class JsonSchemaRegistryControllerTest {
@@ -500,11 +501,11 @@ public class JsonSchemaRegistryControllerTest {
   @Test
   public void testFindRecordsBySchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", "json")).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", "json").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
 
-    Assert.assertEquals(1, result.length);
+    Assert.assertTrue(result.length > 0);
   }
 
   @Test
@@ -529,12 +530,11 @@ public class JsonSchemaRegistryControllerTest {
 
   @Test
   public void testFindRecordsByUnknownSchemaId() throws Exception {
-    ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", "cd")).andDo(print()).andExpect(status().isOk()).andReturn();
-    ObjectMapper map = new ObjectMapper();
-    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-
-    Assert.assertEquals(0, result.length);
+    ingestSchemaRecord();    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound()).andReturn();
+//    ObjectMapper map = new ObjectMapper();
+//    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+//
+//    Assert.assertEquals(0, result.length);
   }
 
   @Test
