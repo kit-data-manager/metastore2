@@ -100,6 +100,10 @@ public class MetadataRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
+    // Test for schema version
+    if (record.getSchemaVersion() != null) {
+      
+    }
 
     if (record.getId() != null) {
       String message = "Not expecting record id to be assigned by user.";
