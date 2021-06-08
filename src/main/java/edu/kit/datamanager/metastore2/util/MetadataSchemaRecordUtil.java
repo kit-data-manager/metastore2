@@ -572,7 +572,7 @@ public class MetadataSchemaRecordUtil {
       schemaRecord.setSchemaDocumentUri(result.getSchemaDocumentUri());
       try {
         schemaRecordDao.save(schemaRecord);
-        LOG.error("Schema record saved: " + schemaRecord);
+        LOG.trace("Schema record saved: " + schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);
       }
