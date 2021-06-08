@@ -62,7 +62,7 @@ public interface IMetadataController {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
 
-  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+  @RequestMapping(path = "", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
@@ -108,7 +108,7 @@ public interface IMetadataController {
           + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed (except in case of 'id' is provided).",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataRecord.class))))})
-  @RequestMapping(value = {"/"}, method = {RequestMethod.GET})
+  @RequestMapping(value = {""}, method = {RequestMethod.GET})
   @PageableAsQueryParam
   @ResponseBody
   public ResponseEntity<List<MetadataRecord>> getRecords(

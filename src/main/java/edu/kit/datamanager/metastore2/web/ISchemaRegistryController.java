@@ -63,7 +63,7 @@ public interface ISchemaRegistryController {
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
-  @RequestMapping(path = "/", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+  @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
@@ -123,7 +123,7 @@ public interface ISchemaRegistryController {
           + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataSchemaRecord.class))))})
-  @RequestMapping(value = {"/"}, method = {RequestMethod.GET})
+  @RequestMapping(value = {""}, method = {RequestMethod.GET})
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
