@@ -102,7 +102,7 @@ public class MetadataRecordUtil {
     }
     // Test for schema version
     if (record.getSchemaVersion() != null) {
-      
+
     }
 
     if (record.getId() != null) {
@@ -112,7 +112,11 @@ public class MetadataRecordUtil {
     }
     // validate document
     long nano2 = System.nanoTime() / 1000000;
+    // validate schema document
     validateMetadataDocument(applicationProperties, record, document);
+    // set internal parameters
+    record.setRecordVersion(1l);
+
     long nano3 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
@@ -173,6 +177,10 @@ public class MetadataRecordUtil {
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     }
+    String version = dataResource.getVersion();
+    if (version != null) {
+      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+    }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (document != null) {
@@ -211,10 +219,13 @@ public class MetadataRecordUtil {
         dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
         dataResource = DataResourceUtils.copyDataResource(dataResource);
       } catch (ResourceNotFoundException rnfe) {
+        LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
         dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+        dataResource.setVersion("1");
       }
     } else {
       dataResource = new DataResource();
+      dataResource.setVersion("1");
     }
     dataResource.setAcls(metadataRecord.getAcl());
     if (metadataRecord.getCreatedAt() != null) {
@@ -300,6 +311,12 @@ public class MetadataRecordUtil {
           metadataRecord.setPid(identifier.getValue());
         }
       }
+      Long recordVersion = 1l;
+      if (dataResource.getVersion() != null) {
+        recordVersion = Long.parseLong(dataResource.getVersion());
+      }
+      metadataRecord.setRecordVersion(recordVersion);
+
       long nano2 = System.nanoTime() / 1000000;
       metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
       long nano3 = System.nanoTime() / 1000000;

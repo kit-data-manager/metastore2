@@ -126,8 +126,11 @@ public class MetadataSchemaRecordUtil {
     schemaRecord.setType(record.getType());
 
     // End of parameter checks
+    // validate schema document
     validateMetadataSchemaDocument(applicationProperties, schemaRecord, document);
+    // set internal parameters
     record.setType(schemaRecord.getType());
+    record.setSchemaVersion(1l);
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
@@ -197,6 +200,10 @@ public class MetadataSchemaRecordUtil {
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     }
+    String version = dataResource.getVersion();
+    if (version != null) {
+      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+    }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     record = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
@@ -241,9 +248,11 @@ public class MetadataSchemaRecordUtil {
         } catch (ResourceNotFoundException | NullPointerException rnfe) {
           LOG.error("Error catching DataResource for " + metadataSchemaRecord.getSchemaId() + " -> " + rnfe.getMessage());
           dataResource = DataResource.factoryNewDataResource(metadataSchemaRecord.getSchemaId());
+          dataResource.setVersion("1");
         }
       } else {
         dataResource = new DataResource();
+        dataResource.setVersion("1");
       }
       dataResource.setAcls(metadataSchemaRecord.getAcl());
       if (metadataSchemaRecord.getCreatedAt() != null) {
@@ -319,7 +328,11 @@ public class MetadataSchemaRecordUtil {
           metadataSchemaRecord.setPid(identifier.getValue());
         }
       }
-      metadataSchemaRecord.setSchemaVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+      Long schemaVersion = 1l;
+      if (dataResource.getVersion() != null) {
+        schemaVersion = Long.parseLong(dataResource.getVersion());
+      }
+      metadataSchemaRecord.setSchemaVersion(schemaVersion);
 
       SchemaRecord schemaRecord = null;
       try {

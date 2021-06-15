@@ -5,8 +5,8 @@
  */
 package edu.kit.datamanager.metastore2.test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -47,7 +48,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -68,7 +68,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -972,7 +971,19 @@ public class SchemaRegistryControllerTest {
       ingestSchemaWithVersion(schemaId, version);
       // Get version of record as array
       // Read all versions 
-      this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version)));
+      MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType  mapCollectionType = mapper.getTypeFactory()
+    .constructCollectionType(List.class, MetadataSchemaRecord.class);
+    List<MetadataSchemaRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
+    HashSet<Long> versions = new HashSet<>();
+    for (MetadataSchemaRecord item: resultList) { 
+      versions.add(item.getSchemaVersion());
+    }
+    Assert.assertEquals(version, versions.size());
+    for (long index = 1; index <= version; index++)  {
+      Assert.assertTrue("Test for version: " + index, versions.contains(index));
+    }
       // Validate document with last version
       byte[] xmlDocument = null;
       for (int document = 1; document <= version; document++) {
