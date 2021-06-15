@@ -442,7 +442,7 @@ public class MetadataSchemaRecordUtil {
     LOG.trace("Metadata document validation succeeded.");
   }
 
-  public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+  public static MetadataSchemaRecord getRecordById(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null, false);
   }

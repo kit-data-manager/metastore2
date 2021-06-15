@@ -161,11 +161,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   public ResponseEntity<List<MetadataSchemaRecord>> getAllVersions(
-          @PathVariable(value = "id") String id,
-          Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb
+          String id,
+          Pageable pgbl
   ) {
     LOG.trace("Performing getAllVersions({}).", id);
     // Search for resource type of MetadataSchemaRecord
@@ -200,8 +197,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Override
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(String schemaId, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaId, mimeTypes, updateFrom, updateUntil);
+    // if schemaId is given return all versions 
     if (schemaId != null) {
-      return getAllVersions(schemaId, pgbl, wr, hsr, ucb);
+      return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));

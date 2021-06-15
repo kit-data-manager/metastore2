@@ -131,7 +131,7 @@ public class SchemaSynchronizationService{
             //
             MetadataSchemaRecord foundRecord = null;
             try {
-            foundRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, record.getSchemaId());
+            foundRecord = MetadataSchemaRecordUtil.getRecordById(schemaConfig, record.getSchemaId());
             } catch (Exception ex) {
               //  do nothing
             }
