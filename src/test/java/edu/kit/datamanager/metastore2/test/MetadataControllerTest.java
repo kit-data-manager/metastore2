@@ -6,6 +6,7 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
@@ -21,6 +22,7 @@ import edu.kit.datamanager.repo.domain.Agent;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
@@ -35,6 +37,7 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -977,8 +980,21 @@ public class MetadataControllerTest {
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
    // Get version of record as array
     // Read all versions (2 version2 available)
-    this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(2)));
-  }
+     result = this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(2))).andReturn();
+    long version = 2l;
+    mapper = new ObjectMapper();
+    CollectionType  mapCollectionType = mapper.getTypeFactory()
+    .constructCollectionType(List.class, MetadataRecord.class);
+    List<MetadataRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
+    HashSet<Long> versions = new HashSet<>();
+    for (MetadataRecord item: resultList) { 
+      versions.add(item.getRecordVersion());
+    }
+    Assert.assertEquals(version, versions.size());
+    for (long index = 1; index <= version; index++)  {
+      Assert.assertTrue("Test for version: " + index, versions.contains(index));
+    }
+ }
 
   private String createDCMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
@@ -1030,6 +1046,7 @@ public class MetadataControllerTest {
     dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
     dataResource.setLastUpdate(now);
     dataResource.setState(DataResource.State.VOLATILE);
+    dataResource.setVersion("1");
     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
