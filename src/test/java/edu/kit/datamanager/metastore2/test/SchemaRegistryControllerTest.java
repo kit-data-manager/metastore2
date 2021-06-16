@@ -972,18 +972,18 @@ public class SchemaRegistryControllerTest {
       // Get version of record as array
       // Read all versions 
       MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
-    ObjectMapper mapper = new ObjectMapper();
-    CollectionType  mapCollectionType = mapper.getTypeFactory()
-    .constructCollectionType(List.class, MetadataSchemaRecord.class);
-    List<MetadataSchemaRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
-    HashSet<Long> versions = new HashSet<>();
-    for (MetadataSchemaRecord item: resultList) { 
-      versions.add(item.getSchemaVersion());
-    }
-    Assert.assertEquals(version, versions.size());
-    for (long index = 1; index <= version; index++)  {
-      Assert.assertTrue("Test for version: " + index, versions.contains(index));
-    }
+      ObjectMapper mapper = new ObjectMapper();
+      CollectionType mapCollectionType = mapper.getTypeFactory()
+              .constructCollectionType(List.class, MetadataSchemaRecord.class);
+      List<MetadataSchemaRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
+      HashSet<Long> versions = new HashSet<>();
+      for (MetadataSchemaRecord item : resultList) {
+        versions.add(item.getSchemaVersion());
+      }
+      Assert.assertEquals(version, versions.size());
+      for (long index = 1; index <= version; index++) {
+        Assert.assertTrue("Test for version: " + index, versions.contains(index));
+      }
       // Validate document with last version
       byte[] xmlDocument = null;
       for (int document = 1; document <= version; document++) {
@@ -1045,6 +1045,7 @@ public class SchemaRegistryControllerTest {
     dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.XML.name());
     dataResource.setLastUpdate(now);
     dataResource.setState(DataResource.State.VOLATILE);
+    dataResource.setVersion("1");
     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));

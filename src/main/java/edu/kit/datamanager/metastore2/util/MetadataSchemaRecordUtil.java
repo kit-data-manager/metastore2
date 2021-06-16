@@ -199,6 +199,8 @@ public class MetadataSchemaRecordUtil {
       existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
+    } else {
+      dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
     String version = dataResource.getVersion();
     if (version != null) {
