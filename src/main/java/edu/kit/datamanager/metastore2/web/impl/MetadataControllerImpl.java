@@ -22,6 +22,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -212,10 +213,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
   public ResponseEntity<List<MetadataRecord>> getAllVersions(
           @PathVariable(value = "id") String id,
-          Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb
+          Pageable pgbl
   ) {
     LOG.trace("Performing getAllVersions({}).", id);
     // Search for resource type of MetadataSchemaRecord
@@ -253,13 +251,18 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
     if (id != null) {
-      return getAllVersions(id, pgbl, wr, hsr, ucb);
+      return getAllVersions(id, pgbl);
     } 
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
     List<String> allRelatedIdentifiers = new ArrayList<>();
     if (schemaIds != null) {
-      allRelatedIdentifiers.addAll(schemaIds);
+      for (String schemaId : schemaIds) {
+        MetadataSchemaRecord currentSchemaRecord = MetadataRecordUtil.getCurrentSchemaRecord(metadataConfig, schemaId);
+        for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
+          allRelatedIdentifiers.add(schemaId + MetadataRecordUtil.SCHEMA_VERSION_SEPARATOR + versionNumber);
+        }
+      }
     }
     if (relatedIds != null) {
       allRelatedIdentifiers.addAll(relatedIds);

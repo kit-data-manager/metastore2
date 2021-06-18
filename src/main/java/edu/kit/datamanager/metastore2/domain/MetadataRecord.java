@@ -67,6 +67,8 @@ public class MetadataRecord implements EtagSupport, Serializable {
   private Instant lastUpdate;
   @NotBlank(message = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.")
   private String schemaId;
+  @NotNull(message = "The version of the schema. If no version is provided the current schema is used.")
+  private Long schemaVersion;
   @NotNull(message = "The record version. The version is set by the metadata registry and cannot be provided manually.")
   private Long recordVersion;
 

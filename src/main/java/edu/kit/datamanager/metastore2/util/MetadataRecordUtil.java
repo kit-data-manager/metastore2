@@ -63,6 +63,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MetadataRecordUtil {
 
   /**
+   * Separator for separating schemaId and schemaVersion.
+   */
+  public static final String SCHEMA_VERSION_SEPARATOR = ":";
+  /**
    * Logger for messages.
    */
   private static final Logger LOG = LoggerFactory.getLogger(MetadataRecordUtil.class);
@@ -100,6 +104,16 @@ public class MetadataRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
+    // Test for schema version
+    if (record.getSchemaVersion() == null) {
+      MetadataSchemaRecord currentSchemaRecord;
+      try {
+        currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchemaId());
+      } catch (ResourceNotFoundException rnfe) {
+        throw new UnprocessableEntityException("Unknown schema ID '" + record.getSchemaId() + "'!");
+      }
+      record.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
+    }
 
     if (record.getId() != null) {
       String message = "Not expecting record id to be assigned by user.";
@@ -108,7 +122,11 @@ public class MetadataRecordUtil {
     }
     // validate document
     long nano2 = System.nanoTime() / 1000000;
+    // validate schema document
     validateMetadataDocument(applicationProperties, record, document);
+    // set internal parameters
+    record.setRecordVersion(1l);
+
     long nano3 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
@@ -168,6 +186,12 @@ public class MetadataRecordUtil {
       existingRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
+    } else {
+         dataResource = DataResourceUtils.copyDataResource(dataResource);
+    }
+    String version = dataResource.getVersion();
+    if (version != null) {
+      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
@@ -207,10 +231,13 @@ public class MetadataRecordUtil {
         dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
         dataResource = DataResourceUtils.copyDataResource(dataResource);
       } catch (ResourceNotFoundException rnfe) {
+        LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
         dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+        dataResource.setVersion("1");
       }
     } else {
       dataResource = new DataResource();
+      dataResource.setVersion("1");
     }
     dataResource.setAcls(metadataRecord.getAcl());
     if (metadataRecord.getCreatedAt() != null) {
@@ -239,8 +266,9 @@ public class MetadataRecordUtil {
         relationFound = true;
       }
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        LOG.trace("Set schemaId to '{}'", metadataRecord.getSchemaId());
-        relatedIds.setValue(metadataRecord.getSchemaId());
+        String schemaAndVersion = metadataRecord.getSchemaId() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion();
+        LOG.trace("Set schemaId to '{}'", schemaAndVersion);
+        relatedIds.setValue(schemaAndVersion);
         schemaIdFound = true;
       }
     }
@@ -249,7 +277,7 @@ public class MetadataRecordUtil {
       dataResource.getRelatedIdentifiers().add(relatedResource);
     }
     if (!schemaIdFound) {
-      RelatedIdentifier schemaId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchemaId(), null, null);
+      RelatedIdentifier schemaId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchemaId() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion(), null, null);
       dataResource.getRelatedIdentifiers().add(schemaId);
     }
     String defaultTitle = "Metadata 4 metastore";
@@ -297,7 +325,12 @@ public class MetadataRecordUtil {
         }
       }
       long nano2 = System.nanoTime() / 1000000;
-      metadataRecord.setRecordVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
+      Long recordVersion = 1l;
+      if (dataResource.getVersion() != null) {
+        recordVersion = Long.parseLong(dataResource.getVersion());
+      }
+      metadataRecord.setRecordVersion(recordVersion);
+
       long nano3 = System.nanoTime() / 1000000;
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
@@ -306,7 +339,15 @@ public class MetadataRecordUtil {
         }
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
           LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
-          metadataRecord.setSchemaId(relatedIds.getValue());
+          String schemaAndVersion = relatedIds.getValue();
+          String[] split = schemaAndVersion.split(SCHEMA_VERSION_SEPARATOR);
+          if (LOG.isTraceEnabled()) {
+            for (String item: split) {
+              LOG.trace("Split into: '{}'", item);
+            }
+          }
+          metadataRecord.setSchemaId(split[0]);
+          metadataRecord.setSchemaVersion(Long.parseLong(split[1]));
         }
       }
       DataRecord dataRecord = null;
@@ -358,12 +399,58 @@ public class MetadataRecordUtil {
   }
 
   /**
+   * Returns schema record with the current version.
+   *
+   * @param metastoreProperties Configuration for accessing services
+   * @param schemaId SchemaID of the schema.
+   * @return MetadataSchemaRecord ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  public static MetadataSchemaRecord getCurrentSchemaRecord(MetastoreConfiguration metastoreProperties,
+          String schemaId) {
+    MetadataSchemaRecord returnValue = null;
+    boolean success = false;
+    StringBuilder errorMessage = new StringBuilder();
+    if (metastoreProperties.getSchemaRegistries().length == 0) {
+      LOG.trace("No external schema registries defined. Try to use internal one...");
+
+      returnValue = MetadataSchemaRecordUtil.getRecordById(metastoreProperties, schemaId);
+      success = true;
+    } else {
+      for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        URI schemaRegistryUri = URI.create(schemaRegistry);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId);
+
+        URI finalUri = builder.build().toUri();
+
+        try {
+          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class);
+          success = true;
+          break;
+        } catch (HttpClientErrorException ce) {
+          String message = "Error accessing schema '" + schemaId + "' at '" + schemaRegistry + "'!";
+          LOG.error(message, ce);
+          errorMessage.append(message).append("\n");
+        } catch (RestClientException ex) {
+          String message = "Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.";
+          LOG.error(message, ex);
+          errorMessage.append(message).append("\n");
+        }
+      }
+    }
+    if (!success) {
+      throw new UnprocessableEntityException(errorMessage.toString());
+    }
+    return returnValue;
+  }
+
+  /**
    * Validate metadata document with given schema.
    *
+   * @param metastoreProperties Configuration for accessing services
    * @param record metadata of the document.
    * @param document document
-   * @return ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
+   * @throws Exception In case of any error or invalid document.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MetadataRecord record,
@@ -380,7 +467,7 @@ public class MetadataRecordUtil {
       LOG.trace("No external schema registries defined. Try to use internal one...");
       if (schemaConfig != null) {
         try {
-          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, record.getSchemaId(), null);
+          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, record.getSchemaId(), record.getSchemaVersion());
           validationSuccess = true;
         } catch (Exception ex) {
           String message = "Error validating document!";
@@ -393,7 +480,7 @@ public class MetadataRecordUtil {
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
         URI schemaRegistryUri = URI.create(schemaRegistry);
-        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate");
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate").queryParam("version", record.getSchemaVersion());
 
         URI finalUri = builder.build().toUri();
 
@@ -411,7 +498,7 @@ public class MetadataRecordUtil {
           LOG.error(message, ce);
           errorMessage.append(message).append("\n");
         } catch (IOException | RestClientException ex) {
-          String message = new String("Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.");
+          String message = "Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.";
           LOG.error(message, ex);
           errorMessage.append(message).append("\n");
         }
@@ -488,6 +575,11 @@ public class MetadataRecordUtil {
       if (provided.getAcl() != null) {
         LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
         managed.setAcl(provided.getAcl());
+      }
+      //update schema version
+      if (provided.getSchemaVersion() != null) {
+        LOG.trace("Updating schema version from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
+        managed.setSchemaVersion(provided.getSchemaVersion());
       }
     }
 //    LOG.trace("Setting lastUpdate to now().");

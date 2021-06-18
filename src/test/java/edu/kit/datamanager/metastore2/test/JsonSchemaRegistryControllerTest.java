@@ -870,7 +870,8 @@ public class JsonSchemaRegistryControllerTest {
     dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.JSON.name());
     dataResource.setLastUpdate(now);
     dataResource.setState(DataResource.State.VOLATILE);
-    Set<AclEntry> aclEntries = dataResource.getAcls();
+  dataResource.setVersion("1");
+      Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     ContentInformation ci = ContentInformation.createContentInformation(
