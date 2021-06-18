@@ -106,7 +106,12 @@ public class MetadataRecordUtil {
     }
     // Test for schema version
     if (record.getSchemaVersion() == null) {
-      MetadataSchemaRecord currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchemaId());
+      MetadataSchemaRecord currentSchemaRecord;
+      try {
+        currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchemaId());
+      } catch (ResourceNotFoundException rnfe) {
+        throw new UnprocessableEntityException("Unknown schema ID '" + record.getSchemaId() + "'!");
+      }
       record.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
     }
 

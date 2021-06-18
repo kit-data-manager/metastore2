@@ -700,11 +700,7 @@ public class MetadataControllerTest {
   @Test
   public void testFindRecordsByUnknownParameter() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isOk()).andReturn();
-    ObjectMapper map = new ObjectMapper();
-    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
-
-    Assert.assertEquals(0, result.length);
+    this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   @Test

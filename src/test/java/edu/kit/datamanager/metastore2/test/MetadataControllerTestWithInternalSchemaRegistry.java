@@ -101,7 +101,6 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
-  private static final String METADATA_RECORD_ID = "test_id";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final String RELATED_RESOURCE = "anyResourceId";
@@ -699,11 +698,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   @Test
   public void testFindRecordsByUnknownParameter() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isOk()).andReturn();
-    ObjectMapper map = new ObjectMapper();
-    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
-
-    Assert.assertEquals(0, result.length);
+    this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound());
   }
 
   @Test
