@@ -126,7 +126,7 @@ public class MetadataSchemaRecordUtil {
     schemaRecord.setType(record.getType());
 
     // End of parameter checks
-    // validate schema document
+    // validate schema document / determine type if not given
     validateMetadataSchemaDocument(applicationProperties, schemaRecord, document);
     // set internal parameters
     record.setType(schemaRecord.getType());
@@ -443,7 +443,7 @@ public class MetadataSchemaRecordUtil {
         LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
         long nano4 = System.nanoTime() / 1000000;
         if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), document.getInputStream())) {
-          LOG.warn("Metadata document validation failed.");
+          LOG.warn("Metadata document validation failed. -> " + applicableValidator.getErrorMessage());
           throw new UnprocessableEntityException(applicableValidator.getErrorMessage());
         }
         long nano5 = System.nanoTime() / 1000000;

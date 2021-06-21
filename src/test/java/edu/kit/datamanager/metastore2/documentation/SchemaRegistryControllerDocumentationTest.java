@@ -297,7 +297,7 @@ public class SchemaRegistryControllerDocumentationTest {
     //  8. List all versions of a schema
     //**************************************************************************
     this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
-            andDo(document("get-all-version-of-a-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andDo(document("get-all-versions-of-a-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
@@ -409,25 +409,36 @@ public class SchemaRegistryControllerDocumentationTest {
     metadataFile = new MockMultipartFile("document", "metadata_v2.xml", "application/xml", DOCUMENT_V2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(newLocation).
-            file(recordFile).header("If-Match", etag).with(putMultipart())).
+            file(recordFile).file(metadataFile).header("If-Match", etag).with(putMultipart())).
             andDo(print()).
             andDo(document("update-metadata-record-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andExpect(status().isOk()).
             andReturn();
     etag = result.getResponse().getHeader("ETag");
+    location = result.getResponse().getHeader("Location");
     // 5. Update metadata record
     //**************************************************************************
     // update once more to newest version of schema
+    // Get Etag
+    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(document("get-metadata-record-v2", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
     record.setSchemaVersion(3l);
     recordFile = new MockMultipartFile("record", "metadata-record-acl.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata_v3.xml", "application/xml", DOCUMENT_V3.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(newLocation).
-            file(recordFile).header("If-Match", etag).with(putMultipart())).
+            file(recordFile).file(metadataFile).header("If-Match", etag).with(putMultipart())).
             andDo(print()).
             andDo(document("update-metadata-record-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andExpect(status().isOk()).
             andReturn();
+    location = result.getResponse().getHeader("Location");
+    this.mockMvc.perform(get(location)).
+            andDo(document("get-metadata-document-v3", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
     // 6. List all versions of a record
     //**************************************************************************
     String resourceId = record.getId();

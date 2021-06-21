@@ -324,7 +324,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     //  8. List all versions of a schema
     //**************************************************************************
     this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
-            andDo(document("get-all-version-of-a-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
+            andDo(document("get-all-versions-of-a-json-schema", preprocessRequest(prettyPrint()), preprocessResponse(prettyPrint()))).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
