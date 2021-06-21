@@ -41,20 +41,20 @@ public class JsonValidationExceptionTest {
   public void testAllConstructors() {
     String messageOne = "any message";
     String messageTwo = "any other message";
-    JsonValidationException exception = new JsonValidationException();
-    assertNotNull(exception);
-    assertNull(exception.getMessage());
+//    JsonValidationException exception = new JsonValidationException();
+//    assertNotNull(exception);
+//    assertNull(exception.getMessage());
     JsonValidationException exceptionWithMessage = new JsonValidationException(messageOne);
     assertNotNull(exceptionWithMessage);
     assertEquals(messageOne, exceptionWithMessage.getMessage());
-    JsonValidationException exceptionWithCause = new JsonValidationException(exception);
-    assertNotNull(exceptionWithCause);
-    assertNull(exception.getMessage());
-    assertEquals(exception, exceptionWithCause.getCause());
-    JsonValidationException exceptionWithMessageAndCause = new JsonValidationException(messageTwo,exception);
+//    JsonValidationException exceptionWithCause = new JsonValidationException(exception);
+//    assertNotNull(exceptionWithCause);
+//    assertNull(exception.getMessage());
+//    assertEquals(exception, exceptionWithCause.getCause());
+    JsonValidationException exceptionWithMessageAndCause = new JsonValidationException(messageTwo,exceptionWithMessage);
     assertNotNull(exceptionWithMessageAndCause);
     assertNotNull(exceptionWithMessageAndCause.getMessage());
-    assertEquals(exception, exceptionWithMessageAndCause.getCause());
+    assertEquals(exceptionWithMessage, exceptionWithMessageAndCause.getCause());
     assertEquals(messageTwo, exceptionWithMessageAndCause.getMessage());
     
     assertTrue(true);
