@@ -46,7 +46,7 @@ public class JsonValidationExceptionTest {
 //    assertNull(exception.getMessage());
     JsonValidationException exceptionWithMessage = new JsonValidationException(messageOne);
     assertNotNull(exceptionWithMessage);
-    assertEquals(messageOne, exceptionWithMessage.getMessage());
+    assertTrue(exceptionWithMessage.getMessage().contains(messageOne));
 //    JsonValidationException exceptionWithCause = new JsonValidationException(exception);
 //    assertNotNull(exceptionWithCause);
 //    assertNull(exception.getMessage());
@@ -55,7 +55,7 @@ public class JsonValidationExceptionTest {
     assertNotNull(exceptionWithMessageAndCause);
     assertNotNull(exceptionWithMessageAndCause.getMessage());
     assertEquals(exceptionWithMessage, exceptionWithMessageAndCause.getCause());
-    assertEquals(messageTwo, exceptionWithMessageAndCause.getMessage());
+    assertTrue(exceptionWithMessageAndCause.getMessage().contains(messageTwo));
     
     assertTrue(true);
   }
