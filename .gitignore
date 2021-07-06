@@ -2,6 +2,10 @@
 .gradle
 nbproject
 
+# Ignore backup files
+**/*~
+**/*.bak
+
 # Ignore internal specific settings
 **/application.properties
 
