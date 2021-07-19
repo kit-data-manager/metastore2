@@ -338,10 +338,11 @@ public class MetadataSchemaRecordUtil {
 
       SchemaRecord schemaRecord = null;
       try {
-        LOG.error("findByIDAndVersion {},{}", dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
+        LOG.debug("findByIDAndVersion {},{}", dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         metadataSchemaRecord.setSchemaDocumentUri(schemaRecord.getSchemaDocumentUri());
       } catch (NullPointerException npe) {
+        LOG.debug("No schema record found! -> Create new schema record.");
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         if (info != null) {
@@ -428,7 +429,7 @@ public class MetadataSchemaRecordUtil {
         byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
         applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, schemaDocument);
         schemaRecordDao.save(schemaRecord);
-      } else {
+     } else {
         applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
       }
       long nano3 = System.nanoTime() / 1000000;
@@ -508,6 +509,7 @@ public class MetadataSchemaRecordUtil {
   }
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
+    LOG.debug("Validate metadata schema document...");
     if (document == null || document.isEmpty()) {
       String message = "Missing metadata schema document in body. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
@@ -585,6 +587,7 @@ public class MetadataSchemaRecordUtil {
       schemaRecord.setSchemaId(result.getSchemaId());
       schemaRecord.setVersion(result.getSchemaVersion());
       schemaRecord.setSchemaDocumentUri(result.getSchemaDocumentUri());
+      schemaRecord.setType(result.getType());
       try {
         schemaRecordDao.save(schemaRecord);
         LOG.trace("Schema record saved: " + schemaRecord);

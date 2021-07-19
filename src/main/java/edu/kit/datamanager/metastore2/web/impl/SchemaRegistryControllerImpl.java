@@ -223,6 +223,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Cleaning up schemaDocumentUri of query result.");
     List<MetadataSchemaRecord> schemaList = new ArrayList<>();
     recordList.forEach((record) -> {
+      LOG.trace(record.toString());
       MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
       fixSchemaDocumentUri(item);
       schemaList.add(item);
