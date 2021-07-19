@@ -39,7 +39,7 @@ public class SchemaUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaUtils.class);
 
-  private static final int MAX_LENGTH_OF_HEADER = 100;
+  private static final int MAX_LENGTH_OF_HEADER = 200;
 
   private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//^\\s{\\s*\".*");
   private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w{2,3}:)?schema(.|\\s)*", Pattern.MULTILINE);
@@ -58,12 +58,16 @@ public class SchemaUtils {
       LOG.trace("Guess type for '{}'", schemaAsString);
 
       Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);
-      if (m.matches()) {
-        return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
-      } else {
-        m = XML_FIRST_BYTE.matcher(schemaAsString);
+      if (schemaAsString.contains("{")) {
         if (m.matches()) {
-          return MetadataSchemaRecord.SCHEMA_TYPE.XML;
+          return MetadataSchemaRecord.SCHEMA_TYPE.JSON;
+        }
+      } else {
+        if (schemaAsString.contains("<")) {
+          m = XML_FIRST_BYTE.matcher(schemaAsString);
+          if (m.matches()) {
+            return MetadataSchemaRecord.SCHEMA_TYPE.XML;
+          }
         }
       }
     }
