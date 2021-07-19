@@ -259,7 +259,7 @@ public class MetadataControllerImpl implements IMetadataController {
     if (schemaIds != null) {
       for (String schemaId : schemaIds) {
         MetadataSchemaRecord currentSchemaRecord = MetadataRecordUtil.getCurrentSchemaRecord(metadataConfig, schemaId);
-        for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
+        for (long versionNumber = 1; versionNumber <= currentSchemaRecord.getSchemaVersion(); versionNumber++) {
           allRelatedIdentifiers.add(schemaId + MetadataRecordUtil.SCHEMA_VERSION_SEPARATOR + versionNumber);
         }
       }

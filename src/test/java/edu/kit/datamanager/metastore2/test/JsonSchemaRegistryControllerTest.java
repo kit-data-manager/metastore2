@@ -153,6 +153,18 @@ public class JsonSchemaRegistryControllerTest {
           + "    \"additionalProperties\": false\n"
           + "}";
 
+  private final static String JSON_SCHEMA4UPDATE = "{\n"
+          + "    \"type\": \"object\", "
+          + "    \"properties\": "
+          + "    { "
+          + "        \"title\": "
+          + "        { "
+          + "            \"type\": \"string\", "
+          + "            \"title\": \"Title\", "
+          + "            \"description\": \"Title of object.\" "
+          + "        } "
+          + "    } "
+          + "}";
   private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
   private final static String INVALID_JSON_DOCUMENT = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
   private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
@@ -826,6 +838,30 @@ public class JsonSchemaRegistryControllerTest {
     String etag = result.getResponse().getHeader("ETag");
 
     this.mockMvc.perform(put("/api/v1/schemas/json").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+  }
+
+  @Test
+  public void testCreateSchemaRecordWithUpdateWithoutChanges() throws Exception {
+    // Test with a schema missing schema property.stotzka
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("updateWithoutChanges_json");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA4UPDATE.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/updateWithoutChanges_json").
+            file(schemaFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
   }
 
   @Test
