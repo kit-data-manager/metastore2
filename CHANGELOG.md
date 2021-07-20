@@ -6,7 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 - The code is now completely relying on the library of the kit-data-manager.
+### Added
 - Metadata (schema) records now also versioned.
+### Fixed
+- Filtering metadata documents by resourceId, schemaId
+- Filtering schema documents by mimetype
+- Error while updating json schema documents without schema
 ## [0.2.4] - date 2020-12-16
 ### Added
 - Support for messaging
