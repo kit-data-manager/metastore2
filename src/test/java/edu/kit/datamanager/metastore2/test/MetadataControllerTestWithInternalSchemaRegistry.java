@@ -37,6 +37,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -72,6 +73,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -698,7 +700,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   @Test
   public void testFindRecordsByUnknownParameter() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(0)));
   }
 
   @Test

@@ -99,7 +99,8 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41403"})
+@TestPropertySource(properties = {"server.port=41401"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41401/api/v3/,http://localhost:41401/api/v1/"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {
 

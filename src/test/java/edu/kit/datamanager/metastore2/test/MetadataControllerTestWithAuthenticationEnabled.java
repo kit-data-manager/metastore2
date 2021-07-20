@@ -753,7 +753,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testFindRecordsByUnknownParameter() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd").header(HttpHeaders.AUTHORIZATION,
-            "Bearer " + userToken)).andDo(print()).andExpect(status().isNotFound());
+            "Bearer " + userToken)).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(0)));
   }
 
   @Test
