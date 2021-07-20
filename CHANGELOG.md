@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 - The code is now completely relying on the library of the kit-data-manager.
 ### Added
+- Authentication based on JWT powered by KIT Data Manager.
 - Metadata (schema) records now also versioned.
+- OAI PMH protocol added
+### Changed
+- Metadata are now linked to specific version of a schema.
 ### Fixed
 - Filtering metadata documents by resourceId, schemaId
 - Filtering schema documents by mimetype
 - Error while updating json schema documents without schema
+- Speedup guessing type for schema. 
+- Drop tables at startup.
 ## [0.2.4] - date 2020-12-16
 ### Added
 - Support for messaging
