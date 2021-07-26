@@ -151,7 +151,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     
     LOG.debug("Test for existing metadata record for given schema and resource");
-    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource(), record.getSchemaId());
+    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), record.getSchemaId());
     long nano3 = System.nanoTime() / 1000000;
     
     if (recordAlreadyExists) {

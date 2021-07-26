@@ -21,6 +21,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -180,7 +181,7 @@ public class SchemaRegistryControllerDocumentationTest {
           + "  <example:date>2018-07-02</example:date>\n"
           + "  <example:note>since version 3 notes are allowed</example:note>\n"
           + "</example:metadata>";
-  private static final String RELATED_RESOURCE = "anyResourceId";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
 
   @Before
   public void setUp() throws JsonProcessingException {
@@ -465,7 +466,7 @@ public class SchemaRegistryControllerDocumentationTest {
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
-    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE)).
+    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier())).
             andDo(print()).
             andDo(document("find-metadata-record-resource")).
             andExpect(status().isOk()).

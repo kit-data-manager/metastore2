@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -456,7 +457,7 @@ public class MetadataControllerFilterTest {
   public void ingestMetadataDocument(String schemaId, String resource) throws Exception {
     MetadataRecord record = new MetadataRecord();
     record.setSchemaId(schemaId);
-    record.setRelatedResource(resource);
+    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier(resource));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
