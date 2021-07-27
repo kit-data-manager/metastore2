@@ -90,7 +90,7 @@ public class MetadataControllerWithoutRegistryTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
 
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"

@@ -50,4 +50,6 @@ public class LinkedMetadataRecord implements Serializable {
   private String schemaId;
   @NotBlank(message = "The unqiue identifier of the related source.")
   private String relatedResource;
+  
+  
 }

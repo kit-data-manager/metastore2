@@ -19,6 +19,7 @@ import edu.kit.datamanager.repo.domain.Agent;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.Description;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
@@ -736,6 +737,8 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     String mimeTypeBefore = record.getMimeType();
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    record.setDefinition("definition changed");
+    record.setLabel("label changed");
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc").
@@ -753,6 +756,9 @@ public class SchemaRegistryControllerTest {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    Assert.assertFalse(record.getLabel().equals(record2.getLabel()));
+    Assert.assertFalse(record.getDefinition().equals(record2.getDefinition()));
+    Assert.assertTrue(record.getComment().equals(record2.getComment()));
   }
 
   @Test
@@ -1049,6 +1055,11 @@ public class SchemaRegistryControllerTest {
     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+      Set<Description> descriptions = dataResource.getDescriptions();
+      descriptions.add(Description.factoryDescription("other", Description.TYPE.OTHER));
+      descriptions.add(Description.factoryDescription("abstract", Description.TYPE.ABSTRACT));
+      descriptions.add(Description.factoryDescription("technical info", Description.TYPE.TECHNICAL_INFO));
+      descriptions.add(Description.factoryDescription("not used yet", Description.TYPE.METHODS));
     ContentInformation ci = ContentInformation.createContentInformation(
             SCHEMA_ID, "schema.xsd", (String[]) null);
     ci.setVersion(1);

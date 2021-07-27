@@ -181,7 +181,7 @@ public class SchemaRegistryControllerDocumentationTest {
           + "  <example:date>2018-07-02</example:date>\n"
           + "  <example:note>since version 3 notes are allowed</example:note>\n"
           + "</example:metadata>";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
 
   @Before
   public void setUp() throws JsonProcessingException {

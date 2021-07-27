@@ -49,6 +49,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -297,6 +298,10 @@ public class MetadataSchemaRecordUtil {
     // definition -> description of type (TECHNICAL_INFO)
     // comment    -> description of type (ABSTRACT)
     Set<Description> descriptions = dataResource.getDescriptions();
+    if (descriptions == null) {
+        descriptions = new HashSet<>();
+        dataResource.setDescriptions(descriptions);
+    }
 
     checkDescription(descriptions, metadataSchemaRecord.getLabel(), Description.TYPE.OTHER);
     checkDescription(descriptions, metadataSchemaRecord.getDefinition(), Description.TYPE.TECHNICAL_INFO);
@@ -414,7 +419,6 @@ public class MetadataSchemaRecordUtil {
           LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
       }
     }
-    dataResource.getDescriptions().iterator().next().setType(Description.TYPE.ABSTRACT);
     LOG.error("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
     return metadataSchemaRecord;
   }
@@ -594,11 +598,11 @@ public class MetadataSchemaRecordUtil {
           managed.setComment(provided.getComment());
         }
       }
-      //update locked
-      if (provided.getLocked() != null) {
-        if (!provided.getLocked().equals(managed.getLocked())) {
-          LOG.trace("Updating record comment from {} to {}.", managed.getLocked(), provided.getLocked());
-          managed.setLocked(provided.getLocked());
+      //update doNotSync
+      if (provided.getDoNotSync() != null) {
+        if (!provided.getDoNotSync().equals(managed.getDoNotSync())) {
+          LOG.trace("Updating record comment from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
+          managed.setDoNotSync(provided.getDoNotSync());
         }
       }
       //update schemaId

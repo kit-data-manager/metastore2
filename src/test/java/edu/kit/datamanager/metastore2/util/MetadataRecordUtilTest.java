@@ -73,8 +73,8 @@ public class MetadataRecordUtilTest {
   private static final String METADATA_RECORD_ID = "test_id";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
-  private static final ResourceIdentifier RELATED_RESOURCE_2= ResourceIdentifier.factoryUrlResourceIdentifier("anyOtherResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE_2= ResourceIdentifier.factoryInternalResourceIdentifier("anyOtherResourceId");
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;

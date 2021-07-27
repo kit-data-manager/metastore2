@@ -950,8 +950,6 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
-    // Add versioning 
-    javers.commit("admin", result);
     
     return result.getId();
   }

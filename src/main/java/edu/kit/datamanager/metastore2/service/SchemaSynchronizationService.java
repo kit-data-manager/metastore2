@@ -142,7 +142,7 @@ public class SchemaSynchronizationService{
             } else{
               LOGGER.trace("Existing schema with id {} detected. Downloading remote schema document.", record.getSchemaId());
               MetadataSchemaRecord localRecord = optRecord.get();
-              if(localRecord.getLocked() == null || !localRecord.getLocked()){
+              if(localRecord.getDoNotSync() == null || localRecord.getDoNotSync()){
                 LOGGER.trace("Synchronization of local record enabled. Comparing schema document hashes.");
                 if(!localRecord.getSchemaHash().equals(record.getSchemaHash())){
                   //download remote schema

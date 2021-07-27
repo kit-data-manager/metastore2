@@ -329,9 +329,9 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindRecordsByResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      String relatedResource = RELATED_RESOURCE + i;
+      ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
       MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
-              .param("resourceId", relatedResource))
+              .param("resourceId", relatedResource.getIdentifier()))
               .andDo(print())
               .andExpect(status().isOk())
               .andReturn();
@@ -386,9 +386,9 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindRecordsByMultipleResourceIdsIncludingInvalidResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      String relatedResource = RELATED_RESOURCE + i;
+      ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
       MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
-              .param("resourceId", relatedResource)
+              .param("resourceId", relatedResource.getIdentifier())
               .param("resourceId", INVALID_MIMETYPE))
               .andDo(print())
               .andExpect(status().isOk())
@@ -457,7 +457,7 @@ public class MetadataControllerFilterTest {
   public void ingestMetadataDocument(String schemaId, String resource) throws Exception {
     MetadataRecord record = new MetadataRecord();
     record.setSchemaId(schemaId);
-    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier(resource));
+    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(resource));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));

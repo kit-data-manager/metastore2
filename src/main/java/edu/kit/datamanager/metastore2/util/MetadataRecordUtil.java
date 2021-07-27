@@ -336,7 +336,7 @@ public class MetadataRecordUtil {
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
           LOG.trace("Set relation to '{}'", relatedIds.getValue());
-          metadataRecord.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier(relatedIds.getValue()));
+          metadataRecord.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue()));
         }
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
           LOG.trace("Set schemaId to '{}'", relatedIds.getValue());

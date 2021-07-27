@@ -206,16 +206,16 @@ public class MetadataSchemaRecordTest {
    * Test of getLocked method, of class MetadataSchemaRecord.
    */
   @Test
-  public void testSetAndGetLocked() {
+  public void testSetAndGetDoNotSync() {
     System.out.println("getLocked");
     MetadataSchemaRecord instance = new MetadataSchemaRecord();
     Boolean expResult = true;
-    instance.setLocked(expResult);
-    Boolean result = instance.getLocked();
+    instance.setDoNotSync(expResult);
+    Boolean result = instance.getDoNotSync();
     assertEquals(expResult, result);
     expResult = false;
-    instance.setLocked(expResult);
-    result = instance.getLocked();
+    instance.setDoNotSync(expResult);
+    result = instance.getDoNotSync();
     assertEquals(expResult, result);
   }
 
@@ -261,7 +261,7 @@ public class MetadataSchemaRecordTest {
     assertEquals(Instant.parse("2020-04-15T05:34:01.5465Z").truncatedTo(ChronoUnit.MILLIS),record.getCreatedAt());
     assertEquals(Instant.parse("2020-04-15T05:34:01.546502Z").truncatedTo(ChronoUnit.MILLIS),record.getLastUpdate());
     assertEquals("http://localhost/api/v1/schemas/dc",record.getSchemaDocumentUri());
-    assertEquals(Boolean.FALSE,record.getLocked());
+    assertEquals(Boolean.TRUE,record.getDoNotSync());
     //,\"acl\":[{\"id\":11,\"sid\":\"SELF\",\"permission\":\"WRITE\"}],\"schemaDocumentUri\":\"http://localhost/api/v1/schemas/dc\",\"locked\":false}";
 
   }
@@ -438,16 +438,16 @@ public class MetadataSchemaRecordTest {
 //   * Test of getLocked method, of class MetadataSchemaRecord.
 //   */
 //  @Test
-//  public void testSetAndGetLocked() {
+//  public void testSetAndGetDoNotSync() {
 //    System.out.println("getLocked");
 //    MetadataSchemaRecord instance = new MetadataSchemaRecord();
 //    Boolean expResult = true;
-//    instance.setLocked(expResult);
-//    Boolean result = instance.getLocked();
+//    instance.setDoNotSync(expResult);
+//    Boolean result = instance.getDoNotSync();
 //    assertEquals(expResult, result);
 //    expResult = false;
-//    instance.setLocked(expResult);
-//    result = instance.getLocked();
+//    instance.setDoNotSync(expResult);
+//    result = instance.getDoNotSync();
 //    assertEquals(expResult, result);
 //  }
 //
@@ -493,7 +493,7 @@ public class MetadataSchemaRecordTest {
 //    assertEquals(Instant.parse("2020-04-15T05:34:01.5465Z"),record.getCreatedAt());
 //    assertEquals(Instant.parse("2020-04-15T05:34:01.546502Z"),record.getLastUpdate());
 //    assertEquals("http://localhost/api/v1/schemas/dc",record.getSchemaDocumentUri());
-//    assertEquals(Boolean.FALSE,record.getLocked());
+//    assertEquals(Boolean.FALSE,record.getDoNotSync());
 //    //,\"acl\":[{\"id\":11,\"sid\":\"SELF\",\"permission\":\"WRITE\"}],\"schemaDocumentUri\":\"http://localhost/api/v1/schemas/dc\",\"locked\":false}";
 //
 //  }

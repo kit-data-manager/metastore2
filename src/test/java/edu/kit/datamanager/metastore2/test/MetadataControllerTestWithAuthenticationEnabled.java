@@ -1076,8 +1076,6 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             file(metadataFile).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
-    // Add versioning 
-    javers.commit("admin", result);
     
     return result.getId();
   } 

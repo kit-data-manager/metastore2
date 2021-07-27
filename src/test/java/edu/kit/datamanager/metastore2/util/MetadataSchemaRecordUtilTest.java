@@ -93,7 +93,7 @@ public class MetadataSchemaRecordUtilTest {
   }
 
   private MetadataSchemaRecord buildMSR(Set<AclEntry> aclEntry, String comment, Instant creationDate, String definition,
-          String eTag, String label, Instant update, boolean locked, String mimetype, String pid, String schemaDocument,
+          String eTag, String label, Instant update, boolean doNotSync, String mimetype, String pid, String schemaDocument,
           String schemaHash, String schemaId, Long version, SCHEMA_TYPE type) {
     MetadataSchemaRecord msr = new MetadataSchemaRecord();
     msr.setAcl(aclEntry);
@@ -103,9 +103,9 @@ public class MetadataSchemaRecordUtilTest {
     msr.setETag(eTag);
     msr.setLabel(label);
     msr.setLastUpdate(update);
-    msr.setLocked(locked);
+    msr.setDoNotSync(doNotSync);
     msr.setMimeType(mimetype);
-    msr.setPid(ResourceIdentifier.factoryUrlResourceIdentifier(pid));
+    msr.setPid(ResourceIdentifier.factoryInternalResourceIdentifier(pid));
     msr.setSchemaDocumentUri(schemaDocument);
     msr.setSchemaHash(schemaHash);
     msr.setSchemaId(schemaId);

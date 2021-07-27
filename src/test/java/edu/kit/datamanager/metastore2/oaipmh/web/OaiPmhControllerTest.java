@@ -988,7 +988,7 @@ public class OaiPmhControllerTest {
 //    record.setId("my_id");
     record.setSchemaId(schemaId);
     UUID randomUUID = UUID.randomUUID();
-    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier(randomUUID.toString()));
+    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(randomUUID.toString()));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));

@@ -112,8 +112,8 @@ public class MetadataControllerTest {
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final String UNKNOWN_RELATED_RESOURCE = "unknownHResourceId";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
-  private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryUrlResourceIdentifier("anyOtherResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryInternalResourceIdentifier("anyOtherResourceId");
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
@@ -1012,8 +1012,6 @@ public class MetadataControllerTest {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
-    // Add versioning 
-    javers.commit("admin", result);
     
     return result.getId();
   }

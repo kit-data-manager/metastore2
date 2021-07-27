@@ -1,30 +1,29 @@
-
 package edu.kit.datamanager.metastore2.domain;
 
-import java.net.URI;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
 import java.util.Map;
-import javax.annotation.processing.Generated;
-import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.validation.constraints.NotBlank;
+import lombok.Data;
 
-public class ResourceIdentifier {
+@Entity
+@JsonIgnoreProperties(ignoreUnknown = true)
+@Data
+public class ResourceIdentifier implements Serializable {
 
-    /**
-     * 
-     * (Required)
-     * 
-     */
-    @Expose
+    @Id
+    @NotBlank(message = "The unqiue identifier of the resource identifier.")
+    private Long id;
+
+    @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
     private String identifier;
-    /**
-     * 
-     * (Required)
-     * 
-     */
-    @Expose
-    private IdentifierType identifierType;
 
+    @NotBlank(message = "The type of the unique identifier, e.g. DOI, Handle, PURL,...,internal.")
+    private IdentifierType identifierType;
 
     @Override
     public String toString() {
@@ -32,13 +31,13 @@ public class ResourceIdentifier {
         sb.append(ResourceIdentifier.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
         sb.append("resourceIdentifier");
         sb.append('=');
-        sb.append(((this.getIdentifier() == null)?"<null>":this.getIdentifier()));
+        sb.append(((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()));
         sb.append(',');
         sb.append("resourceIdentifierType");
         sb.append('=');
-        sb.append(((this.getIdentifierType() == null)?"<null>":this.getIdentifierType()));
-        if (sb.charAt((sb.length()- 1)) == ',') {
-            sb.setCharAt((sb.length()- 1), ']');
+        sb.append(((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()));
+        if (sb.charAt((sb.length() - 1)) == ',') {
+            sb.setCharAt((sb.length() - 1), ']');
         } else {
             sb.append(']');
         }
@@ -48,8 +47,8 @@ public class ResourceIdentifier {
     @Override
     public int hashCode() {
         int result = 1;
-        result = ((result* 31)+((this.getIdentifier() == null)? 0 :this.getIdentifier().hashCode()));
-        result = ((result* 31)+((this.getIdentifierType() == null)? 0 :this.getIdentifierType().hashCode()));
+        result = ((result * 31) + ((this.getIdentifier() == null) ? 0 : this.getIdentifier().hashCode()));
+        result = ((result * 31) + ((this.getIdentifierType() == null) ? 0 : this.getIdentifierType().hashCode()));
         return result;
     }
 
@@ -62,7 +61,7 @@ public class ResourceIdentifier {
             return false;
         }
         ResourceIdentifier rhs = ((ResourceIdentifier) other);
-        return ((((this.getIdentifier() == rhs.getIdentifier())||((this.getIdentifier()!= null)&&this.getIdentifier().equals(rhs.getIdentifier()))))&&((this.getIdentifierType() == rhs.getIdentifierType())||((this.getIdentifierType()!= null)&&this.getIdentifierType().equals(rhs.getIdentifierType()))));
+        return ((((this.getIdentifier() == rhs.getIdentifier()) || ((this.getIdentifier() != null) && this.getIdentifier().equals(rhs.getIdentifier())))) && ((this.getIdentifierType() == rhs.getIdentifierType()) || ((this.getIdentifierType() != null) && this.getIdentifierType().equals(rhs.getIdentifierType()))));
     }
 
     public enum IdentifierType {
@@ -104,12 +103,14 @@ public class ResourceIdentifier {
         @SerializedName("URN")
         URN("URN"),
         @SerializedName("w3id")
-        W_3_ID("w3id");
+        W_3_ID("w3id"),
+        @SerializedName("internal")
+        INTERNAL("internal");
         private final String value;
         private final static Map<String, ResourceIdentifier.IdentifierType> CONSTANTS = new HashMap<String, ResourceIdentifier.IdentifierType>();
 
         static {
-            for (ResourceIdentifier.IdentifierType c: values()) {
+            for (ResourceIdentifier.IdentifierType c : values()) {
                 CONSTANTS.put(c.value, c);
             }
         }
@@ -138,37 +139,46 @@ public class ResourceIdentifier {
 
     }
 
-  /**
-   * @return the identifier
-   */
-  public String getIdentifier() {
-    return identifier;
-  }
+    /**
+     * @return the identifier
+     */
+    public String getIdentifier() {
+        return identifier;
+    }
 
-  /**
-   * @param identifier the identifier to set
-   */
-  public void setIdentifier(String identifier) {
-    this.identifier = identifier;
-  }
+    /**
+     * @param identifier the identifier to set
+     */
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
+    }
 
-  /**
-   * @return the identifierType
-   */
-  public IdentifierType getIdentifierType() {
-    return identifierType;
-  }
+    /**
+     * @return the identifierType
+     */
+    public IdentifierType getIdentifierType() {
+        return identifierType;
+    }
 
-  /**
-   * @param identifierType the identifierType to set
-   */
-  public void setIdentifierType(IdentifierType identifierType) {
-    this.identifierType = identifierType;
-  }
-  public static ResourceIdentifier factoryUrlResourceIdentifier(String identifier) {
-    ResourceIdentifier resourceIdentifier = new ResourceIdentifier();
-    resourceIdentifier.setIdentifier(identifier);
-    resourceIdentifier.setIdentifierType(ResourceIdentifier.IdentifierType.URL);
-    return resourceIdentifier;
-  }
+    /**
+     * @param identifierType the identifierType to set
+     */
+    public void setIdentifierType(IdentifierType identifierType) {
+        this.identifierType = identifierType;
+    }
+
+    public static ResourceIdentifier factoryUrlResourceIdentifier(String identifier) {
+        return factoryResourceIdentifier(identifier, ResourceIdentifier.IdentifierType.URL);
+    }
+
+    public static ResourceIdentifier factoryInternalResourceIdentifier(String identifier) {
+        return factoryResourceIdentifier(identifier, ResourceIdentifier.IdentifierType.INTERNAL);
+    }
+
+    public static ResourceIdentifier factoryResourceIdentifier(String identifier, ResourceIdentifier.IdentifierType type) {
+        ResourceIdentifier resourceIdentifier = new ResourceIdentifier();
+        resourceIdentifier.setIdentifier(identifier);
+        resourceIdentifier.setIdentifierType(type);
+        return resourceIdentifier;
+    }
 }
