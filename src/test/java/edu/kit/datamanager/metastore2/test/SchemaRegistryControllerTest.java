@@ -736,8 +736,12 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     String mimeTypeBefore = record.getMimeType();
+    String definitionBefore = record.getDefinition();
+    String labelBefore = record.getLabel();
+    String commentBefore = record.getComment();
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
-    record.setDefinition("definition changed");
+    record.setDefinition("");
+    record.setComment("new comment");
     record.setLabel("label changed");
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
@@ -756,9 +760,11 @@ public class SchemaRegistryControllerTest {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
-    Assert.assertFalse(record.getLabel().equals(record2.getLabel()));
-    Assert.assertFalse(record.getDefinition().equals(record2.getDefinition()));
-    Assert.assertTrue(record.getComment().equals(record2.getComment()));
+    Assert.assertEquals("Check label: ", record.getLabel(),record2.getLabel());
+    Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());
+    Assert.assertNotEquals("Check label: ",labelBefore,record2.getLabel());
+    Assert.assertNotEquals("Check comment: ", commentBefore, record2.getComment());
+    Assert.assertNull("Check definition for 'null'", record2.getDefinition());
   }
 
   @Test

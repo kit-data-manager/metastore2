@@ -176,8 +176,6 @@ public class MetadataSchemaRecordUtil {
           MultipartFile schemaDocument,
           Function<String, String> supplier) {
     MetadataSchemaRecord record = null;
-    MetadataSchemaRecord existingRecord;
-    DataResource newResource;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (schemaDocument == null || schemaDocument.isEmpty())) {
@@ -200,7 +198,7 @@ public class MetadataSchemaRecordUtil {
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (record != null) {
-      existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+      MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     } else {
@@ -581,30 +579,28 @@ public class MetadataSchemaRecordUtil {
       if (provided.getLabel() != null) {
         if (!provided.getLabel().equals(managed.getLabel())) {
           LOG.trace("Updating record label from {} to {}.", managed.getLabel(), provided.getLabel());
-          managed.setLabel(provided.getLabel());
+          managed.setLabel(checkForEmptyString(provided.getLabel()));
         }
       }
       //update definition
       if (provided.getDefinition() != null) {
         if (!provided.getDefinition().equals(managed.getDefinition())) {
           LOG.trace("Updating record definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
-          managed.setDefinition(provided.getDefinition());
+          managed.setDefinition(checkForEmptyString(provided.getDefinition()));
         }
       }
       //update comment
       if (provided.getComment() != null) {
         if (!provided.getComment().equals(managed.getComment())) {
           LOG.trace("Updating record comment from {} to {}.", managed.getComment(), provided.getComment());
-          managed.setComment(provided.getComment());
+          managed.setComment(checkForEmptyString(provided.getComment()));
         }
       }
       //update doNotSync
-      if (provided.getDoNotSync() != null) {
         if (!provided.getDoNotSync().equals(managed.getDoNotSync())) {
           LOG.trace("Updating record comment from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
           managed.setDoNotSync(provided.getDoNotSync());
         }
-      }
       //update schemaId
       if (provided.getSchemaId() != null) {
         if (!provided.getSchemaId().equals(managed.getSchemaId())) {
@@ -623,6 +619,18 @@ public class MetadataSchemaRecordUtil {
 //    LOG.trace("Setting lastUpdate to now().");
 //    managed.setLastUpdate(Instant.now());
     return managed;
+  }
+  /**
+   * Check for empty String. If String is empty return 'NULL'.
+   * @param string String to check.
+   * @return String or 'NULL'
+   */
+  private static String checkForEmptyString(String string) {
+      String returnValue = null;
+      if (!string.isEmpty()) { 
+          returnValue = string;
+      }
+      return returnValue;
   }
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
