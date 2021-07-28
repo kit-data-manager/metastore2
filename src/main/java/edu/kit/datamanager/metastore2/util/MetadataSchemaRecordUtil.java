@@ -549,13 +549,13 @@ public class MetadataSchemaRecordUtil {
     if (provided != null) {
       // update pid
       if (!Objects.isNull(provided.getPid())) {
-        if (provided.getPid().equals(managed.getPid())) {
+        if (!provided.getPid().equals(managed.getPid())) {
           LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
           managed.setPid(provided.getPid());
         }
       }
       //update acl
-      if (provided.getAcl() != null) {
+      if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
           LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
           managed.setAcl(provided.getAcl());

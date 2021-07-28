@@ -51,7 +51,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 /**
  *
- *Test for exceptions
+ * Test for exceptions
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT) //RANDOM_PORT)
@@ -67,6 +67,7 @@ import org.springframework.web.multipart.MultipartFile;
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataRecordUtilTest {
+
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
@@ -74,7 +75,7 @@ public class MetadataRecordUtilTest {
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
-  private static final ResourceIdentifier RELATED_RESOURCE_2= ResourceIdentifier.factoryInternalResourceIdentifier("anyOtherResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryInternalResourceIdentifier("anyOtherResourceId");
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
@@ -92,18 +93,18 @@ public class MetadataRecordUtilTest {
   private MetastoreConfiguration metadataConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-  
+
   public MetadataRecordUtilTest() {
   }
-  
+
   @BeforeClass
   public static void setUpClass() {
   }
-  
+
   @AfterClass
   public static void tearDownClass() {
   }
-  
+
   @Before
   public void setUp() {
     System.out.println("------MetadataControllerTest--------------------------");
@@ -115,15 +116,23 @@ public class MetadataRecordUtilTest {
     metadataRecordDao.deleteAll();
     allIdentifiersDao.deleteAll();
 
-      // setup mockMvc
-      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
-              .apply(documentationConfiguration(this.restDocumentation))
-              .build();
+    // setup mockMvc
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+            .addFilters(springSecurityFilterChain)
+            .apply(documentationConfiguration(this.restDocumentation))
+            .build();
   }
-  
+
   @After
   public void tearDown() {
+  }
+
+  /**
+   * Constructor
+   */
+  @Test
+  public void testConstructor() {
+    assertNotNull(new MetadataRecordUtil());
   }
 
   /**
@@ -139,6 +148,7 @@ public class MetadataRecordUtilTest {
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
   }
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption2() {
     System.out.println("createMetadataRecord");
@@ -154,7 +164,18 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption3() {
     System.out.println("createMetadataRecord");
     MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte [])null);
+    MultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[]) null);
+    MultipartFile document = null;
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption3a() {
+    System.out.println("createMetadataRecord");
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", new String("{nonsense}").getBytes());
     MultipartFile document = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
@@ -164,13 +185,57 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption4() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = null;
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption4a() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setSchemaId(SCHEMA_ID);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = null;
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption4b() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setRelatedResource(RELATED_RESOURCE);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = null;
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption4c() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
+    MetastoreConfiguration applicationProperties = metadataConfig;
     MultipartFile document = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
@@ -180,29 +245,93 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption5() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte [])null);;
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);;
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption5a() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setSchemaId(SCHEMA_ID);
+    record.setRelatedResource(RELATED_RESOURCE);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", new String("{nonsense}").getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption6() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setSchemaId(null);
+    record.setRelatedResource(null);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption6a() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setSchemaId(null);
+    record.setRelatedResource(RELATED_RESOURCE);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
+    MetadataRecord expResult = null;
+    MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testCreateMetadataRecordExeption6b() throws JsonProcessingException {
+    System.out.println("createMetadataRecord");
+    MetadataRecord record = new MetadataRecord();
+    record.setSchemaId(SCHEMA_ID);
+    record.setRelatedResource(null);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.UnprocessableEntityException.class)
-  public void testCreateMetadataRecordExeption6() throws JsonProcessingException {
+  public void testCreateMetadataRecordExeption6c() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
+    MetastoreConfiguration applicationProperties = metadataConfig;
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
@@ -212,13 +341,13 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption7() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = null;
-   MetastoreConfiguration applicationProperties = metadataConfig;
+    MetastoreConfiguration applicationProperties = metadataConfig;
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
@@ -228,13 +357,13 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption8() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[]) null);
-   MetastoreConfiguration applicationProperties = metadataConfig;
+    MetastoreConfiguration applicationProperties = metadataConfig;
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
@@ -244,14 +373,14 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption9() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", SCHEMA_ID.getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte [])null);;
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
@@ -260,14 +389,14 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption10() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
 //    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte [])null);;
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
@@ -276,14 +405,14 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption11() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
 //    record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte [])null);;
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
@@ -292,15 +421,15 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataRecordExeption12() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setId(SCHEMA_ID);
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-   MetastoreConfiguration applicationProperties = metadataConfig;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte [])null);;
+    MetastoreConfiguration applicationProperties = metadataConfig;
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(applicationProperties, recordDocument, document);
     fail("Don't reach this line!");
@@ -334,7 +463,7 @@ public class MetadataRecordUtilTest {
     MetastoreConfiguration applicationProperties = null;
     String resourceId = "";
     String eTag = "";
-    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte []) null);
+    MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[]) null);
     MultipartFile document = null;
     Function<String, String> supplier = null;
     MetadataRecord expResult = null;
@@ -350,7 +479,7 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataRecord3() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
@@ -373,7 +502,7 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataRecord4() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
@@ -381,7 +510,7 @@ public class MetadataRecordUtilTest {
     String resourceId = "";
     String eTag = "";
     MockMultipartFile recordDocument = null;
-    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[])null);
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);
     Function<String, String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
@@ -396,7 +525,7 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataRecord5() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
@@ -404,7 +533,7 @@ public class MetadataRecordUtilTest {
     String resourceId = "";
     String eTag = "";
     MockMultipartFile recordDocument = null;
-       MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", new String().getBytes());
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", new String().getBytes());
     Function<String, String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
@@ -419,7 +548,7 @@ public class MetadataRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataRecord6() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
-   MetadataRecord record = new MetadataRecord();
+    MetadataRecord record = new MetadataRecord();
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
@@ -427,7 +556,7 @@ public class MetadataRecordUtilTest {
     String resourceId = "";
     String eTag = "";
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", SCHEMA_ID.getBytes());
-       MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
+    MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
     Function<String, String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
@@ -451,14 +580,15 @@ public class MetadataRecordUtilTest {
 //    fail("Don't reach this line!");
 //  }
 //
+
   /**
    * Test of migrateToDataResource method, of class MetadataRecordUtil.
    */
   @Test(expected = NullPointerException.class)
   public void testMigrateToDataResource() {
     System.out.println("migrateToDataResource");
-   MetadataRecord record = new MetadataRecord();
-   record.setId("08/15");
+    MetadataRecord record = new MetadataRecord();
+    record.setId("08/15");
     record.setSchemaId(SCHEMA_ID);
     record.setRelatedResource(RELATED_RESOURCE);
     RepoBaseConfiguration applicationProperties = null;
@@ -568,5 +698,5 @@ public class MetadataRecordUtilTest {
     String bearerToken = "";
     MetadataRecordUtil.setToken(bearerToken);
   }
-  
+
 }

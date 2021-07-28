@@ -36,11 +36,8 @@ public class ResourceIdentifier implements Serializable {
         sb.append("resourceIdentifierType");
         sb.append('=');
         sb.append(((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()));
-        if (sb.charAt((sb.length() - 1)) == ',') {
-            sb.setCharAt((sb.length() - 1), ']');
-        } else {
-            sb.append(']');
-        }
+        sb.append(']');
+ 
         return sb.toString();
     }
 
