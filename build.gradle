@@ -68,7 +68,7 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-data-rest:1.5.6")
     implementation("org.springdoc:springdoc-openapi-webmvc-core:1.5.6")
 
-
+    compile ('org.springframework.boot:spring-boot-starter-thymeleaf')
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.1"
     //driver for h2
@@ -83,7 +83,7 @@ dependencies {
   
     // datamanager
     implementation "edu.kit.datamanager:repo-core:0.9.0-SNAPSHOT"
-//    implementation("edu.kit.datamanager:service-base:0.3.0-SNAPSHOT")
+    //    implementation("edu.kit.datamanager:service-base:0.3.0-SNAPSHOT")
 
     runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
 

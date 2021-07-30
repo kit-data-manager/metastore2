@@ -1,0 +1,16 @@
+[{
+        "title": "Schema Record Identifier",
+        "field": "schemaId"
+    },  
+    {
+        "title": "Schema Version",
+        "field": "schemaVersion"  },
+    {
+        "title": "Date Created",
+        "field": "createdAt"
+    },
+    {
+        "title": "Date Updated",
+        "field": "lastUpdate"
+    }
+]
