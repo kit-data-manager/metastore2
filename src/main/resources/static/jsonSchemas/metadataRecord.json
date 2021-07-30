@@ -1,0 +1,60 @@
+{
+    "type": "object",
+    "properties": {
+        "id": {
+            "type": "string",
+            "title": "Identifier"
+        },
+        "relatedResource": {
+            "type": "string",
+            "title": "Related Resource"
+        },
+        "createdAt": {
+            "type": "string",
+            "title": "Date Created"
+        },
+        "lastUpdate": {
+            "type": "string",
+            "title": "Date Updated"
+        },
+        "recordVersion": {
+            "type": "integer",
+            "title": "Record Version"
+        },
+        "schemaId": {
+            "type": "string",
+            "title": "Schema Identifier"
+        },
+        "schemaVersion": {
+            "type": "integer",
+            "title": "Schema Version"
+        },
+        "acl": {
+            "type": "array",
+            "title": "ACL",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sid": {
+                        "type": "string",
+                        "title": "Sid",
+                        "default": "SELF"                    },
+                    "permission": {
+                        "type": "string",
+                        "title": "Permission",
+                        "default": "ADMINISTRATE",
+                        "enum": ["READ","WRITE", "ADMINISTRATE", "NONE"]
+                    }
+                }
+            }
+        },
+        "metadataDocumentUri": {
+            "type": "string",
+            "title": "Metadata Document URI"
+        },
+        "documentHash": {
+            "type": "string",
+            "title": "Document Hash"
+        }
+    }
+}

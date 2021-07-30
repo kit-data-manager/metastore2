@@ -13,7 +13,7 @@ and open the template in the editor.
         <link rel="stylesheet" style="text/css" href="/editor/dependencies/jsonform/deps/opt/bootstrap-v4.5.2.css"/>
         <link rel="stylesheet" style="text/css" href="/editor/lib/css/metadataeditor.style.default.css" />
     </head>
- <div class="container">
+    <div class="container">
         <div class="col-12">
             <!-- table-->
             <div>
@@ -110,7 +110,10 @@ and open the template in the editor.
                     $("#formModal").modal('show');
                 }
                 ,
-                buttonTitle: "Register new Schema"}
+                buttonTitle: "Register new Schema"},
+            listOperation: function (rowColumnvalue) {
+                window.location.href = "/schema-management/" + rowColumnvalue.schemaId;
+            }
 
         };
         $('#table-schemas').metadataeditorTable(inputs);

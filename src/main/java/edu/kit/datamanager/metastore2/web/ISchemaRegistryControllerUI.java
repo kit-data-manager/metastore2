@@ -5,7 +5,11 @@
  */
 package edu.kit.datamanager.metastore2.web;
 
+import javax.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  *
@@ -14,5 +18,9 @@ import org.springframework.web.servlet.ModelAndView;
 public interface ISchemaRegistryControllerUI {
     
      public ModelAndView schemaManagement();
+         public ModelAndView metadataManagement(String id, Pageable pgbl,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          UriComponentsBuilder ucb);
     
 }
