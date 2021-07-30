@@ -5,21 +5,22 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
-import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
-import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -66,13 +67,8 @@ public class MetadataSchemaRecordUtilTest {
   @Test
   public void testMigrateToDataResource() {
     System.out.println("migrateToDataResource");
-    RepoBaseConfiguration applicationProperties = null;
-    MetadataSchemaRecord metadataSchemaRecord = null;
-    DataResource expResult = null;
-    DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
+        System.out.println("Test moved to SchemaRegistryControllerTest");
+        // due to mandatory application properties.
   }
 
   /**
@@ -82,15 +78,9 @@ public class MetadataSchemaRecordUtilTest {
   @Test
   public void testMigrateToMetadataSchemaRecord() {
     System.out.println("migrateToMetadataSchemaRecord");
-    RepoBaseConfiguration applicationProperties = null;
-    DataResource dataResource = null;
-    boolean provideETag = false;
-    MetadataSchemaRecord expResult = null;
-    MetadataSchemaRecord result = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, dataResource, provideETag);
-    assertEquals(expResult, result);
-    // TODO review the generated test code and remove the default call to fail.
-    fail("The test case is a prototype.");
-  }
+    System.out.println("Test moved to SchemaRegistryControllerTest");
+         // due to mandatory application properties.
+ }
 
   /**
    * Test of mergeRecords method, of class MetadataSchemaRecordUtil.
@@ -200,6 +190,17 @@ public class MetadataSchemaRecordUtilTest {
     fail("Don't reach this line!");
   }
 
+  @Test
+  public void testIdentifierTypes() {
+    MetadataSchemaRecord mr = new MetadataSchemaRecord();
+    ResourceIdentifier.IdentifierType[] values = ResourceIdentifier.IdentifierType.values();
+    for (ResourceIdentifier.IdentifierType item : values) {
+      assertNotNull(item.value() + " is not defined in DataResource!",Identifier.IDENTIFIER_TYPE.valueOf(item.name()));
+    }
+    
+    
+      }
+
   private MetadataSchemaRecord buildMSR(Set<AclEntry> aclEntry, String comment, Instant creationDate, String definition,
           String eTag, String label, Instant update, boolean doNotSync, String mimetype, String pid, String schemaDocument,
           String schemaHash, String schemaId, Long version, SCHEMA_TYPE type) {
@@ -213,7 +214,7 @@ public class MetadataSchemaRecordUtilTest {
     msr.setLastUpdate(update);
     msr.setDoNotSync(doNotSync);
     msr.setMimeType(mimetype);
-    msr.setPid(ResourceIdentifier.factoryInternalResourceIdentifier(pid));
+    msr.setPid(ResourceIdentifier.factoryUrlResourceIdentifier(pid));
     msr.setSchemaDocumentUri(schemaDocument);
     msr.setSchemaHash(schemaHash);
     msr.setSchemaId(schemaId);
@@ -224,7 +225,7 @@ public class MetadataSchemaRecordUtilTest {
 
   }
 
-  private MetadataSchemaRecord createSchemaRecord(int... skipped) {
+  public MetadataSchemaRecord createSchemaRecord(int... skipped) {
     Set<AclEntry> aclEntries = new HashSet<>();
     AclEntry entry = new AclEntry();
     entry.setId(1l);
@@ -232,7 +233,7 @@ public class MetadataSchemaRecordUtilTest {
     entry.setSid("write");
     aclEntries.add(createEntry(1l, PERMISSION.NONE, "none"));
     aclEntries.add(createEntry(2l, PERMISSION.READ, "read"));
-    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now(), "definition", "eTag", "label", Instant.MAX, true, "mimetype", "pid", "schemadocument", "hash", "schemaId", 1l, SCHEMA_TYPE.XML);
+    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now().truncatedTo(ChronoUnit.SECONDS), "definition", "eTag", "label", Instant.MAX.truncatedTo(ChronoUnit.SECONDS), true, "mimetype", "pid", "schemadocument", "hash", "schemaId", 1l, SCHEMA_TYPE.XML);
     for (int remove : skipped) {
       switch (remove) {
         case 1:

@@ -101,8 +101,9 @@ public class ResourceIdentifier implements Serializable {
         URN("URN"),
         @SerializedName("w3id")
         W_3_ID("w3id"),
-        @SerializedName("internal")
-        INTERNAL("internal");
+        // additional type for internal identifiers (not part of the official datacite schema)
+        @SerializedName("INTERNAL")
+        INTERNAL("INTERNAL");
         private final String value;
         private final static Map<String, ResourceIdentifier.IdentifierType> CONSTANTS = new HashMap<String, ResourceIdentifier.IdentifierType>();
 

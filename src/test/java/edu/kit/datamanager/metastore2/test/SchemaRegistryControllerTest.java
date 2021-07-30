@@ -12,6 +12,9 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtilTest;
+import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -39,6 +42,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -1044,6 +1049,41 @@ public class SchemaRegistryControllerTest {
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId + "/validate?version=" + document).file("document", xmlDocument)).andDo(print()).andExpect(resultMatcher).andReturn();
     }
   }
+  
+  /****************************************************************************
+   * Moved tests from MetadataSchemaRecordUtilTest
+   ****************************************************************************/
+
+  /**
+   * Test of migrateToDataResource method, of class MetadataSchemaRecordUtil.
+   */
+  @Test
+  public void testMigrateToDataResource() {
+    System.out.println("migrateToDataResource");
+RepoBaseConfiguration applicationProperties = schemaConfig;
+   // Test with all possible values
+    MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5,7,11,12);
+    MetadataSchemaRecord expResult = null;
+    DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
+    expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
+    assertEquals(metadataSchemaRecord, expResult);
+    // Test skipping pid
+    metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5,7,10,11,12);
+    result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
+    expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
+    assertEquals(metadataSchemaRecord, expResult);
+  }
+
+  /**
+   * Test of migrateToMetadataSchemaRecord method, of class
+   * MetadataSchemaRecordUtil.
+   */
+  @Test
+  public void testMigrateToMetadataSchemaRecord() {
+    System.out.println("migrateToMetadataSchemaRecord");
+    System.out.println("Test moved to SchemaRegistryControllerTest");
+         // due to mandatory application properties.
+ }
 
   private void ingestSchemaRecord() throws Exception {
     DataResource dataResource = DataResource.factoryNewDataResource(SCHEMA_ID);
