@@ -985,7 +985,7 @@ another-schema.json:
     },
     "additionalProperties": false
 }
------
+----
 
 include::{snippets}/register-another-json-schema/curl-request.adoc[]
 
