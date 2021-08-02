@@ -73,7 +73,7 @@ public class LinkedMetadataRecordTest {
     MetadataRecord mr = new MetadataRecord();
     String schemaId = "schemaId";
     ResourceIdentifier relatedResoure = ResourceIdentifier.factoryInternalResourceIdentifier("relatedResource");
-    mr.setSchemaId(schemaId);
+    mr.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
     mr.setRelatedResource(relatedResoure);
     LinkedMetadataRecord instance = new LinkedMetadataRecord(mr);
     assertEquals(schemaId, instance.getSchemaId());

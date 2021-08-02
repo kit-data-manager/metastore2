@@ -396,7 +396,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     // Create a metadata record.
     MetadataRecord metadataRecord = new MetadataRecord();
 //    record.setId("my_id");
-    metadataRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
+    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     metadataRecord.setRelatedResource(RELATED_RESOURCE);
     metadataRecord.setSchemaVersion(1l);
 

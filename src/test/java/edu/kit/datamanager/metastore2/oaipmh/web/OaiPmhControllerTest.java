@@ -986,7 +986,7 @@ public class OaiPmhControllerTest {
   public void ingestMetadataRecord(String schemaId, String metadataDocument) throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(schemaId);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
     UUID randomUUID = UUID.randomUUID();
     record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(randomUUID.toString()));
     Set<AclEntry> aclEntries = new HashSet<>();

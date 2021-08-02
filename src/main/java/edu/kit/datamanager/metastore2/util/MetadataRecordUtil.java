@@ -347,7 +347,7 @@ public class MetadataRecordUtil {
               LOG.trace("Split into: '{}'", item);
             }
           }
-          metadataRecord.setSchemaId(split[0]);
+          metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(split[0]));
           metadataRecord.setSchemaVersion(Long.parseLong(split[1]));
         }
       }
@@ -582,7 +582,7 @@ public class MetadataRecordUtil {
       if (provided.getSchemaId() != null) {
         if (!provided.getSchemaId().equals(managed.getSchemaId())) {
           LOG.trace("Updating record schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-          managed.setSchemaId(provided.getSchemaId());
+          managed.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(provided.getSchemaId()));
         }
       }
       //update schemaVersion

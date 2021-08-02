@@ -456,7 +456,7 @@ public class MetadataControllerFilterTest {
    */
   public void ingestMetadataDocument(String schemaId, String resource) throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(schemaId);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
     record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(resource));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));

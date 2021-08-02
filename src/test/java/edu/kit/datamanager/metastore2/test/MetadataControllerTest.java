@@ -270,7 +270,7 @@ public class MetadataControllerTest {
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
@@ -290,7 +290,7 @@ public class MetadataControllerTest {
   public void testCreateRecordWithId() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     record.setId("SomeInvalidId");
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -311,7 +311,7 @@ public class MetadataControllerTest {
   public void testCreateRecordWithLocationUri() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
@@ -338,7 +338,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateInvalidRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(INVALID_SCHEMA);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(INVALID_SCHEMA));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -387,7 +387,7 @@ public class MetadataControllerTest {
   // @Test 
   public void testCreateRecordFromExternal() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -407,7 +407,7 @@ public class MetadataControllerTest {
   //@Test @ToDo Set external remote address.
   public void testCreateRecordUpdateFromExternal() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId("my_dcExt");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier("my_dcExt"));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -424,7 +424,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateMetadataUnknownSchemaId() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId("unknown_dc");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier("unknown_dc"));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -439,7 +439,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateRecordWithBadMetadata() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -454,7 +454,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateRecordWithInvalidMetadataNamespace() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -469,7 +469,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateRecordWithInvalidMetadata() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -491,7 +491,7 @@ public class MetadataControllerTest {
   @Test
   public void testCreateRecordWithoutSchema() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -506,6 +506,7 @@ public class MetadataControllerTest {
 
     MetadataRecord record = new MetadataRecord();
     //schemaId is missing
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(RELATED_RESOURCE);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -521,7 +522,7 @@ public class MetadataControllerTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     //related resource is missing
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -536,7 +537,7 @@ public class MetadataControllerTest {
   public void testCreateRecordWithoutDocument() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
@@ -555,7 +556,7 @@ public class MetadataControllerTest {
   public void testCreateTwoVersionsOfSameRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
@@ -581,7 +582,7 @@ public class MetadataControllerTest {
   public void testCreateTwoVersions() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
@@ -765,7 +766,7 @@ public class MetadataControllerTest {
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> acl = new HashSet<>();
     acl.add(new AclEntry("test", PERMISSION.READ));
@@ -997,7 +998,7 @@ public class MetadataControllerTest {
   private String createDCMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));

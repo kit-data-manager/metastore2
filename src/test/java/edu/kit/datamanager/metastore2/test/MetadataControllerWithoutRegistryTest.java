@@ -211,7 +211,7 @@ public class MetadataControllerWithoutRegistryTest {
   @Test
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 

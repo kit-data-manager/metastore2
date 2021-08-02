@@ -186,6 +186,8 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption4() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
+    // set schema identifier to null
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -200,7 +202,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption4a() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -215,6 +217,8 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption4b() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
+    // set schema identifier to null
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -230,7 +234,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption4c() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -246,7 +250,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption5() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -262,7 +266,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption5a() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -278,7 +282,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption6() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(null);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(null);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -294,7 +298,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption6a() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(null);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -310,7 +314,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption6b() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(null);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -326,7 +330,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption6c() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -342,7 +346,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption7() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -358,7 +362,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption8() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -374,7 +378,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption9() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -390,7 +394,7 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption10() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
 //    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -406,7 +410,8 @@ public class MetadataRecordUtilTest {
   public void testCreateMetadataRecordExeption11() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-//    record.setSchemaId(SCHEMA_ID);
+    // set schema identifier to null
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -423,7 +428,7 @@ public class MetadataRecordUtilTest {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
     record.setId(SCHEMA_ID);
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -480,7 +485,7 @@ public class MetadataRecordUtilTest {
   public void testUpdateMetadataRecord3() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
     MetastoreConfiguration applicationProperties = null;
@@ -503,7 +508,7 @@ public class MetadataRecordUtilTest {
   public void testUpdateMetadataRecord4() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
     MetastoreConfiguration applicationProperties = null;
@@ -526,7 +531,7 @@ public class MetadataRecordUtilTest {
   public void testUpdateMetadataRecord5() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
     MetastoreConfiguration applicationProperties = null;
@@ -549,7 +554,7 @@ public class MetadataRecordUtilTest {
   public void testUpdateMetadataRecord6() throws JsonProcessingException {
     System.out.println("updateMetadataRecord");
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
     MetastoreConfiguration applicationProperties = null;
@@ -589,7 +594,7 @@ public class MetadataRecordUtilTest {
     System.out.println("migrateToDataResource");
     MetadataRecord record = new MetadataRecord();
     record.setId("08/15");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     RepoBaseConfiguration applicationProperties = null;
     DataResource expResult = null;

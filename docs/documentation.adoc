@@ -432,29 +432,38 @@ like this:
 [source,options="nowrap"]
 ----
 {
-  "id" : "...",
-  "relatedResource" : "...",
-  "createdAt" : "...",
-  "lastUpdate" : "...",
-  "recordVersion" : 1,
-  "schemaId" : "...",
-  "schemaVersion" : 1,
-  "acl" : [ {
-    "id" : 1,
-    "sid" : "...",
-    "permission" : "..."
-  } ],
-  "metadataDocumentUri" : "...",
-  "documentHash" : "..."
+    "id": "...",
+    "relatedResource": {
+        "identifier": "...",
+        "identifierType": "..."
+    },
+    "createdAt": "...",
+    "lastUpdate": "...",
+    "recordVersion": 1,
+    "schema": {
+        "identifier": "...",
+        "identifierType": "..."
+    },
+    "schemaVersion": 1,
+    "acl": [{
+            "id": 1,
+            "sid": "...",
+            "permission": "..."
+        }],
+    "metadataDocumentUri": "...",
+    "documentHash": "..."
 }
 ----
 At least the following elements are expected to be provided by the user: 
 
 [point]
-- schemaId: A unique label of the schema.
+- schema: Identifier of the linked schema. (INTERNAL and URL supported as type)
 - relatedResource: The link to the resource. 
 
 In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+
+[NOTE]
+If linked schema is identified by its schemaId the INTERNAL type has to be used.
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
@@ -463,9 +472,15 @@ The following example shows the creation of the first metadata record and its me
 ----
 metadata-record.json:
 {
-    "relatedResource": "anyResourceId",
-    "schemaId": "my_first_xsd",
-    "schemaVersion": "1"
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_xsd",
+        "identifierType": "INTERNAL"
+    },
+    "schemaVersion": 1
 }
 ----
 [source,options="nowrap"]
@@ -534,8 +549,14 @@ ETag is needed:
 ----
 metadata-record-v2.json:
 {
-    "relatedResource": "anyResourceId",
-    "schemaId": "my_first_xsd",
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_xsd",
+        "identifierType": "INTERNAL"
+    },
     "schemaVersion": "2",
     "acl": [ {
       "id":null,
@@ -582,8 +603,14 @@ Now you can update metadata due to new version of schema using the new Etag.
 ----
 metadata-record-v3.json:
 {
-    "relatedResource": "anyResourceId",
-    "schemaId": "my_first_xsd",
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_xsd",
+        "identifierType": "INTERNAL"
+    },
     "schemaVersion": "3"
 }
 ----
@@ -1136,29 +1163,35 @@ like this:
 [source,options="nowrap"]
 ----
 {
-  "id" : "...",
-  "relatedResource" : "...",
-  "createdAt" : "...",
-  "lastUpdate" : "...",
-  "recordVersion" : 1,
-  "schemaId" : "...",
-  "schemaVersion" : 1,
-  "acl" : [ {
-    "id" : 1,
-    "sid" : "...",
-    "permission" : "..."
-  } ],
-  "metadataDocumentUri" : "...",
-  "documentHash" : "..."
+    "id": "...",
+    "relatedResource": {
+        "identifier": "...",
+        "identifierType": "..."
+    },
+    "createdAt": "...",
+    "lastUpdate": "...",
+    "schema": {
+        "identifier": "...",
+        "identifierType": "..."
+    },
+    "schemaVersion": 1,
+    "recordVersion": 1,
+    "acl": [{
+            "id": 3,
+            "sid": "...",
+            "permission": "..."
+        }],
+    "metadataDocumentUri": "...",
+    "documentHash": "..."
 }
 ----
 At least the following elements are expected to be provided by the user: 
 
 [point]
-- schemaId: A unique label of the schema.
+- schema: Identifier of the linked schema. (INTERNAL and URL supported as type)
 - relatedResource: The link to the resource. 
 
-In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+metadataDocuIn addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
@@ -1167,9 +1200,16 @@ The following example shows the creation of the first metadata record and its me
 ----
 metadata-record4json.json:
 {
-    "relatedResource": "anyResourceId",
-    "schemaId": "my_first_json",
-    "schemaVersion": "1"
+    "id": "...",
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_json",
+        "identifierType": "INTERNAL"
+    },
+    "schemaVersion": 1
 }
 ----
 [source,options="nowrap"]
@@ -1236,8 +1276,14 @@ ETag is needed:
 ----
 metadata-record4json-v2.json:
 {
-    "relatedResource": "anyResourceId",
-    "schemaId": "my_first_json",
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_json",
+        "identifierType": "INTERNAL"
+    },
     "schemaVersion": "2",
     "acl": [ {
       "id":null,
@@ -1283,8 +1329,14 @@ Now you can update metadata due to new version of schema using the new Etag.
 ----
 metadata-record4json-v3.json:
 {
-  "relatedResource": "anyResourceId",
-  "schemaId": "my_first_json",
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "my_first_json",
+        "identifierType": "INTERNAL"
+    },
   "schemaVersion": "3"
 }
 ----
