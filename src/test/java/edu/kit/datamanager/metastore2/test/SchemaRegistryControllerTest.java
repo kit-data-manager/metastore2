@@ -730,7 +730,7 @@ public class SchemaRegistryControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", DC_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
-
+  // Update only record
   @Test
   public void testUpdateRecord() throws Exception {
     ingestSchemaRecord();
@@ -758,7 +758,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
-//    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
@@ -792,6 +792,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
@@ -823,6 +824,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
@@ -855,6 +857,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getMimeType(), record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
@@ -904,6 +907,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record1.getSchemaHash(), record2.getSchemaHash());
     //Assert.assertEquals(record1.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
     Assert.assertEquals(record1.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record1.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
@@ -1126,6 +1130,7 @@ RepoBaseConfiguration applicationProperties = schemaConfig;
     schemaRecord.setSchemaId(dataResource.getId());
     schemaRecord.setVersion(1l);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());
+    schemaRecord.setDocumentHash(ci.getHash());
     try {
       schemaRecordDao.save(schemaRecord);
       System.out.println("Schema record saved: " + schemaRecord);

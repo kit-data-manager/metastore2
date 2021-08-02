@@ -188,7 +188,7 @@ public class MetadataRecordUtil {
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     } else {
-         dataResource = DataResourceUtils.copyDataResource(dataResource);
+      dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
     String version = dataResource.getVersion();
     if (version != null) {
@@ -204,13 +204,11 @@ public class MetadataRecordUtil {
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
-      if (record != null) {
-        DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
-        dataRecord.setMetadataDocumentUri(addFile.getContentUri());
-        dataRecord.setDocumentHash(addFile.getHash());
-        dataRecord.setLastUpdate(dataResource.getLastUpdate());
-        dataRecordDao.save(dataRecord);
-      }
+      DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+      dataRecord.setMetadataDocumentUri(addFile.getContentUri());
+      dataRecord.setDocumentHash(addFile.getHash());
+      dataRecord.setLastUpdate(dataResource.getLastUpdate());
+      dataRecordDao.save(dataRecord);
     }
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
@@ -343,7 +341,7 @@ public class MetadataRecordUtil {
           String schemaAndVersion = relatedIds.getValue();
           String[] split = schemaAndVersion.split(SCHEMA_VERSION_SEPARATOR);
           if (LOG.isTraceEnabled()) {
-            for (String item: split) {
+            for (String item : split) {
               LOG.trace("Split into: '{}'", item);
             }
           }
