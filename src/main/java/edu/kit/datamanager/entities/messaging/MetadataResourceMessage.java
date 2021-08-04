@@ -82,7 +82,7 @@ public class MetadataResourceMessage extends DataResourceMessage {
     Map<String, String> properties = new HashMap<>();
     if (metadataRecord != null) {
       properties.put(RESOLVING_URL_PROPERTY, metadataRecord.getMetadataDocumentUri());
-      properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchemaId());
+      properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchema().getIdentifier());
       msg.setEntityId(metadataRecord.getId());
     }
     if (action != null) {

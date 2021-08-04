@@ -198,7 +198,7 @@ public class MetadataControllerFilterTest {
 
       Assert.assertEquals("No of records for schema '" + i + "'", i, result.length);
       for (MetadataRecord item: result) {
-        Assert.assertEquals(schemaId, item.getSchemaId());
+        Assert.assertEquals(schemaId, item.getSchema().getIdentifier());
       }
     }
   }

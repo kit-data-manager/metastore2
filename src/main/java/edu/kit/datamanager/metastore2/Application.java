@@ -25,11 +25,11 @@ import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
-import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -94,6 +94,8 @@ public class Application {
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
   private IDataRecordDao dataRecordDao;
+  @Autowired
+  private IUrl2PathDao url2PathDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
@@ -206,6 +208,7 @@ public class Application {
     MetadataRecordUtil.setDataRecordDao(dataRecordDao);
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
+    MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
     
     return rbc;
   }

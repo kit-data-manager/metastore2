@@ -330,6 +330,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
           return "dummy" + t;
         };
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
+        // Todo check for internal related schema identifier switch to URL
+        Todo
         Resource resource = DataCiteMapper.dataResourceToDataciteResource(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(Resource.class);
         Marshaller marshaller = jaxbContext.createMarshaller();

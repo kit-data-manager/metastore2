@@ -36,6 +36,7 @@ import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -141,7 +142,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     long nano2 = System.nanoTime() / 1000000;
     
-    if (record.getRelatedResource() == null || record.getSchemaId() == null) {
+    if (record.getRelatedResource() == null ||record.getRelatedResource().getIdentifier() == null || record.getSchema() == null || record.getSchema().getIdentifier() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
     }
@@ -151,7 +152,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     
     LOG.debug("Test for existing metadata record for given schema and resource");
-    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), record.getSchemaId());
+    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), record.getSchema().getIdentifier());
     long nano3 = System.nanoTime() / 1000000;
     
     if (recordAlreadyExists) {
@@ -256,11 +257,12 @@ public class MetadataControllerImpl implements IMetadataController {
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
     List<String> allRelatedIdentifiers = new ArrayList<>();
+//    File file = new File(new URIoa)
     if (schemaIds != null) {
       for (String schemaId : schemaIds) {
         MetadataSchemaRecord currentSchemaRecord;
         try {
-          currentSchemaRecord = MetadataRecordUtil.getCurrentSchemaRecord(metadataConfig, schemaId);
+          currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
         } catch (ResourceNotFoundException rnfe) {
           //  schemaID not found set version to 1
           currentSchemaRecord = new MetadataSchemaRecord();
