@@ -235,7 +235,9 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
             .addFilters(springSecurityFilterChain)
-            .apply(documentationConfiguration(this.restDocumentation).operationPreprocessors()
+            .apply(documentationConfiguration(this.restDocumentation)
+                    .uris().withPort(8040).and()
+                    .operationPreprocessors()
                     .withRequestDefaults(prettyPrint())
                     .withResponseDefaults(Preprocessors.removeHeaders("X-Content-Type-Options", "X-XSS-Protection", "X-Frame-Options"), prettyPrint()))
             .build();

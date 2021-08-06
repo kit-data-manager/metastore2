@@ -25,6 +25,7 @@ import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
@@ -152,7 +153,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     
     LOG.debug("Test for existing metadata record for given schema and resource");
-    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), record.getSchema().getIdentifier());
+    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, record).getIdentifier());
     long nano3 = System.nanoTime() / 1000000;
     
     if (recordAlreadyExists) {
@@ -263,13 +264,15 @@ public class MetadataControllerImpl implements IMetadataController {
         MetadataSchemaRecord currentSchemaRecord;
         try {
           currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
+          allRelatedIdentifiers.add(currentSchemaRecord.getSchemaDocumentUri());
         } catch (ResourceNotFoundException rnfe) {
           //  schemaID not found set version to 1
           currentSchemaRecord = new MetadataSchemaRecord();
           currentSchemaRecord.setSchemaVersion(1l);
         }
-        for (long versionNumber = 1; versionNumber <= currentSchemaRecord.getSchemaVersion(); versionNumber++) {
-          allRelatedIdentifiers.add(schemaId + MetadataRecordUtil.SCHEMA_VERSION_SEPARATOR + versionNumber);
+        for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
+          MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
+          allRelatedIdentifiers.add(schemaRecord.getSchemaDocumentUri());
         }
       }
     }
@@ -277,13 +280,24 @@ public class MetadataControllerImpl implements IMetadataController {
       allRelatedIdentifiers.addAll(relatedIds);
     }
     if (!allRelatedIdentifiers.isEmpty()) {
-      spec = spec.and(RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()])));
+      Specification<DataResource> toSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
+      spec = spec.and(toSpecification);
     }
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
 
     //if security is enabled, include principal in query
+    if (LOG.isTraceEnabled()) {
+    Page<DataResource> records = dataResourceDao.findAll(pgbl);
+      LOG.trace("List all data resources...");
+      LOG.trace("-----------------------------------------------");
+      for (DataResource item: records.getContent()) {
+        LOG.trace("- '{}'", item);
+      }
+      LOG.trace("-----------------------------------------------");
+      LOG.trace("Specification: '{}'", spec);
+    }
     LOG.debug("Performing query for records.");
     Page<DataResource> records = dataResourceDao.findAll(spec, pgbl);
     

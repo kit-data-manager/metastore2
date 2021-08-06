@@ -261,9 +261,9 @@ public class MetadataRecordUtil {
       ResourceIdentifier identifier = metadataRecord.getPid();
       MetadataSchemaRecordUtil.checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
     } else {
-      LOG.trace("Remove existing identifiers (others than INTERNAL)...");
+      LOG.trace("Remove existing identifiers (others than URL)...");
       for (Identifier item : identifiers) {
-        if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+        if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
         }
       }
@@ -330,7 +330,7 @@ public class MetadataRecordUtil {
       Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
       while (iterator.hasNext()) {
         Identifier identifier = iterator.next();
-        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
           LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
           metadataRecord.setPid(resourceIdentifier);
@@ -356,17 +356,6 @@ public class MetadataRecordUtil {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
           metadataRecord.setSchema(resourceIdentifier);
           metadataRecord.setSchemaVersion(1l);
-          if (resourceIdentifier.getIdentifierType() == IdentifierType.INTERNAL) {
-            String schemaAndVersion = relatedIds.getValue();
-            String[] split = schemaAndVersion.split(SCHEMA_VERSION_SEPARATOR);
-            if (LOG.isTraceEnabled()) {
-              for (String item : split) {
-                LOG.trace("Split into: '{}'", item);
-              }
-            }
-            metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(split[0]));
-            metadataRecord.setSchemaVersion(Long.parseLong(split[1]));
-          }
           LOG.trace("Set schema to '{}'", metadataRecord.getSchema());
         }
       }
@@ -482,6 +471,56 @@ public class MetadataRecordUtil {
     if (!success) {
       throw new UnprocessableEntityException(errorMessage.toString());
     }
+    LOG.trace("Found schema record: '{}'", returnValue);
+    return returnValue;
+  }
+
+  /**
+   * Returns schema record with the current version.
+   *
+   * @param metastoreProperties Configuration for accessing services
+   * @param schemaId SchemaID of the schema.
+   * @param version Version of the schema.
+   * @return MetadataSchemaRecord ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  public static MetadataSchemaRecord getInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
+          String schemaId,
+          Long version) {
+    MetadataSchemaRecord returnValue = null;
+    boolean success = false;
+    StringBuilder errorMessage = new StringBuilder();
+    if (metastoreProperties.getSchemaRegistries().length == 0) {
+      LOG.trace("No external schema registries defined. Try to use internal one...");
+
+      returnValue = MetadataSchemaRecordUtil.getRecordByIdAndVersion(metastoreProperties, schemaId, version);
+      success = true;
+    } else {
+      for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        URI schemaRegistryUri = URI.create(schemaRegistry);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId).queryParam("version", version);
+
+        URI finalUri = builder.build().toUri();
+
+        try {
+          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class);
+          success = true;
+          break;
+        } catch (HttpClientErrorException ce) {
+          String message = "Error accessing schema '" + schemaId + "' at '" + schemaRegistry + "'!";
+          LOG.error(message, ce);
+          errorMessage.append(message).append("\n");
+        } catch (RestClientException ex) {
+          String message = "Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.";
+          LOG.error(message, ex);
+          errorMessage.append(message).append("\n");
+        }
+      }
+    }
+    if (!success) {
+      throw new UnprocessableEntityException(errorMessage.toString());
+    }
+    LOG.trace("Found schema record: '{}'", returnValue);
     return returnValue;
   }
 
@@ -494,15 +533,11 @@ public class MetadataRecordUtil {
    */
   private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
     if (relatedIdentifier == null) {
-      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchema().getIdentifier() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion(), null, null);
+      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, null, null, null);
     }
-    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getSchema().getIdentifierType().name()));
-    if (relatedIdentifier.getIdentifierType() == Identifier.IDENTIFIER_TYPE.INTERNAL) {
-      String schemaAndVersion = metadataRecord.getSchema().getIdentifier() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion();
-      relatedIdentifier.setValue(schemaAndVersion);
-    } else {
-      relatedIdentifier.setValue(metadataRecord.getSchema().getIdentifier());
-    }
+    ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
+    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
+    relatedIdentifier.setValue(schemaIdentifier.getIdentifier());
     LOG.trace("Set relatedId for schema to '{}'", relatedIdentifier);
     
     return relatedIdentifier;

@@ -119,7 +119,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     String etag = record.getEtag();
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
-    fixSchemaDocumentUri(record);
+    fixSchemaDocumentUri(record, true);
     URI locationUri;
     locationUri = getSchemaDocumentUri(record);
     LOG.warn("location uri              " + locationUri);
@@ -254,7 +254,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
-    fixSchemaDocumentUri(updatedSchemaRecord);
+    fixSchemaDocumentUri(updatedSchemaRecord, true);
     // Fix Url for OAI PMH entry
     MetadataSchemaRecordUtil.updateMetadataFormat(updatedSchemaRecord);
 
