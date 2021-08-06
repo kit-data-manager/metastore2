@@ -40,7 +40,7 @@ public class LinkedMetadataRecord implements Serializable {
   
   public LinkedMetadataRecord(MetadataRecord record) {
     schemaId = record.getSchemaId();
-    relatedResource = record.getRelatedResource();
+    relatedResource = record.getRelatedResource().getIdentifier();
   }
   @Id
    @GeneratedValue
@@ -50,4 +50,6 @@ public class LinkedMetadataRecord implements Serializable {
   private String schemaId;
   @NotBlank(message = "The unqiue identifier of the related source.")
   private String relatedResource;
+  
+  
 }

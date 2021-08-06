@@ -15,6 +15,7 @@ import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
@@ -110,8 +111,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   private static final String METADATA_RECORD_ID = "test_id";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
-  private static final String RELATED_RESOURCE = "anyResourceId";
-  private static final String RELATED_RESOURCE_2 = "anyOtherResourceId";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryUrlResourceIdentifier("anyOtherResourceId");
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
@@ -305,7 +306,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
@@ -326,7 +327,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testCreateRecordWithId() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     record.setId("SomeInvalidId");
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -348,7 +349,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testCreateRecordWithLocationUri() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
@@ -377,7 +378,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateInvalidRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(INVALID_SCHEMA);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(INVALID_SCHEMA));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -431,7 +432,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   // @Test 
   public void testCreateRecordFromExternal() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -452,7 +453,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   //@Test @ToDo Set external remote address.
   public void testCreateRecordUpdateFromExternal() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId("my_dcExt");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier("my_dcExt"));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -471,7 +472,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateMetadataUnknownSchemaId() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId("unknown_dc");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier("unknown_dc"));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -487,7 +488,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateRecordWithBadMetadata() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -503,7 +504,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateRecordWithInvalidMetadataNamespace() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -519,7 +520,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateRecordWithInvalidMetadata() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -543,7 +544,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testCreateRecordWithoutSchema() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -559,6 +560,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     MetadataRecord record = new MetadataRecord();
     //schemaId is missing
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
     record.setRelatedResource(RELATED_RESOURCE);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -575,7 +577,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     ObjectMapper mapper = new ObjectMapper();
 
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     //related resource is missing
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -591,7 +593,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testCreateTwoVersionsOfSameRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
@@ -619,7 +621,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testCreateTwoVersions() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
@@ -703,13 +705,13 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE).header(HttpHeaders.AUTHORIZATION,
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier()).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(1, result.length);
-    res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString()).header(HttpHeaders.AUTHORIZATION,
+    res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE.getIdentifier()).param("from", twoHoursBefore.toString()).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isOk()).andReturn();
     map = new ObjectMapper();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
@@ -734,14 +736,14 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
 
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE).param("until", oneHourBefore.toString()).header(HttpHeaders.AUTHORIZATION,
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE.getIdentifier()).param("until", oneHourBefore.toString()).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(0, result.length);
 
-    res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE).param("from", twoHoursBefore.toString()).header(HttpHeaders.AUTHORIZATION,
+    res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", RELATED_RESOURCE.getIdentifier()).param("from", twoHoursBefore.toString()).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken).param("until", oneHourBefore.toString())).andDo(print()).andExpect(status().isOk()).andReturn();
     map = new ObjectMapper();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
@@ -821,7 +823,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> acl = new HashSet<>();
     acl.add(new AclEntry("test", PERMISSION.READ));
@@ -1059,7 +1061,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   private String createDCMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
@@ -1075,8 +1077,6 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             file(metadataFile).header(HttpHeaders.AUTHORIZATION,
             "Bearer " + userToken)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
-    // Add versioning 
-    javers.commit("admin", result);
     
     return result.getId();
   } 

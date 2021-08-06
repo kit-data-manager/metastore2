@@ -12,6 +12,9 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtilTest;
+import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -19,6 +22,7 @@ import edu.kit.datamanager.repo.domain.Agent;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.Description;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
@@ -38,6 +42,8 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -724,7 +730,7 @@ public class SchemaRegistryControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", DC_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
-
+  // Update only record
   @Test
   public void testUpdateRecord() throws Exception {
     ingestSchemaRecord();
@@ -735,7 +741,13 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     String mimeTypeBefore = record.getMimeType();
+    String definitionBefore = record.getDefinition();
+    String labelBefore = record.getLabel();
+    String commentBefore = record.getComment();
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    record.setDefinition("");
+    record.setComment("new comment");
+    record.setLabel("label changed");
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc").
@@ -746,13 +758,18 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
-//    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    Assert.assertEquals("Check label: ", record.getLabel(),record2.getLabel());
+    Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());
+    Assert.assertNotEquals("Check label: ",labelBefore,record2.getLabel());
+    Assert.assertNotEquals("Check comment: ", commentBefore, record2.getComment());
+    Assert.assertNull("Check definition for 'null'", record2.getDefinition());
   }
 
   @Test
@@ -775,6 +792,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
@@ -806,6 +824,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
@@ -838,6 +857,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getMimeType(), record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
@@ -887,6 +907,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record1.getSchemaHash(), record2.getSchemaHash());
     //Assert.assertEquals(record1.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
     Assert.assertEquals(record1.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record1.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
@@ -1032,6 +1053,41 @@ public class SchemaRegistryControllerTest {
       this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId + "/validate?version=" + document).file("document", xmlDocument)).andDo(print()).andExpect(resultMatcher).andReturn();
     }
   }
+  
+  /****************************************************************************
+   * Moved tests from MetadataSchemaRecordUtilTest
+   ****************************************************************************/
+
+  /**
+   * Test of migrateToDataResource method, of class MetadataSchemaRecordUtil.
+   */
+  @Test
+  public void testMigrateToDataResource() {
+    System.out.println("migrateToDataResource");
+RepoBaseConfiguration applicationProperties = schemaConfig;
+   // Test with all possible values
+    MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5,7,11,12);
+    MetadataSchemaRecord expResult = null;
+    DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
+    expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
+    assertEquals(metadataSchemaRecord, expResult);
+    // Test skipping pid
+    metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5,7,10,11,12);
+    result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
+    expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
+    assertEquals(metadataSchemaRecord, expResult);
+  }
+
+  /**
+   * Test of migrateToMetadataSchemaRecord method, of class
+   * MetadataSchemaRecordUtil.
+   */
+  @Test
+  public void testMigrateToMetadataSchemaRecord() {
+    System.out.println("migrateToMetadataSchemaRecord");
+    System.out.println("Test moved to SchemaRegistryControllerTest");
+         // due to mandatory application properties.
+ }
 
   private void ingestSchemaRecord() throws Exception {
     DataResource dataResource = DataResource.factoryNewDataResource(SCHEMA_ID);
@@ -1049,6 +1105,11 @@ public class SchemaRegistryControllerTest {
     Set<AclEntry> aclEntries = dataResource.getAcls();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+      Set<Description> descriptions = dataResource.getDescriptions();
+      descriptions.add(Description.factoryDescription("other", Description.TYPE.OTHER));
+      descriptions.add(Description.factoryDescription("abstract", Description.TYPE.ABSTRACT));
+      descriptions.add(Description.factoryDescription("technical info", Description.TYPE.TECHNICAL_INFO));
+      descriptions.add(Description.factoryDescription("not used yet", Description.TYPE.METHODS));
     ContentInformation ci = ContentInformation.createContentInformation(
             SCHEMA_ID, "schema.xsd", (String[]) null);
     ci.setVersion(1);
@@ -1069,6 +1130,7 @@ public class SchemaRegistryControllerTest {
     schemaRecord.setSchemaId(dataResource.getId());
     schemaRecord.setVersion(1l);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());
+    schemaRecord.setDocumentHash(ci.getHash());
     try {
       schemaRecordDao.save(schemaRecord);
       System.out.println("Schema record saved: " + schemaRecord);

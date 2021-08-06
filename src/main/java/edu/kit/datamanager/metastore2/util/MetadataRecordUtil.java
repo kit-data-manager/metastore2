@@ -25,6 +25,7 @@ import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -138,7 +139,7 @@ public class MetadataRecordUtil {
       return "somethingStupid";
     });
     long nano6 = System.nanoTime() / 1000000;
-    // Create schema record
+    // Create additional metadata record for faster access
     DataRecord dataRecord = new DataRecord();
     dataRecord.setMetadataId(createResource.getId());
     dataRecord.setSchemaId(record.getSchemaId());
@@ -187,7 +188,7 @@ public class MetadataRecordUtil {
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     } else {
-         dataResource = DataResourceUtils.copyDataResource(dataResource);
+      dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
     String version = dataResource.getVersion();
     if (version != null) {
@@ -203,13 +204,11 @@ public class MetadataRecordUtil {
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
-      if (record != null) {
-        DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
-        dataRecord.setMetadataDocumentUri(addFile.getContentUri());
-        dataRecord.setDocumentHash(addFile.getHash());
-        dataRecord.setLastUpdate(dataResource.getLastUpdate());
-        dataRecordDao.save(dataRecord);
-      }
+      DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+      dataRecord.setMetadataDocumentUri(addFile.getContentUri());
+      dataRecord.setDocumentHash(addFile.getHash());
+      dataRecord.setLastUpdate(dataResource.getLastUpdate());
+      dataRecordDao.save(dataRecord);
     }
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
@@ -262,7 +261,7 @@ public class MetadataRecordUtil {
     for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
         LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
-        relatedIds.setValue(metadataRecord.getRelatedResource());
+        relatedIds.setValue(metadataRecord.getRelatedResource().getIdentifier());
         relationFound = true;
       }
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
@@ -273,7 +272,7 @@ public class MetadataRecordUtil {
       }
     }
     if (!relationFound) {
-      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource(), null, null);
+      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource().getIdentifier(), null, null);
       dataResource.getRelatedIdentifiers().add(relatedResource);
     }
     if (!schemaIdFound) {
@@ -335,18 +334,18 @@ public class MetadataRecordUtil {
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
           LOG.trace("Set relation to '{}'", relatedIds.getValue());
-          metadataRecord.setRelatedResource(relatedIds.getValue());
+          metadataRecord.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue()));
         }
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
           LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
           String schemaAndVersion = relatedIds.getValue();
           String[] split = schemaAndVersion.split(SCHEMA_VERSION_SEPARATOR);
           if (LOG.isTraceEnabled()) {
-            for (String item: split) {
+            for (String item : split) {
               LOG.trace("Split into: '{}'", item);
             }
           }
-          metadataRecord.setSchemaId(split[0]);
+          metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(split[0]));
           metadataRecord.setSchemaVersion(Long.parseLong(split[1]));
         }
       }
@@ -556,30 +555,40 @@ public class MetadataRecordUtil {
 
   public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
     if (provided != null) {
-      if (!Objects.isNull(provided.getPid())) {
-        LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-        managed.setPid(provided.getPid());
+      //update pid
+      if (provided.getPid() != null) {
+        if (!provided.getPid().equals(managed.getPid())) {
+          LOG.trace("Updating record mimetype from {} to {}.", managed.getPid(), provided.getPid());
+          managed.setPid(provided.getPid());
+        }
       }
-
-      if (!Objects.isNull(provided.getRelatedResource())) {
-        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-        managed.setRelatedResource(provided.getRelatedResource());
-      }
-
-      if (!Objects.isNull(provided.getSchemaId())) {
-        LOG.trace("Updating schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-        managed.setSchemaId(provided.getSchemaId());
-      }
-
       //update acl
       if (provided.getAcl() != null) {
-        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-        managed.setAcl(provided.getAcl());
+        if (!provided.getAcl().equals(managed.getAcl())) {
+          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+          managed.setAcl(provided.getAcl());
+        }
       }
-      //update schema version
+      //update getRelatedResource
+      if (provided.getRelatedResource() != null) {
+        if (!provided.getRelatedResource().equals(managed.getRelatedResource())) {
+          LOG.trace("Updating record type from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+          managed.setRelatedResource(provided.getRelatedResource());
+        }
+      }
+      //update schemaId
+      if (provided.getSchemaId() != null) {
+        if (!provided.getSchemaId().equals(managed.getSchemaId())) {
+          LOG.trace("Updating record schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
+          managed.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(provided.getSchemaId()));
+        }
+      }
+      //update schemaVersion
       if (provided.getSchemaVersion() != null) {
-        LOG.trace("Updating schema version from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
-        managed.setSchemaVersion(provided.getSchemaVersion());
+        if (!provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
+          LOG.trace("Updating record schemaVersion from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
+          managed.setSchemaVersion(provided.getSchemaVersion());
+        }
       }
     }
 //    LOG.trace("Setting lastUpdate to now().");

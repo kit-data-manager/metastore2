@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -24,6 +25,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
@@ -31,6 +33,7 @@ import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.Description;
 import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
@@ -47,6 +50,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -140,9 +145,10 @@ public class MetadataSchemaRecordUtil {
     });
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
+    schemaRecord.setDocumentHash(contentInformation.getHash());
     try {
       schemaRecordDao.save(schemaRecord);
-      LOG.error("Schema record saved: " + schemaRecord);
+      LOG.trace("Schema record saved (Create): '{}'", schemaRecord);
     } catch (Exception npe) {
       LOG.error("Can't save schema record: " + schemaRecord, npe);
     }
@@ -172,8 +178,6 @@ public class MetadataSchemaRecordUtil {
           MultipartFile schemaDocument,
           Function<String, String> supplier) {
     MetadataSchemaRecord record = null;
-    MetadataSchemaRecord existingRecord;
-    DataResource newResource;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (schemaDocument == null || schemaDocument.isEmpty())) {
@@ -196,7 +200,7 @@ public class MetadataSchemaRecordUtil {
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (record != null) {
-      existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+      MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     } else {
@@ -213,16 +217,17 @@ public class MetadataSchemaRecordUtil {
       // Create schema record
       SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(record.getSchemaId());
       validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
-      LOG.trace("Updating metadata document.");
+      LOG.trace("Updating schema document.");
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, info.getRelativePath(), null, true, supplier);
       schemaRecord.setSchemaDocumentUri(addFile.getContentUri());
+      schemaRecord.setDocumentHash(addFile.getHash());
       LOG.trace("Updated to: {}", schemaRecord);
       try {
         schemaRecordDao.save(schemaRecord);
-        LOG.error("Schema record saved: " + schemaRecord);
+        LOG.trace("Schema record saved (Update): '{}'", schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);
       }
@@ -271,8 +276,17 @@ public class MetadataSchemaRecordUtil {
           dataResource.getDates().add(Date.factoryDate(metadataSchemaRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
         }
       }
+      Set<Identifier> identifiers = dataResource.getAlternateIdentifiers();
       if (metadataSchemaRecord.getPid() != null) {
-        dataResource.setIdentifier(PrimaryIdentifier.factoryPrimaryIdentifier(metadataSchemaRecord.getPid()));
+        ResourceIdentifier identifier = metadataSchemaRecord.getPid();
+        checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
+      } else {
+        LOG.trace("Remove existing identifiers (others than INTERNAL)...");
+        for (Identifier item : identifiers) {
+          if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+            LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
+          }
+        }
       }
       String defaultTitle = metadataSchemaRecord.getMimeType();
       boolean titleExists = false;
@@ -290,7 +304,88 @@ public class MetadataSchemaRecordUtil {
       dataResource.getFormats().clear();
       dataResource.getFormats().add(metadataSchemaRecord.getType().name());
     }
+    // label      -> description of type (OTHER)
+    // definition -> description of type (TECHNICAL_INFO)
+    // comment    -> description of type (ABSTRACT)
+    Set<Description> descriptions = dataResource.getDescriptions();
+
+    checkDescription(descriptions, metadataSchemaRecord.getLabel(), Description.TYPE.OTHER);
+    checkDescription(descriptions, metadataSchemaRecord.getDefinition(), Description.TYPE.TECHNICAL_INFO);
+    checkDescription(descriptions, metadataSchemaRecord.getComment(), Description.TYPE.ABSTRACT);
+
     return dataResource;
+  }
+
+  /**
+   * Test if description exists. If description is null remove existing
+   * description type. if description added/changed add/change description with
+   * given type.
+   *
+   * @param descriptions all descriptions
+   * @param description Content of (new) description
+   * @param type Type of the description
+   */
+  private static void checkDescription(Set<Description> descriptions, String description, Description.TYPE type) {
+    Iterator<Description> iterator = descriptions.iterator();
+    Description item = null;
+    while (iterator.hasNext()) {
+      Description next = iterator.next();
+
+      if (next.getType().compareTo(type) == 0) {
+        item = next;
+        break;
+      }
+    }
+    if (item != null) {
+      if (description != null) {
+        if (!description.equals(item.getDescription())) {
+          item.setDescription(description);
+        }
+      } else {
+        descriptions.remove(item);
+      }
+    } else {
+      if (description != null) {
+        item = Description.factoryDescription(description, type);
+        descriptions.add(item);
+      }
+    }
+  }
+
+  /**
+   * Test if alternate identifier exists. If alternate identifier is null remove
+   * existing alternate identifier type. if alternate identifier added/changed
+   * add/change alternate identifier with given type.
+   *
+   * @param identifiers all alternate identifiers
+   * @param identifier Content of (new) alternate identifier
+   * @param type Type of the alternate identifier
+   */
+  private static void checkAlternateIdentifier(Set<Identifier> identifiers, String identifier, Identifier.IDENTIFIER_TYPE type) {
+    Iterator<Identifier> iterator = identifiers.iterator();
+    Identifier item = null;
+    while (iterator.hasNext()) {
+      Identifier next = iterator.next();
+
+      if (next.getIdentifierType().compareTo(type) == 0) {
+        item = next;
+        break;
+      }
+    }
+    if (item != null) {
+      if (identifier != null) {
+        if (!identifier.equals(item.getValue())) {
+          item.setValue(identifier);
+        }
+      } else {
+        identifiers.remove(item);
+      }
+    } else {
+      if (identifier != null) {
+        item = Identifier.factoryIdentifier(identifier, type);
+        identifiers.add(item);
+      }
+    }
   }
 
   public static MetadataSchemaRecord migrateToMetadataSchemaRecord(RepoBaseConfiguration applicationProperties,
@@ -323,13 +418,18 @@ public class MetadataSchemaRecordUtil {
       if (dataResource.getLastUpdate() != null) {
         metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
       }
-
-      if (dataResource.getIdentifier() != null) {
-        PrimaryIdentifier identifier = dataResource.getIdentifier();
-        if (identifier.hasDoi()) {
-          metadataSchemaRecord.setPid(identifier.getValue());
+      Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
+      while (iterator.hasNext()) {
+        Identifier identifier = iterator.next();
+        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
+          LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
+          metadataSchemaRecord.setPid(resourceIdentifier);
+          break;
         }
+
       }
+
       Long schemaVersion = 1l;
       if (dataResource.getVersion() != null) {
         schemaVersion = Long.parseLong(dataResource.getVersion());
@@ -341,17 +441,39 @@ public class MetadataSchemaRecordUtil {
         LOG.debug("findByIDAndVersion {},{}", dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
         metadataSchemaRecord.setSchemaDocumentUri(schemaRecord.getSchemaDocumentUri());
+        metadataSchemaRecord.setSchemaHash(schemaRecord.getDocumentHash());
       } catch (NullPointerException npe) {
         LOG.debug("No schema record found! -> Create new schema record.");
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         if (info != null) {
           metadataSchemaRecord.setSchemaDocumentUri(info.getContentUri());
+          metadataSchemaRecord.setSchemaHash(info.getHash());
           saveNewSchemaRecord(metadataSchemaRecord);
         }
       }
     }
     long nano7 = System.nanoTime() / 1000000;
+    // label -> description of type (OTHER)
+    // description -> description of type (TECHNICAL_INFO)
+    // comment -> description of type (ABSTRACT)
+    Iterator<Description> iterator = dataResource.getDescriptions().iterator();
+    while (iterator.hasNext()) {
+      Description nextDescription = iterator.next();
+      switch (nextDescription.getType()) {
+        case ABSTRACT:
+          metadataSchemaRecord.setComment(nextDescription.getDescription());
+          break;
+        case TECHNICAL_INFO:
+          metadataSchemaRecord.setDefinition(nextDescription.getDescription());
+          break;
+        case OTHER:
+          metadataSchemaRecord.setLabel(nextDescription.getDescription());
+          break;
+        default:
+          LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
+      }
+    }
     LOG.error("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
     return metadataSchemaRecord;
   }
@@ -429,7 +551,7 @@ public class MetadataSchemaRecordUtil {
         byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
         applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, schemaDocument);
         schemaRecordDao.save(schemaRecord);
-     } else {
+      } else {
         applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
       }
       long nano3 = System.nanoTime() / 1000000;
@@ -482,30 +604,92 @@ public class MetadataSchemaRecordUtil {
 
   public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
     if (provided != null) {
+      // update pid
       if (!Objects.isNull(provided.getPid())) {
-        LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-        managed.setPid(provided.getPid());
+        if (!provided.getPid().equals(managed.getPid())) {
+          LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
+          managed.setPid(provided.getPid());
+        }
       }
-
       //update acl
-      if (provided.getAcl() != null) {
-        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-        managed.setAcl(provided.getAcl());
+      if (!provided.getAcl().isEmpty()) {
+        if (!provided.getAcl().equals(managed.getAcl())) {
+          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+          managed.setAcl(provided.getAcl());
+        }
       }
       //update mimetype
       if (provided.getMimeType() != null) {
-        LOG.trace("Updating record mimetype from {} to {}.", managed.getMimeType(), provided.getMimeType());
-        managed.setMimeType(provided.getMimeType());
+        if (!provided.getMimeType().equals(managed.getMimeType())) {
+          LOG.trace("Updating record mimetype from {} to {}.", managed.getMimeType(), provided.getMimeType());
+          managed.setMimeType(provided.getMimeType());
+        }
       }
-      //update mimetype
+      //update type
       if (provided.getType() != null) {
-        LOG.trace("Updating record type from {} to {}.", managed.getType(), provided.getType());
-        managed.setType(provided.getType());
+        if (!provided.getType().equals(managed.getType())) {
+          LOG.trace("Updating record type from {} to {}.", managed.getType(), provided.getType());
+          managed.setType(provided.getType());
+        }
+      }
+      //update label
+      if (provided.getLabel() != null) {
+        if (!provided.getLabel().equals(managed.getLabel())) {
+          LOG.trace("Updating record label from {} to {}.", managed.getLabel(), provided.getLabel());
+          managed.setLabel(checkForEmptyString(provided.getLabel()));
+        }
+      }
+      //update definition
+      if (provided.getDefinition() != null) {
+        if (!provided.getDefinition().equals(managed.getDefinition())) {
+          LOG.trace("Updating record definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
+          managed.setDefinition(checkForEmptyString(provided.getDefinition()));
+        }
+      }
+      //update comment
+      if (provided.getComment() != null) {
+        if (!provided.getComment().equals(managed.getComment())) {
+          LOG.trace("Updating record comment from {} to {}.", managed.getComment(), provided.getComment());
+          managed.setComment(checkForEmptyString(provided.getComment()));
+        }
+      }
+      //update doNotSync
+      if (!provided.getDoNotSync().equals(managed.getDoNotSync())) {
+        LOG.trace("Updating record comment from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
+        managed.setDoNotSync(provided.getDoNotSync());
+      }
+      //update schemaId
+      if (provided.getSchemaId() != null) {
+        if (!provided.getSchemaId().equals(managed.getSchemaId())) {
+          LOG.trace("Updating record comment from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
+          managed.setSchemaId(provided.getSchemaId());
+        }
+      }
+      //update schemaVersion
+      if (provided.getSchemaVersion() != null) {
+        if (!provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
+          LOG.trace("Updating record comment from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
+          managed.setSchemaVersion(provided.getSchemaVersion());
+        }
       }
     }
 //    LOG.trace("Setting lastUpdate to now().");
 //    managed.setLastUpdate(Instant.now());
     return managed;
+  }
+
+  /**
+   * Check for empty String. If String is empty return 'NULL'.
+   *
+   * @param string String to check.
+   * @return String or 'NULL'
+   */
+  private static String checkForEmptyString(String string) {
+    String returnValue = null;
+    if (!string.isEmpty()) {
+      returnValue = string;
+    }
+    return returnValue;
   }
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
@@ -588,13 +772,13 @@ public class MetadataSchemaRecordUtil {
       schemaRecord.setVersion(result.getSchemaVersion());
       schemaRecord.setSchemaDocumentUri(result.getSchemaDocumentUri());
       schemaRecord.setType(result.getType());
+      schemaRecord.setDocumentHash(result.getSchemaHash());
       try {
         schemaRecordDao.save(schemaRecord);
-        LOG.trace("Schema record saved: " + schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);
       }
-      LOG.trace("Schema record saved: {}", schemaRecord);
+      LOG.trace("Schema record saved (save2): {}", schemaRecord);
     }
   }
 

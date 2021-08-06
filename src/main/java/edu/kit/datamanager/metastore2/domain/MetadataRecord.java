@@ -21,6 +21,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import edu.kit.datamanager.entities.EtagSupport;
+import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
@@ -54,7 +55,7 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
   private String pid;
   @NotBlank(message = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.")
-  private String relatedResource;
+  private ResourceIdentifier relatedResource;
   @NotNull(message = "The date the record has been initially created.")
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'", timezone = "UTC")
   @JsonDeserialize(using = CustomInstantDeserializer.class)
@@ -65,8 +66,8 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @JsonDeserialize(using = CustomInstantDeserializer.class)
   @JsonSerialize(using = CustomInstantSerializer.class)
   private Instant lastUpdate;
-  @NotBlank(message = "The unqiue identifier of the schema used by this record. The schemaId must map to a valid entry in the schema registry.")
-  private String schemaId;
+  @NotBlank(message = "The unqiue identifier of the schema used by this record. Possible types: INTERNAL, URL. Will be extended...")
+  private ResourceIdentifier schema;
   @NotNull(message = "The version of the schema. If no version is provided the current schema is used.")
   private Long schemaVersion;
   @NotNull(message = "The record version. The version is set by the metadata registry and cannot be provided manually.")
@@ -118,5 +119,18 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @JsonIgnore
   public String getEtag() {
     return eTag;
+  }
+
+  /** 
+   * Get (internal) schema identifier.
+   * 
+   * @return schema identifier.
+   */
+   @JsonIgnore
+   public String getSchemaId() {
+    if (schema.getIdentifierType() == ResourceIdentifier.IdentifierType.INTERNAL) {
+      return schema.getIdentifier();
+    }
+    throw new BadArgumentException("URL as schema identifier is not supported yet! (Coming soon)");
   }
 }
