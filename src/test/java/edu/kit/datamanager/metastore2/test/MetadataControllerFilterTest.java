@@ -135,7 +135,7 @@ public class MetadataControllerFilterTest {
   private static final String JSON_SCHEMA_ID = "json_schema_";
   private static final String XML_SCHEMA_ID = "xml_schema_";
   private static final String RELATED_RESOURCE = "resource_";
-  private static final String  INVALID_MIMETYPE = "application/invalid";
+  private static final String INVALID_MIMETYPE = "application/invalid";
 
   private MockMvc mockMvc;
   @Autowired
@@ -197,8 +197,12 @@ public class MetadataControllerFilterTest {
       MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
       Assert.assertEquals("No of records for schema '" + i + "'", i, result.length);
-      for (MetadataRecord item: result) {
-        Assert.assertEquals(schemaId, item.getSchema().getIdentifier());
+      for (MetadataRecord item : result) {
+        Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, item.getSchema().getIdentifierType());
+        String schemaUrl = item.getSchema().getIdentifier();
+        Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+        Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
+        Assert.assertTrue(schemaUrl.contains(schemaId));
       }
     }
   }
