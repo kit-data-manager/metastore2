@@ -373,8 +373,8 @@ public class SchemaRegistryControllerDocumentationTest {
     // Create a metadata record.
     MetadataRecord metadataRecord = new MetadataRecord();
 //    record.setId("my_id");
-    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     metadataRecord.setRelatedResource(RELATED_RESOURCE);
+    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     metadataRecord.setSchemaVersion(1l);
 
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
@@ -415,6 +415,7 @@ public class SchemaRegistryControllerDocumentationTest {
 
     mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     record.setSchemaVersion(2l);
     recordFile = new MockMultipartFile("record", "metadata-record-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v2.xml", "application/xml", DOCUMENT_V2.getBytes());
@@ -437,6 +438,7 @@ public class SchemaRegistryControllerDocumentationTest {
             andDo(document("get-metadata-record-v2")).
             andExpect(status().isOk()).
             andReturn().getResponse();
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     record.setSchemaVersion(3l);
     recordFile = new MockMultipartFile("record", "metadata-record-v3.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v3.xml", "application/xml", DOCUMENT_V3.getBytes());
