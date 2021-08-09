@@ -265,6 +265,7 @@ public class MetadataRecordUtil {
       for (Identifier item : identifiers) {
         if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
+          identifiers.remove(item);
         }
       }
     }
@@ -539,7 +540,7 @@ public class MetadataRecordUtil {
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
     relatedIdentifier.setValue(schemaIdentifier.getIdentifier());
     LOG.trace("Set relatedId for schema to '{}'", relatedIdentifier);
-    
+
     return relatedIdentifier;
   }
 
@@ -654,16 +655,16 @@ public class MetadataRecordUtil {
   }
 
   public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
-    if (provided != null) {
+    if (provided != null && managed != null) {
       //update pid
       if (provided.getPid() != null) {
         if (!provided.getPid().equals(managed.getPid())) {
-          LOG.trace("Updating record mimetype from {} to {}.", managed.getPid(), provided.getPid());
+          LOG.trace("Updating record pid from {} to {}.", managed.getPid(), provided.getPid());
           managed.setPid(provided.getPid());
         }
       }
       //update acl
-      if (provided.getAcl() != null) {
+      if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
           LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
           managed.setAcl(provided.getAcl());
@@ -672,15 +673,15 @@ public class MetadataRecordUtil {
       //update getRelatedResource
       if (provided.getRelatedResource() != null) {
         if (!provided.getRelatedResource().equals(managed.getRelatedResource())) {
-          LOG.trace("Updating record type from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+          LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
           managed.setRelatedResource(provided.getRelatedResource());
         }
       }
       //update schemaId
-      if (provided.getSchema().getIdentifier() != null) {
-        if (!provided.getSchema().getIdentifier().equals(managed.getSchema().getIdentifier())) {
-          LOG.trace("Updating record schemaId from {} to {}.", managed.getSchema().getIdentifier(), provided.getSchema().getIdentifier());
-          managed.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(provided.getSchema().getIdentifier()));
+      if (provided.getSchema() != null) {
+        if (!provided.getSchema().equals(managed.getSchema())) {
+          LOG.trace("Updating record schema from {} to {}.", managed.getSchema(), provided.getSchema());
+          managed.setSchema(provided.getSchema());
         }
       }
       //update schemaVersion
@@ -690,6 +691,8 @@ public class MetadataRecordUtil {
           managed.setSchemaVersion(provided.getSchemaVersion());
         }
       }
+    } else {
+      managed = (managed != null) ? managed : provided;
     }
 //    LOG.trace("Setting lastUpdate to now().");
 //    managed.setLastUpdate(Instant.now());

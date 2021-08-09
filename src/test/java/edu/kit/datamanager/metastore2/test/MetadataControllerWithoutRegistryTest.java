@@ -82,8 +82,9 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"server.port=41406"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_no_reg;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithoutRegistryTest {
 
