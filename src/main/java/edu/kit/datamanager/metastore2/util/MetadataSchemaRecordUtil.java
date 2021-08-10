@@ -152,12 +152,7 @@ public class MetadataSchemaRecordUtil {
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
-    try {
-      schemaRecordDao.save(schemaRecord);
-      LOG.trace("Schema record saved (Create): '{}'", schemaRecord);
-    } catch (Exception npe) {
-      LOG.error("Can't save schema record: " + schemaRecord, npe);
-    }
+    saveNewSchemaRecord(schemaRecord);
     // Settings for OAI PMH
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
@@ -212,32 +207,27 @@ public class MetadataSchemaRecordUtil {
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
-    String version = dataResource.getVersion();
-    if (version != null) {
-      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
-    }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
-    record = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
     if (schemaDocument != null) {
-      // Create schema record
+      record = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+      // Get schema record for this schema
       SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(record.getSchemaId());
       validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
-      LOG.trace("Updating schema document.");
+
+      // Everything seems to be fine update document and increment version
+      LOG.trace("Updating schema document (and increment version)...");
+      String version = dataResource.getVersion();
+      if (version != null) {
+        dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+      }
+
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, info.getRelativePath(), null, true, supplier);
-      schemaRecord.setSchemaDocumentUri(addFile.getContentUri());
-      schemaRecord.setDocumentHash(addFile.getHash());
-      LOG.trace("Updated to: {}", schemaRecord);
-      try {
-        schemaRecordDao.save(schemaRecord);
-        LOG.trace("Schema record saved (Update): '{}'", schemaRecord);
-      } catch (Exception npe) {
-        LOG.error("Can't save schema record: " + schemaRecord, npe);
-      }
     }
+    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
+
     return migrateToMetadataSchemaRecord(applicationProperties, dataResource, true);
   }
 
@@ -869,21 +859,37 @@ public class MetadataSchemaRecordUtil {
   }
 
   private static void saveNewSchemaRecord(MetadataSchemaRecord result) {
-    if (schemaRecordDao != null) {
-      // Create shortcut for access.
-      LOG.trace("Found new schema record!");
-      SchemaRecord schemaRecord = new SchemaRecord();
+    SchemaRecord schemaRecord = null;
+
+    // Create shortcut for access.
+    LOG.trace("Save new schema record!");
+    schemaRecord = transformToSchemaRecord(result);
+
+    saveNewSchemaRecord(schemaRecord);
+  }
+
+  private static SchemaRecord transformToSchemaRecord(MetadataSchemaRecord result) {
+    SchemaRecord schemaRecord = null;
+    LOG.trace("Transform to schema record! ({})", result);
+    if (result != null) {
+      schemaRecord = new SchemaRecord();
       schemaRecord.setSchemaId(result.getSchemaId());
       schemaRecord.setVersion(result.getSchemaVersion());
       schemaRecord.setSchemaDocumentUri(result.getSchemaDocumentUri());
       schemaRecord.setType(result.getType());
       schemaRecord.setDocumentHash(result.getSchemaHash());
+    }
+    return schemaRecord;
+  }
+
+  private static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
+    if (schemaRecordDao != null) {
       try {
         schemaRecordDao.save(schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);
       }
-      LOG.trace("Schema record saved (save2): {}", schemaRecord);
+      LOG.trace("Schema record saved: {}", schemaRecord);
     }
   }
 

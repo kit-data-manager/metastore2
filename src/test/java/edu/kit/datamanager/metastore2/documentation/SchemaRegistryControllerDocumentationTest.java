@@ -101,8 +101,9 @@ public class SchemaRegistryControllerDocumentationTest {
 
   private final static String EXAMPLE_SCHEMA_ID = "my_first_xsd";
   private final static String ANOTHER_SCHEMA_ID = "another_xsd";
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/xml/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String SCHEMA_V1 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "        xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
@@ -192,6 +193,12 @@ public class SchemaRegistryControllerDocumentationTest {
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
     } catch (IOException ex) {
       ex.printStackTrace();
     }

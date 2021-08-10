@@ -149,7 +149,7 @@ public class MetadataRecordUtil {
     dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
     dataRecord.setLastUpdate(dataResource.getLastUpdate());
-    dataRecordDao.save(dataRecord);
+    saveNewDataRecord(dataRecord);
     long nano7 = System.nanoTime() / 1000000;
     LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
@@ -193,26 +193,24 @@ public class MetadataRecordUtil {
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
-    String version = dataResource.getVersion();
-    if (version != null) {
-      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
-    }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (document != null) {
       record = migrateToMetadataRecord(applicationProperties, dataResource, false);
       validateMetadataDocument(applicationProperties, record, document);
-      LOG.trace("Updating metadata document.");
+      // Everything seems to be fine update document and increment version
+      LOG.trace("Updating schema document (and increment version)...");
+      String version = dataResource.getVersion();
+      if (version != null) {
+        dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+      }
+
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
 
       ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
-      DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
-      dataRecord.setMetadataDocumentUri(addFile.getContentUri());
-      dataRecord.setDocumentHash(addFile.getHash());
-      dataRecord.setLastUpdate(dataResource.getLastUpdate());
-      dataRecordDao.save(dataRecord);
     }
+    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
+
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
@@ -718,21 +716,37 @@ public class MetadataRecordUtil {
   }
 
   private static void saveNewDataRecord(MetadataRecord result) {
-    if (dataRecordDao != null) {
-      // Create shortcut for access.
-      LOG.trace("Found new schema record!");
-      DataRecord dataRecord = new DataRecord();
+    DataRecord dataRecord = null;
+
+    // Create shortcut for access.
+    LOG.trace("Save new data record!");
+    dataRecord = transformToDataRecord(result);
+
+    saveNewDataRecord(dataRecord);
+  }
+
+  private static DataRecord transformToDataRecord(MetadataRecord result) {
+    DataRecord dataRecord = null;
+    if (result != null) {
+      LOG.trace("Transform to data record!");
+      dataRecord = new DataRecord();
       dataRecord.setMetadataId(result.getId());
       dataRecord.setSchemaId(result.getSchema().getIdentifier());
       dataRecord.setDocumentHash(result.getDocumentHash());
       dataRecord.setMetadataDocumentUri(result.getMetadataDocumentUri());
       dataRecord.setLastUpdate(result.getLastUpdate());
+    }
+    return dataRecord;
+  }
+
+  private static void saveNewDataRecord(DataRecord dataRecord) {
+    if (dataRecordDao != null) {
       try {
         dataRecordDao.save(dataRecord);
       } catch (Exception ex) {
         LOG.error("Error saving data record", ex);
       }
-      LOG.trace("Data record: {}", dataRecord);
+      LOG.trace("Data record saved: {}", dataRecord);
     }
   }
 }

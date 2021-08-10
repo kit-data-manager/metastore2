@@ -650,8 +650,8 @@ public class JsonSchemaRegistryControllerTest {
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
-//    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    // Version shouldn't be updated
+    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
@@ -679,8 +679,8 @@ public class JsonSchemaRegistryControllerTest {
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
     Assert.assertEquals(record.getMimeType(), record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
-//    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    // Version shouldn't be updated
+    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
@@ -792,8 +792,8 @@ public class JsonSchemaRegistryControllerTest {
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
-    testForNextVersion(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
-//    Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    // Version shouldn't be updated
+    Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record1.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record1.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
     if (record1.getAcl() != null) {

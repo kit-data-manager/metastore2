@@ -103,6 +103,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
   private final static String ANOTHER_SCHEMA_ID = "another_json";
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String SCHEMA_V1 = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
@@ -230,6 +231,12 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
     } catch (IOException ex) {
       ex.printStackTrace();
     }
