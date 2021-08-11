@@ -1057,60 +1057,46 @@ public class MetadataControllerTest {
 
   @Test
   public void testGetAllVersionsOfRecord() throws Exception {
-    String metadataRecordId = createDCMetadataRecord();
-    // Get version of record as array
-    // Read all versions (only 1 version available)
-    this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+    String id = null;
+    for (long version = 1; version <= 3; version++) {
+      id = ingestMetadataRecordWithVersion(id, version);
+      // Get version of record as array
+      // Read all versions 
+      this.mockMvc.perform(get("/api/v1/metadata").param("id", id).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
 
-    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String etag = result.getResponse().getHeader("ETag");
-    String body = result.getResponse().getContentAsString();
+      MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + id).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      String etag = result.getResponse().getHeader("ETag");
+      String body = result.getResponse().getContentAsString();
 
-    ObjectMapper mapper = new ObjectMapper();
-    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
+      ObjectMapper mapper = new ObjectMapper();
+      MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+      Assert.assertEquals("Expect current version '" + version + "'", (Long)version, record.getRecordVersion());// version should be 1 higher
+       // Check for new metadata document.
+      result = this.mockMvc.perform(get("/api/v1/metadata/" + id)).andDo(print()).andExpect(status().isOk()).andReturn();
+      String content = result.getResponse().getContentAsString();
 
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
-            file(recordFile).
-            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+      String dcMetadata = DC_DOCUMENT_VERSION_2;
+      
+      if (version == 1) { Assert.assertEquals(Da)
 
-//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
-    body = result.getResponse().getContentAsString();
+      Assert.assertTrue(content.startsWith(dcMetadata));
 
-    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
-    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
-    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
-    if (record.getAcl() != null) {
-      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
-    }
-    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
-    // Check for new metadata document.
-    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String content = result.getResponse().getContentAsString();
-
-    String dcMetadata = DC_DOCUMENT_VERSION_2;
-
-    Assert.assertEquals(dcMetadata, content);
-
-    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
-    // Get version of record as array
-    // Read all versions (2 version2 available)
-    result = this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(2))).andReturn();
-    long version = 2l;
-    mapper = new ObjectMapper();
-    CollectionType mapCollectionType = mapper.getTypeFactory()
-            .constructCollectionType(List.class, MetadataRecord.class);
-    List<MetadataRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
-    HashSet<Long> versions = new HashSet<>();
-    for (MetadataRecord item : resultList) {
-      versions.add(item.getRecordVersion());
-    }
-    Assert.assertEquals(version, versions.size());
-    for (long index = 1; index <= version; index++) {
-      Assert.assertTrue("Test for version: " + index, versions.contains(index));
+//    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+      // Get version of record as array
+      // Read all versions (2 version2 available)
+      result = this.mockMvc.perform(get("/api/v1/metadata").param("id", id).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
+      mapper = new ObjectMapper();
+      CollectionType mapCollectionType = mapper.getTypeFactory()
+              .constructCollectionType(List.class, MetadataRecord.class);
+      List<MetadataRecord> resultList = mapper.readValue(result.getResponse().getContentAsString(), mapCollectionType);
+      HashSet<Long> versions = new HashSet<>();
+      for (MetadataRecord item : resultList) {
+        versions.add(item.getRecordVersion());
+      }
+      Assert.assertEquals(version, versions.size());
+      for (long index = 1; index <= version; index++) {
+        Assert.assertTrue("Test for version: " + index, versions.contains(index));
+      }
     }
   }
 
@@ -1134,6 +1120,29 @@ public class MetadataControllerTest {
     MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
 
     return result.getId();
+  }
+
+  private String ingestMetadataRecordWithVersion(String id, long version) throws Exception {
+    if (id == null) {
+      id = createDCMetadataRecord();
+    } else {
+      // add new version
+      MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + id).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      String etag = result.getResponse().getHeader("ETag");
+      String body = result.getResponse().getContentAsString();
+
+      ObjectMapper mapper = new ObjectMapper();
+      MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+      String newDocument = DC_DOCUMENT;
+      for (int i = 0; i < version; i++) {
+        newDocument.concat(" ");
+      }
+      MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", newDocument.getBytes());
+
+      result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+              file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+    }
+    return id;
   }
 
   private static RequestPostProcessor remoteAddr(final String remoteAddr) { // it's nice to extract into a helper

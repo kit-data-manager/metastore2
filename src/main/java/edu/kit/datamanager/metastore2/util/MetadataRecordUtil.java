@@ -34,13 +34,13 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -197,17 +198,38 @@ public class MetadataRecordUtil {
     if (document != null) {
       record = migrateToMetadataRecord(applicationProperties, dataResource, false);
       validateMetadataDocument(applicationProperties, record, document);
-      // Everything seems to be fine update document and increment version
-      LOG.trace("Updating schema document (and increment version)...");
-      String version = dataResource.getVersion();
-      if (version != null) {
-        dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
-      }
 
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
-
-      ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+      // Check for changes...
+      boolean noChanges = true;
+      try {
+        byte[] currentFileContent;
+        File file = new File(URI.create(info.getContentUri()));
+        if (document.getSize() == Files.size(file.toPath())) {
+         currentFileContent = FileUtils.readFileToByteArray(file);
+         byte[] newFileContent = document.getBytes();
+          for (int index = 0; index < currentFileContent.length; index++) {
+            if (currentFileContent[index] != newFileContent[index]) {
+              noChanges = false;
+              break;
+            }
+          }
+        } else {
+          noChanges = false;
+        }
+      } catch (IOException ex) {
+        LOG.error("Error reading current file!", ex);
+      }
+      if (noChanges == false) {
+        // Everything seems to be fine update document and increment version
+        LOG.trace("Updating schema document (and increment version)...");
+        String version = dataResource.getVersion();
+        if (version != null) {
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        }
+        ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+      }
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
