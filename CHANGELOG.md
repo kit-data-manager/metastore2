@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering schema documents by mimetype
 - Error while updating json schema documents without schema
 - Speedup guessing type for schema. 
+- Updating document without changes will no longer create new version (issue #27)
 - Update schema via POST (issue #28)
 - Add hash of schema documents to record. (issue #38)
 - Drop tables at startup (default).
