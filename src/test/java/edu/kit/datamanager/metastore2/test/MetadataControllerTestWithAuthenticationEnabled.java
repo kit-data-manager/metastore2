@@ -1084,9 +1084,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+    Assert.assertEquals(record.getMetadataDocumentUri(), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());// version should be  the same
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }

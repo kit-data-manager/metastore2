@@ -49,6 +49,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import org.apache.commons.io.FileUtils;
@@ -207,8 +208,8 @@ public class MetadataRecordUtil {
         byte[] currentFileContent;
         File file = new File(URI.create(info.getContentUri()));
         if (document.getSize() == Files.size(file.toPath())) {
-         currentFileContent = FileUtils.readFileToByteArray(file);
-         byte[] newFileContent = document.getBytes();
+          currentFileContent = FileUtils.readFileToByteArray(file);
+          byte[] newFileContent = document.getBytes();
           for (int index = 0; index < currentFileContent.length; index++) {
             if (currentFileContent[index] != newFileContent[index]) {
               noChanges = false;
@@ -229,6 +230,10 @@ public class MetadataRecordUtil {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
         ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+        Optional<DataRecord> dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+        if (dataRecord.isPresent()) {
+          dataRecordDao.delete(dataRecord.get());
+        }
       }
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
@@ -241,8 +246,10 @@ public class MetadataRecordUtil {
           String eTag,
           Function<String, String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    DataRecord listOfDataIds = dataRecordDao.findByMetadataId(id);
-    dataRecordDao.delete(listOfDataIds);
+    Optional<DataRecord> dataRecord = dataRecordDao.findByMetadataId(id);
+    if (dataRecord.isPresent()) {
+      dataRecordDao.delete(dataRecord.get());
+    }
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
@@ -382,11 +389,12 @@ public class MetadataRecordUtil {
       }
       DataRecord dataRecord = null;
       long nano4 = System.nanoTime() / 1000000;
-      try {
-        dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+      Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataId(dataResource.getId());
+      if (dataRecordResult.isPresent()) {
+        dataRecord = dataRecordResult.get();
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
-      } catch (NullPointerException npe) {
+      } else {
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         if (info != null) {

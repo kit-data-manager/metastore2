@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -95,11 +96,13 @@ public class IDataRecordDaoTest {
     System.out.println("findByMetadataId");
     String metadataId = "metadataId1";
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
-    DataRecord result = instance.findByMetadataId(metadataId);
+    Optional<DataRecord> result = instance.findByMetadataId(metadataId);
     assertNotNull(result);
+    assertTrue(result.isPresent());
 
     result = instance.findByMetadataId("unknownId");
-    assertNull(result);
+    assertNotNull(result);
+    assertTrue(result.isEmpty());
   }
 
   /**
