@@ -182,7 +182,7 @@ public class SchemaRegistryControllerDocumentationTest {
           + "  <example:date>2018-07-02</example:date>\n"
           + "  <example:note>since version 3 notes are allowed</example:note>\n"
           + "</example:metadata>";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("https://repo/anyResourceId");
 
   @Before
   public void setUp() throws JsonProcessingException {
@@ -234,7 +234,6 @@ public class SchemaRegistryControllerDocumentationTest {
     //**************************************************************************
     schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    schemaRecord.setMimeType(MediaType.APPLICATION_XML.toString());
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());
 

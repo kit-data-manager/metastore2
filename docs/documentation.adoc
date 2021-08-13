@@ -61,7 +61,6 @@ At least the following elements are expected to be provided by the user:
 
 [point]
 - schemaId: A unique label for the schema.
-- mimeType: The resource type must be assigned by the user. For XSD schemas this should be 'application/xml'
 - type: XML or JSON. For XSD schemas this should be 'XML'
 
 In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
@@ -74,7 +73,6 @@ The following example shows the creation of the first xsd schema only providing 
 schema-record.json:
 {
   "schemaId" : "my_first_xsd",
-  "mimeType" : "application/xml",
   "type" : "XML"
 }
 ----
@@ -231,7 +229,6 @@ The following example shows the creation of another xsd schema only providing ma
 another-schema-record.json:
 {
   "schemaId" : "another_xsd",
-  "mimeType" : "application/xml",
   "type" : "XML"
 }
 ----
@@ -363,7 +360,7 @@ Same for the HTTP request. The schemaVersion number is set by a query parameter.
 include::{snippets}/validate-document-v1/http-request.adoc[]
 
 As a result, you receive 422 as HTTP status and an error message holding some information about the error.
-(Unfortunately not documented here)
+(Unfortunately not documented here due to technical reasons.)
 
 include::{snippets}/validate-document-v1/http-response.adoc[]
 
@@ -765,7 +762,6 @@ The following example shows the creation of the first json schema only providing
 schema-record4json.json:
 {
   "schemaId" : "my_first_json",
-  "mimeType" : "application/json",
   "type" : "JSON"
 }
 ----
@@ -959,7 +955,6 @@ The following example shows the creation of another json schema only providing m
 another-schema-record4json.json:
 {
   "schemaId" : "another_json",
-  "mimeType" : "application/json",
   "type" : "JSON"
 }
 ----
@@ -1097,7 +1092,7 @@ Same for the HTTP request. The schemaVersion number is set by a query parameter.
 include::{snippets}/validate-json-document-v1/http-request.adoc[]
 
 As a result, you receive 422 as HTTP status and an error message holding some information about the error.
-(Unfortunately not documented here)
+(Unfortunately not documented here due to technical reasons.)
 
 include::{snippets}/validate-json-document-v1/http-response.adoc[]
 
