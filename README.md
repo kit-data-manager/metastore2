@@ -77,6 +77,21 @@ user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore
 user@localhost:/home/user/metastore2$
 ```
 
+#### Overwriting default settings of docker container
+If you want to overwrite default configuration of your docker container you have to
+'mount' a config directory containing 'application.properties' with your adapted settings.
+Therefor you have to provide an additional flag to the command mentioned before:
+```
+# Overwriting default settings
+# Create config folder
+user@localhost:/home/user/metastore2$ mkdir config
+# Place your own 'application.properties' inside the config directory
+# Create/run container
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 -v `pwd`/config:/spring/metastore2/config --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
+57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
+user@localhost:/home/user/metastore2$
+```
+
 #### Stop docker container
 If you want to stop container just type
 ```

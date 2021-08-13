@@ -143,13 +143,15 @@ echo Build service...
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find . -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
 find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
 
 echo "Create config directory"
 mkdir "$INSTALLATION_DIRECTORY"/config
+echo "To overwrite default properties place 'application.properties' into this directory." > "$INSTALLATION_DIRECTORY"/config/README.txt
+echo "Only changed properties should be part of this file." >> "$INSTALLATION_DIRECTORY"/config/README.txt
 
 echo "Create lib directory"
 mkdir "$INSTALLATION_DIRECTORY"/lib
