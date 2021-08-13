@@ -68,6 +68,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -143,6 +144,25 @@ public class MetadataSchemaRecordUtil {
     validateMetadataSchemaDocument(applicationProperties, schemaRecord, document);
     // set internal parameters
     record.setType(schemaRecord.getType());
+    if (record.getMimeType() == null) {
+      LOG.trace("No mimetype set! Try to determine...");
+      if (document.getContentType() != null) {
+        LOG.trace("Set mimetype determined from document: '{}'", document.getContentType());
+          record.setMimeType(document.getContentType());
+      } else {
+        LOG.trace("Set mimetype according to type '{}'.", record.getType());
+        switch (record.getType()) {
+          case JSON:
+            record.setMimeType(MediaType.APPLICATION_JSON_VALUE);
+            break;
+          case XML: 
+            record.setMimeType(MediaType.APPLICATION_XML_VALUE);
+            break;
+          default:
+            throw new BadArgumentException("Please provide mimetype for type '" + record.getType() + "'");
+        }
+      }
+    }
     record.setSchemaVersion(1l);
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
