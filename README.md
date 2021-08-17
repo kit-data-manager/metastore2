@@ -14,7 +14,7 @@ It allows you to
 - update added metadata
  
 ## Installation
-There are three ways to install metastore2 as a micorservice:
+There are three ways to install metaStore2 as a micorservice:
 - [Using](#Installation-via-DockerHub) the image available via [DockerHub](https://hub.docker.com/r/kitdm/) (***recommended***)
 - [Building](#Build-docker-container-locally) docker image locally
 - [Building](#Build-and-run-locally) and running locally
@@ -135,15 +135,22 @@ Now you can start the service by calling /path/to/empty/installation/directory/r
 user@localhost:/home/user/metastore2$
 ```
 ## Build framework using docker
-The metastore framework consists of the following services:
+The metaStore framework consists of the following services:
 - RabbitMQ - messaging service
 - Elasticsearch - indexing service
 - Indexing-service - service transforming metadata documents to json
-- Metastore2 - service managing metadata schema and metadata documents
+- MetaStore2 - service managing metadata schema and metadata documents
 To build the whole framework use the shell script ('metatoreFramework.sh'). 
 init - Initialize/Reset the whole framework
 start - Start stopped framework
 stop - Stop framework
+
+### Customize settings
+Two services may be customized to your needs.
+1. MetaStore 
+   - overwrite settings by copying your application.properties file to ./settings/metastore
+2. Indexing-Service
+   - overwrite settings by copying your application.properties file to ./settings/indexing
 
 ## First steps
 As soon as the microservice is started, you can browse to 
@@ -163,10 +170,10 @@ http://localhost:8040/static/docs/documentation.html
 2. Use a productive database (e.g. postgres)
 3. Setup directories for schemata and metadata to a reliable disc. (metastore.schema.schemaFolder, metastore.metadata.metadataFolder)
 
-:information_source: If metastore should be used standalone (without KIT Data Manager) 
+:information_source: If metaStore should be used standalone (without KIT Data Manager) 
 you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
 
-#### Setup metastore2
+#### Setup MetaStore2
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
 Therefor, copy the file 'settings/application-example.properties' to your project folder, rename it to 'application.properties' and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
 and the paths of schemata (metastore.schema.schemaFolder) / metadata (metastore.schema.metadataFolder). If you changed the port you also have to adapt the 
@@ -176,14 +183,14 @@ to the repository base path. Also, the property 'repo.messaging.enabled' should 
 #### Setup database
 See [setup database](installation_postgres.md#setup-database) and [setup for metastore](installation_postgres.md#setup-metastore2-microservice).
 
-### Start metastore2
+### Start MetaStore2
 As soon as you finished modifying 'application.properties', you may start the repository microservice by executing the following command inside the project folder, 
 e.g. where the service has been built before:
 
 ## More Information
 
 * [Information about KIT Data Manager 2](https://github.com/kit-data-manager/base-repo)
-* [REST Documentation Metastore 2](restDocu.md) 
+* [REST Documentation MetaStore2](restDocu.md) 
 
 ## License
 

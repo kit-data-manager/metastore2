@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change in related schema and data (add identifier type to identifier)
 - Store all identifiers as global identifiers (type INTERNAL -> type URL)
 - For registering a schema mimetype is no longer mandatory.
+- Customization is enabled even if framework will be started via docker (issue #41)
 ### Fixed
 - Filtering metadata documents by resourceId, schemaId
 - Filtering schema documents by mimetype
