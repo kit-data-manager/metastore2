@@ -10,13 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Authentication based on JWT powered by KIT Data Manager. (issue #4)
 - Metadata (schema) records now also versioned.
 - OAI PMH protocol added (issue #6)
+- Customization is enabled even if framework will be started via docker (issue #41)
 ### Changed
 - Metadata are now linked to specific version of a schema. (issue #30)
 - Attribute 'locked' from MetadataSchemaRecord changed to 'doNotSync' (issue #37)
 - Change in related schema and data (add identifier type to identifier)
 - Store all identifiers as global identifiers (type INTERNAL -> type URL)
 - For registering a schema mimetype is no longer mandatory.
-- Customization is enabled even if framework will be started via docker (issue #41)
+- Switch to gradle version 7.2
 ### Fixed
 - Filtering metadata documents by resourceId, schemaId
 - Filtering schema documents by mimetype
