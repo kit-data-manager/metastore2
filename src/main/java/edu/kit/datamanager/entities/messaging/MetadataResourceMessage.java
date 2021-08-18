@@ -19,12 +19,13 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
-import static org.springframework.web.servlet.function.RequestPredicates.contentType;
+import lombok.EqualsAndHashCode;
 
 /**
  * Handler for creating messages for metadata.
  */
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class MetadataResourceMessage extends DataResourceMessage {
 
   /**
