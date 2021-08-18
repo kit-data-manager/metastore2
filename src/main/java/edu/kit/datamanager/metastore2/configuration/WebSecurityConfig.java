@@ -19,6 +19,7 @@ import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
 import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
+import javax.servlet.Filter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -103,7 +104,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //    return source;
 //  }
   @Bean
-  public FilterRegistrationBean corsFilter(){
+  public FilterRegistrationBean<?> corsFilter(){
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
@@ -114,7 +115,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
     config.addExposedHeader("ETag");
 
     source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean bean = new FilterRegistrationBean(new CorsFilter(source));
+    FilterRegistrationBean<Filter> bean;
+    bean = new FilterRegistrationBean<>(new CorsFilter(source));
     bean.setOrder(0);
     return bean;
   }
