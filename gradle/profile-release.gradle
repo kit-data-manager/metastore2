@@ -6,7 +6,7 @@ ext {
    
 asciidoctor {
   attributes "snippets": snippetsDir,
-            "version": jar.version,
+            "version": jar.archiveVersion,
             "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
    inputs.dir snippetsDir
    dependsOn test  
