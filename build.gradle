@@ -7,13 +7,13 @@ buildscript {
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
+//        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.6.1'
         //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
     }
 }
 
 plugins { 
-    id 'io.franzbecker.gradle-lombok' version '1.14'
+    id 'io.franzbecker.gradle-lombok' version '4.0.0'
     id "io.spring.dependency-management" version "1.0.8.RELEASE" 
     id "com.github.kt3k.coveralls" version "2.8.1" 
     id "org.owasp.dependencycheck" version "3.1.2"
@@ -46,7 +46,7 @@ configurations {
 }
 
 lombok {
-    version = '1.18.10'
+    version = '1.18.20'
     sha256 = ""
 }
 
@@ -94,14 +94,18 @@ dependencies {
    
     //Java 11 Support 
     testImplementation "org.mockito:mockito-core:2.18.0"
-    testImplementation "org.powermock:powermock-module-junit4:2.0.0-beta.5"
-    testImplementation "org.powermock:powermock-api-mockito2:2.0.0-beta.5"
+    testImplementation "org.powermock:powermock-module-junit4:2.0.9"
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.9"
     testImplementation "junit:junit:4.13.1"
 
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE'
     testImplementation 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
     asciidoctor 'org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE'
     asciidoctor 'com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1'
+}
+
+compileJava {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
 bootJar {
