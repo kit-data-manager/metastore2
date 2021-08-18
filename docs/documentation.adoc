@@ -247,7 +247,7 @@ another-schema.xsd:
     </xs:complexType>
   </xs:element>
 </xs:schema>
------
+----
 
 include::{snippets}/register-another-schema/curl-request.adoc[]
 
