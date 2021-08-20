@@ -1,15 +1,5 @@
-buildscript {
-    repositories { 
-        mavenLocal()
-        mavenCentral()
-
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
-    }
-}
-
 plugins { 
+    id "org.springframework.boot" version "2.2.13.RELEASE"
     id 'io.franzbecker.gradle-lombok' version '4.0.0'
     id "io.spring.dependency-management" version "1.0.8.RELEASE" 
     id "com.github.kt3k.coveralls" version "2.8.1" 
