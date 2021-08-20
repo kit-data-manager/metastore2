@@ -30,7 +30,7 @@ bootJar {
       attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
    }
    dependsOn asciidoctor
-   from ("${asciidoctor.outputDir}/html5") {
+   from ("${asciidoctor.outputDir}") {
       into 'static/docs'
    }
    launchScript()
