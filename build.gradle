@@ -1,5 +1,5 @@
 plugins { 
-    id "org.springframework.boot" version "2.2.13.RELEASE"
+    id "org.springframework.boot" version "2.3.0.RELEASE"
     id 'io.franzbecker.gradle-lombok' version '4.0.0'
     id "io.spring.dependency-management" version "1.0.8.RELEASE" 
     id "com.github.kt3k.coveralls" version "2.8.1" 
@@ -45,6 +45,7 @@ if (project.hasProperty('travis')) {
 } 
 
 dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-validation'    
     implementation "org.javers:javers-spring-boot-starter-sql:3.9.0"
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-mail"
@@ -72,7 +73,7 @@ dependencies {
 //    implementation("edu.kit.datamanager:service-base:0.3.0-SNAPSHOT")
 
     runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
-
+    
     testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE'
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
