@@ -53,7 +53,7 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41402"})
+@TestPropertySource(properties = {"server.port=41411"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IDataRecordDaoTest {
 
