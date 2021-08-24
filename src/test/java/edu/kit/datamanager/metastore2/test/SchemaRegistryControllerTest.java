@@ -704,7 +704,7 @@ public class SchemaRegistryControllerTest {
     String contentUri = contentInformationDao.findAll().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
-    Files.delete(Path.of(uri));
+    Files.delete(Paths.get(uri));
 
     this.mockMvc.perform(get("/api/v1/schemas/dc")).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
@@ -765,7 +765,7 @@ public class SchemaRegistryControllerTest {
     String contentUri = contentInformationDao.findAll().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
-    Files.delete(Path.of(uri));
+    Files.delete(Paths.get(uri));
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/dc/validate").file("document", DC_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }

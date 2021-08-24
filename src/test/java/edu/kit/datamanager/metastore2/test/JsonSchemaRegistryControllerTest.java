@@ -639,7 +639,7 @@ public class JsonSchemaRegistryControllerTest {
 
     //delete schema file
     URI uri = new URI(contentUri);
-    Files.delete(Path.of(uri));
+    Files.delete(Paths.get(uri));
     
     this.mockMvc.perform(get("/api/v1/schemas/json")).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
@@ -699,7 +699,7 @@ public class JsonSchemaRegistryControllerTest {
     String contentUri = contentInformationDao.findAll().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
-    Files.delete(Path.of(uri));
+    Files.delete(Paths.get(uri));
     
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/json/validate").file("document", JSON_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }

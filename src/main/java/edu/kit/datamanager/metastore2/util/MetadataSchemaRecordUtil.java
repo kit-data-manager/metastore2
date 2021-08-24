@@ -654,8 +654,7 @@ public class MetadataSchemaRecordUtil {
    *
    * @param metastoreProperties
    * @param document document to validate.
-   * @param schemaId schemaId of schema.
-   * @param version Version of the document.
+   * @param schemaRecord record of the schema.
    * @throws Exception Error validating document.
    */
   public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
@@ -669,7 +668,7 @@ public class MetadataSchemaRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-    if (schemaRecord == null || schemaRecord.getSchemaDocumentUri() == null || schemaRecord.getSchemaDocumentUri().isBlank()) {
+    if (schemaRecord == null || schemaRecord.getSchemaDocumentUri() == null || schemaRecord.getSchemaDocumentUri().trim().isEmpty()) {
       String message = "Missing or invalid schema record. Returning HTTP BAD_REQUEST.";
       LOG.error(message + " -> '{}'", schemaRecord);
       throw new BadArgumentException(message);

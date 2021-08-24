@@ -108,7 +108,7 @@ public class IUrl2PathDaoTest {
     }
     result = instance.findByUrl("unknownUrl");
     assertNotNull(result);
-    assertTrue(result.isEmpty());
+    assertFalse(result.isPresent());
   }
 
   /**
@@ -170,7 +170,7 @@ public class IUrl2PathDaoTest {
       // Test after deletion
       result = instance.findByUrl(metadataId + i);
       assertNotNull(result);
-      assertTrue(result.isEmpty());
+      assertFalse(result.isPresent());
       // count should be decreasedWob
       assertEquals(noOfDataSets - i, instance.count());
     }

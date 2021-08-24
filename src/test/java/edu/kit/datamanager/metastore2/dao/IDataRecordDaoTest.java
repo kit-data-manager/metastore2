@@ -102,7 +102,7 @@ public class IDataRecordDaoTest {
 
     result = instance.findByMetadataId("unknownId");
     assertNotNull(result);
-    assertTrue(result.isEmpty());
+    assertFalse(result.isPresent());
   }
 
   /**
