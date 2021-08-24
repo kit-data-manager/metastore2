@@ -5,10 +5,9 @@
  */
 package org.openarchives.oai._2;
 
-import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
-import java.util.ArrayList;
-import java.util.GregorianCalendar;
 import java.util.List;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -16,7 +15,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.postgresql.ssl.jdbc4.LibPQFactory;
 
 /**
  *
@@ -47,14 +45,14 @@ public class OAIPMHtypeTest {
      * Test of getResponseDate method, of class OAIPMHtype.
      */
     @Test
-    public void testSetAndGetResponseDate() {
+    public void testSetAndGetResponseDate() throws DatatypeConfigurationException {
         System.out.println("getResponseDate");
         OAIPMHtype instance = new OAIPMHtype();
         XMLGregorianCalendar value = null;
         XMLGregorianCalendar expResult = value;
         XMLGregorianCalendar result = instance.getResponseDate();
         assertEquals(expResult, result);
-        value = new XMLGregorianCalendarImpl(new GregorianCalendar());
+        value = DatatypeFactory.newInstance().newXMLGregorianCalendar();
         expResult = value;
         instance.setResponseDate(value);
         result = instance.getResponseDate();
