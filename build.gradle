@@ -1,17 +1,15 @@
 plugins { 
     id "org.springframework.boot" version "2.4.10"
     id "io.spring.dependency-management" version "1.0.11.RELEASE" 
-    id 'io.franzbecker.gradle-lombok' version '4.0.0'
-    id "com.github.kt3k.coveralls" version "2.8.1" 
-    id "org.owasp.dependencycheck" version "3.1.2"
+    id "io.freefair.lombok" version "6.1.0"
+    id "io.freefair.maven-publish-java" version "6.1.0"
+    id "com.github.kt3k.coveralls" version "2.12.0" 
+    id "org.owasp.dependencycheck" version "6.2.2"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '2.8.1'
+    id 'java'
+    id 'jacoco'
 }
-
-apply plugin: 'java'
-apply plugin: 'jacoco'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
 
 description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
@@ -22,7 +20,6 @@ ext {
 }
 
 println "Building ${name} version: ${version}"
-println "${javersVersion}"
 
 repositories {
     mavenLocal() 
@@ -36,11 +33,6 @@ configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
-lombok {
-    version = '1.18.20'
-    sha256 = ""
-}
-
 if (project.hasProperty('travis')) {
     println 'Using travis profile for building ' + project.getName()
     apply from: 'gradle/profile-travis.gradle'
@@ -51,18 +43,24 @@ if (project.hasProperty('travis')) {
 
 dependencies {
     // boot starter
-    implementation 'org.springframework.boot:spring-boot-starter-validation'    
+    implementation "org.springframework.boot:spring-boot-starter-validation"    
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-mail"
-     
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    
+    implementation "org.springframework:spring-messaging:5.3.9"
+    implementation "org.springframework.security:spring-security-web:5.5.2"
+    implementation "org.springframework.security:spring-security-config:5.5.2"
+    
     // cloud support
-    implementation 'org.springframework.cloud:spring-cloud-starter-config:3.0.4'
-    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3'
+    implementation "org.springframework.cloud:spring-cloud-starter-config:3.0.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3"
 
     // springdoc
-    implementation("org.springdoc:springdoc-openapi-ui:${springDocVersion}")
-    implementation("org.springdoc:springdoc-openapi-data-rest:${springDocVersion}")
-    implementation("org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}")
+    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
 
     // javers
     implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
@@ -72,8 +70,10 @@ dependencies {
     //driver for h2
     implementation "com.h2database:h2:1.4.200"
     
-    
-    implementation "org.apache.tika:tika-core:1.18"
+    // apache
+    implementation "commons-io:commons-io:2.11.0"
+    implementation "org.apache.tika:tika-core:1.27"
+
     implementation "org.javers:javers-core:${javersVersion}"
 
     // JSON validator
@@ -81,11 +81,11 @@ dependencies {
   
     // datamanager
     implementation "edu.kit.datamanager:repo-core:0.9.0-SNAPSHOT"
-    //    implementation("edu.kit.datamanager:service-base:0.3.0-SNAPSHOT")
+    implementation "edu.kit.datamanager:service-base:0.3.0-SNAPSHOT"
 
-    runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.6"
     
-    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE'
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"

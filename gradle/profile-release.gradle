@@ -26,14 +26,15 @@ tasks.withType(Test) {
 }
    
 bootJar {
-   manifest {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
       attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-   }
-   dependsOn asciidoctor
-   from ("${asciidoctor.outputDir}") {
+    }
+    dependsOn asciidoctor
+    from ("${asciidoctor.outputDir}") {
       into 'static/docs'
-   }
-   launchScript()
+    }
+    launchScript()
 }
  
 release {
