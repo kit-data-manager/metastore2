@@ -1,22 +1,22 @@
 import java.text.SimpleDateFormat
 
 ext {
-   snippetsDir = file("build/generated-snippets")
+    snippetsDir = file("build/generated-snippets")
 }
    
 asciidoctor {
-  attributes "snippets": snippetsDir,
-            "version": jar.archiveVersion,
-            "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
-   inputs.dir snippetsDir
-   dependsOn test  
-   sourceDir "docs/"
-   outputDir "build/docs"
+    attributes "snippets": snippetsDir,
+               "version":  jar.archiveVersion,
+               "date":     new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+    inputs.dir snippetsDir
+    dependsOn test  
+    sourceDir "docs/"
+    outputDir "build/docs/html5"
 }
 
 test {
-   outputs.dir snippetsDir
-   environment "spring.config.location", "classpath:/config/"
+    outputs.dir snippetsDir
+    include     "**/*SchemaRegistryControllerDocumentation*"
 }
 
 tasks.withType(Test) {
@@ -26,13 +26,14 @@ tasks.withType(Test) {
 }
    
 bootJar {
+    println 'Create bootable jar...'
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-      attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
     }
     dependsOn asciidoctor
     from ("${asciidoctor.outputDir}") {
-      into 'static/docs'
+        into 'static/docs'
     }
     launchScript()
 }

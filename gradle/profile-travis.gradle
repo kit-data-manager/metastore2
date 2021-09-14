@@ -1,31 +1,30 @@
 import java.text.SimpleDateFormat
 
-apply plugin: 'jacoco'
-
 ext {
-   snippetsDir = file("build/generated-snippets")
+    snippetsDir = file("build/generated-snippets")
 }
 
 asciidoctor {
-   attributes "snippets": snippetsDir,
-            "version": version,
-            "date": new SimpleDateFormat("yyyy-MM-dd").format(new Date())
-   inputs.dir snippetsDir
-   dependsOn test  
-   sourceDir "docs/"
-   outputDir "build/docs"
+    attributes "snippets": snippetsDir,
+               "version":  jar.archiveVersion,
+               "date":     new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+    inputs.dir snippetsDir
+    dependsOn test  
+    sourceDir "docs/"
+    outputDir "build/docs/html5"
 }
 
 test {
-   outputs.dir snippetsDir
-   environment "spring.config.location", "classpath:/config/"
-   include '**/*'
+    println 'Execute all tests...'
+    outputs.dir snippetsDir
+    // Execute all tests
+    include '**/*'
 }
 
 tasks.withType(Test) {
-   testLogging {
-      events 'started', 'passed'
-   }
+    testLogging {
+        events 'started', 'passed'
+    }
 }
 
 
@@ -33,15 +32,14 @@ jacocoTestReport {
     dependsOn test
     reports {
         xml.enabled true
-        html.enabled true
-        html.destination file("${buildDir}/reports/coverage")
+        html.enabled false
     }
     afterEvaluate {
         //exclude some classes/package from code coverage report
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [\
+                    fileTree(dir: it, exclude: [\
             '**/SchemaSynchronization*'
-                    ])
-            }))
+                        ])
+                }))
     }
 }
