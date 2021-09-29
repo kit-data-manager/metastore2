@@ -15,11 +15,14 @@ description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
 ext {
-  set('javersVersion', "6.2.3")
-  set('springDocVersion', "1.5.6")
+    springBootVersion = '2.4.10' 
+    springDocVersion  = '1.5.6'
+    javersVersion     = '6.2.3'
 }
 
+println "Running gradle version: $gradle.gradleVersion"
 println "Building ${name} version: ${version}"
+println "JDK version: JavaVersion.current()"
 
 repositories {
     mavenLocal() 
@@ -42,18 +45,26 @@ if (project.hasProperty('travis')) {
 } 
 
 dependencies {
+    // Spring
+    implementation 'org.springframework:spring-messaging:5.3.9'
+    // Spring Boot
+    implementation "org.springframework.boot:spring-boot-starter-data-rest"
+    implementation "org.springframework.boot:spring-boot-starter-amqp"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+   
     // boot starter
     implementation "org.springframework.boot:spring-boot-starter-validation"    
-    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
-    implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-mail"
-    implementation "org.springframework.boot:spring-boot-starter-actuator"
     
-    implementation "org.springframework:spring-messaging:5.3.9"
     implementation "org.springframework.security:spring-security-web:5.5.2"
+
+    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
     implementation "org.springframework.security:spring-security-config:5.5.2"
     
-    // cloud support
+   // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:3.0.4"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3"
 
@@ -61,6 +72,11 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    // apache
+    implementation "commons-configuration:commons-configuration:1.10"
+    implementation "org.apache.commons:commons-collections4:4.4"
+    // includes commons-lang3
+    implementation "org.apache.commons:commons-text:1.9"
 
     // javers
     implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
@@ -83,7 +99,7 @@ dependencies {
     implementation "edu.kit.datamanager:repo-core:0.9.0-SNAPSHOT"
     implementation "edu.kit.datamanager:service-base:0.3.0-SNAPSHOT"
 
-    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.6"
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
     
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
@@ -95,6 +111,10 @@ dependencies {
     testImplementation "org.powermock:powermock-module-junit4:2.0.9"
     testImplementation "org.powermock:powermock-api-mockito2:2.0.9"
     testImplementation "junit:junit:4.13.2"
+}
+
+dependencyManagement {
+    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") }
 }
 
 compileJava {
@@ -113,7 +133,7 @@ test {
 }
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = "0.8.7"
 }
 
 // task for printing project name.
