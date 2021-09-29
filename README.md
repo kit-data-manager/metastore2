@@ -27,7 +27,7 @@ In order to run this microservice via docker you'll need:
 
 ### Installation
 Typically, there is no need for locally building images as all version are accessible via DockerHub.
-Have a look of available images and their tags [here](https://hub.docker.com/r/kitdm/metastore2) (***available soon***)
+Have a look of available images and their tags [here](https://hub.docker.com/r/kitdm/metastore2) 
 Just follow instructions [below](#Build-docker-container).
 
 ## Build docker container locally
@@ -77,7 +77,7 @@ user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore
 user@localhost:/home/user/metastore2$
 ```
 
-#### Overwriting default settings of docker container
+#### Customize settings
 If you want to overwrite default configuration of your docker container you have to
 'mount' a config directory containing 'application.properties' with your adapted settings.
 Therefor you have to provide an additional flag to the command mentioned before:
@@ -99,7 +99,7 @@ user@localhost:/home/user/metastore2$ docker stop metastore4docker
 ```
 
 #### (Re)start docker container
-If you want to start container just type
+If you want to (re)start container just type
 ```
 user@localhost:/home/user/metastore2$ docker start metastore4docker
 ```
@@ -124,15 +124,26 @@ user@localhost:/home/user/metastore2$
 #### Build service 
 To build service just execute the build.sh script:
 ```
-user@localhost:/home/user/metastore2$bash build.sh /path/to/empty/installation/directory
+user@localhost:/home/user/metastore2$bash build.sh /PATH/TO/EMPTY/INSTALLATION/DIRECTORY
 ---------------------------------------------------------------------------
-Build microservice of metastore2 at /path/to/empty/installation/directory
+Build microservice of metastore2 at /PATH/TO/EMPTY/INSTALLATION/DIRECTORY
 ---------------------------------------------------------------------------
 [...]
 ---------------------------------------------------------------------------
-Now you can start the service by calling /path/to/empty/installation/directory/run.sh
+Now you can start the service by calling /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/run.sh
 ---------------------------------------------------------------------------
 user@localhost:/home/user/metastore2$
+```
+#### Customize settings
+If you want to overwrite default configuration of your docker container you have to
+add a file named 'application.properties' to the 'config' directory inside your installation
+path (/PATH/TO/EMPTY/INSTALLATION/DIRECTORY)selected before. The added file should
+only contain your adapted settings. e.g. in case you want to change only the port to '1234' your
+'application.properties' should look like this:
+```
+# Overwriting default settings from ../application.properties
+# Server settings
+server.port: 1234
 ```
 ## Build framework using docker
 The metaStore framework consists of the following services:
@@ -141,9 +152,17 @@ The metaStore framework consists of the following services:
 - Indexing-service - service transforming metadata documents to json
 - MetaStore2 - service managing metadata schema and metadata documents
 To build the whole framework use the shell script ('metatoreFramework.sh'). 
-init - Initialize/Reset the whole framework
-start - Start stopped framework
-stop - Stop framework
+```
+user@localhost:/home/user/metastore2$ bash metaStoreFramework.sh --help
+Script for managing MetaStore service.
+USAGE:
+  metaStoreFramework.sh [init|start|stop]
+ 
+  init - Initialize/Reset the whole framework
+  start - Start stopped framework
+  stop - Stop framework
+user@localhost:/home/user/metastore2$ 
+```
 
 ### Customize settings
 Two services may be customized to your needs.
@@ -176,16 +195,17 @@ you have to setup a database before. (See ['Installation PostgreSQL'](installati
 #### Setup MetaStore2
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
 Therefor, copy the file 'settings/application-example.properties' to your project folder, rename it to 'application.properties' and customize it. Special attentioned should be payed to the database setup (spring.datasource.*),
-and the paths of schemata (metastore.schema.schemaFolder) / metadata (metastore.schema.metadataFolder). If you changed the port you also have to adapt the 
-url of the schema registry (metastore.metadata.schemaRegistries) 
+and the paths of schemata (metastore.schema.schemaFolder) / metadata (metastore.schema.metadataFolder). 
 to the repository base path. Also, the property 'repo.messaging.enabled' should be changed to 'true' in case you want to use the messaging feature of the repository.
 
 #### Setup database
-See [setup database](installation_postgres.md#setup-database) and [setup for metastore](installation_postgres.md#setup-metastore2-microservice).
+See [setup database](installation_postgres.md#setup-database) and [setup for MetaStore2](installation_postgres.md#setup-metastore2-microservice).
 
 ### Start MetaStore2
-As soon as you finished modifying 'application.properties', you may start the repository microservice by executing the following command inside the project folder, 
-e.g. where the service has been built before:
+As soon as you finished modifying 'application.properties', you may start the repository microservice by executing the following command inside the installation folder:
+```
+user@localhost:/home/user/metastore2$bash /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/run.sh
+```
 
 ## More Information
 

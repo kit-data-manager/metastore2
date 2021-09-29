@@ -123,7 +123,7 @@ printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 git clone https://github.com/VolkerHartmann/service-base.git
 cd service-base
 git checkout refactoringServiceBase
-./gradlew clean build install
+./gradlew clean build publishToMavenLocal
 cd ..
 
 # repo-core -> branch: development
@@ -131,7 +131,7 @@ cd ..
 git clone https://github.com/VolkerHartmann/repo-core.git
 cd repo-core
 git checkout development
-./gradlew clean build install
+./gradlew clean build publishToMavenLocal
 cd ..
 
 ################################################################################

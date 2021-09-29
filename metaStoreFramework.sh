@@ -24,7 +24,11 @@ function usage {
 ################################################################################
   echo "Script for managing metastore service."
   echo "USAGE:"
-  echo "  $0 [/init|start|stop]"
+  echo "  $0 [init|start|stop]"
+  echo " "
+  echo "  init - Initialize/Reset the whole framework"
+  echo "  start - Start stopped framework"
+  echo "  stop - Stop framework"
   exit 1
 }
 
