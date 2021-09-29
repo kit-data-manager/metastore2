@@ -120,6 +120,9 @@ printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 ################################################################################
 # service-base -> branch: refactoringServiceBase
 ###################################
+echo "Create directory for snapshots"
+mkdir "$INSTALLATION_DIRECTORY"/git
+cd "$INSTALLATION_DIRECTORY"/git
 git clone https://github.com/VolkerHartmann/service-base.git
 cd service-base
 git checkout refactoringServiceBase
@@ -132,12 +135,12 @@ git clone https://github.com/VolkerHartmann/repo-core.git
 cd repo-core
 git checkout development
 ./gradlew clean build publishToMavenLocal
-cd ..
+cd "$ACTUAL_DIR" 
+rm -rf "$INSTALLATION_DIRECTORY"/git
 
 ################################################################################
 # Build service
 ################################################################################
-
 echo Build service...
 ./gradlew -Prelease clean build
 
