@@ -32,6 +32,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -62,7 +64,7 @@ public interface IMetadataController {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
 
-  @RequestMapping(path = "", method = RequestMethod.POST, consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
+  @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
@@ -99,7 +101,6 @@ public interface IMetadataController {
           WebRequest wr,
           HttpServletResponse hsr);
 
-
   @Operation(summary = "Get all records.", description = "List all records in a paginated and/or sorted form. The result can be refined by providing id, specific related resource id(s) and/or metadata schema id(s) valid records must match. "
           + "If 'id' is provided all available versions for given 'id' will be returned and all other parameters will be ignored."
           + "If 'resourceId' and 'schemaId' are provided, a record matches if its related resource identifier AND the used metadata schema are matching. "
@@ -117,7 +118,7 @@ public interface IMetadataController {
           @Parameter(description = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          Pageable pgbl,
+          @PageableDefault(sort = {"lastUpdate"}, direction = Sort.Direction.DESC) Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
@@ -129,9 +130,9 @@ public interface IMetadataController {
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
             @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id or no schema for the provided schema id was found.")})
   @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
-  @Parameters ( {
-    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
-  }  )
+  @Parameters({
+    @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
+  })
   ResponseEntity updateRecord(
           @Parameter(description = "The record identifier of related resource identifier.", required = true) @PathVariable("id") String id,
           @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
@@ -147,9 +148,9 @@ public interface IMetadataController {
           responses = {
             @ApiResponse(responseCode = "204", description = "No Content is returned as long as no error occurs while deleting a record. Multiple delete operations to the same record will also return HTTP 204 even if the deletion succeeded in the first call.")})
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.DELETE})
-  @Parameters ( {
-    @Parameter(name = "If-Match", description= "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER) 
-  }  )
+  @Parameters({
+    @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
+  })
   @ResponseBody
   public ResponseEntity deleteRecord(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
 }

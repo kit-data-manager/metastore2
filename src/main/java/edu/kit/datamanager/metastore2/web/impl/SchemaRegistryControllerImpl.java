@@ -224,13 +224,20 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       throw ex;
     }
     List<DataResource> recordList = records.getContent();
-    LOG.trace("Cleaning up schemaDocumentUri of query result.");
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Cleaning up schemaDocumentUri of query result.");
+      for (DataResource item : recordList) {
+        LOG.trace("---> " + item.toString());
+      }
+    }
     List<MetadataSchemaRecord> schemaList = new ArrayList<>();
     recordList.forEach((record) -> {
-      LOG.trace(record.toString());
       MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
       fixSchemaDocumentUri(item);
       schemaList.add(item);
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("===> " + item.toString());
+      }
     });
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());

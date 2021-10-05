@@ -467,6 +467,7 @@ public class MetadataRecordUtil {
    */
   public static MetadataSchemaRecord getCurrentInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId) {
+    LOG.trace("Get current internal schema record for id '{}'.", schemaId);
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
@@ -477,6 +478,7 @@ public class MetadataRecordUtil {
       success = true;
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
         URI schemaRegistryUri = URI.create(schemaRegistry);
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId);
 
@@ -519,6 +521,7 @@ public class MetadataRecordUtil {
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
+    LOG.trace("Get internal schema record for id '{}'.", schemaId);
     if (metastoreProperties.getSchemaRegistries().length == 0) {
       LOG.trace("No external schema registries defined. Try to use internal one...");
 
@@ -526,6 +529,7 @@ public class MetadataRecordUtil {
       success = true;
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
         URI schemaRegistryUri = URI.create(schemaRegistry);
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId).queryParam("version", version);
 
@@ -607,6 +611,7 @@ public class MetadataRecordUtil {
       }
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
         URI schemaRegistryUri = URI.create(schemaRegistry);
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchema().getIdentifier(), "validate").queryParam("version", record.getSchemaVersion());
 
