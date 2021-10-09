@@ -30,6 +30,7 @@ import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
+import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -41,6 +42,7 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceService;
+import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
@@ -133,10 +135,14 @@ public class Application {
 //  public IdBasedStorageProperties idBasedStorageProperties() {
 //    return new IdBasedStorageProperties();
 //  }
-
   @Bean
   public DateBasedStorageProperties dateBasedStorageProperties() {
     return new DateBasedStorageProperties();
+  }
+
+  @Bean
+  public IdBasedStorageProperties idBasedStorageProperties() {
+    return new IdBasedStorageProperties();
   }
 
   @Bean
@@ -209,7 +215,7 @@ public class Application {
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
-    
+
     return rbc;
   }
 
@@ -232,7 +238,7 @@ public class Application {
       }
     }
     for (IRepoStorageService storageService : this.storageServices) {
-      if ("dateBased".equals(storageService.getServiceName())) {
+      if (IdBasedStorageService.SERVICE_NAME.equals(storageService.getServiceName())) {
         LOG.info("Set storage service: {}", storageService.getServiceName());
         rbc.setStorageService(storageService);
         break;
