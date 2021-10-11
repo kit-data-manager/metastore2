@@ -361,6 +361,7 @@ public class MetadataControllerFilterTest {
         String relatedResource = RELATED_RESOURCE + j;
         get.param("resourceId", relatedResource);
       }
+      get.param("size", Integer.toString(noOfResults * 2));
       get.header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE);
       MvcResult res = this.mockMvc
               .perform(get)
