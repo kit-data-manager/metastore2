@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
@@ -101,7 +102,10 @@ public class MetadataRecordUtil {
       record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
+      if (ex instanceof JsonParseException) {
+        message = message + " Reason: " + ex.getMessage();
+      }
+      LOG.error("Error parsing json: ", ex);
       throw new BadArgumentException(message);
     }
 
@@ -179,7 +183,10 @@ public class MetadataRecordUtil {
         record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
       } catch (IOException ex) {
         String message = "Can't map record document to MetadataRecord";
-        LOG.error(message);
+        if (ex instanceof JsonParseException) {
+          message = message + " Reason: " + ex.getMessage();
+        }
+        LOG.error("Error parsing json: ", ex);
         throw new BadArgumentException(message);
       }
     }

@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -139,7 +140,10 @@ public class MetadataControllerImpl implements IMetadataController {
       record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
+      if (ex instanceof JsonParseException) {
+       message = message + " Reason: " + ex.getMessage();
+    }
+      LOG.error("Error parsing json: ", ex);
       throw new BadArgumentException(message);
     }
     long nano2 = System.nanoTime() / 1000000;

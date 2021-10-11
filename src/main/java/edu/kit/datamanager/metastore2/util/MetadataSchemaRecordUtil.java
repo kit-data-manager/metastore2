@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
@@ -112,6 +113,10 @@ public class MetadataSchemaRecordUtil {
       record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
+      if (ex instanceof JsonParseException) {
+        message = message + " Reason: " + ex.getMessage();
+      }
+      LOG.error("Error parsing json: ", ex);
       LOG.error(message);
       throw new BadArgumentException(message);
     }
@@ -148,14 +153,14 @@ public class MetadataSchemaRecordUtil {
       LOG.trace("No mimetype set! Try to determine...");
       if (document.getContentType() != null) {
         LOG.trace("Set mimetype determined from document: '{}'", document.getContentType());
-          record.setMimeType(document.getContentType());
+        record.setMimeType(document.getContentType());
       } else {
         LOG.trace("Set mimetype according to type '{}'.", record.getType());
         switch (record.getType()) {
           case JSON:
             record.setMimeType(MediaType.APPLICATION_JSON_VALUE);
             break;
-          case XML: 
+          case XML:
             record.setMimeType(MediaType.APPLICATION_XML_VALUE);
             break;
           default:
@@ -213,7 +218,10 @@ public class MetadataSchemaRecordUtil {
         record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
       } catch (IOException ex) {
         String message = "Can't map record document to MetadataSchemaRecord";
-        LOG.error(message);
+        if (ex instanceof JsonParseException) {
+          message = message + " Reason: " + ex.getMessage();
+        }
+        LOG.error("Error parsing json: ", ex);
         throw new BadArgumentException(message);
       }
     }
@@ -244,8 +252,8 @@ public class MetadataSchemaRecordUtil {
         byte[] currentFileContent;
         File file = new File(URI.create(info.getContentUri()));
         if (schemaDocument.getSize() == Files.size(file.toPath())) {
-         currentFileContent = FileUtils.readFileToByteArray(file);
-         byte[] newFileContent = schemaDocument.getBytes();
+          currentFileContent = FileUtils.readFileToByteArray(file);
+          byte[] newFileContent = schemaDocument.getBytes();
           for (int index = 0; index < currentFileContent.length; index++) {
             if (currentFileContent[index] != newFileContent[index]) {
               noChanges = false;
@@ -258,7 +266,7 @@ public class MetadataSchemaRecordUtil {
       } catch (IOException ex) {
         LOG.error("Error reading current file!", ex);
       }
-      if (noChanges  == false) {
+      if (noChanges == false) {
         // Everything seems to be fine update document and increment version
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
