@@ -24,7 +24,11 @@ function usage {
 ################################################################################
   echo "Script for managing metastore service."
   echo "USAGE:"
-  echo "  $0 [/init|start|stop]"
+  echo "  $0 [init|start|stop]"
+  echo " "
+  echo "  init - Initialize/Reset the whole framework"
+  echo "  start - Start stopped framework"
+  echo "  stop - Stop framework"
   exit 1
 }
 
@@ -42,6 +46,11 @@ function checkParameters {
 function initFramework {
 ################################################################################
 printInfo "Setup Framework"
+
+echo "Setup configuration directories for metaStore and indexing-Service"
+mkdir -p "$ACTUAL_DIR/settings/metastore"
+mkdir -p "$ACTUAL_DIR/settings/indexing"
+
 echo "Setup network for docker..."
 docker network create network4datamanager
 
@@ -49,9 +58,9 @@ echo "Start RabbitMQ server..."
 deleteDockerContainer rabbitmq4docker
 docker run -d --hostname rabbitmq --net network4datamanager --name rabbitmq4docker -p 5672:5672 -p 15672:15672 rabbitmq:3-management
 
-echo "Start metastore2..."
+echo "Start metaStore2..."
 deleteDockerContainer metastore4docker
-docker run -d -p8040:8040 --net network4datamanager --name metastore4docker kitdm/metastore2:latest
+docker run -d -v "$ACTUAL_DIR/settings/metastore":/spring/metastore2/config --net network4datamanager --name metastore4docker -p8040:8040 kitdm/metastore2:latest
 
 echo "Start elasticsearch server..."
 deleteDockerContainer elasticsearch4metastore
@@ -59,7 +68,7 @@ docker run -d --net network4datamanager --name elasticsearch4metastore  -p 9200:
 
 echo "Start Indexing-Service..."
 deleteDockerContainer indexing4metastore
-docker run -d --net network4datamanager --name indexing4metastore  -p 8050:8050 indexing-service:latest
+docker run -d -v "$ACTUAL_DIR/settings/metastore":/spring/indexing-service/config --net network4datamanager --name indexing4metastore  -p 8050:8050 indexing-service:latest
 
 printInfo "Ready to use metastore"
 }
@@ -138,7 +147,7 @@ echo "--------------------------------------------------------------------------
 ################################################################################
 # Test for commands used in this script
 ################################################################################
-testForCommands="type echo grep docker"
+testForCommands="type echo grep mkdir docker"
 
 for command in $testForCommands
 do 

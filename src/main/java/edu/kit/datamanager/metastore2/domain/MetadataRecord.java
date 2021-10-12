@@ -53,7 +53,7 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @NotBlank(message = "The unique identify of the record.")
   private String id;
   @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
-  private String pid;
+  private ResourceIdentifier pid;
   @NotBlank(message = "The unqiue identifier of the resource the metadata record is related to. The value might be a URL, a PID or something else resolvable by an external tool/service.")
   private ResourceIdentifier relatedResource;
   @NotNull(message = "The date the record has been initially created.")

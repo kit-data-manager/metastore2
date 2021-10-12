@@ -12,6 +12,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -52,7 +53,7 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41402"})
+@TestPropertySource(properties = {"server.port=41411"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IDataRecordDaoTest {
 
@@ -95,11 +96,13 @@ public class IDataRecordDaoTest {
     System.out.println("findByMetadataId");
     String metadataId = "metadataId1";
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
-    DataRecord result = instance.findByMetadataId(metadataId);
+    Optional<DataRecord> result = instance.findByMetadataId(metadataId);
     assertNotNull(result);
+    assertTrue(result.isPresent());
 
     result = instance.findByMetadataId("unknownId");
-    assertNull(result);
+    assertNotNull(result);
+    assertFalse(result.isPresent());
   }
 
   /**

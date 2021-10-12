@@ -25,6 +25,7 @@ import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
@@ -41,6 +42,7 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceService;
+import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
@@ -95,6 +97,8 @@ public class Application {
   @Autowired
   private IDataRecordDao dataRecordDao;
   @Autowired
+  private IUrl2PathDao url2PathDao;
+  @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
   private OaiPmhConfiguration oaiPmhConfiguration;
@@ -131,10 +135,14 @@ public class Application {
 //  public IdBasedStorageProperties idBasedStorageProperties() {
 //    return new IdBasedStorageProperties();
 //  }
-
   @Bean
   public DateBasedStorageProperties dateBasedStorageProperties() {
     return new DateBasedStorageProperties();
+  }
+
+  @Bean
+  public IdBasedStorageProperties idBasedStorageProperties() {
+    return new IdBasedStorageProperties();
   }
 
   @Bean
@@ -206,7 +214,8 @@ public class Application {
     MetadataRecordUtil.setDataRecordDao(dataRecordDao);
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
-    
+    MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
+
     return rbc;
   }
 
@@ -229,7 +238,7 @@ public class Application {
       }
     }
     for (IRepoStorageService storageService : this.storageServices) {
-      if ("dateBased".equals(storageService.getServiceName())) {
+      if (IdBasedStorageService.SERVICE_NAME.equals(storageService.getServiceName())) {
         LOG.info("Set storage service: {}", storageService.getServiceName());
         rbc.setStorageService(storageService);
         break;

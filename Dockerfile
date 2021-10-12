@@ -11,14 +11,15 @@ ARG SERVICE_ROOT_DIRECTORY_DEFAULT=/spring/
 ####################################################
 # Building environment (java & git)
 ####################################################
-FROM openjdk:11-buster AS build-env-java
+FROM openjdk:16-alpine AS build-env-java
 LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=build-env
 
 # Install git as additional requirement
-RUN apt-get update && \
-    apt-get upgrade --assume-yes && \
-    apt-get install --assume-yes git 
+RUN apk update && \
+    apk upgrade  && \
+    apk add  git && \
+    apk add  bash
 
 ####################################################
 # Building service
@@ -46,7 +47,7 @@ RUN bash ./build.sh $SERVICE_DIRECTORY
 ####################################################
 # Runtime environment 4 metastore2
 ####################################################
-FROM openjdk:11-buster AS run-service-metastore2
+FROM openjdk:16-alpine AS run-service-metastore2
 LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=run
 

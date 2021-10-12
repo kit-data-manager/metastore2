@@ -15,7 +15,9 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -26,11 +28,11 @@ import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
-import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
@@ -39,15 +41,19 @@ import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
@@ -96,12 +102,15 @@ public class MetadataRecordUtil {
       record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
+      if (ex instanceof JsonParseException) {
+        message = message + " Reason: " + ex.getMessage();
+      }
+      LOG.error("Error parsing json: ", ex);
       throw new BadArgumentException(message);
     }
 
-    if (record.getRelatedResource() == null || record.getSchemaId() == null) {
-      String message = "Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.";
+    if (record.getRelatedResource() == null || record.getRelatedResource().getIdentifier() == null || record.getSchema() == null || record.getSchema().getIdentifier() == null) {
+      String message = "Mandatory attributes relatedResource and/or schema not found in record. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
@@ -109,9 +118,9 @@ public class MetadataRecordUtil {
     if (record.getSchemaVersion() == null) {
       MetadataSchemaRecord currentSchemaRecord;
       try {
-        currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchemaId());
+        currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchema());
       } catch (ResourceNotFoundException rnfe) {
-        throw new UnprocessableEntityException("Unknown schema ID '" + record.getSchemaId() + "'!");
+        throw new UnprocessableEntityException("Unknown schema ID '" + record.getSchema().getIdentifier() + "'!");
       }
       record.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
     }
@@ -142,11 +151,11 @@ public class MetadataRecordUtil {
     // Create additional metadata record for faster access
     DataRecord dataRecord = new DataRecord();
     dataRecord.setMetadataId(createResource.getId());
-    dataRecord.setSchemaId(record.getSchemaId());
+    dataRecord.setSchemaId(record.getSchema().getIdentifier());
     dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
     dataRecord.setLastUpdate(dataResource.getLastUpdate());
-    dataRecordDao.save(dataRecord);
+    saveNewDataRecord(dataRecord);
     long nano7 = System.nanoTime() / 1000000;
     LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
@@ -174,7 +183,10 @@ public class MetadataRecordUtil {
         record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
       } catch (IOException ex) {
         String message = "Can't map record document to MetadataRecord";
-        LOG.error(message);
+        if (ex instanceof JsonParseException) {
+          message = message + " Reason: " + ex.getMessage();
+        }
+        LOG.error("Error parsing json: ", ex);
         throw new BadArgumentException(message);
       }
     }
@@ -190,26 +202,49 @@ public class MetadataRecordUtil {
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
-    String version = dataResource.getVersion();
-    if (version != null) {
-      dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
-    }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     if (document != null) {
       record = migrateToMetadataRecord(applicationProperties, dataResource, false);
       validateMetadataDocument(applicationProperties, record, document);
-      LOG.trace("Updating metadata document.");
+
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
-
-      ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
-      DataRecord dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
-      dataRecord.setMetadataDocumentUri(addFile.getContentUri());
-      dataRecord.setDocumentHash(addFile.getHash());
-      dataRecord.setLastUpdate(dataResource.getLastUpdate());
-      dataRecordDao.save(dataRecord);
+      // Check for changes...
+      boolean noChanges = true;
+      try {
+        byte[] currentFileContent;
+        File file = new File(URI.create(info.getContentUri()));
+        if (document.getSize() == Files.size(file.toPath())) {
+          currentFileContent = FileUtils.readFileToByteArray(file);
+          byte[] newFileContent = document.getBytes();
+          for (int index = 0; index < currentFileContent.length; index++) {
+            if (currentFileContent[index] != newFileContent[index]) {
+              noChanges = false;
+              break;
+            }
+          }
+        } else {
+          noChanges = false;
+        }
+      } catch (IOException ex) {
+        LOG.error("Error reading current file!", ex);
+      }
+      if (noChanges == false) {
+        // Everything seems to be fine update document and increment version
+        LOG.trace("Updating schema document (and increment version)...");
+        String version = dataResource.getVersion();
+        if (version != null) {
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        }
+        ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
+        Optional<DataRecord> dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+        if (dataRecord.isPresent()) {
+          dataRecordDao.delete(dataRecord.get());
+        }
+      }
     }
+    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
+
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
@@ -218,8 +253,10 @@ public class MetadataRecordUtil {
           String eTag,
           Function<String, String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    DataRecord listOfDataIds = dataRecordDao.findByMetadataId(id);
-    dataRecordDao.delete(listOfDataIds);
+    Optional<DataRecord> dataRecord = dataRecordDao.findByMetadataId(id);
+    if (dataRecord.isPresent()) {
+      dataRecordDao.delete(dataRecord.get());
+    }
   }
 
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
@@ -253,8 +290,18 @@ public class MetadataRecordUtil {
         dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
       }
     }
+    Set<Identifier> identifiers = dataResource.getAlternateIdentifiers();
     if (metadataRecord.getPid() != null) {
-      dataResource.setIdentifier(PrimaryIdentifier.factoryPrimaryIdentifier(metadataRecord.getPid()));
+      ResourceIdentifier identifier = metadataRecord.getPid();
+      MetadataSchemaRecordUtil.checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
+    } else {
+      LOG.trace("Remove existing identifiers (others than URL)...");
+      for (Identifier item : identifiers) {
+        if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
+          LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
+          identifiers.remove(item);
+        }
+      }
     }
     boolean relationFound = false;
     boolean schemaIdFound = false;
@@ -265,9 +312,7 @@ public class MetadataRecordUtil {
         relationFound = true;
       }
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        String schemaAndVersion = metadataRecord.getSchemaId() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion();
-        LOG.trace("Set schemaId to '{}'", schemaAndVersion);
-        relatedIds.setValue(schemaAndVersion);
+        updateRelatedIdentifierForSchema(relatedIds, metadataRecord);
         schemaIdFound = true;
       }
     }
@@ -276,7 +321,7 @@ public class MetadataRecordUtil {
       dataResource.getRelatedIdentifiers().add(relatedResource);
     }
     if (!schemaIdFound) {
-      RelatedIdentifier schemaId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, metadataRecord.getSchemaId() + SCHEMA_VERSION_SEPARATOR + metadataRecord.getSchemaVersion(), null, null);
+      RelatedIdentifier schemaId = updateRelatedIdentifierForSchema(null, metadataRecord);
       dataResource.getRelatedIdentifiers().add(schemaId);
     }
     String defaultTitle = "Metadata 4 metastore";
@@ -317,12 +362,18 @@ public class MetadataRecordUtil {
         metadataRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
-      if (dataResource.getIdentifier() != null) {
-        PrimaryIdentifier identifier = dataResource.getIdentifier();
-        if (identifier.hasDoi()) {
-          metadataRecord.setPid(identifier.getValue());
+      Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
+      while (iterator.hasNext()) {
+        Identifier identifier = iterator.next();
+        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
+          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
+          LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
+          metadataRecord.setPid(resourceIdentifier);
+          break;
         }
+
       }
+
       long nano2 = System.nanoTime() / 1000000;
       Long recordVersion = 1l;
       if (dataResource.getVersion() != null) {
@@ -337,25 +388,20 @@ public class MetadataRecordUtil {
           metadataRecord.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue()));
         }
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-          LOG.trace("Set schemaId to '{}'", relatedIds.getValue());
-          String schemaAndVersion = relatedIds.getValue();
-          String[] split = schemaAndVersion.split(SCHEMA_VERSION_SEPARATOR);
-          if (LOG.isTraceEnabled()) {
-            for (String item : split) {
-              LOG.trace("Split into: '{}'", item);
-            }
-          }
-          metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(split[0]));
-          metadataRecord.setSchemaVersion(Long.parseLong(split[1]));
+          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
+          metadataRecord.setSchema(resourceIdentifier);
+          metadataRecord.setSchemaVersion(1l);
+          LOG.trace("Set schema to '{}'", metadataRecord.getSchema());
         }
       }
       DataRecord dataRecord = null;
       long nano4 = System.nanoTime() / 1000000;
-      try {
-        dataRecord = dataRecordDao.findByMetadataId(dataResource.getId());
+      Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataId(dataResource.getId());
+      if (dataRecordResult.isPresent()) {
+        dataRecord = dataRecordResult.get();
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
-      } catch (NullPointerException npe) {
+      } else {
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         if (info != null) {
@@ -401,12 +447,34 @@ public class MetadataRecordUtil {
    * Returns schema record with the current version.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param schemaId SchemaID of the schema.
+   * @param schema Identifier of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
    * @throws IOException Error reading document.
    */
   public static MetadataSchemaRecord getCurrentSchemaRecord(MetastoreConfiguration metastoreProperties,
+          ResourceIdentifier schema) {
+    MetadataSchemaRecord msr;
+    if (schema.getIdentifierType() == IdentifierType.INTERNAL) {
+      msr = getCurrentInternalSchemaRecord(metastoreProperties, schema.getIdentifier());
+    } else {
+      msr = new MetadataSchemaRecord();
+      msr.setSchemaVersion(1l);
+    }
+
+    return msr;
+  }
+
+  /**
+   * Returns schema record with the current version.
+   *
+   * @param metastoreProperties Configuration for accessing services
+   * @param schemaId SchemaID of the schema.
+   * @return MetadataSchemaRecord ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  public static MetadataSchemaRecord getCurrentInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId) {
+    LOG.trace("Get current internal schema record for id '{}'.", schemaId);
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
@@ -417,6 +485,7 @@ public class MetadataRecordUtil {
       success = true;
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
         URI schemaRegistryUri = URI.create(schemaRegistry);
         UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId);
 
@@ -440,7 +509,78 @@ public class MetadataRecordUtil {
     if (!success) {
       throw new UnprocessableEntityException(errorMessage.toString());
     }
+    LOG.trace("Found schema record: '{}'", returnValue);
     return returnValue;
+  }
+
+  /**
+   * Returns schema record with the current version.
+   *
+   * @param metastoreProperties Configuration for accessing services
+   * @param schemaId SchemaID of the schema.
+   * @param version Version of the schema.
+   * @return MetadataSchemaRecord ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  public static MetadataSchemaRecord getInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
+          String schemaId,
+          Long version) {
+    MetadataSchemaRecord returnValue = null;
+    boolean success = false;
+    StringBuilder errorMessage = new StringBuilder();
+    LOG.trace("Get internal schema record for id '{}'.", schemaId);
+    if (metastoreProperties.getSchemaRegistries().length == 0) {
+      LOG.trace("No external schema registries defined. Try to use internal one...");
+
+      returnValue = MetadataSchemaRecordUtil.getRecordByIdAndVersion(metastoreProperties, schemaId, version);
+      success = true;
+    } else {
+      for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
+        URI schemaRegistryUri = URI.create(schemaRegistry);
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", schemaId).queryParam("version", version);
+
+        URI finalUri = builder.build().toUri();
+
+        try {
+          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class);
+          success = true;
+          break;
+        } catch (HttpClientErrorException ce) {
+          String message = "Error accessing schema '" + schemaId + "' at '" + schemaRegistry + "'!";
+          LOG.error(message, ce);
+          errorMessage.append(message).append("\n");
+        } catch (RestClientException ex) {
+          String message = "Failed to access schema registry at '" + schemaRegistry + "'. Proceeding with next registry.";
+          LOG.error(message, ex);
+          errorMessage.append(message).append("\n");
+        }
+      }
+    }
+    if (!success) {
+      throw new UnprocessableEntityException(errorMessage.toString());
+    }
+    LOG.trace("Found schema record: '{}'", returnValue);
+    return returnValue;
+  }
+
+  /**
+   * Update/create related identifier to values given by metadata record.
+   *
+   * @param relatedIdentifier related identifier (if null create a new one)
+   * @param metadataRecord record holding schema information.
+   * @return updated/created related identifier.
+   */
+  private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
+    if (relatedIdentifier == null) {
+      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, null, null, null);
+    }
+    ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
+    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
+    relatedIdentifier.setValue(schemaIdentifier.getIdentifier());
+    LOG.trace("Set relatedId for schema to '{}'", relatedIdentifier);
+
+    return relatedIdentifier;
   }
 
   /**
@@ -462,11 +602,11 @@ public class MetadataRecordUtil {
     }
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
-    if (metastoreProperties.getSchemaRegistries().length == 0) {
+    if (metastoreProperties.getSchemaRegistries().length == 0 || record.getSchema().getIdentifierType() != IdentifierType.INTERNAL) {
       LOG.trace("No external schema registries defined. Try to use internal one...");
       if (schemaConfig != null) {
         try {
-          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, record.getSchemaId(), record.getSchemaVersion());
+          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, record.getSchema(), record.getSchemaVersion());
           validationSuccess = true;
         } catch (Exception ex) {
           String message = "Error validating document!";
@@ -478,8 +618,9 @@ public class MetadataRecordUtil {
       }
     } else {
       for (String schemaRegistry : metastoreProperties.getSchemaRegistries()) {
+        LOG.trace("Try to fetch schema from '{}'.", schemaRegistry);
         URI schemaRegistryUri = URI.create(schemaRegistry);
-        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchemaId(), "validate").queryParam("version", record.getSchemaVersion());
+        UriComponentsBuilder builder = UriComponentsBuilder.newInstance().scheme(schemaRegistryUri.getScheme()).host(schemaRegistryUri.getHost()).port(schemaRegistryUri.getPort()).pathSegment(schemaRegistryUri.getPath(), "schemas", record.getSchema().getIdentifier(), "validate").queryParam("version", record.getSchemaVersion());
 
         URI finalUri = builder.build().toUri();
 
@@ -487,13 +628,13 @@ public class MetadataRecordUtil {
           HttpStatus status = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).withFormParam("document", document.getInputStream()).postForm(MediaType.MULTIPART_FORM_DATA);
 
           if (Objects.equals(HttpStatus.NO_CONTENT, status)) {
-            LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchemaId(), schemaRegistry);
+            LOG.trace("Successfully validated document against schema {} in registry {}.", record.getSchema().getIdentifier(), schemaRegistry);
             validationSuccess = true;
             break;
           }
         } catch (HttpClientErrorException ce) {
           //not valid 
-          String message = "Failed to validate metadata document against schema " + record.getSchemaId() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".";
+          String message = "Failed to validate metadata document against schema " + record.getSchema().getIdentifier() + " at '" + schemaRegistry + "' with status " + ce.getStatusCode() + ".";
           LOG.error(message, ce);
           errorMessage.append(message).append("\n");
         } catch (IOException | RestClientException ex) {
@@ -554,16 +695,16 @@ public class MetadataRecordUtil {
   }
 
   public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
-    if (provided != null) {
+    if (provided != null && managed != null) {
       //update pid
       if (provided.getPid() != null) {
         if (!provided.getPid().equals(managed.getPid())) {
-          LOG.trace("Updating record mimetype from {} to {}.", managed.getPid(), provided.getPid());
+          LOG.trace("Updating record pid from {} to {}.", managed.getPid(), provided.getPid());
           managed.setPid(provided.getPid());
         }
       }
       //update acl
-      if (provided.getAcl() != null) {
+      if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
           LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
           managed.setAcl(provided.getAcl());
@@ -572,15 +713,15 @@ public class MetadataRecordUtil {
       //update getRelatedResource
       if (provided.getRelatedResource() != null) {
         if (!provided.getRelatedResource().equals(managed.getRelatedResource())) {
-          LOG.trace("Updating record type from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+          LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
           managed.setRelatedResource(provided.getRelatedResource());
         }
       }
       //update schemaId
-      if (provided.getSchemaId() != null) {
-        if (!provided.getSchemaId().equals(managed.getSchemaId())) {
-          LOG.trace("Updating record schemaId from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-          managed.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(provided.getSchemaId()));
+      if (provided.getSchema() != null) {
+        if (!provided.getSchema().equals(managed.getSchema())) {
+          LOG.trace("Updating record schema from {} to {}.", managed.getSchema(), provided.getSchema());
+          managed.setSchema(provided.getSchema());
         }
       }
       //update schemaVersion
@@ -590,6 +731,8 @@ public class MetadataRecordUtil {
           managed.setSchemaVersion(provided.getSchemaVersion());
         }
       }
+    } else {
+      managed = (managed != null) ? managed : provided;
     }
 //    LOG.trace("Setting lastUpdate to now().");
 //    managed.setLastUpdate(Instant.now());
@@ -615,21 +758,37 @@ public class MetadataRecordUtil {
   }
 
   private static void saveNewDataRecord(MetadataRecord result) {
-    if (dataRecordDao != null) {
-      // Create shortcut for access.
-      LOG.trace("Found new schema record!");
-      DataRecord dataRecord = new DataRecord();
+    DataRecord dataRecord = null;
+
+    // Create shortcut for access.
+    LOG.trace("Save new data record!");
+    dataRecord = transformToDataRecord(result);
+
+    saveNewDataRecord(dataRecord);
+  }
+
+  private static DataRecord transformToDataRecord(MetadataRecord result) {
+    DataRecord dataRecord = null;
+    if (result != null) {
+      LOG.trace("Transform to data record!");
+      dataRecord = new DataRecord();
       dataRecord.setMetadataId(result.getId());
-      dataRecord.setSchemaId(result.getSchemaId());
+      dataRecord.setSchemaId(result.getSchema().getIdentifier());
       dataRecord.setDocumentHash(result.getDocumentHash());
       dataRecord.setMetadataDocumentUri(result.getMetadataDocumentUri());
       dataRecord.setLastUpdate(result.getLastUpdate());
+    }
+    return dataRecord;
+  }
+
+  private static void saveNewDataRecord(DataRecord dataRecord) {
+    if (dataRecordDao != null) {
       try {
         dataRecordDao.save(dataRecord);
       } catch (Exception ex) {
         LOG.error("Error saving data record", ex);
       }
-      LOG.trace("Data record: {}", dataRecord);
+      LOG.trace("Data record saved: {}", dataRecord);
     }
   }
 }

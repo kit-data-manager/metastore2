@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -20,7 +21,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -176,17 +176,74 @@ public class MetadataSchemaRecordUtilTest {
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNull() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (ResourceIdentifier)null, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNoValue() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    ResourceIdentifier identifier = ResourceIdentifier.factoryInternalResourceIdentifier(null);
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, identifier, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNoType() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    ResourceIdentifier identifier = ResourceIdentifier.factoryResourceIdentifier("any", null);
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, identifier, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, null, 1l);
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaDocumentUri("any");
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, schemaRecord);
     fail("Don't reach this line!");
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentEmpty() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
+     SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaDocumentUri("any");
     MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, null, 1l);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateMetadataDocumentSchemaRecordNull() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+     SchemaRecord schemaRecord = null;
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateMetadataDocumentSchemaRecordUriNull() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+     SchemaRecord schemaRecord = new SchemaRecord();
+     MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateMetadataDocumentSchemaRecordUriEmpty() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+     SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaDocumentUri("   ");
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
 

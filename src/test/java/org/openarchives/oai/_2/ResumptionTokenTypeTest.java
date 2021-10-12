@@ -5,9 +5,9 @@
  */
 package org.openarchives.oai._2;
 
-import com.sun.org.apache.xerces.internal.jaxp.datatype.XMLGregorianCalendarImpl;
 import java.math.BigInteger;
-import java.util.GregorianCalendar;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -62,14 +62,14 @@ public class ResumptionTokenTypeTest {
      * Test of getExpirationDate method, of class ResumptionTokenType.
      */
     @Test
-    public void testSetAndGetExpirationDate() {
+    public void testSetAndGetExpirationDate() throws DatatypeConfigurationException {
         System.out.println("testSetAndGetExpirationDate");
         ResumptionTokenType instance = new ResumptionTokenType();
         XMLGregorianCalendar value = null;
         XMLGregorianCalendar expResult = value;
         XMLGregorianCalendar result = instance.getExpirationDate();
         assertEquals(expResult, result);
-        value = new XMLGregorianCalendarImpl(new GregorianCalendar());
+        value = DatatypeFactory.newInstance().newXMLGregorianCalendar();
         expResult = value;
         instance.setExpirationDate(value);
         result = instance.getExpirationDate();

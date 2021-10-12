@@ -120,10 +120,13 @@ printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 ################################################################################
 # service-base -> branch: refactoringServiceBase
 ###################################
+echo "Create directory for snapshots"
+mkdir "$INSTALLATION_DIRECTORY"/git
+cd "$INSTALLATION_DIRECTORY"/git
 git clone https://github.com/VolkerHartmann/service-base.git
 cd service-base
 git checkout refactoringServiceBase
-./gradlew clean build install
+./gradlew clean build publishToMavenLocal
 cd ..
 
 # repo-core -> branch: development
@@ -131,25 +134,27 @@ cd ..
 git clone https://github.com/VolkerHartmann/repo-core.git
 cd repo-core
 git checkout development
-./gradlew clean build install
-cd ..
+./gradlew clean build publishToMavenLocal
+cd "$ACTUAL_DIR" 
+rm -rf "$INSTALLATION_DIRECTORY"/git
 
 ################################################################################
 # Build service
 ################################################################################
-
 echo Build service...
 ./gradlew -Prelease clean build
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find . -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
 find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
 
 echo "Create config directory"
 mkdir "$INSTALLATION_DIRECTORY"/config
+echo "To overwrite default properties place 'application.properties' into this directory." > "$INSTALLATION_DIRECTORY"/config/README.txt
+echo "Only changed properties should be part of this file." >> "$INSTALLATION_DIRECTORY"/config/README.txt
 
 echo "Create lib directory"
 mkdir "$INSTALLATION_DIRECTORY"/lib

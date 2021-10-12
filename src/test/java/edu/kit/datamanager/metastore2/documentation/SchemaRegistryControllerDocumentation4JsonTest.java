@@ -84,7 +84,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41407"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc_json;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
 @TestPropertySource(properties = {"metastore.schema.metadataFolder=file:///tmp/metastore2/restdocu/json/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41407/api/v1/"})
@@ -103,6 +103,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
   private final static String ANOTHER_SCHEMA_ID = "another_json";
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String SCHEMA_V1 = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
@@ -219,7 +220,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
           + "\"date\": \"2018-07-02\",\n"
           + "\"note\": \"since version 3 notes are allowed\"\n"
           + "}";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("https://repo/anyResourceId");
 
   @Before
   public void setUp() throws JsonProcessingException {
@@ -230,12 +231,20 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
     } catch (IOException ex) {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
             .addFilters(springSecurityFilterChain)
-            .apply(documentationConfiguration(this.restDocumentation).operationPreprocessors()
+            .apply(documentationConfiguration(this.restDocumentation)
+                    .uris().withPort(8040).and()
+                    .operationPreprocessors()
                     .withRequestDefaults(prettyPrint())
                     .withResponseDefaults(Preprocessors.removeHeaders("X-Content-Type-Options", "X-XSS-Protection", "X-Frame-Options"), prettyPrint()))
             .build();
@@ -248,7 +257,6 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     //**************************************************************************
     schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
-    schemaRecord.setMimeType(MediaType.APPLICATION_JSON.toString());
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());
 
@@ -396,8 +404,8 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
     // Create a metadata record.
     MetadataRecord metadataRecord = new MetadataRecord();
 //    record.setId("my_id");
-    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     metadataRecord.setRelatedResource(RELATED_RESOURCE);
+    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     metadataRecord.setSchemaVersion(1l);
 
     recordFile = new MockMultipartFile("record", "metadata-record4json.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
@@ -438,6 +446,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
 
     mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     record.setSchemaVersion(2l);
     recordFile = new MockMultipartFile("record", "metadata-record4json-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v2.json", "application/xml", DOCUMENT_V2.getBytes());
@@ -460,6 +469,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
             andDo(document("get-json-metadata-record-v2")).
             andExpect(status().isOk()).
             andReturn().getResponse();
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     record.setSchemaVersion(3l);
     recordFile = new MockMultipartFile("record", "metadata-record4json-v3.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v3.json", "application/xml", DOCUMENT_V3.getBytes());

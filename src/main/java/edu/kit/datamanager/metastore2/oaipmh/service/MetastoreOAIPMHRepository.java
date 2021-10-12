@@ -19,9 +19,7 @@ import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
-import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.DataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
@@ -45,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -330,6 +329,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
           return "dummy" + t;
         };
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
+        // Todo check for internal related schema identifier switch to URL
         Resource resource = DataCiteMapper.dataResourceToDataciteResource(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(Resource.class);
         Marshaller marshaller = jaxbContext.createMarshaller();
@@ -406,9 +406,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
    */
   private DataRecord getEntity(OAIPMHBuilder builder) {
     LOGGER.trace("Performing getEntity().");
+    DataRecord entity = null;
 
-    DataRecord entity = dataRecordDao.findByMetadataId(builder.getIdentifier());
-
+    Optional<DataRecord> findEntity = dataRecordDao.findByMetadataId(builder.getIdentifier());
+    if (findEntity.isPresent()) {
+      entity = findEntity.get();
+    }
     return entity;
 
   }
