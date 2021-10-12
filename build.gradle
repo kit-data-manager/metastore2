@@ -22,7 +22,7 @@ ext {
 
 println "Running gradle version: $gradle.gradleVersion"
 println "Building ${name} version: ${version}"
-println "JDK version: JavaVersion.current()"
+println "JDK version: ${JavaVersion.current()}"
 
 repositories {
     mavenLocal() 
