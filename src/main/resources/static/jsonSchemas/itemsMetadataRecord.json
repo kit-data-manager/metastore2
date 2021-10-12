@@ -1,0 +1,17 @@
+[{
+        "title": "Identifier",
+        "field": "id"
+    },  
+    {
+        "title": "Related Resource",
+        "field": "relatedResource"
+       },
+    {
+        "title": "Date Created",
+        "field": "createdAt"
+    },
+    {
+        "title": "Date Updated",
+        "field": "lastUpdate"
+    }
+]

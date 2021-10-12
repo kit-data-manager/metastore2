@@ -1,0 +1,23 @@
+{
+    "type": "fieldset",
+    "title": "Schema Record",
+    "items": [
+        "schemaId",
+        "mimeType",
+        "type",
+        {
+            "type": "array",
+            "title": "ACL",
+            "htmlClass": "acl",
+            "items": [
+                "acl[]"
+            ]
+        },
+        "locked",
+        {
+            "key": "fileSchema",
+            "type": "file"
+        }
+    ]
+}
+
