@@ -46,6 +46,8 @@ import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
+import java.util.ArrayList;
+import java.util.List;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -188,14 +190,12 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     for (IRepoVersioningService versioningService : this.versioningServices) {
       if ("simple".equals(versioningService.getServiceName())) {
-        LOG.info("Set versioning service: {}", versioningService.getServiceName());
         rbc.setVersioningService(versioningService);
         break;
       }
     }
     for (IRepoStorageService storageService : this.storageServices) {
       if ("simple".equals(storageService.getServiceName())) {
-        LOG.info("Set storage service: {}", storageService.getServiceName());
         rbc.setStorageService(storageService);
         break;
       }
@@ -205,17 +205,16 @@ public class Application {
     schemaResourceService.configure(rbc);
     schemaInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
-    rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+    rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    LOG.info("------------------------------------------------------");
-    LOG.info("------{}", rbc);
-    LOG.info("------------------------------------------------------");
     MetadataRecordUtil.setSchemaConfig(rbc);
     MetadataRecordUtil.setDataRecordDao(dataRecordDao);
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
-
+    
+    printSettings(rbc);
+    
     return rbc;
   }
 
@@ -232,14 +231,12 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     for (IRepoVersioningService versioningService : this.versioningServices) {
       if ("simple".equals(versioningService.getServiceName())) {
-        LOG.info("Set versioning service: {}", versioningService.getServiceName());
         rbc.setVersioningService(versioningService);
         break;
       }
     }
     for (IRepoStorageService storageService : this.storageServices) {
       if (IdBasedStorageService.SERVICE_NAME.equals(storageService.getServiceName())) {
-        LOG.info("Set storage service: {}", storageService.getServiceName());
         rbc.setStorageService(storageService);
         break;
       }
@@ -249,12 +246,45 @@ public class Application {
     dataResourceService.configure(rbc);
     contentInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
-    rbc.setSchemaRegistries(applicationProperties.getSchemaRegistries());
+    rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    LOG.info("------------------------------------------------------");
-    LOG.info("------{}", rbc);
-    LOG.info("------------------------------------------------------");
+    
+    printSettings(rbc);
+    
     return rbc;
+  }
+  /**
+   * Print current settings for repository
+   * @param config Settings.
+   */
+  public void printSettings(MetastoreConfiguration config) {
+    LOG.info("------------------------------------------------------");
+    LOG.info("------{}", config);
+    LOG.info("------------------------------------------------------");
+    LOG.info("Versioning service: {}", config.getVersioningService().getServiceName());
+    LOG.info("Storage service: {}", config.getStorageService().getServiceName());
+    LOG.info("Basepath metadata repository: {}", config.getBasepath().toString());
+    int noOfSchemaRegistries = config.getSchemaRegistries().length;
+    LOG.info("Number of registered external schema registries: {}", noOfSchemaRegistries);
+    for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
+      LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
+    }
+    
+  }
+  /** 
+   * Check settings for empty entries and remove them.
+   * @param currentRegistries Current list of schema registries.
+   * @return Fitered list of schema registries.
+   */
+  public String[] checkRegistries(String[] currentRegistries) {
+    List<String> allRegistries = new ArrayList<>();
+    for (String schemaRegistry : currentRegistries){
+      if (!schemaRegistry.trim().isEmpty()) { 
+       allRegistries.add(schemaRegistry);
+      }
+    }
+    String[] array = allRegistries.toArray(new String[0]);
+    return array;
   }
 
   public static void main(String[] args) {
