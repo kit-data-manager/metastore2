@@ -1,0 +1,25 @@
+{
+    "type": "fieldset",
+    "title": "Schema Record",
+    "items": [
+        "schemaId",
+        "mimeType",
+        "type",
+        "createdAt",
+        "lastUpdate",
+        "label",
+        "definition",
+        "comment",
+        {
+            "type": "array",
+            "title": "ACL",
+            "htmlClass": "acl",
+            "items": [
+                "acl[]"
+            ]
+        },
+        "locked",
+        "schemaDocumentUri",
+        "schemaHash"
+    ]
+}

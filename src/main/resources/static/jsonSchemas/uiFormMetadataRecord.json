@@ -1,0 +1,23 @@
+{
+    "type": "fieldset",
+    "title": "Schema Record",
+    "items": [
+        "id",
+        "relatedResource",
+        "schemaId",
+        "recordVersion",
+        "createdAt",
+        "lastUpdate",
+        "schemaVersion",
+        {
+            "type": "array",
+            "title": "acl",
+            "htmlClass": "acl",
+            "items": [
+                "acl[]"
+            ]
+        },
+        "metadataDocumentUri",
+        "documentHash"
+    ]
+}
