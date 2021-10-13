@@ -5,6 +5,9 @@
     {
         "title": "Schema Version",
         "field": "schemaVersion"  },
+        {
+        "title": "Label",
+        "field": "label"  },
     {
         "title": "Date Created",
         "field": "createdAt"

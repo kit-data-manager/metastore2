@@ -1,17 +1,16 @@
 {
     "type": "fieldset",
-    "title": "Schema Record",
     "items": [
         "id",
         "relatedResource",
-        "schemaId",
+        "schema",
         "recordVersion",
         "createdAt",
         "lastUpdate",
         "schemaVersion",
         {
             "type": "array",
-            "title": "acl",
+            "title": "ACL",
             "htmlClass": "acl",
             "items": [
                 "acl[]"

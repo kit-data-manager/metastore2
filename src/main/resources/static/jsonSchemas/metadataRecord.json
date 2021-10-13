@@ -6,8 +6,18 @@
             "title": "Identifier"
         },
         "relatedResource": {
-            "type": "string",
-            "title": "Related Resource"
+            "type": "object",
+            "title": "Related Resource",
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "title": "Identifier"
+                },
+                "identifierType": {
+                    "type": "string",
+                    "title": "Identifier Type"
+                }
+            }
         },
         "createdAt": {
             "type": "string",
@@ -21,9 +31,20 @@
             "type": "integer",
             "title": "Record Version"
         },
-        "schemaId": {
-            "type": "string",
-            "title": "Schema Identifier"
+        "schema": {
+            "type": "object",
+             "title": "Schema",
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "title": "Identifier"
+                },
+                "identifierType": {
+                    "type": "string",
+                    "enum": ["INTERNAL"],
+                    "title": "Identifier Type"
+                }
+            }
         },
         "schemaVersion": {
             "type": "integer",
@@ -38,12 +59,13 @@
                     "sid": {
                         "type": "string",
                         "title": "Sid",
-                        "default": "SELF"                    },
+                        "default": "SELF"
+                    },
                     "permission": {
                         "type": "string",
                         "title": "Permission",
                         "default": "ADMINISTRATE",
-                        "enum": ["READ","WRITE", "ADMINISTRATE", "NONE"]
+                        "enum": ["READ", "WRITE", "ADMINISTRATE", "NONE"]
                     }
                 }
             }
