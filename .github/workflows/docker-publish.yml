@@ -70,7 +70,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            kitdm/${{IMAGE_NAME}}
+            kitdm/metastore2
           # add git short SHA as Docker tag
           tag-sha: true    
       - name: Set up QEMU
