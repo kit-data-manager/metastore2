@@ -33,11 +33,11 @@ jobs:
     - name: Build with Gradle
       run:   |
         if [ "$RUNNER_OS" == "Linux" ]; then
-              ./gradlew clean build 
+              ./gradlew -Ptravis clean build 
         elif [ "$RUNNER_OS" == "macOS" ]; then
-              ./gradlew clean build 
+              ./gradlew -Ptravis clean build 
         elif [ "$RUNNER_OS" == "Windows" ]; then
-              ./gradlew.bat clean build
+              ./gradlew.bat -Ptravis clean build
         else
               echo "$RUNNER_OS not supported"
               exit 1
@@ -57,7 +57,7 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle (JDK ${{ env.currentBuildVersion }})
-      run: ./gradlew clean check jacocoTestReport
+      run: ./gradlew -Ptravis clean check jacocoTestReport
     - name: Codecov
       uses: codecov/codecov-action@v1
       with:
