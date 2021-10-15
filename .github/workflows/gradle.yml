@@ -1,0 +1,64 @@
+# This workflow will build a Java project with Gradle
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-gradle
+
+name: build with gradle
+
+on:
+  push:
+    branches: [ master, main, testWorkflow ]
+  pull_request:
+    branches: [ master, main ]
+
+env:
+    # JDK version used for building jar file
+    currentBuildVersion: 8
+jobs:
+  build:
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: [ubuntu-latest, macOS-latest, windows-latest]
+        # Use both LTS releases and latest one for tests
+        jdk: [ 8, 11, 16 ]
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Set up OpenJDK version ...
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu' 
+        java-version: ${{ matrix.jdk }}
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle
+      run:   |
+        if [ "$RUNNER_OS" == "Linux" ]; then
+              ./gradlew clean build 
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+              ./gradlew clean build 
+        elif [ "$RUNNER_OS" == "Windows" ]; then
+              ./gradlew.bat clean build
+        else
+              echo "$RUNNER_OS not supported"
+              exit 1
+        fi
+      shell: bash
+  coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Set up OpenJDK version ...
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu' 
+        java-version: ${{ env.currentBuildVersion }}
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+    - name: Build with Gradle (JDK ${{ env.currentBuildVersion }})
+      run: ./gradlew clean check jacocoTestReport
+    - name: Codecov
+      uses: codecov/codecov-action@v1
+      with:
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml #optional

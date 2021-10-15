@@ -19,12 +19,13 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.Data;
-import static org.springframework.web.servlet.function.RequestPredicates.contentType;
+import lombok.EqualsAndHashCode;
 
 /**
  * Handler for creating messages for metadata.
  */
 @Data
+@EqualsAndHashCode(callSuper=false)
 public class MetadataResourceMessage extends DataResourceMessage {
 
   /**
@@ -82,7 +83,7 @@ public class MetadataResourceMessage extends DataResourceMessage {
     Map<String, String> properties = new HashMap<>();
     if (metadataRecord != null) {
       properties.put(RESOLVING_URL_PROPERTY, metadataRecord.getMetadataDocumentUri());
-      properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchemaId());
+      properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchema().getIdentifier());
       msg.setEntityId(metadataRecord.getId());
     }
     if (action != null) {

@@ -1,40 +1,31 @@
-buildscript {
-    repositories { 
-        mavenLocal()
-        jcenter()
-        mavenCentral()
-
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.2.RELEASE")
-        classpath 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
-        //classpath 'org.kordamp.gradle:stats-gradle-plugin:0.2.2'
-    }
-}
-
 plugins { 
-    id 'io.franzbecker.gradle-lombok' version '1.14'
-    id "io.spring.dependency-management" version "1.0.8.RELEASE" 
-    id "com.github.kt3k.coveralls" version "2.8.1" 
-    id "org.owasp.dependencycheck" version "3.1.2"
-    id "org.asciidoctor.convert" version "1.5.3"
+    id "org.springframework.boot" version "2.4.10"
+    id "io.spring.dependency-management" version "1.0.11.RELEASE" 
+    id "io.freefair.lombok" version "6.1.0"
+    id "io.freefair.maven-publish-java" version "6.1.0"
+    id "com.github.kt3k.coveralls" version "2.12.0" 
+    id "org.owasp.dependencycheck" version "6.2.2"
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '2.8.1'
+    id 'java'
+    id 'jacoco'
 }
-
-apply plugin: 'java'
-apply plugin: 'jacoco'
-apply plugin: 'org.springframework.boot'
-apply plugin: 'io.spring.dependency-management'
 
 description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
-println "Building ${name} version: ${version}"
+ext {
+    springBootVersion = '2.4.10' 
+    springDocVersion  = '1.5.6'
+    javersVersion     = '6.2.3'
+}
 
+println "Running gradle version: $gradle.gradleVersion"
+println "Building ${name} version: ${version}"
+println "JDK version: ${JavaVersion.current()}"
 
 repositories {
     mavenLocal() 
-    jcenter()
     mavenCentral()
 }
 
@@ -43,11 +34,6 @@ targetCompatibility = 1.8
  
 configurations {
     all*.exclude module : 'spring-boot-starter-logging'
-}
-
-lombok {
-    version = '1.18.10'
-    sha256 = ""
 }
 
 if (project.hasProperty('travis')) {
@@ -59,57 +45,85 @@ if (project.hasProperty('travis')) {
 } 
 
 dependencies {
-    implementation "org.javers:javers-spring-boot-starter-sql:3.9.0"
+    // Spring
+    implementation 'org.springframework:spring-messaging:5.3.9'
+    // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
-    implementation "org.springframework.boot:spring-boot-starter-mail"
+    implementation "org.springframework.boot:spring-boot-starter-amqp"
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-actuator"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
    
-    implementation "org.springdoc:springdoc-openapi-ui:1.4.8"
-    implementation "org.springdoc:springdoc-openapi-data-rest:1.4.8"
+    // boot starter
+    implementation "org.springframework.boot:spring-boot-starter-validation"    
+    implementation "org.springframework.boot:spring-boot-starter-mail"
+    
+    implementation "org.springframework.security:spring-security-web:5.5.2"
+
+    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
+    implementation "org.springframework.security:spring-security-config:5.5.2"
+    
+   // cloud support
+    implementation "org.springframework.cloud:spring-cloud-starter-config:3.0.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3"
+
+    // springdoc
+    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    // apache
+    implementation "commons-configuration:commons-configuration:1.10"
+    implementation "org.apache.commons:commons-collections4:4.4"
+    // includes commons-lang3
+    implementation "org.apache.commons:commons-text:1.9"
+
+    // UI (website)
+    implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
+
+    // javers
+    implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
 
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.1"
     //driver for h2
     implementation "com.h2database:h2:1.4.200"
     
-    
-    implementation "org.apache.tika:tika-core:1.18"
-    implementation "org.javers:javers-core:5.3.2"
+    // apache
+    implementation "commons-io:commons-io:2.11.0"
+    implementation "org.apache.tika:tika-core:1.27"
+
+    implementation "org.javers:javers-core:${javersVersion}"
 
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.0.43"
   
     // datamanager
-    implementation "edu.kit.datamanager:service-base:0.2.0"
+    implementation "edu.kit.datamanager:repo-core:0.9.0"
+    implementation "edu.kit.datamanager:service-base:0.3.0"
 
-    runtimeOnly    'org.apache.httpcomponents:httpclient:4.5.6'
-
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc"
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
+    
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:2.18.0"
-    testImplementation "org.powermock:powermock-module-junit4:2.0.0-beta.5"
-    testImplementation "org.powermock:powermock-api-mockito2:2.0.0-beta.5"
-    testImplementation "junit:junit:4.13.1"
-
-    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc:2.0.2.RELEASE'
-    testImplementation 'org.asciidoctor:asciidoctor-gradle-plugin:1.5.9.2'
-    asciidoctor 'org.springframework.restdocs:spring-restdocs-asciidoctor:2.0.2.RELEASE'
-    asciidoctor 'com.github.allati.asciidoctor.monotree:asciidoctor-extension-monotree:0.0.1'
+    testImplementation "org.mockito:mockito-core:3.12.0"
+    testImplementation "org.powermock:powermock-module-junit4:2.0.9"
+    testImplementation "org.powermock:powermock-api-mockito2:2.0.9"
+    testImplementation "junit:junit:4.13.2"
 }
 
-bootJar {
-    manifest {
-        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-    }
-    dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}/html5") {
-        into 'static/docs'
-    }
-    launchScript()
+dependencyManagement {
+    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") }
 }
+
+compileJava {
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+}
+
 
 test {
     finalizedBy jacocoTestReport
@@ -122,7 +136,7 @@ test {
 }
 
 jacoco {
-    toolVersion = "0.8.5"
+    toolVersion = "0.8.7"
 }
 
 // task for printing project name.

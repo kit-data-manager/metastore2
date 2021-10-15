@@ -84,7 +84,7 @@ echo "--------------------------------------------------------------------------
 ################################################################################
 # Test for commands used in this script
 ################################################################################
-testForCommands="chmod cp dirname find java javac mkdir"
+testForCommands="chmod cp dirname find java javac mkdir git"
 
 for command in $testForCommands
 do 
@@ -114,23 +114,23 @@ REPO_NAME=${REPO_NAME##*$'\n'}
 
 printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 
-
 ################################################################################
 # Build service
 ################################################################################
-
 echo Build service...
 ./gradlew -Prelease clean build
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find . -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
 find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
 
 echo "Create config directory"
 mkdir "$INSTALLATION_DIRECTORY"/config
+echo "To overwrite default properties place 'application.properties' into this directory." > "$INSTALLATION_DIRECTORY"/config/README.txt
+echo "Only changed properties should be part of this file." >> "$INSTALLATION_DIRECTORY"/config/README.txt
 
 echo "Create lib directory"
 mkdir "$INSTALLATION_DIRECTORY"/lib

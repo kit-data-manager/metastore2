@@ -16,20 +16,12 @@
 package edu.kit.datamanager.metastore2.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Invalid json format of data.
  */
-@ResponseStatus(value = HttpStatus.BAD_REQUEST)
-public class JsonValidationException extends RuntimeException {
-
-  /**
-   * Default constructor.
-   */
-  public JsonValidationException() {
-    super();
-  }
+public class JsonValidationException extends ResponseStatusException {
 
   /**
    * Constructor with given message and cause.
@@ -38,7 +30,7 @@ public class JsonValidationException extends RuntimeException {
    * @param cause Cause.
    */
   public JsonValidationException(String message, Throwable cause) {
-    super(message, cause);
+    super(HttpStatus.BAD_REQUEST, message, cause);
   }
 
   /**
@@ -47,15 +39,6 @@ public class JsonValidationException extends RuntimeException {
    * @param message Message.
    */
   public JsonValidationException(String message) {
-    super(message);
-  }
-
-  /**
-   * Constructor with given message and cause.
-   *
-   * @param cause Cause.
-   */
-  public JsonValidationException(Throwable cause) {
-    super(cause);
+    super(HttpStatus.BAD_REQUEST, message);
   }
 }

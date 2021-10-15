@@ -6,13 +6,8 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.metastore2.dao.IMetadataRecordDao;
-import edu.kit.datamanager.metastore2.dao.IMetadataSchemaDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.acl.AclEntry;
-import edu.kit.datamanager.service.IAuditService;
-import java.util.HashSet;
-import java.util.Set;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,13 +41,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://any.domain.test/api/v1"})
 @TestPropertySource(properties = {"server.port=41404"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_wrong_reg;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://any.domain.test/api/v1"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithWrongRegistryTest {
 
   private static final String SCHEMA_ID = "my_dc";
-  private static final String RELATED_RESOURCE = "anyResourceId";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
 
   private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
@@ -83,14 +79,14 @@ public class MetadataControllerWithWrongRegistryTest {
   @Test
   public void testCreateRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setSchemaId(SCHEMA_ID);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }

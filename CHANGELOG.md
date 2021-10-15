@@ -5,7 +5,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
+- The code is now completely relying on the library of the kit-data-manager.
+### Added
+- Authentication based on JWT powered by KIT Data Manager. (issue #4)
+- Metadata (schema) records now also versioned.
+- OAI PMH protocol added (issue #6)
+- Customization is enabled even if framework will be started via docker (issue #41)
+### Changed
+- Metadata are now linked to specific version of a schema. (issue #30)
+- Attribute 'locked' from MetadataSchemaRecord changed to 'doNotSync' (issue #37)
+- Change in related schema and data (add identifier type to identifier)
+- Store all identifiers as global identifiers (type INTERNAL -> type URL)
+- For registering a schema mimetype is no longer mandatory.
+- Switch to gradle version 7.2
+### Fixed
+- Filtering metadata documents by resourceId, schemaId
+- Filtering schema documents by mimetype
+- Error while updating json schema documents without schema
+- Speedup guessing type for schema. 
+- Updating document without changes will no longer create new version (issue #27)
+- Update schema via POST (issue #28)
+- Add hash of schema documents to record. (issue #38)
+- Drop tables at startup (default).
 ## [0.2.4] - date 2020-12-16
 ### Added
 - Support for messaging
