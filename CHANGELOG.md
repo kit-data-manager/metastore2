@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Added
+
+### Changed
+
+### Fixed
+
+## [0.3.0] - 2021-10-16
 - The code is now completely relying on the library of the kit-data-manager.
 ### Added
 - Authentication based on JWT powered by KIT Data Manager. (issue #4)
@@ -18,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Store all identifiers as global identifiers (type INTERNAL -> type URL)
 - For registering a schema mimetype is no longer mandatory.
 - Switch to gradle version 7.2
+- Update to Spring Boot 2.4.10
+- Update to service-base version 0.3.0
 ### Fixed
 - Filtering metadata documents by resourceId, schemaId
 - Filtering schema documents by mimetype
@@ -27,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update schema via POST (issue #28)
 - Add hash of schema documents to record. (issue #38)
 - Drop tables at startup (default).
+
 ## [0.2.4] - date 2020-12-16
 ### Added
 - Support for messaging
@@ -73,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.2.4...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/kit-data-manager/metastore2/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/kit-data-manager/metastore2/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/kit-data-manager/metastore2/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/kit-data-manager/metastore2/compare/v0.2.1...v0.2.2
