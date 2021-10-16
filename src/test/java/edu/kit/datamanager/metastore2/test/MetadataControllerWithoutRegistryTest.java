@@ -84,11 +84,13 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41406"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_no_reg;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/withoutRegistry/schema"})
+@TestPropertySource(properties = {"metastore.schema.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithoutRegistryTest {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/withoutRegistry";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/withoutRegistry/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc";
@@ -229,7 +231,7 @@ public class MetadataControllerWithoutRegistryTest {
   
   private void ingestSchemaRecord() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("my_dc");
+    record.setSchemaId(SCHEMA_ID);
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();
