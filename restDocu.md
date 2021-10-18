@@ -2657,7 +2657,6 @@ and its metadata only providing mandatory fields mentioned above:
 
     metadata-record4json.json:
     {
-        "id": "...",
         "relatedResource": {
             "identifier": "anyResourceId",
             "identifierType": "INTERNAL"
