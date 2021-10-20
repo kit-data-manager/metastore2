@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.3.1] - 2021-10-20
+### Fixed
+- Error starting docker due to missing bash.
+
 ## [0.3.0] - 2021-10-16
 - The code is now completely relying on the library of the kit-data-manager.
 ### Added
@@ -84,7 +88,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/kit-data-manager/metastore2/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/kit-data-manager/metastore2/compare/v0.2.4...v0.3.0
 [0.2.4]: https://github.com/kit-data-manager/metastore2/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/kit-data-manager/metastore2/compare/v0.2.2...v0.2.3
