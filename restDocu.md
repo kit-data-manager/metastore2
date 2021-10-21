@@ -2157,7 +2157,7 @@ providing mandatory fields mentioned above:
     $ curl 'http://localhost:8040/api/v1/schemas' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'schema=@another-schema.json;type=application/xml' \
-        -F 'record=@another-schema-record.json;type=application/json'
+        -F 'record=@another-schema-record4json.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
