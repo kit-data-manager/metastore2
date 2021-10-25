@@ -53,14 +53,17 @@ and open the template in the editor.
         options = /*[[${request}]]*/ {};
         /*]]>*/
 
+        var table = {
+            pagination: "remote",
+            ajaxURL: "/api/v1/ui/schemas",
+            paginationSize: 2
+        };
         // add modals to html
         $('body').append(modalTemplate("ALERT"));
         $('body').append(modalTemplate("FAILED"));
         $('body').append(modalTemplate("SUCCESS"));
 
-
-
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, resource: options.schemaRecords, items: options.items,
+        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
             readOperation: function (rowColumnvalue) {
                 readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
                     var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
@@ -75,19 +78,20 @@ and open the template in the editor.
                 $("#formModal").modal('show');
             },
             updateOperation: function (rowColumnvalue) {
-                $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
-                    $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
-                        var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Update Schema"};
-                        $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
-                            //TODO check if file is uploaded
-                            uploadFile(function (valueSchema, updateSchema) {
-                                updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
-                            });
+                readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
+                    $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
+                        $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
+                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: schemaRecordResource, buttonTitle: "Update Schema"};
+                            $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
+                                //TODO check if file is uploaded
+                                uploadFile(function (valueSchema, updateSchema) {
+                                    updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
+                                });
 
+                            });
                         });
                     });
                 });
-
                 $("#formModal").modal('show');
             },
             createOperation: {callback: function () {

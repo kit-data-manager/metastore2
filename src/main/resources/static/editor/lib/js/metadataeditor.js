@@ -295,13 +295,14 @@ editorDefinitionTable.prototype.initializeInputsTable = function (options, rende
         _throw("JSON Data Model is missing");
     }
 
-    if (options.resource !== undefined && options.resource !== null && options.resource !== '') {
-        this.resource = options.resource;
-//    } else if ((options.readOperation !== undefined) || (options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
-    } else if ((options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
-
-        _throw("JSON resource is missing");
-    }
+//    if (options.resource !== undefined && options.resource !== null && options.resource !== '') {
+//        this.resource = options.resource;
+////    } else if ((options.readOperation !== undefined) || (options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
+//    } 
+//    else if ((options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
+//
+//        _throw("JSON resource is missing");
+//    }
 
     if (options.items !== undefined && options.items !== null && options.items !== '') {
         if (options.items.length <= 6) {
@@ -417,13 +418,6 @@ editorDefinitionTable.prototype.generateTable = function (options) {
             }});
     }
 
-    if (options.updateSchemaOperation !== undefined) {
-        this.items.push({formatter: this.editIcon, hozAlign: "right", width: 60, headerSort: false, cellClick: function (e, cell) {
-                emptyElt(formElt);
-                options.updateSchemaOperation(cell.getRow().getData());
-            }});
-    }
-
     if (options.deleteOperation !== undefined) {
         this.items.push({formatter: this.deleteIcon, hozAlign: "right", width: 60, headerSort: false, cellClick: function (e, cell) {
                 emptyElt(formElt);
@@ -441,9 +435,8 @@ editorDefinitionTable.prototype.generateTable = function (options) {
 
     this.tableLayout.columns = this.items;
     var table = new Tabulator(this.tableId, this.tableLayout);
-    table.setData(this.resource);
+  
     //add buttons after table
-
     $("<div class=\"row\"><div class=\"col-md-12 text-right\" id= \"editor-buttons\"></div></div>").insertAfter(this.tableId);
     if (options.createOperation !== undefined) {
         var buttonTitle = (options.buttonTitle !== undefined) ? options.buttonTitle : buttons.CREATE.title;
