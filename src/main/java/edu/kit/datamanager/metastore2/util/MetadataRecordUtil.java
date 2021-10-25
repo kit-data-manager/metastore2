@@ -366,12 +366,15 @@ public class MetadataRecordUtil {
       while (iterator.hasNext()) {
         Identifier identifier = iterator.next();
         if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
-          LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-          metadataRecord.setPid(resourceIdentifier);
-          break;
+          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
+            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
+            metadataRecord.setPid(resourceIdentifier);
+            break;
+          } else {
+            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+          }
         }
-
       }
 
       long nano2 = System.nanoTime() / 1000000;
