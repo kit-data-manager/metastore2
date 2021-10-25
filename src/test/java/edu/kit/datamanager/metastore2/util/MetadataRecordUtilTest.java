@@ -88,6 +88,8 @@ public class MetadataRecordUtilTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String METADATA_RECORD_ID = "test_id";
+  private static final String PID = "anyPID";
+  private static final String PRINCIPAL = "principal";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
@@ -669,31 +671,66 @@ public class MetadataRecordUtilTest {
     assertEquals(expResult, result);
     dataResource = DataResource.factoryNewDataResource();
     dataResource.getAlternateIdentifiers().clear();
+    // Test with id &  PrimaryIdentifier
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
     assertNotNull(result.getId());
-    assertTrue(true);
+    assertEquals("Id should be the same!", result.getId(), dataResource.getId());
+    assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
+    assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertNull("PID should be empty", result.getPid());
+    assertNull("Create date should be empty!", result.getCreatedAt());
+    assertNull("Last update date should be empty!", result.getLastUpdate());
+    // Test with one (internal) alternate identifier.
     dataResource = DataResource.factoryNewDataResource();
     dataResource.getDates().add(Date.factoryDate(Instant.now(), Date.DATE_TYPE.ISSUED));
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
-    assertEquals(result.getId(), result.getPid().getIdentifier());
-    assertEquals(ResourceIdentifier.IdentifierType.INTERNAL, result.getPid().getIdentifierType());
-    assertTrue(true);
-    dataResource.getAlternateIdentifiers().add(Identifier.factoryIdentifier("anyId", Identifier.IDENTIFIER_TYPE.UPC));
+    assertNotNull(result.getId());
+    assertEquals("Id should be the same!", result.getId(), dataResource.getId());
+    assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
+    assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertNull("PID should be empty", result.getPid());
+    assertNull("Create date should be empty!", result.getCreatedAt());
+    assertNull("Last update date should be empty!", result.getLastUpdate());
+    
+    
+    // Test migration of PID with two alternate identifiers (internal & UPC)
+    dataResource.getAlternateIdentifiers().add(Identifier.factoryIdentifier(PID, Identifier.IDENTIFIER_TYPE.UPC));
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
-    assertEquals(result.getId(), result.getPid().getIdentifier());
-    assertEquals(ResourceIdentifier.IdentifierType.INTERNAL, result.getPid().getIdentifierType());
-    assertTrue(true);
+    assertNotNull(result.getId());
+    assertEquals("Id should be the same!", result.getId(), dataResource.getId());
+    assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
+    assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertNull("Create date should be empty!", result.getCreatedAt());
+    assertNull("Last update date should be empty!", result.getLastUpdate());
+    // PID should be set
+    assertNotNull("PID shouldn't be NULL", result.getPid());
+    assertEquals(PID, result.getPid().getIdentifier());
+    assertEquals(ResourceIdentifier.IdentifierType.UPC, result.getPid().getIdentifierType());
+    // Add schemaID, resourceType, relatedIdentifier for schema
     dataResource.getTitles().add(Title.factoryTitle(SCHEMA_ID));
     dataResource.setResourceType(ResourceType.createResourceType(SCHEMA_ID));
     RelatedIdentifier relId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, SCHEMA_ID, null, null);
     relId.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
     dataResource.getRelatedIdentifiers().add(relId);
-
-    dataResource = applicationProperties.getDataResourceService().create(dataResource, SCHEMA_ID);
+    // dataResourceService adds ACL
+    dataResource = applicationProperties.getDataResourceService().create(dataResource, PRINCIPAL);
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
     contentInformationService.create(ContentInformation.createContentInformation("anyFile"), dataResource, SCHEMA_ID, new ByteArrayInputStream(SCHEMA_ID.getBytes()), true);
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
-    assertTrue(true);
+    assertNotNull(result.getId());
+    assertEquals("Id should be the same!", result.getId(), dataResource.getId());
+    assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
+    assertFalse("ACL shouldn't be empty", result.getAcl().isEmpty());
+    assertEquals("ACL should contain one entry for 'SELF'", 1, result.getAcl().size());
+    edu.kit.datamanager.repo.domain.acl.AclEntry next = result.getAcl().iterator().next();
+    assertEquals("SID should be principal set before!'", PRINCIPAL, next.getSid());
+    assertEquals("Persmission should be 'ADMINISTRATE'", PERMISSION.ADMINISTRATE, next.getPermission());
+    // Dates should be set bei content information service.
+    assertNotNull("Create date should be set!", result.getCreatedAt());
+    assertNotNull("Last update date should be set!", result.getLastUpdate());
+    // PID should be set
+    assertEquals(PID, result.getPid().getIdentifier());
+    assertEquals(ResourceIdentifier.IdentifierType.UPC, result.getPid().getIdentifierType());
   }
 
   /**

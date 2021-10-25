@@ -157,7 +157,7 @@ public class MetadataRecordUtil {
     dataRecord.setLastUpdate(dataResource.getLastUpdate());
     saveNewDataRecord(dataRecord);
     long nano7 = System.nanoTime() / 1000000;
-    LOG.error("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
+    LOG.info("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
     return migrateToMetadataRecord(applicationProperties, createResource, true);
   }
@@ -366,12 +366,15 @@ public class MetadataRecordUtil {
       while (iterator.hasNext()) {
         Identifier identifier = iterator.next();
         if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
-          LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-          metadataRecord.setPid(resourceIdentifier);
-          break;
+          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
+            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
+            metadataRecord.setPid(resourceIdentifier);
+            break;
+          } else {
+            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+          }
         }
-
       }
 
       long nano2 = System.nanoTime() / 1000000;
@@ -411,7 +414,7 @@ public class MetadataRecordUtil {
         }
       }
       long nano5 = System.nanoTime() / 1000000;
-      LOG.error("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
+      LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
     }
 
     return metadataRecord;
@@ -439,7 +442,7 @@ public class MetadataRecordUtil {
     if (!listOfFiles.isEmpty()) {
       returnValue = listOfFiles.get(0);
     }
-    LOG.error("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
+    LOG.info("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 

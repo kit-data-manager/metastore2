@@ -474,11 +474,15 @@ public class MetadataSchemaRecordUtil {
       Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
       while (iterator.hasNext()) {
         Identifier identifier = iterator.next();
-        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
-          LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-          metadataSchemaRecord.setPid(resourceIdentifier);
-          break;
+        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
+          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
+            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().name()));
+            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
+            metadataSchemaRecord.setPid(resourceIdentifier);
+            break;
+          } else {
+            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+          }
         }
       }
 
@@ -526,7 +530,7 @@ public class MetadataSchemaRecordUtil {
           LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
       }
     }
-    LOG.error("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
+    LOG.info("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
     return metadataSchemaRecord;
   }
 
@@ -552,7 +556,7 @@ public class MetadataSchemaRecordUtil {
       returnValue = listOfFiles.get(0);
     }
     long nano3 = System.nanoTime() / 1000000;
-    LOG.error("Content information of resource, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
+    LOG.info("Content information of resource, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 
@@ -654,7 +658,7 @@ public class MetadataSchemaRecordUtil {
     long nano2 = System.nanoTime() / 1000000;
     validateMetadataDocument(metastoreProperties, document, schemaRecord);
     long nano3 = System.nanoTime() / 1000000;
-    LOG.error("Validate document(schemaId,version), {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
+    LOG.info("Validate document(schemaId,version), {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
   }
 
   /**
@@ -714,7 +718,7 @@ public class MetadataSchemaRecordUtil {
           throw new UnprocessableEntityException(applicableValidator.getErrorMessage());
         }
         long nano5 = System.nanoTime() / 1000000;
-        LOG.error("Validate document(schemaRecord), {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1);
+        LOG.info("Validate document(schemaRecord), {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1);
       }
     } catch (IOException ex) {
       String message = "Failed to read metadata document from input stream.";
