@@ -11,6 +11,7 @@ import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtilTest;
@@ -109,6 +110,8 @@ public class SchemaRegistryControllerTest {
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/schematest/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private static final String PID = "anyPID";
+  private static final ResourceIdentifier.IdentifierType PID_TYPE = ResourceIdentifier.IdentifierType.HANDLE;
   private static final String SCHEMA_ID = "dc";
   private static final String INVALID_SCHEMA_ID = "invalid/my_dc";
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
@@ -1147,10 +1150,18 @@ public class SchemaRegistryControllerTest {
   public void testMigrateToDataResource() {
     System.out.println("migrateToDataResource");
     RepoBaseConfiguration applicationProperties = schemaConfig;
-    // Test with all possible values
+    // Test with all possible values PID shouldn't be an URL
     MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5, 7, 11, 12);
     MetadataSchemaRecord expResult = null;
     DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
+    expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
+    metadataSchemaRecord.setPid(null);
+    assertEquals(metadataSchemaRecord, expResult);
+    // Test with all possible values containing valid PID.
+    metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5, 7, 11, 12);
+    ResourceIdentifier correctPid = ResourceIdentifier.factoryResourceIdentifier(PID, PID_TYPE);
+    metadataSchemaRecord.setPid(correctPid);
+    result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
     expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
     assertEquals(metadataSchemaRecord, expResult);
     // Test skipping pid
@@ -1168,7 +1179,11 @@ public class SchemaRegistryControllerTest {
   public void testMigrateToMetadataSchemaRecord() {
     System.out.println("migrateToMetadataSchemaRecord");
     System.out.println("Test moved to SchemaRegistryControllerTest");
-    // due to mandatory application properties.
+    System.out.println(ResourceIdentifier.IdentifierType.HANDLE.name());
+    System.out.println(ResourceIdentifier.IdentifierType.HANDLE);
+     System.out.println(ResourceIdentifier.IdentifierType.HANDLE.value());
+
+   // due to mandatory application properties.
   }
 
   private void ingestSchemaRecord() throws Exception {
