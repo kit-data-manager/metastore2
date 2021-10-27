@@ -25,7 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
- *
+ * Configuration for DOIP server.
  */
 @ConfigurationProperties(prefix = "metastore")
 @Component
@@ -35,10 +35,13 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode(callSuper = true)
 public class DoipConfiguration extends GenericPluginProperties{
 
-  @Value("${repo.plugin.doip.port:8881}")
+  @Value("${repo.plugin.doip.enabled:false}")
+  private boolean enabled;
+
+  @Value("${repo.plugin.doip.port:8045}")
   private int port;
 
-  @Value("${repo.plugin.doip.serviceId:0.NFDI4Ing/DOIPServer}")
+  @Value("${repo.plugin.doip.serviceId:0.Metastore/DOIPServer}")
   private String serviceId;
 
   @Value("${repo.plugin.doip.serviceName:TurntableAPI}")

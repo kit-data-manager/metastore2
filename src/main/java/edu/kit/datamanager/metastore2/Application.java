@@ -112,8 +112,6 @@ public class Application {
   private IDataResourceService dataResourceService;
   @Autowired
   private IContentInformationService contentInformationService;
-  @Autowired
-  private DoipService doipService;
 
   @Bean
   @Scope("prototype")
@@ -279,7 +277,6 @@ public class Application {
       LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
     }
     LOG.info("-----------------DOIP-------------------------------------");
-    doipService.init();
     LOG.info("------------------------------------------------------");
     
   }

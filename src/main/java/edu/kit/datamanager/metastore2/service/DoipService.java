@@ -15,57 +15,102 @@
  */
 package edu.kit.datamanager.metastore2.service;
 
-import edu.kit.datamanager.clients.SimpleServiceClient;
+import com.google.gson.JsonObject;
 import edu.kit.datamanager.metastore2.configuration.DoipConfiguration;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.configuration.SynchronizationSource;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.SchemaSynchronizationEvent;
-import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Optional;
+import edu.kit.datamanager.metastore2.service.doip.DoipProcessor4MetaStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import net.dona.doip.InDoipSegment;
+import net.dona.doip.server.DoipProcessor;
+import net.dona.doip.server.DoipServer;
+import net.dona.doip.server.DoipServerConfig;
+import net.dona.doip.server.DoipServerRequest;
+import net.dona.doip.server.DoipServerResponse;
 
 /**
+ * Service for processing DOIP requests.
  *
- * @author jejkal
  */
 @Component
-public class DoipService{
-
+public class DoipService implements InitializingBean {
+  
   private static final Logger LOGGER = LoggerFactory.getLogger(DoipService.class);
-
+  
+  public DoipService() {
+    LOGGER.info("DOIP service ready to use...");
+  }
+  
   @Autowired
   private DoipConfiguration doipConfiguration;
   @Autowired
   Environment environment;
-
+  
   @Autowired
   private MetastoreConfiguration schemaConfig;
-
+  
   @Autowired
   private MetastoreConfiguration metadataConfig;
   
-  public void init() {
-    LOGGER.error("Show config: " + doipConfiguration.toString());
+  @Override
+  public void afterPropertiesSet() throws Exception {
+    LOGGER.info("*********************************************************************");
+    if (doipConfiguration.isEnabled()) {
+      LOGGER.info("Setup DOIP service...");
+      init();
+    } else {
+      LOGGER.info("DOIP service is not enabled!");
+    }
+    LOGGER.info("*********************************************************************");
   }
 
+  /**
+   * Initialize DOIP server.
+   *
+   * @see DoipConfiguration
+   */
+  public void init() {
+    DoipServerConfig config = new DoipServerConfig();
+    config.listenAddress = doipConfiguration.getAddress();
+    
+    config.port = doipConfiguration.getPort();
+    config.processorClass = "edu.kit.datamanager.metastore2.service.doip.DoipProcessor4MetaStore";
+    config.processorConfig = new JsonObject();
+    config.processorConfig.addProperty("serviceId", doipConfiguration.getServiceId());
+    config.processorConfig.addProperty("serviceName", doipConfiguration.getServiceName());
+    config.processorConfig.addProperty("serviceDescription", doipConfiguration.getServiceDescription());
+    config.processorConfig.addProperty("authenticationEnabled", doipConfiguration.getAuthenticationEnabled());
+    config.processorConfig.addProperty("defaultToken", doipConfiguration.getDefaultToken());
+    
+    DoipServerConfig.TlsConfig tlsConfig = new DoipServerConfig.TlsConfig();
+    tlsConfig.id = config.processorConfig.get("serviceId").getAsString();
+    config.tlsConfig = tlsConfig;
+    DoipProcessor4MetaStore doipProcessor = new DoipProcessor4MetaStore(schemaConfig, metadataConfig);
+    doipProcessor.init(config.processorConfig);
+    DoipServer server = new DoipServer(config, doipProcessor);
+    try {
+      server.init();
+      Runtime.getRuntime().addShutdownHook(new Thread(server::shutdown));
+      LOGGER.info("Address: '{}'", config.listenAddress);
+      LOGGER.info("Port: '{}'", config.port);
+      LOGGER.info("Service Name: '{}'", doipConfiguration.getServiceName());
+      LOGGER.info("Service ID: '{}'", doipConfiguration.getServiceId());
+      LOGGER.info("Service Description: '{}'", doipConfiguration.getServiceDescription());
+      LOGGER.info("Authentication Enabled: '{}'", doipConfiguration.getAuthenticationEnabled());
+      LOGGER.info("Default Token: '{}'", doipConfiguration.getDefaultToken());
+      LOGGER.info("*********************************************************************");
+      LOGGER.info("DOIP Server is up and running!");
+    } catch (Exception ex) {
+      LOGGER.error("Error during setup of DOIP server!", ex);
+    }
+  }
+  
 }

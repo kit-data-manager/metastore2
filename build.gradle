@@ -64,7 +64,7 @@ dependencies {
     implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
     implementation "org.springframework.security:spring-security-config:5.5.2"
     
-   // cloud support
+    // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:3.0.4"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3"
 
@@ -102,8 +102,12 @@ dependencies {
     implementation "edu.kit.datamanager:repo-core:0.9.0"
     implementation "edu.kit.datamanager:service-base:0.3.0"
 
+    // DOIP SDK
+    implementation "net.dona.doip:doip-sdk:2.1.0"
+
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
     
+    // Additional libraries for tests
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
