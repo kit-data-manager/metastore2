@@ -439,7 +439,7 @@ editorDefinitionTable.prototype.generateTable = function (options) {
     //add buttons after table
     $("<div class=\"row\"><div class=\"col-md-12 text-right\" id= \"editor-buttons\"></div></div>").insertAfter(this.tableId);
     if (options.createOperation !== undefined) {
-        var buttonTitle = (options.buttonTitle !== undefined) ? options.buttonTitle : buttons.CREATE.title;
+        var buttonTitle = (options.createOperation.buttonTitle !== undefined) ? options.createOperation.buttonTitle : buttons.CREATE.title;
         $("#editor-buttons").append(generateButton("editor-create-button", buttonTitle, "right"));
         $("#editor-create-button").click(function () {
             emptyElt(formElt);
@@ -448,7 +448,7 @@ editorDefinitionTable.prototype.generateTable = function (options) {
     }
 
     if (options.returnOperation !== undefined) {
-        var buttonTitle = (options.buttonTitle !== undefined) ? options.buttonTitle : buttons.RETURN.title;
+        var buttonTitle = (options.returnOperation.buttonTitle !== undefined) ? options.returnOperation.buttonTitle : buttons.RETURN.title;
         $("#editor-buttons").append(generateButton("editor-return-button", buttonTitle, "left"));
         $("#editor-return-button").click(function () {
             options.returnOperation.callback();
