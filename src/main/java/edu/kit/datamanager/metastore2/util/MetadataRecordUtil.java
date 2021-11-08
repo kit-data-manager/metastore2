@@ -377,14 +377,12 @@ public class MetadataRecordUtil {
         }
       }
 
-      long nano2 = System.nanoTime() / 1000000;
       Long recordVersion = 1l;
       if (dataResource.getVersion() != null) {
         recordVersion = Long.parseLong(dataResource.getVersion());
       }
       metadataRecord.setRecordVersion(recordVersion);
 
-      long nano3 = System.nanoTime() / 1000000;
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
           LOG.trace("Set relation to '{}'", relatedIds.getValue());
@@ -398,15 +396,19 @@ public class MetadataRecordUtil {
         }
       }
       DataRecord dataRecord = null;
-      long nano4 = System.nanoTime() / 1000000;
+      long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataId(dataResource.getId());
+      long nano3 = System.nanoTime() / 1000000;
+      long nano4;
       if (dataRecordResult.isPresent()) {
         dataRecord = dataRecordResult.get();
+        nano4 = System.nanoTime() / 1000000;
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
       } else {
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
+        nano4 = System.nanoTime() / 1000000;
         if (info != null) {
           metadataRecord.setDocumentHash(info.getHash());
           metadataRecord.setMetadataDocumentUri(info.getContentUri());
@@ -414,7 +416,7 @@ public class MetadataRecordUtil {
         }
       }
       long nano5 = System.nanoTime() / 1000000;
-      LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
+      LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, provideETag);
     }
 
     return metadataRecord;
