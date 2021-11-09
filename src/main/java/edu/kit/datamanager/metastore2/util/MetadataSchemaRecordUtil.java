@@ -741,12 +741,12 @@ public class MetadataSchemaRecordUtil {
   public static MetadataSchemaRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
-    long nanoTime = System.nanoTime() / 1000000;
+    long nano = System.nanoTime() / 1000000;
     DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
-    long nanoTime2 = System.nanoTime() / 1000000;
+    long nano2 = System.nanoTime() / 1000000;
     MetadataSchemaRecord result = migrateToMetadataSchemaRecord(metastoreProperties, dataResource, supportEtag);
-    long nanoTime3 = System.nanoTime() / 1000000;
-    LOG.error("getRecordByIDAndVersion," + nanoTime + ", " + (nanoTime2 - nanoTime) + ", " + (nanoTime3 - nanoTime));
+    long nano3 = System.nanoTime() / 1000000;
+    LOG.info("getRecordByID {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return result;
   }
 
