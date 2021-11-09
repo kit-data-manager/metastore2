@@ -99,7 +99,7 @@ dependencies {
     implementation "com.networknt:json-schema-validator:1.0.43"
   
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:0.9.0"
+    implementation "edu.kit.datamanager:repo-core:0.9.1-SNAPSHOT"
     implementation "edu.kit.datamanager:service-base:0.3.0"
 
     // DOIP SDK

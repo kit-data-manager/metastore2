@@ -53,9 +53,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -399,20 +401,30 @@ public class MetadataRecordUtil {
       long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataId(dataResource.getId());
       long nano3 = System.nanoTime() / 1000000;
-      long nano4;
+      long nano4 = nano3;
+      boolean isAvailable = false;
+      boolean saveDataRecord = false;
       if (dataRecordResult.isPresent()) {
+        if (dataRecordResult.get().getVersion() == recordVersion) {
         dataRecord = dataRecordResult.get();
         nano4 = System.nanoTime() / 1000000;
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
+        isAvailable = true;        
+        }
       } else {
+        saveDataRecord = true;
+      }
+      if (!isAvailable) {
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         nano4 = System.nanoTime() / 1000000;
         if (info != null) {
           metadataRecord.setDocumentHash(info.getHash());
           metadataRecord.setMetadataDocumentUri(info.getContentUri());
-          saveNewDataRecord(metadataRecord);
+          if (saveDataRecord) {
+            saveNewDataRecord(metadataRecord);
+          }
         }
       }
       long nano5 = System.nanoTime() / 1000000;
@@ -670,10 +682,21 @@ public class MetadataRecordUtil {
           String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
-    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    MetadataRecord result = null;
+    Page<DataResource> dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
     long nano2 = System.nanoTime() / 1000000;
-
-    MetadataRecord result = migrateToMetadataRecord(metastoreProperties, dataResource, supportEtag);
+    Stream<DataResource> stream = dataResource.get();
+    if (version != null) {
+      stream = stream.filter(resource -> Long.parseLong(resource.getVersion()) == version);
+    }
+    Optional<DataResource> findFirst = stream.findFirst();
+    if (findFirst.isPresent()) {
+      result = migrateToMetadataRecord(metastoreProperties, findFirst.get(), supportEtag);
+    } else {
+      String message = String.format("ID '%s' or version '%d' doesn't exist!", recordId, version.longValue());
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
     long nano3 = System.nanoTime() / 1000000;
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return result;
