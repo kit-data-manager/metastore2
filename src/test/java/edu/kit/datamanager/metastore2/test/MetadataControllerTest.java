@@ -763,7 +763,7 @@ public class MetadataControllerTest {
   @Test
   public void testGetRecordByIdWithInvalidVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "13").header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "13").header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
   }
 
   @Test
@@ -1241,7 +1241,7 @@ public class MetadataControllerTest {
 
       ObjectMapper mapper = new ObjectMapper();
       MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-      record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE.getIdentifier() + version));
+      record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE_STRING + version));
 
       MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 

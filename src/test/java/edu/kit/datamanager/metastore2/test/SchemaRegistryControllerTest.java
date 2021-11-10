@@ -44,7 +44,6 @@ import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -55,6 +54,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -114,6 +114,7 @@ public class SchemaRegistryControllerTest {
   private static final ResourceIdentifier.IdentifierType PID_TYPE = ResourceIdentifier.IdentifierType.HANDLE;
   private static final String SCHEMA_ID = "dc";
   private static final String INVALID_SCHEMA_ID = "invalid/my_dc";
+  private static final String COMMENT = "any unique comment for test";
   private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
           + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
@@ -283,7 +284,7 @@ public class SchemaRegistryControllerTest {
     schemaRecordDao.deleteAll();
     allIdentifiersDao.deleteAll();
     try {
-      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -317,7 +318,6 @@ public class SchemaRegistryControllerTest {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
-
 
   @Test
   public void testCreateSchemaRecordWithoutMimeType() throws Exception {
@@ -649,7 +649,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception {
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
   }
 
   @Test
@@ -995,7 +995,7 @@ public class SchemaRegistryControllerTest {
 
     this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
-  
+
   @Test
   public void testCreateSchemaRecordWithUpdateWithoutChanges() throws Exception {
     // Test with a schema missing schema property.
@@ -1008,10 +1008,10 @@ public class SchemaRegistryControllerTest {
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
     record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
-    
+
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", SCHEMA_V3.getBytes());
-    
+
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
@@ -1171,19 +1171,69 @@ public class SchemaRegistryControllerTest {
     assertEquals(metadataSchemaRecord, expResult);
   }
 
-  /**
-   * Test of migrateToMetadataSchemaRecord method, of class
-   * MetadataSchemaRecordUtil.
-   */
   @Test
-  public void testMigrateToMetadataSchemaRecord() {
-    System.out.println("migrateToMetadataSchemaRecord");
-    System.out.println("Test moved to SchemaRegistryControllerTest");
-    System.out.println(ResourceIdentifier.IdentifierType.HANDLE.name());
-    System.out.println(ResourceIdentifier.IdentifierType.HANDLE);
-     System.out.println(ResourceIdentifier.IdentifierType.HANDLE.value());
+  public void testIssue52() throws Exception {
+    String schemaId = "test4Issue52";
+    int version = 1;
+    ingestSchemaWithVersion(schemaId, version);
+    // Test get record with one version
+    // Read all versions 
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
+    Assert.assertTrue("Reference to '" + COMMENT + version + "' is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
+    // check for higher versions which should be not available
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
 
-   // due to mandatory application properties.
+    version++;
+    ingestNewSchemaRecord(schemaId, version);
+    // Read all versions (should be still one version)
+    result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
+    Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
+    // check for higher versions which should be not available
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+
+    version++;
+    ingestNewSchemaRecord(schemaId, version);
+    // Read all versions (should be still one version)
+    result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
+    Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
+    // check for higher versions which should be not available
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+
+    ingestSchemaWithVersion(schemaId, 2);
+    // Read all versions (should be still one version)
+    result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 2))).andReturn();
+    Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
+    // check for higher versions which should be not available (if version > 2)
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isOk());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+
+    version++;
+    ingestNewSchemaRecord(schemaId, version);
+    // Read all versions (should be still one version)
+    result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 2))).andReturn();
+    Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
+
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "1")).andDo(print()).andExpect(status().isOk()).andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcSchema = SCHEMA_V1;
+
+//    Assert.assertEquals(dcMetadata, content);
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isOk()).andReturn();
+    content = result.getResponse().getContentAsString();
+
+    Assert.assertNotEquals(dcSchema, content);
+    Assert.assertEquals("Length must differ!", SCHEMA_V2.length(), content.length());
+    // check for higher versions which should be not available (if version > 2)
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
   }
 
   private void ingestSchemaRecord() throws Exception {
@@ -1232,7 +1282,7 @@ public class SchemaRegistryControllerTest {
 
     File dcFile = new File("/tmp/schema_dc.xsd");
     if (!dcFile.exists()) {
-      try (FileOutputStream fout = new FileOutputStream(dcFile)) {
+      try ( FileOutputStream fout = new FileOutputStream(dcFile)) {
         fout.write(DC_SCHEMA.getBytes());
         fout.flush();
       }
@@ -1241,6 +1291,7 @@ public class SchemaRegistryControllerTest {
 
   private void ingestSchemaWithVersion(String schemaId, long version) throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setComment(COMMENT + version);
     record.setSchemaId(schemaId);
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
@@ -1285,6 +1336,25 @@ public class SchemaRegistryControllerTest {
     Long versionAfter = record.getSchemaVersion();
     Assert.assertEquals("Wrong version created!", version, (long) versionAfter);
 
+  }
+
+  private void ingestNewSchemaRecord(String schemaId, long version) throws Exception {
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    record.setComment(COMMENT + version);
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
   }
 
   private static RequestPostProcessor remoteAddr(final String remoteAddr) { // it's nice to extract into a helper

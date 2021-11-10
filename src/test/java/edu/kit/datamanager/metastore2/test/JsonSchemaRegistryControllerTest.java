@@ -580,7 +580,7 @@ public class JsonSchemaRegistryControllerTest {
   @Test
   public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception {
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/json").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    this.mockMvc.perform(get("/api/v1/schemas/json").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
   }
   
   @Test

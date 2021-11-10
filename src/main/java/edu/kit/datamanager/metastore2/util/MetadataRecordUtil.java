@@ -405,6 +405,7 @@ public class MetadataRecordUtil {
       boolean isAvailable = false;
       boolean saveDataRecord = false;
       if (dataRecordResult.isPresent()) {
+        LOG.trace("Get document URI from DataRecord.");
         if (dataRecordResult.get().getVersion() == recordVersion) {
         dataRecord = dataRecordResult.get();
         nano4 = System.nanoTime() / 1000000;
@@ -416,6 +417,7 @@ public class MetadataRecordUtil {
         saveDataRecord = true;
       }
       if (!isAvailable) {
+        LOG.trace("Get document URI from ContentInformation.");
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
         nano4 = System.nanoTime() / 1000000;

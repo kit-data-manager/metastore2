@@ -64,10 +64,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
+import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
@@ -238,10 +239,9 @@ public class MetadataSchemaRecordUtil {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
 
+    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
     if (schemaDocument != null) {
-      record = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       // Get schema record for this schema
-      SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(record.getSchemaId());
       validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
 
       ContentInformation info;
@@ -265,6 +265,7 @@ public class MetadataSchemaRecordUtil {
         }
       } catch (IOException ex) {
         LOG.error("Error reading current file!", ex);
+        throw new BadArgumentException("Error reading schema document!");
       }
       if (noChanges == false) {
         // Everything seems to be fine update document and increment version
@@ -274,7 +275,11 @@ public class MetadataSchemaRecordUtil {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
         ContentInformation addFile = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, info.getRelativePath(), null, true, supplier);
+      } else {
+        schemaRecordDao.delete(schemaRecord);
       }
+    } else {
+      schemaRecordDao.delete(schemaRecord);
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
@@ -742,11 +747,24 @@ public class MetadataSchemaRecordUtil {
           String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
-    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
+    MetadataSchemaRecord result = null;
+    Page<DataResource> dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+//    DataResource dataResource = metastoreProperties.getDataResourceService().findByAnyIdentifier(recordId, version);
     long nano2 = System.nanoTime() / 1000000;
-    MetadataSchemaRecord result = migrateToMetadataSchemaRecord(metastoreProperties, dataResource, supportEtag);
+    Stream<DataResource> stream = dataResource.get();
+    if (version != null) {
+      stream = stream.filter(resource -> Long.parseLong(resource.getVersion()) == version);
+    }
+    Optional<DataResource> findFirst = stream.findFirst();
+    if (findFirst.isPresent()) {
+      result = migrateToMetadataSchemaRecord(metastoreProperties, findFirst.get(), supportEtag);
+    } else {
+      String message = String.format("ID '%s' or version '%d' doesn't exist!", recordId, version.longValue());
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
     long nano3 = System.nanoTime() / 1000000;
-    LOG.info("getRecordByID {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
+    LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return result;
   }
 
