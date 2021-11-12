@@ -81,6 +81,26 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
 
     }
+    
+    @RequestMapping("/api/v1/ui/metadataBySchemaId/{id}")
+    @ResponseBody
+    public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@PathVariable(value = "id", required = true) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
+
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber()-1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, Arrays.asList(id),null,null, pageable, wr, hsr, ucb);
+        List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
+
+        String pageSize =  responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+        
+        TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
+                .lastPage((Integer.parseInt(pageSize.split("/")[1])/pageable.getPageSize())+1)
+                .data(metadataRecords)
+                .build();
+        
+        return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
+
+    }
 
     @RequestMapping("/schema-management")
     @Override
@@ -95,7 +115,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         return model;
     }
     
-    @RequestMapping("/schema-management/{id}")
+    @RequestMapping("/metadata-management/{id}")
     @Override
     public ModelAndView metadataManagement(@PathVariable(value = "id", required = true) String id,
             Pageable pgbl,
@@ -103,11 +123,9 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
           HttpServletResponse hsr,
           UriComponentsBuilder ucb) {
 
-        ResponseEntity< List<MetadataRecord>> metadataRecords = metadtaControllerImpl.getRecords(null, null, Arrays.asList(id),null,null, pgbl, wr, hsr, ucb);
         EditorRequestMetadata request = EditorRequestMetadata.builder()
                 .dataModel(getJsonObject(DATAMODELMETADATA))
                 .uiForm(getJsonObject(UIFORMMETADATA))
-                .metadataRecords(metadataRecords.getBody())
                 .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
         
         ModelAndView model = new ModelAndView("metadata-management");

@@ -98,7 +98,7 @@ and open the template in the editor.
             createOperation: {callback: function () {
                     $.getJSON("/jsonSchemas/uiFormSchemaRecordForCreate.json", function (uiForm) {
                         $.getJSON("/jsonSchemas/schemaRecordForCreate.json", function (dataModel) {
-                            var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Schema"};
+                            var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm};
                             //TODO check if file is uploaded
                             $('form').metadataeditorForm(options, function onSubmitValid(valueRecord) {
                                 var input = document.getElementsByClassName('input-file');
@@ -117,7 +117,7 @@ and open the template in the editor.
                 ,
                 buttonTitle: "Register new Schema"},
             listOperation: function (rowColumnvalue) {
-                window.location.href = "/schema-management/" + rowColumnvalue.schemaId;
+                window.location.href = "/metadata-management/" + rowColumnvalue.schemaId;
             }
 
         };

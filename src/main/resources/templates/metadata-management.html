@@ -53,17 +53,27 @@ and open the template in the editor.
         options = /*[[${request}]]*/ {};
         /*]]>*/
 
+        var currentUrl = window.location.href;
+        var schemaId = currentUrl.substring(currentUrl.indexOf("/metadata-management/") + "/metadata-management/".length, currentUrl.length);
+        var table = {
+            layout: "fitColumns",
+            pagination: "remote",
+            ajaxURL: "/api/v1/ui/metadataBySchemaId/" + schemaId,
+            paginationSize: 2
+        };
         // add modals to html
         $('body').append(modalTemplate("ALERT"));
         $('body').append(modalTemplate("FAILED"));
         $('body').append(modalTemplate("SUCCESS"));
 
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, resource: options.metadataRecords, items: options.items,
+        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
             readOperation: function (rowColumnvalue) {
                 var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                 $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                    readSchema(options.resource, function (metadataDataModel) {
-                        readMetadata(options.resource.metadataDocumentUri, function (metadataResource) {
+                    var resource = options.resource;
+                    var url = resource.schema.identifier;
+                    readSchema(url, function (metadataDataModel) {
+                        readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
                             options = {operation: "READ", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource};
                             $('form').metadataeditorForm(options, function onSubmitValid(value) {
                             });
@@ -73,12 +83,12 @@ and open the template in the editor.
                 $("#formModal").modal('show');
             },
             updateOperation: function (rowColumnvalue) {
-                $.getJSON("/jsonSchemas/metadataRecordForCreate.json", function (dataModel) {
-                    $.getJSON("/jsonSchemas/uiFormmetadataRecordForCreate.json", function (uiForm) {
+                $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
+                    $.getJSON("/jsonSchemas/uiFormmetadataRecord.json", function (uiForm) {
                         var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                         $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
-                            readSchema(options.resource, function (metadataDataModel) {
-                                readMetadata(options.resource.metadataDocumentUri, function (metadataResource) {
+                            readSchema(options.resource.schema.identifier, function (metadataDataModel) {
+                                readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
                                     options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource, buttonTitle: "Update"};
                                     $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
                                         updateMetadataRecord(updatedMetadataRecord, updatedMetadataDocument);
@@ -95,7 +105,13 @@ and open the template in the editor.
                         $.getJSON("/jsonSchemas/uiFormMetadataRecordForCreate.json", function (uiForm) {
                             var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Generate Schema"};
                             $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
-                                readSchema(JSON.parse(metadataRecord), function (schemaDocument) {
+                                var record = JSON.parse(metadataRecord);
+                                if (record.schemaVersion === undefined) {
+                                    url = "/api/v1/schemas/" + record.schema.identifier;
+                                } else {
+                                    url = "/api/v1/schemas/" + record.schema.identifier + "?version=" + record.schemaVersion;
+                                }
+                                readSchema(url, function (schemaDocument) {
                                     options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
                                     $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
                                         createMetadataRecord(metadataRecord, metadata);
@@ -105,7 +121,8 @@ and open the template in the editor.
                         });
                     });
                     $("#formModal").modal('show');
-                }},
+                },
+                buttonTitle: "Register new Metadata Document"},
 
             returnOperation: {callback: function () {
                     window.location.href = "/schema-management";
@@ -121,7 +138,6 @@ and open the template in the editor.
          * @returns {undefined}
          */
         function updateMetadataRecord(valueRecord, valueDocument) {
-
             var formData = new FormData();
             var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
             const recordFile = new File([blobRecord], 'recordFile.json');
@@ -165,16 +181,30 @@ and open the template in the editor.
          * @param {type} callback cb function returns schema as a JSON value in case the actual method is correctly executed.
          * @returns {undefined}
          */
-        function readSchema(rowColumnValue, callback) {
-            var url;
-            if (rowColumnValue.schemaVersion === undefined) {
-                url = "/api/v1/schemas/" + rowColumnValue.schemaId;
-            } else {
-                url = "/api/v1/schemas/" + rowColumnValue.schemaId + "?version=" + rowColumnValue.schemaVersion;
-            }
+        function readSchemaRecord(rowColumnValue, callback) {
             $.ajax({
                 type: "GET",
                 url: url,
+                contentType: "application/json",
+                dataType: 'json',
+                headers: {
+                    Accept: "application/vnd.datamanager.schema-record+json"},
+                success: function (result) {
+                    callback(result);
+
+                },
+                error: function (result) {
+                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                }
+            });
+
+        }
+        ;
+
+        function readSchema(rowColumnValue, callback) {
+            $.ajax({
+                type: "GET",
+                url: rowColumnValue,
                 contentType: "application/json",
                 dataType: 'json',
                 success: function (result) {
@@ -188,7 +218,6 @@ and open the template in the editor.
 
         }
         ;
-
         /**
          * registers a new metadata Record.
          * @param {type} valueMetadataRecord the JSON value of the metadata record.
@@ -229,7 +258,7 @@ and open the template in the editor.
          * @param {type} callback cb function returns the metadata document as a JSON value in case the actual method is coorectly executed.
          * @returns {undefined}
          */
-        function readMetadata(value, callback) {
+        function readMetadataDocument(value, callback) {
             $.ajax({
                 type: "GET",
                 url: value,

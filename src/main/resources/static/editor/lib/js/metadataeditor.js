@@ -264,7 +264,7 @@ $.fn.metadataeditorForm = function (options, callback) {
     formElt = renderElt;
     var editor = new editorDefinitionForm();
     editor.initializeInputsForm(options, renderElt);
-    editor.render(callback);
+    editor.render(callback, options.buttonTitle);
     return editor;
 };
 /**
@@ -378,17 +378,17 @@ editorDefinitionForm.prototype.initializeInputsForm = function (options, renderE
     this.uiForm = options.uiForm || "*";
     this.resource = options.resource || null;
     this.renderElt = renderElt;
-    this.buttonTitle = options.buttonTitle;
+//    this.buttonTitle = options.buttonTitle;
 };
 /**
  * Based on the given operation, a form will be generated.
  * @param {type} callback callback function
  * @returns {undefined}
  */
-editorDefinitionForm.prototype.render = function (callback) {
+editorDefinitionForm.prototype.render = function (callback, buttonTitle) {
     emptyElt(formElt);
-    (this.operation === operationType.READ) ? this.generateReadForm(callback) : ((this.operation === operationType.CREATE) ? this.generateCreateForm(callback) :
-            ((this.operation === operationType.UPDATE) ? this.generateUpdateForm(callback) : ((this.operation === operationType.DELETE) ?
+    (this.operation === operationType.READ) ? this.generateReadForm(callback, buttonTitle) : ((this.operation === operationType.CREATE) ? this.generateCreateForm(callback, buttonTitle) :
+            ((this.operation === operationType.UPDATE) ? this.generateUpdateForm(callback, buttonTitle) : ((this.operation === operationType.DELETE) ?
                     this.generateDeleteForm(callback) : _throw("Unknown operation!"))));
 };
 
@@ -474,8 +474,10 @@ emptyElt = elt => {
  * @param {type} callback
  * @returns {undefined}
  */
-editorDefinitionForm.prototype.generateCreateForm = function (callback) {
-    if (this.buttonTitle === undefined) {
+editorDefinitionForm.prototype.generateCreateForm = function (callback, buttonTitle) {
+    if (buttonTitle !== undefined) {
+        this.buttonTitle = buttonTitle;
+    }else{
         this.buttonTitle = operationType.CREATE;
     }
     this.renderElt.jsonForm({
@@ -484,7 +486,7 @@ editorDefinitionForm.prototype.generateCreateForm = function (callback) {
             this.uiForm,
             {
                 "type": "submit",
-                "title": this.operation
+                "title": this.buttonTitle
             }
         ],
         "onSubmitValid": function (values) {
@@ -498,8 +500,10 @@ editorDefinitionForm.prototype.generateCreateForm = function (callback) {
  * @returns {undefined}
  */
 
-editorDefinitionForm.prototype.generateUpdateForm = function (callback) {
-    if (this.buttonTitle === undefined) {
+editorDefinitionForm.prototype.generateUpdateForm = function (callback, buttonTitle) {
+if (buttonTitle !== undefined) {
+        this.buttonTitle = buttonTitle;
+    }else{
         this.buttonTitle = operationType.UPDATE;
     }
     if (!this.resource) {
@@ -525,15 +529,15 @@ editorDefinitionForm.prototype.generateUpdateForm = function (callback) {
  * generates a form filled with values. It is used only to show the values, no button is generated.
  * @returns {undefined}
  */
-editorDefinitionForm.prototype.generateFilledReadForm = function (callback) {
-    if (this.buttonTitle !== undefined) {
+editorDefinitionForm.prototype.generateFilledReadForm = function (callback, buttonTitle) {
+    if (buttonTitle !== undefined) {
         this.renderElt.jsonForm({
             schema: this.dataModel,
             form: [
                 this.uiForm,
                 {
                     "type": "submit",
-                    "title": this.buttonTitle
+                    "title": buttonTitle
                 }
             ],
             value: this.resource,
@@ -555,9 +559,9 @@ editorDefinitionForm.prototype.generateFilledReadForm = function (callback) {
 
 };
 
-editorDefinitionForm.prototype.generateReadForm = function (callback) {
+editorDefinitionForm.prototype.generateReadForm = function (callback, buttonTitle) {
     if (this.resource) {
-        this.generateFilledReadForm(callback);
+        this.generateFilledReadForm(callback, buttonTitle);
     } else {
         this.generateEmptyFieldFormWithoutButton();
     }
@@ -583,8 +587,10 @@ editorDefinitionForm.prototype.generateEmptyFieldFormWithoutButton = function ()
  * @param {type} callback cb function returns the form as a JSON value in case the actual method is coorectly executed.
  * @returns {undefined}
  */
-editorDefinitionForm.prototype.generateDeleteForm = function (callback) {
-    if (this.buttonTitle === undefined) {
+editorDefinitionForm.prototype.generateDeleteForm = function (callback, buttonTitle) {
+if (buttonTitle !== undefined) {
+        this.buttonTitle = buttonTitle;
+    }else{
         this.buttonTitle = operationType.DELETE;
     }
     var copyResource = this.resource;

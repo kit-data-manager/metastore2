@@ -2,6 +2,7 @@
     "type": "fieldset",
     "items": [
         "schemaId",
+        "schemaVersion",
         "mimeType",
         "type",
         "createdAt",

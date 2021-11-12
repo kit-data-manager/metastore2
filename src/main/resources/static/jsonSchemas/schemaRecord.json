@@ -5,6 +5,10 @@
             "type": "string",
             "title": "Schema Record Identifier"
         },
+        "schemaVersion": {
+            "type": "string",
+            "title": "Schema Version"
+        },
         "mimeType": {
             "type": "string",
             "title": "mime Type",
