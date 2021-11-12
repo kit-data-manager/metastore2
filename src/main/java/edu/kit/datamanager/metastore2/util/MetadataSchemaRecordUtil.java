@@ -535,7 +535,7 @@ public class MetadataSchemaRecordUtil {
           LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
       }
     }
-    LOG.info("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1);
+    LOG.info("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano6 - nano1, nano6 - nano1, nano7 - nano1, provideETag);
     return metadataSchemaRecord;
   }
 

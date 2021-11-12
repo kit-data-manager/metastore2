@@ -254,7 +254,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           @RequestPart(name = "record", required = false) MultipartFile record,
           @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
-    LOG.trace("Performing updateMetadataSchemaRecord({}, {}).", schemaId, record);
+    LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
     Function<String, String> getById;
     getById = (t) -> {
       return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
