@@ -20,14 +20,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
-import edu.kit.datamanager.metastore2.configuration.DoipConfiguration;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
-import edu.kit.datamanager.metastore2.service.DoipService;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
@@ -155,11 +153,6 @@ public class Application {
   }
 
   @Bean
-  public DoipConfiguration doipConfiguration() {
-    return new DoipConfiguration();
-  }
-
-  @Bean
   public IMessagingService messagingService() {
     return new RabbitMQMessagingService();
   }
@@ -276,8 +269,6 @@ public class Application {
     for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
       LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
     }
-    LOG.info("-----------------DOIP-------------------------------------");
-    LOG.info("------------------------------------------------------");
     
   }
   /** 
