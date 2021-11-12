@@ -174,18 +174,21 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    Page<DataResource> records = DataResourceUtils.readAllVersionsOfResource(schemaConfig, id, pgbl);
+  MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordById(schemaConfig, id);
+    List<MetadataSchemaRecord> recordList = new ArrayList<>();
+    long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
+    for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
+      recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version));
+    }
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
-    List<DataResource> recordList = records.getContent();
     List<MetadataSchemaRecord> metadataList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
-      fixSchemaDocumentUri(item);
-      metadataList.add(item);
+      fixSchemaDocumentUri(record);
+      metadataList.add(record);
     });
 
-    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
+    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
 
     return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
   }
@@ -251,7 +254,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           @RequestPart(name = "record", required = false) MultipartFile record,
           @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
-    LOG.trace("Performing updateMetadataSchemaRecord({}, {}).", schemaId, record);
+    LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
     Function<String, String> getById;
     getById = (t) -> {
       return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();

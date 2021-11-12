@@ -235,18 +235,21 @@ public class MetadataControllerImpl implements IMetadataController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    Page<DataResource> records = DataResourceUtils.readAllVersionsOfResource(metadataConfig, id, pgbl);
+    MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id);
+    List<MetadataRecord> recordList = new ArrayList<>();
+    long totalNoOfElements = recordByIdAndVersion.getRecordVersion();
+    for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
+      recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
+    }
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
-    List<DataResource> recordList = records.getContent();
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record, false);
-      fixMetadataDocumentUri(item);
-      metadataList.add(item);
+      fixMetadataDocumentUri(record);
+      metadataList.add(record);
     });
 
-    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
+    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
 
     return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
   }
