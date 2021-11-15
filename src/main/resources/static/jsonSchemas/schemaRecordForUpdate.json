@@ -42,7 +42,7 @@
                         "type": "string",
                         "title": "Permission",
                         "default": "ADMINISTRATE",
-                        "enum": ["READ", "ADMINISTRATE"]
+                        "enum": ["NONE", "READ", "WRITE", "ADMINISTRATE"]
                     }
                 }
             }

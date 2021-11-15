@@ -1,8 +1,8 @@
 {
     "type": "fieldset",
-    "title": "Schema Record",
     "items": [
         "schemaId",
+        "schemaVersion",
         "mimeType",
         "type",
         "createdAt",

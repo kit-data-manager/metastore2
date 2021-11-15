@@ -1,6 +1,5 @@
 {
         "type": "fieldset",
-        "title": "Schema Record",
         "items": [
             "schemaId",
             "mimeType",
