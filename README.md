@@ -1,8 +1,10 @@
 # Metastore 2 repository
 
-[![Build Status](https://travis-ci.com/kit-data-manager/metastore2.svg?branch=master)](https://travis-ci.com/kit-data-manager/metastore2)
-[![Coverage Status](https://coveralls.io/repos/github/kit-data-manager/metastore2/badge.svg?branch=master)](https://coveralls.io/github/kit-data-manager/metastore2?branch=master)
+[![Build Status](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml)
+[![Codecov](https://codecov.io/gh/kit-data-manager/metastore2/branch/master/graph/badge.svg)](https://codecov.io/gh/kit-data-manager/metastore2)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
+[![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
+![Docker Image Version (latest semver)](https://img.shields.io/docker/v/kitdm/metastore2)
 
 General purpose metadata repository and schema registry service.
 

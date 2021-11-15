@@ -231,19 +231,20 @@ public class IDataRecordDaoTest {
 
   private void prepareDataBase() {
     String[][] datasets = {
-      {"metadataId1", "documentUri", "123", "schemaId", "2021-03-15T13:00"},
-      {"metadataId2", "documentUri", "123", "schemaId", "2021-03-15T14:00"},
-      {"metadataId3", "documentUri", "123", "schemaId", "2021-03-15T15:00"},
-      {"metadataId4", "documentUri", "123", "schemaId", "2021-03-15T16:00"},
-      {"metadataId5", "documentUri", "123", "schemaId", "2021-03-15T17:00"},
-      {"metadataId6", "documentUri", "123", "schemaId", "2021-03-15T18:00"},};
+      {"metadataId1", "3", "documentUri", "123", "schemaId", "2021-03-15T13:00"},
+      {"metadataId2", "1", "documentUri", "123", "schemaId", "2021-03-15T14:00"},
+      {"metadataId3", "1", "documentUri", "123", "schemaId", "2021-03-15T15:00"},
+      {"metadataId4", "1", "documentUri", "123", "schemaId", "2021-03-15T16:00"},
+      {"metadataId5", "1", "documentUri", "123", "schemaId", "2021-03-15T17:00"},
+      {"metadataId6", "1", "documentUri", "123", "schemaId", "2021-03-15T18:00"},};
     dataRecordDao.deleteAll();
     for (String[] dataset : datasets) {
-      saveDataRecord(dataset[0], dataset[1], dataset[2], dataset[3], dataset[4]);
+      saveDataRecord(dataset[0], dataset[1], dataset[2], dataset[3], dataset[4], dataset[5]);
     }
   }
 
   private void saveDataRecord(String metadataId,
+          String version,
           String metadataDocumentUri,
           String documentHash,
           String schemaId,
@@ -255,6 +256,7 @@ public class IDataRecordDaoTest {
     DataRecord dataRecord = new DataRecord();
     dataRecord.setDocumentHash(documentHash);
     dataRecord.setMetadataId(metadataId);
+    dataRecord.setVersion(Long.getLong(version));
     dataRecord.setSchemaId(schemaId);
     dataRecord.setLastUpdate(instant);
     dataRecord.setMetadataDocumentUri(metadataDocumentUri);

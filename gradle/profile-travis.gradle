@@ -17,6 +17,16 @@ asciidoctor {
 test {
     println 'Execute all tests...'
     outputs.dir snippetsDir
+    // Allow access to internal methods used by powerMockito
+    // Will fail with Java17
+    if (JavaVersion.current().isJava9Compatible()) {
+        println 'Allow access to private methods...'
+        jvmArgs '--illegal-access=permit'
+    }
+    if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_16)) {
+        println 'Allow access to private methods of package java.io...'
+        jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+   }
     // Execute all tests
     include '**/*'
 }

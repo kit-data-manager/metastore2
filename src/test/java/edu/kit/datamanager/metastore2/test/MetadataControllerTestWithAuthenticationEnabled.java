@@ -816,7 +816,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   public void testGetRecordByIdWithInvalidVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "13").header(HttpHeaders.AUTHORIZATION,
-            "Bearer " + userToken).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+            "Bearer " + userToken).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
   }
 
   @Test

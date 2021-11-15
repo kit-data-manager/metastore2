@@ -1195,7 +1195,6 @@ The following example shows the creation of the first metadata record and its me
 ----
 metadata-record4json.json:
 {
-    "id": "...",
     "relatedResource": {
         "identifier": "anyResourceId",
         "identifierType": "INTERNAL"

@@ -61,6 +61,11 @@ ENV REPO_NAME=${REPO_NAME_DEFAULT}
 ENV SERVICE_DIRECTORY=${SERVICE_ROOT_DIRECTORY_DEFAULT}${REPO_NAME}
 ENV REPO_PORT=${REPO_PORT_DEFAULT}
 
+# Install bash as additional requirement
+RUN apk update && \
+    apk upgrade  && \
+    apk add  bash
+
 # Copy service from build container
 RUN mkdir -p ${SERVICE_DIRECTORY}
 WORKDIR ${SERVICE_DIRECTORY}

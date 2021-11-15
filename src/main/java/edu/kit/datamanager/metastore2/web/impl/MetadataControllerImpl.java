@@ -184,7 +184,7 @@ public class MetadataControllerImpl implements IMetadataController {
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
     long nano7 = System.nanoTime() / 1000000;
-    LOG.error("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
+    LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
@@ -235,18 +235,21 @@ public class MetadataControllerImpl implements IMetadataController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    Page<DataResource> records = DataResourceUtils.readAllVersionsOfResource(metadataConfig, id, pgbl);
+    MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id);
+    List<MetadataRecord> recordList = new ArrayList<>();
+    long totalNoOfElements = recordByIdAndVersion.getRecordVersion();
+    for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
+      recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
+    }
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
-    List<DataResource> recordList = records.getContent();
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach((record) -> {
-      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record, false);
-      fixMetadataDocumentUri(item);
-      metadataList.add(item);
+      fixMetadataDocumentUri(record);
+      metadataList.add(record);
     });
 
-    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
+    String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
 
     return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
   }
