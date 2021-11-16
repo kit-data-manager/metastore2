@@ -29,7 +29,7 @@ jobs:
 
       - name: Run tests
         run: |
-            ./gradlew -Ptravis jacocoTestReport
+            ./gradlew jacocoTestReport
 #            docker build . --file Dockerfile
   # Push image to GitHub Packages.
   # See also https://docs.docker.com/docker-hub/builds/
