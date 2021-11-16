@@ -39,13 +39,13 @@ configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
-if (project.hasProperty('production')) {
-    println 'Using release profile for building ' + project.getName()
-    apply from: 'gradle/profile-release.gradle'   
+if (System.getProperty('profile') == 'minimal') {
+    println 'Using minimal profile for building ' + project.getName()
+    apply from: 'gradle/profile-minimal.gradle'   
 } else {
-    println 'Using default profile generating all reports for building ' + project.getName()
+    println 'Using default profile executing all tests for building ' + project.getName()
     apply from: 'gradle/profile-complete.gradle'
-} 
+}
 
 dependencies {
     // Spring
@@ -138,6 +138,12 @@ test {
     testLogging {
         outputs.upToDateWhen {false}
         showStandardStreams = true
+    }
+}
+
+tasks.withType(Test) {
+    testLogging {
+        events 'started', 'passed'
     }
 }
 

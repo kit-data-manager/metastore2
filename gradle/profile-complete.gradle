@@ -15,12 +15,6 @@ test {
     include '**/*'
 }
 
-tasks.withType(Test) {
-    testLogging {
-        events 'started', 'passed'
-    }
-}
-
 // Generate coverage report
 jacocoTestReport {
     dependsOn test
