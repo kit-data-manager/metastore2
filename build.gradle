@@ -18,6 +18,9 @@ ext {
     springBootVersion = '2.4.10' 
     springDocVersion  = '1.5.6'
     javersVersion     = '6.2.3'
+
+    // directory for generated code snippets during tests
+    snippetsDir = file("build/generated-snippets")
 }
 
 println "Running gradle version: $gradle.gradleVersion"
@@ -36,12 +39,12 @@ configurations {
     all*.exclude module : 'spring-boot-starter-logging'
 }
 
-if (project.hasProperty('travis')) {
-    println 'Using travis profile for building ' + project.getName()
-    apply from: 'gradle/profile-travis.gradle'
-} else if (project.hasProperty('release')) {
-    println 'Using release profile for building ' + project.getName()
+if (project.hasProperty('production')) {
+    println 'Using release/default profile for building ' + project.getName()
     apply from: 'gradle/profile-release.gradle'   
+} else {
+    println 'Using default profile generating all reports for building ' + project.getName()
+    apply from: 'gradle/profile-complete.gradle'
 } 
 
 dependencies {
@@ -64,7 +67,7 @@ dependencies {
     implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
     implementation "org.springframework.security:spring-security-config:5.5.2"
     
-   // cloud support
+    // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:3.0.4"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.0.3"
 
@@ -99,11 +102,15 @@ dependencies {
     implementation "com.networknt:json-schema-validator:1.0.43"
   
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:0.9.0"
+    implementation "edu.kit.datamanager:repo-core:0.9.1"
     implementation "edu.kit.datamanager:service-base:0.3.0"
+
+    // DOIP SDK
+    implementation "net.dona.doip:doip-sdk:2.1.0"
 
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
     
+    // Additional libraries for tests
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
@@ -124,7 +131,6 @@ compileJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 
-
 test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
@@ -137,6 +143,45 @@ test {
 
 jacoco {
     toolVersion = "0.8.7"
+}
+
+import java.text.SimpleDateFormat
+
+tasks.register('testForSnippetsDir') {
+  doFirst {
+    println 'snippetsDir exists: ' + snippetsDir.exists()
+    if (!snippetsDir.exists()) {
+      println 'Create snippets dir...'
+      println 'WARNING: Don\'t skip tests for building production ready jar file!'
+      snippetsDir.mkdirs()
+    }
+  }
+} 
+
+asciidoctor {
+  dependsOn testForSnippetsDir
+     attributes "snippets": snippetsDir,
+               "version":  jar.archiveVersion,
+               "date":     new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+    inputs.dir snippetsDir
+    dependsOn test  
+    sourceDir "docs/"
+    outputDir "build/docs/html5"
+}
+
+   
+bootJar {
+    println 'Create bootable jar...'
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+    }
+    dependsOn asciidoctor
+    from ("${asciidoctor.outputDir}") {
+        into 'static/docs'
+    }
+    launchScript()
 }
 
 // task for printing project name.

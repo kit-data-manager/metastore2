@@ -1,43 +1,10 @@
-import java.text.SimpleDateFormat
-
-ext {
-    snippetsDir = file("build/generated-snippets")
-}
-   
-asciidoctor {
-    attributes "snippets": snippetsDir,
-               "version":  jar.archiveVersion,
-               "date":     new SimpleDateFormat("yyyy-MM-dd").format(new Date())
-    inputs.dir snippetsDir
-    dependsOn test  
-    sourceDir "docs/"
-    outputDir "build/docs/html5"
-}
-
+// For faster execution only neccessary tests will be executed
 test {
     outputs.dir snippetsDir
     include     "**/*SchemaRegistryControllerDocumentation*"
 }
 
-tasks.withType(Test) {
-    testLogging {
-        events 'started', 'passed'
-    }
-}
-   
-bootJar {
-    println 'Create bootable jar...'
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
-    }
-    dependsOn asciidoctor
-    from ("${asciidoctor.outputDir}") {
-        into 'static/docs'
-    }
-    launchScript()
-}
- 
 release {
+   // define tag pattern (tags have to start with 'v')
     tagTemplate = 'v${version}'
 }
