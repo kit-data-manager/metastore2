@@ -40,7 +40,7 @@ configurations {
 }
 
 if (project.hasProperty('production')) {
-    println 'Using release/default profile for building ' + project.getName()
+    println 'Using release profile for building ' + project.getName()
     apply from: 'gradle/profile-release.gradle'   
 } else {
     println 'Using default profile generating all reports for building ' + project.getName()
