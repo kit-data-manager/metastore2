@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.3.4] - 2021-11-17
+### Fixed
+- Error handling versions for metadata documents (issues #55)
+### Changed
+- Building service all tests now enabled by default (use -Dprofile=minimal to execute only mandatory tests)
+
 ## [0.3.3] - 2021-11-12
 ### Fixed
 - Error handling versions for (schema/metadata) records (issues #52, #53)
@@ -96,7 +102,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/kit-data-manager/metastore2/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/kit-data-manager/metastore2/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/kit-data-manager/metastore2/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/kit-data-manager/metastore2/compare/v0.3.0...v0.3.1
