@@ -408,7 +408,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     LOGGER.trace("Performing getEntity().");
     DataRecord entity = null;
 
-    Optional<DataRecord> findEntity = dataRecordDao.findByMetadataId(builder.getIdentifier());
+    Optional<DataRecord> findEntity = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(builder.getIdentifier());
     if (findEntity.isPresent()) {
       entity = findEntity.get();
     }
