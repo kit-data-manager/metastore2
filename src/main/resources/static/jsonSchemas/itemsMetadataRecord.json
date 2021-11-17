@@ -4,7 +4,7 @@
     },  
     {
         "title": "Related Resource",
-        "field": "relatedResource"
+        "field": "relatedResource.identifier"
        },
     {
         "title": "Date Created",
