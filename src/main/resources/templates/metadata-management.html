@@ -177,30 +177,10 @@ and open the template in the editor.
 
         /**
          * reads the schema.
-         * @param {type} rowColumnValue the value of the JSON metadata record.
-         * @param {type} callback cb function returns schema as a JSON value in case the actual method is correctly executed.
+         * @param {type} rowColumnValue schema document uri.
+         * @param {type} callback cb function returns the schema as a JSON value in case the actual method is coorectly executed.
          * @returns {undefined}
          */
-        function readSchemaRecord(rowColumnValue, callback) {
-            $.ajax({
-                type: "GET",
-                url: url,
-                contentType: "application/json",
-                dataType: 'json',
-                headers: {
-                    Accept: "application/vnd.datamanager.schema-record+json"},
-                success: function (result) {
-                    callback(result);
-
-                },
-                error: function (result) {
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-
-        }
-        ;
-
         function readSchema(rowColumnValue, callback) {
             $.ajax({
                 type: "GET",
