@@ -92,15 +92,36 @@ public class IDataRecordDaoTest {
    * Test of findByMetadataId method, of class IDataRecordDao.
    */
   @Test
+  public void testFindByMetadataIdAndVersion() {
+    System.out.println("findByMetadataIdAndVersion");
+    String metadataId = "metadataId1";
+//    IDataRecordDao instance = new IDataRecordDaoImpl();
+    Optional<DataRecord> result = instance.findByMetadataIdAndVersion(metadataId, 3l);
+    assertNotNull(result);
+    assertTrue(result.isPresent());
+
+    result = instance.findByMetadataIdAndVersion(metadataId, 1l);
+    assertNotNull(result);
+    assertFalse(result.isPresent());
+    
+    result = instance.findByMetadataIdAndVersion("unknownId", 1l);
+    assertNotNull(result);
+    assertFalse(result.isPresent());
+  }
+
+  /**
+   * Test of findByMetadataId method, of class IDataRecordDao.
+   */
+  @Test
   public void testFindByMetadataId() {
     System.out.println("findByMetadataId");
     String metadataId = "metadataId1";
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
-    Optional<DataRecord> result = instance.findByMetadataId(metadataId);
+    Optional<DataRecord> result = instance.findTopByMetadataIdOrderByVersionDesc(metadataId);
     assertNotNull(result);
     assertTrue(result.isPresent());
 
-    result = instance.findByMetadataId("unknownId");
+    result = instance.findTopByMetadataIdOrderByVersionDesc("unknownId");
     assertNotNull(result);
     assertFalse(result.isPresent());
   }
@@ -256,7 +277,7 @@ public class IDataRecordDaoTest {
     DataRecord dataRecord = new DataRecord();
     dataRecord.setDocumentHash(documentHash);
     dataRecord.setMetadataId(metadataId);
-    dataRecord.setVersion(Long.getLong(version));
+    dataRecord.setVersion(Long.parseLong(version));
     dataRecord.setSchemaId(schemaId);
     dataRecord.setLastUpdate(instant);
     dataRecord.setMetadataDocumentUri(metadataDocumentUri);

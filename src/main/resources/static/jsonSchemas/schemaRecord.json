@@ -5,6 +5,10 @@
             "type": "string",
             "title": "Schema Record Identifier"
         },
+        "schemaVersion": {
+            "type": "string",
+            "title": "Schema Version"
+        },
         "mimeType": {
             "type": "string",
             "title": "mime Type",
@@ -51,7 +55,7 @@
                         "type": "string",
                         "title": "Permission",
                         "default": "ADMINISTRATE",
-                        "enum": ["READ", "ADMINISTRATE"]
+                        "enum": ["NONE", "READ", "WRITE", "ADMINISTRATE"]
                     }
                 }
             }
