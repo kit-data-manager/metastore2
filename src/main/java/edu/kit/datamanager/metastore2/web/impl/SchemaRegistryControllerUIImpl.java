@@ -132,7 +132,12 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
          model.addObject("request", request);
         return model;
     }
-
+    
+     @RequestMapping("/dashboard")
+     @Override
+     public String dashboard(){
+         return "dashboard";
+     }
     /**
      * gets a JSON object from a file.
      *
