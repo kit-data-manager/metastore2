@@ -311,6 +311,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       Url2Path url2Path = new Url2Path();
       url2Path.setPath(schemaDocumentUri);
       url2Path.setUrl(record.getSchemaDocumentUri());
+      url2Path.setType(record.getType());
       url2PathDao.save(url2Path);
     }
   }

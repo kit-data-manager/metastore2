@@ -1,0 +1,10 @@
+// For faster execution only neccessary tests will be executed
+test {
+    outputs.dir snippetsDir
+    include     "**/*SchemaRegistryControllerDocumentation*"
+}
+
+release {
+   // define tag pattern (tags have to start with 'v')
+    tagTemplate = 'v${version}'
+}
