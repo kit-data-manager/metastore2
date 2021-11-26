@@ -54,7 +54,7 @@ and open the template in the editor.
         /*]]>*/
 
         var currentUrl = window.location.href;
-        var schemaId = currentUrl.substring(currentUrl.indexOf("/metadata-management/") + "/metadata-management/".length, currentUrl.length);
+        var schemaId = currentUrl.substring(currentUrl.indexOf("/metadata-schema-management/") + "/metadata-schema-management/".length, currentUrl.length);
         var table = {
             layout: "fitColumns",
             pagination: "remote",
@@ -137,16 +137,20 @@ and open the template in the editor.
          * @param {type} valueDocument JSOn value of the metadata document.
          * @returns {undefined}
          */
-        function updateMetadataRecord(valueRecord, valueDocument) {
+ function updateMetadataRecord(valueRecord, valueSchema) {
+
             var formData = new FormData();
             var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
-            const recordFile = new File([blobRecord], 'recordFile.json');
+            const recordFile = new File([blobRecord], 'recordFile1.json');
+
+          
+                var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
+                const schemaFile = new File([blobSchema], 'schemaFile1.json');
+                formData.append("document", schemaFile);
+          
 
             formData.append("record", recordFile);
 
-            var blobSchema = new Blob([JSON.stringify(JSON.parse(valueDocument), null, 2)], {type: "application/json"});
-            const schemaFile = new File([blobSchema], 'schemaFile.json');
-            formData.append("document", schemaFile);
             generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
                 if (status === "success") {
                     $.ajax({
@@ -160,7 +164,7 @@ and open the template in the editor.
                         data: formData,
                         success: function (result) {
                             $("#formModal").modal('hide');
-                            showModal("SUCCESS", "Operation has been sucessfully executed!", "");
+                            showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
                         },
                         error: function (result) {
                             $("#formModal").modal('hide');
@@ -171,8 +175,6 @@ and open the template in the editor.
                     alert("etag couldn't be generated");
                 }
             });
-
-
         }
 
         /**

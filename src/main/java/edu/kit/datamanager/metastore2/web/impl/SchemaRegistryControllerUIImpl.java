@@ -115,7 +115,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         return model;
     }
     
-    @RequestMapping("/metadata-management/{id}")
+    @RequestMapping("/metadata-schema-management/{id}")
     @Override
     public ModelAndView metadataManagement(@PathVariable(value = "id", required = true) String id,
             Pageable pgbl,
@@ -128,7 +128,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
                 .uiForm(getJsonObject(UIFORMMETADATA))
                 .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
         
-        ModelAndView model = new ModelAndView("metadata-management");
+        ModelAndView model = new ModelAndView("metadata-schema-management");
          model.addObject("request", request);
         return model;
     }
