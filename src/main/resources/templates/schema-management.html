@@ -118,7 +118,11 @@ and open the template in the editor.
                 buttonTitle: "Register new Schema"},
             listOperation: function (rowColumnvalue) {
                 window.location.href = "/metadata-schema-management/" + rowColumnvalue.schemaId;
-            }
+            },
+
+            returnOperation: {callback: function () {
+                    window.location.href = "/dashboard";
+                }, buttonTitle: "Dashboard"}
 
         };
         $('#table-schemas').metadataeditorTable(inputs);
