@@ -486,7 +486,7 @@ public class MetadataSchemaRecordUtil {
             metadataSchemaRecord.setPid(resourceIdentifier);
             break;
           } else {
-            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
           }
         }
       }
