@@ -1129,6 +1129,6 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
-    return result.getSchemaDocumentUri().replaceFirst("8080", "41401");
+    return result.getSchemaDocumentUri().replaceFirst("8080", "41410");
   }
 }

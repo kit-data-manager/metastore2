@@ -330,6 +330,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       url2Path.setPath(schemaDocumentUri);
       url2Path.setUrl(record.getSchemaDocumentUri());
       url2Path.setType(record.getType());
+      url2Path.setVersion(record.getSchemaVersion());
       url2PathDao.save(url2Path);
     }
   }

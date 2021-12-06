@@ -13,6 +13,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
@@ -229,6 +230,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Autowired
   private IAllIdentifiersDao allIdentifiersDao;
   @Autowired
+  private IUrl2PathDao url2PathDao;
+  @Autowired
   private MetastoreConfiguration metadataConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
@@ -245,7 +248,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     schemaRecordDao.deleteAll();
     dataRecordDao.deleteAll();
     allIdentifiersDao.deleteAll();
-
+    url2PathDao.deleteAll();
+    
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
@@ -1255,6 +1259,6 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
-    return result.getSchemaDocumentUri().replaceFirst("8080", "41401");
+    return result.getSchemaDocumentUri().replaceFirst("8080", "41408");
   }
 }
