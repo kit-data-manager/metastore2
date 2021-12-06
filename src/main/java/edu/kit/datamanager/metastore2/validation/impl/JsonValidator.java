@@ -28,6 +28,11 @@ public class JsonValidator implements IValidator {
   private String errorMessage;
 
   @Override
+  public IValidator getInstance() {
+    return new JsonValidator();
+  }
+
+  @Override
   public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
     return MetadataSchemaRecord.SCHEMA_TYPE.JSON.equals(type);
   }

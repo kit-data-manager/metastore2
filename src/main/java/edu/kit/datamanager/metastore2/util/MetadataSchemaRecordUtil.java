@@ -907,7 +907,7 @@ public class MetadataSchemaRecordUtil {
     }
     for (IValidator validator : metastoreProperties.getValidators()) {
       if (validator.supportsSchemaType(schemaRecord.getType())) {
-        applicableValidator = validator;
+        applicableValidator = validator.getInstance();
         LOG.trace("Found validator for schema: '{}'", schemaRecord.getType().name());
         break;
       }

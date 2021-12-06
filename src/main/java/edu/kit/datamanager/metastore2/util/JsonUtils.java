@@ -56,7 +56,7 @@ public class JsonUtils {
   /**
    * Mapper for parsing json.
    */
-  private static ObjectMapper mapper = new ObjectMapper();
+  private static final ObjectMapper mapper = new ObjectMapper();
 
   /**
    * Validate JSON schema document based on detected JSON schema or version
@@ -245,7 +245,7 @@ public class JsonUtils {
    * @return JsonNode represented by String
    * @throws Exception Not a valid json document.
    */
-  protected static JsonNode getJsonNodeFromString(String content) throws Exception {
+  protected static synchronized JsonNode getJsonNodeFromString(String content) throws Exception {
     return mapper.readTree(content);
   }
 
