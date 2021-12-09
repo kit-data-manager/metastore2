@@ -41,7 +41,7 @@
                 },
                 "identifierType": {
                     "type": "string",
-                    "enum": ["URL"],
+                    "enum": ["URL", "INTERNAL"],
                     "title": "Identifier Type"
                 }
             }
