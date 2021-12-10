@@ -100,6 +100,9 @@ dependencies {
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.0.43"
   
+    // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
+    implementation 'xerces:xercesImpl:2.12.1'
+
     // datamanager
     implementation "edu.kit.datamanager:repo-core:0.9.1"
     implementation "edu.kit.datamanager:service-base:0.3.1"
