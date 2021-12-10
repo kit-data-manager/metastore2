@@ -1223,18 +1223,10 @@ public class MetadataControllerTest {
     String content = result.getResponse().getContentAsString();
 
     String dcMetadata = DC_DOCUMENT;
-    System.out.println("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
-    System.out.println(dcMetadata+"xxxx");
-    System.out.println("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
-    System.out.println(content+"xxxx");
-    System.out.println("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
 //    Assert.assertEquals(dcMetadata, content);
 
     result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isOk()).andReturn();
     content = result.getResponse().getContentAsString();
-    System.out.println("Version 2");
-    System.out.println(content+"xxxx");
-    System.out.println("uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu");
 
     Assert.assertNotEquals(dcMetadata, content);
     Assert.assertEquals("Length must differ!", dcMetadata.length() + 3, content.length());
