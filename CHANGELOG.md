@@ -11,9 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+
+## [0.3.5] - 2021-12-13
+### Fixed
 - OAS 3.0 is not available (issue #58)
 - Incorrect schema version in the metadata record (issue #59) 
 - XML validation is not threadsafe. (issue #60)
+- Fix for CVE-2021-44228
 
 ## [0.3.4] - 2021-11-17
 ### Fixed
@@ -105,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...HEAD
+[0.3.5]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/kit-data-manager/metastore2/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/kit-data-manager/metastore2/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/kit-data-manager/metastore2/compare/v0.3.1...v0.3.2
