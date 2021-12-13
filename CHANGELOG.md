@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Update to Spring Boot 2.4.13
 
 ### Fixed
 
@@ -19,11 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - XML validation is not threadsafe. (issue #60)
 - Fix for CVE-2021-44228
 
+### Changed
+- Update to service-base version 0.3.1
+
 ## [0.3.4] - 2021-11-17
 ### Fixed
 - Error handling versions for metadata documents (issue #55)
 ### Changed
 - Building service all tests now enabled by default (use -Dprofile=minimal to execute only mandatory tests)
+- Update to repo-core version 0.9.1
 
 ## [0.3.3] - 2021-11-12
 ### Fixed

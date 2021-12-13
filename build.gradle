@@ -14,7 +14,7 @@ description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
 ext {
-    springBootVersion = '2.4.10' 
+    springBootVersion = '2.4.13' 
     springDocVersion  = '1.5.6'
     javersVersion     = '6.2.3'
 
