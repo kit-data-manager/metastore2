@@ -13,6 +13,7 @@ import edu.kit.datamanager.metastore2.dto.TabulatorItems;
 import edu.kit.datamanager.metastore2.dto.EditorRequestMetadata;
 import edu.kit.datamanager.metastore2.dto.TabulatorRemotePagination;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerUI;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +47,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  * @author sabrinechelbi
  */
 @Controller
+@Tag(name = "REST endpoints 4 GUI")
 public class SchemaRegistryControllerUIImpl implements ISchemaRegistryControllerUI {
 
     private final static String DATAMODELSCHEMA = "/static/jsonSchemas/schemaRecord.json";

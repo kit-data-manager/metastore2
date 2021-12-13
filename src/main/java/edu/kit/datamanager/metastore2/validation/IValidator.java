@@ -11,10 +11,17 @@ import java.io.InputStream;
 
 /**
  *
- * @author Torridity
+ * Interface for validating metadata (schema) documents.
  */
 public interface IValidator {
 
+  /**
+   * Get an instance of the validator.
+   * @return 
+   */
+  default IValidator getInstance(){
+    return this;
+  }
   /**
    * Supports the given schema type.
    *

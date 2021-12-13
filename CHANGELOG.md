@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+- OAS 3.0 is not available (issue #58)
+- Incorrect schema version in the metadata record (issue #59) 
+- XML validation is not threadsafe. (issue #60)
 
 ## [0.3.4] - 2021-11-17
 ### Fixed
-- Error handling versions for metadata documents (issues #55)
+- Error handling versions for metadata documents (issue #55)
 ### Changed
 - Building service all tests now enabled by default (use -Dprofile=minimal to execute only mandatory tests)
 

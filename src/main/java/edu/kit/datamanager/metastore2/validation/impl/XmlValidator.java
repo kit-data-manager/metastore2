@@ -8,7 +8,6 @@ package edu.kit.datamanager.metastore2.validation.impl;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import javax.xml.XMLConstants;
@@ -23,65 +22,73 @@ import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 
 /**
- * Class for validating XML files. 
+ * Class for validating XML files.
  */
 @Component
-public class XmlValidator implements IValidator{
+public class XmlValidator implements IValidator {
 
-  private static final Logger LOG = LoggerFactory.getLogger(XmlValidator.class);
-  
-  private String errorMessage;
+    private static final Logger LOG = LoggerFactory.getLogger(XmlValidator.class);
 
-  @Override
-  public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type){
-    return MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(type);
-  }
+    private String errorMessage;
 
-  @Override
-  public boolean isSchemaValid(InputStream schemaStream){
-    LOG.trace("Checking schema for validity.");
-    boolean result = false;
-    Source schemaSource = new StreamSource(schemaStream);
-    SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-    try{
-      LOG.trace("Creating schema instance.");
-      Schema schema = schemaFactory.newSchema(schemaSource);
-      LOG.trace("Obtaining validator.");
-      schema.newValidator();
-      LOG.trace("Schema seems to be valid.");
-      result = true;
-    } catch(SAXException e){
-      LOG.trace("Failed to validate schema.", e);
+    @Override
+    public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
+        return MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(type);
     }
-    return result;
-  }
 
-  @Override
-  public boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream){
-    LOG.trace("Checking metdata document using schema at {}.", schemaFile);
-    boolean valid = false;
-    LOG.trace("Reading metadata document from stream.");
-    Source xmlFile = new StreamSource(metadataDocumentStream);
-    SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-
-    try{
-      LOG.trace("Creating schema instance.");
-      Schema schema = schemaFactory.newSchema(schemaFile);
-      LOG.trace("Obtaining validator.");
-      Validator validator = schema.newValidator();
-      LOG.trace("Validating metadata file.");
-      validator.validate(xmlFile);
-      LOG.trace("Metadata document is valid according to schema.");
-      valid = true;
-    } catch(SAXException | IOException e){
-      LOG.trace("Failed to validate metadata document.", e);
-      errorMessage = new String("Validation error: " + e.getMessage());
+    @Override
+    public IValidator getInstance() {
+        return new XmlValidator();
     }
-    return valid;
-  }
 
-  @Override
-  public String getErrorMessage() {
-    return errorMessage;
-  }
+    @Override
+    public boolean isSchemaValid(InputStream schemaStream) {
+        boolean result = false;
+        LOG.trace("Checking schema for validity.");
+        Source schemaSource = new StreamSource(schemaStream);
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        try {
+            LOG.trace("Creating schema instance.");
+            Schema schema = null;
+            schema = schemaFactory.newSchema(schemaSource);
+            LOG.trace("Obtaining validator.");
+            schema.newValidator();
+            LOG.trace("Schema seems to be valid.");
+            result = true;
+        } catch (SAXException e) {
+            LOG.error("Failed to validate schema.", e);
+            errorMessage = new String("Validation error: " + e.getMessage());
+        }
+        return result;
+    }
+
+    @Override
+    public boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream) {
+        boolean valid = false;
+        LOG.trace("Checking metdata document using schema at {}.", schemaFile);
+        LOG.trace("Reading metadata document from stream.");
+        Source xmlFile = new StreamSource(metadataDocumentStream);
+        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+        try {
+            LOG.trace("Creating schema instance.");
+            Schema schema = null;
+            schema = schemaFactory.newSchema(schemaFile);
+            LOG.trace("Obtaining validator.");
+            Validator validator = schema.newValidator();
+            LOG.trace("Validating metadata file.");
+            validator.validate(xmlFile);
+            LOG.trace("Metadata document is valid according to schema.");
+            valid = true;
+        } catch (SAXException | IOException e) {
+            LOG.error("Failed to validate metadata document.", e);
+            errorMessage = new String("Validation error: " + e.getMessage());
+        }
+        return valid;
+    }
+
+    @Override
+    public String getErrorMessage() {
+        return errorMessage;
+    }
 }

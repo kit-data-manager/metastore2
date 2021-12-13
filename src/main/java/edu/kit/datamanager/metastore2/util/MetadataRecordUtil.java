@@ -120,7 +120,7 @@ public class MetadataRecordUtil {
     if (record.getSchemaVersion() == null) {
       MetadataSchemaRecord currentSchemaRecord;
       try {
-        currentSchemaRecord = getCurrentSchemaRecord(applicationProperties, record.getSchema());
+        currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(applicationProperties, record.getSchema());
       } catch (ResourceNotFoundException rnfe) {
         throw new UnprocessableEntityException("Unknown schema ID '" + record.getSchema().getIdentifier() + "'!");
       }
@@ -155,6 +155,7 @@ public class MetadataRecordUtil {
     dataRecord.setMetadataId(createResource.getId());
     dataRecord.setVersion(record.getRecordVersion());
     dataRecord.setSchemaId(record.getSchema().getIdentifier());
+    dataRecord.setSchemaVersion(record.getSchemaVersion());
     dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
     dataRecord.setDocumentHash(contentInformation.getHash());
     dataRecord.setLastUpdate(dataResource.getLastUpdate());
@@ -378,7 +379,7 @@ public class MetadataRecordUtil {
             metadataRecord.setPid(resourceIdentifier);
             break;
           } else {
-            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
           }
         }
       }
@@ -414,6 +415,7 @@ public class MetadataRecordUtil {
         nano4 = System.nanoTime() / 1000000;
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
+        metadataRecord.setSchemaVersion(dataRecord.getSchemaVersion());
         isAvailable = true;
       } else {
         saveDataRecord = true;
@@ -426,6 +428,8 @@ public class MetadataRecordUtil {
         if (info != null) {
           metadataRecord.setDocumentHash(info.getHash());
           metadataRecord.setMetadataDocumentUri(info.getContentUri());
+          MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
+          metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
           if (saveDataRecord) {
             saveNewDataRecord(metadataRecord);
           }
@@ -462,27 +466,6 @@ public class MetadataRecordUtil {
     }
     LOG.info("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
-  }
-
-  /**
-   * Returns schema record with the current version.
-   *
-   * @param metastoreProperties Configuration for accessing services
-   * @param schema Identifier of the schema.
-   * @return MetadataSchemaRecord ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
-   */
-  public static MetadataSchemaRecord getCurrentSchemaRecord(MetastoreConfiguration metastoreProperties,
-          ResourceIdentifier schema) {
-    MetadataSchemaRecord msr;
-    if (schema.getIdentifierType() == IdentifierType.INTERNAL) {
-      msr = getCurrentInternalSchemaRecord(metastoreProperties, schema.getIdentifier());
-    } else {
-      msr = new MetadataSchemaRecord();
-      msr.setSchemaVersion(1l);
-    }
-
-    return msr;
   }
 
   /**
@@ -807,6 +790,7 @@ public class MetadataRecordUtil {
       dataRecord.setMetadataId(result.getId());
       dataRecord.setVersion(result.getRecordVersion());
       dataRecord.setSchemaId(result.getSchema().getIdentifier());
+      dataRecord.setSchemaVersion(result.getSchemaVersion());
       dataRecord.setDocumentHash(result.getDocumentHash());
       dataRecord.setMetadataDocumentUri(result.getMetadataDocumentUri());
       dataRecord.setLastUpdate(result.getLastUpdate());
