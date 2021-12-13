@@ -53,18 +53,12 @@ and open the template in the editor.
         options = /*[[${request}]]*/ {};
         /*]]>*/
 
-        var table = {
-            layout: "fitColumns",
-            pagination: "remote",
-            ajaxURL: "/api/v1/ui/schemas",
-            paginationSize: 2
-        };
         // add modals to html
         $('body').append(modalTemplate("ALERT"));
         $('body').append(modalTemplate("FAILED"));
         $('body').append(modalTemplate("SUCCESS"));
 
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
+        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items,paginationURL: "/api/v1/ui/schemas",
             readOperation: function (rowColumnvalue) {
                 readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
                     var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
