@@ -9,7 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-- Update to Spring Boot 2.4.13
+- Update libraries:
+  - Spring Boot 2.4.13
+  - Spring Doc  1.5.13
+  - Javers 6.5.3
+  - DependencyCheck 6.5.0.1
+  - json-schema-validator 1.0.64
+  - service-base 0.3.2
+  - repo-core 0.9.2
+
 
 ### Fixed
 
