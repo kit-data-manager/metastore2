@@ -66,6 +66,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -880,6 +881,9 @@ public class MetadataSchemaRecordUtil {
         if (!applicableValidator.isSchemaValid(document.getInputStream())) {
           String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
           LOG.warn(message);
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Schema: " + IOUtils.toString(document.getInputStream(), StandardCharsets.UTF_8.name()));
+          }
           throw new UnprocessableEntityException(message);
         }
       }
