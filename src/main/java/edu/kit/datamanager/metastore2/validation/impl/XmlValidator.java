@@ -20,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
 /**
  * Class for validating XML files.
@@ -45,14 +47,17 @@ public class XmlValidator implements IValidator {
     public boolean isSchemaValid(InputStream schemaStream) {
         boolean result = false;
         LOG.trace("Checking schema for validity.");
-        Source schemaSource = new StreamSource(schemaStream);
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         try {
+            SchemaFactory schemaFactory = getSchemaFactory();
+            
             LOG.trace("Creating schema instance.");
-            Schema schema = null;
+            Schema schema;
+        Source schemaSource = new StreamSource(schemaStream);
             schema = schemaFactory.newSchema(schemaSource);
+            
             LOG.trace("Obtaining validator.");
             schema.newValidator();
+            
             LOG.trace("Schema seems to be valid.");
             result = true;
         } catch (SAXException e) {
@@ -67,17 +72,20 @@ public class XmlValidator implements IValidator {
         boolean valid = false;
         LOG.trace("Checking metdata document using schema at {}.", schemaFile);
         LOG.trace("Reading metadata document from stream.");
-        Source xmlFile = new StreamSource(metadataDocumentStream);
-        SchemaFactory schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-
         try {
+            SchemaFactory schemaFactory = getSchemaFactory();
+
             LOG.trace("Creating schema instance.");
             Schema schema = null;
             schema = schemaFactory.newSchema(schemaFile);
+            
             LOG.trace("Obtaining validator.");
             Validator validator = schema.newValidator();
+            
             LOG.trace("Validating metadata file.");
+            Source xmlFile = new StreamSource(metadataDocumentStream);
             validator.validate(xmlFile);
+            
             LOG.trace("Metadata document is valid according to schema.");
             valid = true;
         } catch (SAXException | IOException e) {
@@ -90,5 +98,17 @@ public class XmlValidator implements IValidator {
     @Override
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    /**
+     * Get schema factory with disabled DTD parsing due to XXE vulnerabilty.
+     *
+     * @return schema factory
+     */
+    private SchemaFactory getSchemaFactory() throws SAXNotRecognizedException, SAXNotSupportedException {
+        SchemaFactory schemaFactory;
+        schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        schemaFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        return schemaFactory;
     }
 }

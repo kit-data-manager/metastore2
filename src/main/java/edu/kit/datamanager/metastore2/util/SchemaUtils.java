@@ -79,6 +79,8 @@ public class SchemaUtils {
     try {
       DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
       documentBuilderFactory.setNamespaceAware(true);
+      // Disable DTD due to XXE vulnerabiltiy
+      documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
       Document document = documentBuilder.parse(new ByteArrayInputStream(schema));
       NamedNodeMap map = ((Element) document.getDocumentElement()).getAttributes();
