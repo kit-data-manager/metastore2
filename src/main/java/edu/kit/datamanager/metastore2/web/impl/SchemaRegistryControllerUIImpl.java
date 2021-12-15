@@ -147,7 +147,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         JSONObject obj = null;
         try {
             obj = (JSONObject) parser.parse(
-                    new InputStreamReader(resource.getInputStream(), "UTF-8"));
+                    new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -165,7 +165,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         TabulatorItems[] items = null;
         Resource resource = new ClassPathResource(path);
         try {
-            items = mapper.readValue(Files.newBufferedReader(Paths.get(resource.getURI()), StandardCharsets.UTF_8), TabulatorItems[].class);
+            items = mapper.readValue(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), TabulatorItems[].class);
         } catch (IOException ex) {
             Logger.getLogger(SchemaRegistryControllerUIImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
