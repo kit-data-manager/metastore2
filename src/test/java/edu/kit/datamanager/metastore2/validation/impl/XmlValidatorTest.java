@@ -11,6 +11,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.xerces.impl.Version;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -26,6 +27,7 @@ import org.xml.sax.SAXException;
 public class XmlValidatorTest {
 
     File schemaFile = new File("src/test/resources/examples/xml/example.xsd");
+    File schemaFile2 = new File("src/test/resources/examples/xml/oai_dc.xsd");
     File xmlFile = new File("src/test/resources/examples/xml/example.xml");
     File invalidXmlFile = new File("src/test/resources/examples/xml/invalidExample.xml");
 
@@ -83,6 +85,20 @@ public class XmlValidatorTest {
     public void testIsSchemaValid() throws FileNotFoundException {
         System.out.println("isSchemaValid");
         InputStream schemaStream = new FileInputStream(schemaFile);
+        IValidator instance = new XmlValidator().getInstance();
+        boolean expResult = true;
+        boolean result = instance.isSchemaValid(schemaStream);
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of isSchemaValid method, of class XmlValidator.
+     */
+    @Test
+    public void testIsOAI_DCSchemaValid() throws FileNotFoundException {
+        System.out.println("isSchemaValid");
+              System.out.println(Version.getVersion());
+       InputStream schemaStream = new FileInputStream(schemaFile2);
         IValidator instance = new XmlValidator().getInstance();
         boolean expResult = true;
         boolean result = instance.isSchemaValid(schemaStream);
