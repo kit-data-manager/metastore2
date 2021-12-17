@@ -11,7 +11,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import org.apache.xerces.impl.Version;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -27,8 +26,11 @@ import org.xml.sax.SAXException;
 public class XmlValidatorTest {
 
     File schemaFile = new File("src/test/resources/examples/xml/example.xsd");
-    File schemaFile2 = new File("src/test/resources/examples/xml/oai_dc.xsd");
+    File schema_simple_dc = new File("src/test/resources/examples/xml/simpledc20021212.xsd");
+    File schema_oai_dc = new File("src/test/resources/examples/xml/oai_dc.xsd");
+    File invalidSchemaWithDoctype = new File("src/test/resources/examples/xml/forbidden.xsd");
     File xmlFile = new File("src/test/resources/examples/xml/example.xml");
+    File xmlFile_oai_dc = new File("src/test/resources/examples/xml/oai_dc.xml");
     File invalidXmlFile = new File("src/test/resources/examples/xml/invalidExample.xml");
 
     public XmlValidatorTest() {
@@ -95,14 +97,40 @@ public class XmlValidatorTest {
      * Test of isSchemaValid method, of class XmlValidator.
      */
     @Test
-    public void testIsOAI_DCSchemaValid() throws FileNotFoundException {
+    public void testIsSchemaValid_OAI_DC() throws FileNotFoundException {
         System.out.println("isSchemaValid");
-              System.out.println(Version.getVersion());
-       InputStream schemaStream = new FileInputStream(schemaFile2);
+       InputStream schemaStream = new FileInputStream(schema_oai_dc);
         IValidator instance = new XmlValidator().getInstance();
         boolean expResult = true;
         boolean result = instance.isSchemaValid(schemaStream);
         assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of isSchemaValid method, of class XmlValidator.
+     */
+    @Test
+    public void testIsSchemaValid_simple_DC() throws FileNotFoundException {
+        System.out.println("isSchemaValid");
+       InputStream schemaStream = new FileInputStream(schema_simple_dc);
+        IValidator instance = new XmlValidator().getInstance();
+        boolean expResult = true;
+        boolean result = instance.isSchemaValid(schemaStream);
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of isSchemaValid method, of class XmlValidator.
+     */
+    @Test
+    public void testIsSchemaValidForbiddenSchema() throws FileNotFoundException {
+        System.out.println("isSchemaValid");
+       InputStream schemaStream = new FileInputStream(invalidSchemaWithDoctype);
+        IValidator instance = new XmlValidator().getInstance();
+        boolean expResult = false;
+        boolean result = instance.isSchemaValid(schemaStream);
+        assertEquals(expResult, result);
+        assertTrue("Error message should contain DOCTYPE", instance.getErrorMessage().contains("DOCTYPE"));
     }
 
     /**
@@ -118,6 +146,22 @@ public class XmlValidatorTest {
         IValidator instance = new XmlValidator().getInstance();
         boolean expResult = true;
         boolean result = instance.validateMetadataDocument(schemaFile, metadataDocumentStream);
+        assertEquals(expResult, result);
+    }
+
+    /**
+     * Test of validateMetadataDocument method, of class XmlValidator.
+     */
+    @Test
+    public void testValidateMetadataDocument_OAI_DC() throws FileNotFoundException {
+        System.out.println("validateMetadataDocument");
+        assertTrue("Schema file is not available!", schema_oai_dc.exists());
+        assertTrue("Xml file is not available!", xmlFile_oai_dc.exists());
+
+        InputStream metadataDocumentStream = new FileInputStream(xmlFile_oai_dc);
+        IValidator instance = new XmlValidator().getInstance();
+        boolean expResult = true;
+        boolean result = instance.validateMetadataDocument(schema_oai_dc, metadataDocumentStream);
         assertEquals(expResult, result);
     }
 
@@ -152,5 +196,4 @@ public class XmlValidatorTest {
         String errorMessage = instance.getErrorMessage();
         assertNotNull(errorMessage);
     }
-
 }

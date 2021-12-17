@@ -39,21 +39,21 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 @Component
 public class XmlValidator implements IValidator {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(XmlValidator.class);
-
+    
     private String errorMessage;
-
+    
     @Override
     public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
         return MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(type);
     }
-
+    
     @Override
     public IValidator getInstance() {
         return new XmlValidator();
     }
-
+    
     @Override
     public boolean isSchemaValid(InputStream schemaStream) {
         boolean result = false;
@@ -72,7 +72,7 @@ public class XmlValidator implements IValidator {
         }
         return result;
     }
-
+    
     @Override
     public boolean validateMetadataDocument(File schemaFile, InputStream metadataDocumentStream) {
         boolean valid = false;
@@ -80,18 +80,18 @@ public class XmlValidator implements IValidator {
         LOG.trace("Reading metadata document from stream.");
         try {
             SchemaFactory schemaFactory = getSchemaFactory();
-
+            
             LOG.trace("Creating schema instance.");
             Schema schema = null;
             schema = schemaFactory.newSchema(schemaFile);
-
+            
             LOG.trace("Obtaining validator.");
             Validator validator = schema.newValidator();
-
+            
             LOG.trace("Validating metadata file.");
             Source xmlFile = new StreamSource(metadataDocumentStream);
             validator.validate(xmlFile);
-
+            
             LOG.trace("Metadata document is valid according to schema.");
             valid = true;
         } catch (SAXException | IOException e) {
@@ -100,7 +100,7 @@ public class XmlValidator implements IValidator {
         }
         return valid;
     }
-
+    
     @Override
     public String getErrorMessage() {
         return errorMessage;
@@ -117,7 +117,7 @@ public class XmlValidator implements IValidator {
 //        schemaFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         return schemaFactory;
     }
-
+    
     private SAXParser getSaxParser() {
         SAXParser parser = null;
         try {
@@ -135,4 +135,4 @@ public class XmlValidator implements IValidator {
         }
         return parser;
     }
-}
+    }

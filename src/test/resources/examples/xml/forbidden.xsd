@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+    <!-- Doctypes shouldn't be allowed!" -->
+<!DOCTYPE document SYSTEM "/any/internal/file">
+
+<schema targetNamespace="http://www.openarchives.org/OAI/2.0/oai_dc/forbidden"
+        xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/forbidden"
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+
+    <import namespace="http://purl.org/dc/elements/1.1/" schemaLocation="https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd"/>
+
+    <element name="dc" type="oai_dc:oai_dcType"/>
+
+    <complexType name="oai_dcType">
+        <choice minOccurs="0" maxOccurs="unbounded">
+            <element ref="dc:title"/>
+            <element ref="dc:creator"/>
+            <element ref="dc:subject"/>
+            <element ref="dc:description"/>
+            <element ref="dc:publisher"/>
+            <element ref="dc:contributor"/>
+            <element ref="dc:date"/>
+            <element ref="dc:type"/>
+            <element ref="dc:format"/>
+            <element ref="dc:identifier"/>
+            <element ref="dc:source"/>
+            <element ref="dc:language"/>
+            <element ref="dc:relation"/>
+            <element ref="dc:coverage"/>
+            <element ref="dc:rights"/>
+        </choice>
+    </complexType>
+
+</schema>
