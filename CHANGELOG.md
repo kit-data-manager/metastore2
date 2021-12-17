@@ -14,12 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [0.3.6] - 2021-12-14
+## [0.3.6] - 2021-12-17
 ### Security
 - Fix for CWE-611, CWE-776, CWE-827
 
 ### Added
 - Code and Security analysis
+- Make CORS partly configurable
 
 ### Changed
 - Update libraries:
