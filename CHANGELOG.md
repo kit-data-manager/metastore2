@@ -14,9 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [0.3.6] - 2021-12-17
+## [0.3.6] - 2021-12-18
 ### Security
-- Fix for CWE-611, CWE-776, CWE-827
+- Fix for CWE-611, CWE-776, CWE-827, CWE-352
 
 ### Added
 - Code and Security analysis
@@ -29,9 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Javers 6.5.3
   - DependencyCheck 6.5.0.1
   - json-schema-validator 1.0.64
+  - netflix-eureka-client 3.0.5  
   - service-base 0.3.2
   - repo-core 0.9.2
-
+ 
 ## [0.3.5] - 2021-12-13
 ### Security
 - Fix for CVE-2021-44228
