@@ -6,24 +6,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
 ### Added
 
 ### Changed
 
 ### Fixed
 
+## [0.3.6] - 2021-12-18
+### Security
+- Fix for CWE-611, CWE-776, CWE-827, CWE-352
+
+### Added
+- Code and Security analysis
+- Make CORS partly configurable
+
+### Changed
+- Update libraries:
+  - Spring Boot 2.4.13
+  - Spring Doc  1.5.13
+  - Javers 6.5.3
+  - DependencyCheck 6.5.0.1
+  - json-schema-validator 1.0.64
+  - netflix-eureka-client 3.0.5  
+  - service-base 0.3.2
+  - repo-core 0.9.2
+ 
 ## [0.3.5] - 2021-12-13
+### Security
+- Fix for CVE-2021-44228
+
 ### Fixed
 - OAS 3.0 is not available (issue #58)
 - Incorrect schema version in the metadata record (issue #59) 
 - XML validation is not threadsafe. (issue #60)
-- Fix for CVE-2021-44228
+
+### Changed
+- Update to service-base version 0.3.1
 
 ## [0.3.4] - 2021-11-17
 ### Fixed
 - Error handling versions for metadata documents (issue #55)
 ### Changed
 - Building service all tests now enabled by default (use -Dprofile=minimal to execute only mandatory tests)
+- Update to repo-core version 0.9.1
 
 ## [0.3.3] - 2021-11-12
 ### Fixed
@@ -109,7 +136,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...HEAD
+[0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/kit-data-manager/metastore2/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/kit-data-manager/metastore2/compare/v0.3.2...v0.3.3
