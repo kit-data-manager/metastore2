@@ -129,6 +129,7 @@ public class XmlValidator implements IValidator {
             spf.setFeature(Constants.XERCES_FEATURE_PREFIX + Constants.LOAD_EXTERNAL_DTD_FEATURE, false);
             spf.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_GENERAL_ENTITIES_FEATURE, false);
             spf.setFeature(Constants.SAX_FEATURE_PREFIX + Constants.EXTERNAL_PARAMETER_ENTITIES_FEATURE, false);
+            spf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             parser = spf.newSAXParser();
         } catch (ParserConfigurationException | SAXException ex) {
             LOG.error("Error creating SAX parser!", ex);
