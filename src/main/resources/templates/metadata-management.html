@@ -104,10 +104,16 @@ and open the template in the editor.
                             var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Create/Generate Schema"};
                             $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
                                 var record = JSON.parse(metadataRecord);
-                                if (record.schemaVersion === undefined) {
+                                // check schema identifier type
+                                if (record.schema.identifierType === "INTERNAL") {
                                     url = "/api/v1/schemas/" + record.schema.identifier;
-                                } else {
-                                    url = "/api/v1/schemas/" + record.schema.identifier + "?version=" + record.schemaVersion;
+                                } else if (record.schema.identifierType === "URL") {
+                                    url = record.schema.identifier;
+                                }
+
+                                //add the schema version if it is given
+                                if (record.schemaVersion !== undefined) {
+                                    url = url + "?version=" + record.schemaVersion;
                                 }
 
                                 //upload the metadata document
