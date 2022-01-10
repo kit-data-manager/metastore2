@@ -103,7 +103,7 @@ and open the template in the editor.
             createOperation: {callback: function () {
                     $.getJSON("/jsonSchemas/metadataRecordForCreate.json", function (dataModel) {
                         $.getJSON("/jsonSchemas/uiFormMetadataRecordForCreate.json", function (uiForm) {
-                            var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Generate Schema"};
+                            var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Create/Generate Schema"};
                             $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
                                 var record = JSON.parse(metadataRecord);
                                 // check schema identifier type
@@ -112,17 +112,31 @@ and open the template in the editor.
                                 } else if (record.schema.identifierType === "URL") {
                                     url = record.schema.identifier;
                                 }
-                                
+
                                 //add the schema version if it is given
                                 if (record.schemaVersion !== undefined) {
                                     url = url + "?version=" + record.schemaVersion;
                                 }
-                                readSchema(url, function (schemaDocument) {
-                                    options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
-                                    $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
-                                        createMetadataRecord(metadataRecord, metadata);
+                                
+                                //upload the metadata document
+                                var input = $('.input-file');
+                                if (input[0].value.length !== 0) {
+                                    let file = input[0].files[0];
+                                    let reader = new FileReader();
+                                    reader.readAsText(file);
+                                    reader.onload = function (e) {
+                                        var metadataDocument = reader.result;
+                                        createMetadataRecord(metadataRecord, metadataDocument);
+                                    }
+                                } else {
+                                    //generate the appropriate Schema
+                                    readSchema(url, function (schemaDocument) {
+                                        options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
+                                        $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
+                                            createMetadataRecord(metadataRecord, metadata);
+                                        });
                                     });
-                                });
+                                }
                             });
                         });
                     });
