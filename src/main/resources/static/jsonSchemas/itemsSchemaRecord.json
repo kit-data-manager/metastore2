@@ -4,8 +4,9 @@
     },  
     {
         "title": "Schema Version",
-        "field": "schemaVersion"  },
-        {
+        "field": "schemaVersion",
+        "editor":"input"},
+    {
         "title": "Label",
         "field": "label"  },
     {

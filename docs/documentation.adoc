@@ -678,7 +678,7 @@ As a result, you receive a list of metadata records in descending order.
 include::{snippets}/list-all-versions-of-metadata-document/http-response.adoc[]
 
 ===== Find by resourceId
-If you want to find all records belonging to an external resource. Metastore may 
+If you want to find all records belonging to an external resource. MetaStore may 
 hold multiple metadata documents per resource. (Nevertheless only one per registered 
 schema)
 
@@ -1400,7 +1400,7 @@ As a result, you receive a list of metadata records in descending order.
 include::{snippets}/list-all-versions-of-json-metadata-document/http-response.adoc[]
 
 ===== Find by resourceId
-If you want to find all records belonging to an external resource. Metastore may 
+If you want to find all records belonging to an external resource. MetaStore may 
 hold multiple metadata documents per resource. (Nevertheless only one per registered 
 schema)
 

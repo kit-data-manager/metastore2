@@ -11,6 +11,11 @@
             "items": [
                 "acl[]"
             ]
+        },
+         {
+            "key": "metadataDocument",
+             "id": "metadataDocument",
+            "type": "file"
         }
     ]
 }

@@ -1,7 +1,8 @@
-# Metastore 2 repository
+# MetaStore 2 repository
 
 [![Build Status](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml)
 [![Codecov](https://codecov.io/gh/kit-data-manager/metastore2/branch/master/graph/badge.svg)](https://codecov.io/gh/kit-data-manager/metastore2)
+[![CodeQL](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
 [![Docker Cloud Build Status](https://img.shields.io/docker/cloud/build/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
 ![Docker Image Version (latest semver)](https://img.shields.io/docker/v/kitdm/metastore2)
@@ -176,12 +177,23 @@ Two services may be customized to your needs.
 ## First steps
 As soon as the microservice is started, you can browse to 
 
+http://localhost:8040/
+
+and start ingesting schemas and metadata documents.
+
+If you want to use a script for doing so please refer to 
+
 http://localhost:8040/swagger-ui.html
 
-in order to see available RESTful endpoints and their documentation. Furthermore, you can use this Web interface to test single API calls in order to get familiar with the 
-service. A small documentation guiding you through the first steps of using the RESTful API you can find at
+in order to see available RESTful endpoints and their documentation. Furthermore, 
+you can use this Web interface to test single API calls in order to get familiar with the 
+service. 
+
+A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 http://localhost:8040/static/docs/documentation.html
+
+
 
 
 ## Setup for production mode
@@ -216,4 +228,4 @@ user@localhost:/home/user/metastore2$bash /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/
 
 ## License
 
-The Metastore2 is licensed under the Apache License, Version 2.0.
+The MetaStore2 is licensed under the Apache License, Version 2.0.

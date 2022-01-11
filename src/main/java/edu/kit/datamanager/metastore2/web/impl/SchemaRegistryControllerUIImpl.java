@@ -53,53 +53,72 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
     private final static String DATAMODELSCHEMA = "/static/jsonSchemas/schemaRecord.json";
     private final static String UIFORMSCHEMA = "/static/jsonSchemas/uiFormSchemaRecord.json";
     private final static String ITEMSSCHEMA = "/static/jsonSchemas/itemsSchemaRecord.json";
-    
+
     private final static String DATAMODELMETADATA = "/static/jsonSchemas/metadataRecord.json";
     private final static String UIFORMMETADATA = "/static/jsonSchemas/uiFormMetadataRecord.json";
     private final static String ITEMSMETADATA = "/static/jsonSchemas/itemsMetadataRecord.json";
-    
+
     @Autowired
     private MetadataControllerImpl metadtaControllerImpl;
-    
+
     @Autowired
     private SchemaRegistryControllerImpl schemaControllerImpl;
-    
+
     @RequestMapping("/api/v1/ui/schemas")
     @ResponseBody
-    public ResponseEntity<TabulatorRemotePagination> getRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
+    public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
 
-       Pageable pageable = PageRequest.of(pgbl.getPageNumber()-1, pgbl.getPageSize(), Sort.by("id").ascending());
-         
-       ResponseEntity<List<MetadataSchemaRecord>>  responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable,  wr,  hsr,  ucb);      
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+        ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
         List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
-        
-        String pageSize =  responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
-        
+
+        String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1])/pageable.getPageSize())+1)
+                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
                 .data(schemaRecords)
                 .build();
-        
+
         return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
 
     }
-    
-    @RequestMapping("/api/v1/ui/metadataBySchemaId/{id}")
+
+    @RequestMapping("/api/v1/ui/metadata")
     @ResponseBody
-    public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@PathVariable(value = "id", required = true) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb){
+    public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
 
-        Pageable pageable = PageRequest.of(pgbl.getPageNumber()-1, pgbl.getPageSize(), Sort.by("id").ascending());
-
-        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, Arrays.asList(id),null,null, pageable, wr, hsr, ucb);
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, null, null, null, pageable, wr, hsr, ucb);
         List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
-        String pageSize =  responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
-        
+        String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1])/pageable.getPageSize())+1)
+                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
                 .data(metadataRecords)
                 .build();
-        
+
+        return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
+
+    }
+
+    @RequestMapping("/api/v1/ui/metadataBySchemaId/{id}")
+    @ResponseBody
+    public ResponseEntity<TabulatorRemotePagination> getMetadataSchemaRecordsForUi(@PathVariable(value = "id", required = true) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, Arrays.asList(id), null, null, pageable, wr, hsr, ucb);
+        List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
+
+        String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+
+        TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
+                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .data(metadataRecords)
+                .build();
+
         return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
 
     }
@@ -116,23 +135,48 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         model.addObject("request", request);
         return model;
     }
-    
-    @RequestMapping("/metadata-management/{id}")
+
+    @RequestMapping("/metadata-schema-management/{id}")
     @Override
-    public ModelAndView metadataManagement(@PathVariable(value = "id", required = true) String id,
+    public ModelAndView metadataSchemaManagement(@PathVariable(value = "id", required = true) String id,
             Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb) {
+            WebRequest wr,
+            HttpServletResponse hsr,
+            UriComponentsBuilder ucb) {
 
         EditorRequestMetadata request = EditorRequestMetadata.builder()
                 .dataModel(getJsonObject(DATAMODELMETADATA))
                 .uiForm(getJsonObject(UIFORMMETADATA))
                 .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
-        
-        ModelAndView model = new ModelAndView("metadata-management");
-         model.addObject("request", request);
+
+        ModelAndView model = new ModelAndView("metadata-schema-management");
+        model.addObject("request", request);
         return model;
+    }
+
+    @RequestMapping("/metadata-management")
+    @Override
+    public ModelAndView metadataManagement() {
+        EditorRequestSchema request = EditorRequestSchema.builder()
+                .dataModel(getJsonObject(DATAMODELMETADATA))
+                .uiForm(getJsonObject(UIFORMMETADATA))
+                .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
+
+        ModelAndView model = new ModelAndView("metadata-management");
+        model.addObject("request", request);
+        return model;
+    }
+
+    @RequestMapping("/dashboard")
+    @Override
+    public String dashboard() {
+        return "dashboard";
+    }
+
+    @RequestMapping("/")
+    @Override
+    public String startPage() {
+        return "dashboard";
     }
 
     /**
@@ -165,7 +209,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         TabulatorItems[] items = null;
         Resource resource = new ClassPathResource(path);
         try {
-            items = mapper.readValue(Files.newBufferedReader(Paths.get(resource.getURI()), StandardCharsets.UTF_8), TabulatorItems[].class);
+            items = mapper.readValue(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8), TabulatorItems[].class);
         } catch (IOException ex) {
             Logger.getLogger(SchemaRegistryControllerUIImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
