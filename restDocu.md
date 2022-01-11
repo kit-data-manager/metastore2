@@ -1532,7 +1532,7 @@ As a result, you receive a list of metadata records in descending order.
 #### Find by resourceId
 
 If you want to find all records belonging to an external resource.
-Metastore may hold multiple metadata documents per resource.
+MetaStore may hold multiple metadata documents per resource.
 (Nevertheless only one per registered schema)
 
 Command line:
@@ -3218,7 +3218,7 @@ As a result, you receive a list of metadata records in descending order.
 #### Find by resourceId
 
 If you want to find all records belonging to an external resource.
-Metastore may hold multiple metadata documents per resource.
+MetaStore may hold multiple metadata documents per resource.
 (Nevertheless only one per registered schema)
 
 Command line:

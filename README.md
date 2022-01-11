@@ -1,4 +1,4 @@
-# Metastore 2 repository
+# MetaStore 2 repository
 
 [![Build Status](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml)
 [![Codecov](https://codecov.io/gh/kit-data-manager/metastore2/branch/master/graph/badge.svg)](https://codecov.io/gh/kit-data-manager/metastore2)
@@ -228,4 +228,4 @@ user@localhost:/home/user/metastore2$bash /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/
 
 ## License
 
-The Metastore2 is licensed under the Apache License, Version 2.0.
+The MetaStore2 is licensed under the Apache License, Version 2.0.

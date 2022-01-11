@@ -36,8 +36,8 @@ public class OpenApiDefinitions{
   public OpenAPI customOpenAPI(){
     return new OpenAPI()
             .components(new Components())
-            .info(new Info().title("Metastore Microservice - RESTful API").
-                    description("This webpage describes the RESTful interface of the KIT Data Manager Metastore Microservice.").
+            .info(new Info().title("MetaStore Microservice - RESTful API").
+                    description("This webpage describes the RESTful interface of the KIT Data Manager MetaStore Microservice.").
                     version("0.1").
                     contact(
                             new Contact().

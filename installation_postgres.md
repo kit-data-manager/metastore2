@@ -35,7 +35,7 @@ To start/stop docker container afterwards use
 user@localhost:/home/user/$docker stop postgres4metastore
 user@localhost:/home/user/$docker start postgres4metastore
 ```
-## Setup Metastore2 Microservice
+## Setup MetaStore2 Microservice
 For using this database the settings in 'application.properties' should look like this:
 ```
 [...]
