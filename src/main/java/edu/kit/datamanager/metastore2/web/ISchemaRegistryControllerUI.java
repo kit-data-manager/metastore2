@@ -27,5 +27,7 @@ public interface ISchemaRegistryControllerUI {
     public ModelAndView metadataManagement();
 
     public String dashboard();
+
+    public String startPage();
     
 }

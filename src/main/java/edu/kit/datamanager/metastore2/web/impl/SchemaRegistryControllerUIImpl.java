@@ -173,6 +173,12 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         return "dashboard";
     }
 
+    @RequestMapping("/")
+    @Override
+    public String startPage() {
+        return "dashboard";
+    }
+
     /**
      * gets a JSON object from a file.
      *

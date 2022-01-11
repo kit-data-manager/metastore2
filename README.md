@@ -177,7 +177,7 @@ Two services may be customized to your needs.
 ## First steps
 As soon as the microservice is started, you can browse to 
 
-http://localhost:8040/dashboard
+http://localhost:8040/
 
 and start ingesting schemas and metadata documents.
 
