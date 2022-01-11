@@ -31,6 +31,7 @@ import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -69,6 +70,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
+@Tag(name = "Schema Registry")
 @Schema(description = "Schema Registry")
 public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
@@ -127,7 +129,11 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity getRecordById(String schemaId, Long version, WebRequest wr, HttpServletResponse hsr) {
+  public ResponseEntity getRecordById(
+          @PathVariable(value = "schemaId") String schemaId,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr) {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
@@ -141,7 +147,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity getSchemaDocumentById(
-          @PathVariable(value = "id") String schemaId,
+          @PathVariable(value = "schemaId") String schemaId,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr) {
@@ -194,7 +200,11 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity validate(String schemaId, Long version, MultipartFile document, WebRequest wr, HttpServletResponse hsr) {
+  public ResponseEntity validate(@PathVariable(value = "schemaId") String schemaId,
+          @RequestParam(value = "version", required = false) Long version, 
+          MultipartFile document, 
+          WebRequest wr, 
+          HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
     MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
     LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
@@ -202,7 +212,14 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(String schemaId, List<String> mimeTypes, Instant updateFrom, Instant updateUntil, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(@RequestParam(value = "schemaId", required = false)  String schemaId,
+          @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
+          @RequestParam(name = "from", required = false) Instant updateFrom,
+          @RequestParam(name = "until", required = false) Instant updateUntil,
+          Pageable pgbl, 
+          WebRequest wr, 
+          HttpServletResponse hsr, 
+          UriComponentsBuilder ucb) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaId, mimeTypes, updateFrom, updateUntil);
     // if schemaId is given return all versions 
     if (schemaId != null) {
@@ -249,8 +266,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity updateRecord(
-          @PathVariable("id") final String schemaId,
+  public ResponseEntity updateRecord(@PathVariable("schemaId") final String schemaId,
           @RequestPart(name = "record", required = false) MultipartFile record,
           @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
@@ -275,7 +291,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity deleteRecord(String schemaId, WebRequest request, HttpServletResponse hsr) {
+  public ResponseEntity deleteRecord(@PathVariable("schemaId") final String schemaId,
+          WebRequest request, 
+          HttpServletResponse hsr) {
     LOG.trace("Performing deleteRecord({}).", schemaId);
     Function<String, String> getById;
     getById = (t) -> {
@@ -312,6 +330,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       url2Path.setPath(schemaDocumentUri);
       url2Path.setUrl(record.getSchemaDocumentUri());
       url2Path.setType(record.getType());
+      url2Path.setVersion(record.getSchemaVersion());
       url2PathDao.save(url2Path);
     }
   }

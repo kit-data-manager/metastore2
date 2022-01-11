@@ -179,11 +179,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   @Override
   public boolean isPrefixSupported(String prefix) {
     boolean exists = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
-    System.out.println(prefix + ": " + exists);
+    LOGGER.trace(prefix + ": " + exists);
     if (!exists) {
       List<MetadataFormat> findAll = metadataFormatDao.findAll();
       for (MetadataFormat item : findAll) {
-        System.out.println("." + item.getMetadataPrefix());
+        LOGGER.trace("." + item.getMetadataPrefix());
         if (prefix.equalsIgnoreCase(item.getMetadataPrefix())) {
           exists = true;
           break;
@@ -476,23 +476,24 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       List<String> findMetadataPrefix = metadataFormatDao.getAllIds();
       if (LOGGER.isTraceEnabled()) {
         for (String item : findMetadataPrefix) {
-          System.out.println("SchemaID: " + item);
+          LOGGER.trace("SchemaID: " + item);
         }
       }
       LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", findMetadataPrefix, from, until, page, maxElementsPerList);
       overallCount = dataRecordDao.countBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until);
       results = dataRecordDao.findBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until, PageRequest.of(page, maxElementsPerList));
-      System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
     } else {
       LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", prefix, from, until, page, maxElementsPerList);
       overallCount = dataRecordDao.countBySchemaIdAndLastUpdateBetween(prefix, from, until);
       results = dataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
-      System.out.println("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
     }
     if (LOGGER.isTraceEnabled()) {
-      List<DataRecord> findAll = dataRecordDao.findAll();
+         LOGGER.trace("List all items:");
+     List<DataRecord> findAll = dataRecordDao.findAll();
       for (DataRecord item : findAll) {
-        System.out.println(item);
+        LOGGER.trace("-> " + item);
       }
     }
     LOGGER.trace("Setting next resumption token.");

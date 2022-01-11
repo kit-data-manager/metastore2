@@ -66,6 +66,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -486,7 +487,7 @@ public class MetadataSchemaRecordUtil {
             metadataSchemaRecord.setPid(resourceIdentifier);
             break;
           } else {
-            LOG.warn("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
+            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
           }
         }
       }
@@ -878,8 +879,11 @@ public class MetadataSchemaRecordUtil {
         LOG.trace("Validator found. Checking provided schema file.");
         LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
         if (!applicableValidator.isSchemaValid(document.getInputStream())) {
-          String message = "Metadata document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
+          String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
           LOG.warn(message);
+          if (LOG.isTraceEnabled()) {
+            LOG.trace("Schema: " + IOUtils.toString(document.getInputStream(), StandardCharsets.UTF_8.name()));
+          }
           throw new UnprocessableEntityException(message);
         }
       }
@@ -907,7 +911,7 @@ public class MetadataSchemaRecordUtil {
     }
     for (IValidator validator : metastoreProperties.getValidators()) {
       if (validator.supportsSchemaType(schemaRecord.getType())) {
-        applicableValidator = validator;
+        applicableValidator = validator.getInstance();
         LOG.trace("Found validator for schema: '{}'", schemaRecord.getType().name());
         break;
       }
@@ -1012,6 +1016,32 @@ public class MetadataSchemaRecordUtil {
       metadataFormatDao.save(mf);
     }
 
+  }
+
+  /**
+   * Returns schema record with the current version.
+   *
+   * @param metastoreProperties Configuration for accessing services
+   * @param schema Identifier of the schema.
+   * @return MetadataSchemaRecord ResponseEntity in case of an error.
+   * @throws IOException Error reading document.
+   */
+  public static MetadataSchemaRecord getCurrentSchemaRecord(MetastoreConfiguration metastoreProperties,
+          ResourceIdentifier schema) {
+    MetadataSchemaRecord msr;
+    if (schema.getIdentifierType() == IdentifierType.INTERNAL) {
+      msr = MetadataRecordUtil.getCurrentInternalSchemaRecord(metastoreProperties, schema.getIdentifier());
+    } else {
+      msr = new MetadataSchemaRecord();
+      Optional<Url2Path> url2path = url2PathDao.findByUrl(schema.getIdentifier());
+      Long version = 1l;
+      if (url2path.isPresent()) {
+        version = url2path.get().getVersion();
+      }
+      msr.setSchemaVersion(version);
+    }
+
+    return msr;
   }
 
   /**

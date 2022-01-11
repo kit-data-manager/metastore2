@@ -37,6 +37,8 @@ public class Url2Path implements Serializable {
   private String url;
   @NotBlank(message = "Path of schema document linked to identifier.")
   private String path;
+  @NotBlank(message = "Version of the schema document.")
+  private Long version;
   @Enumerated(EnumType.STRING)
   @NotBlank(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
   private SCHEMA_TYPE type;

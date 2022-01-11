@@ -36,10 +36,10 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -78,6 +78,7 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
+@Tag(name = "Metadata Repository")
 @Schema(description = "Metadata Resource Management")
 public class MetadataControllerImpl implements IMetadataController {
 

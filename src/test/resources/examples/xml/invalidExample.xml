@@ -1,0 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
+<example:metadata xmlns:example="http://www.example.org/schema/xsd/" >
+    <example:invalid>My first XML document</example:invalid>
+</example:metadata>

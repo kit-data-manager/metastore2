@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+        xmlns="http://www.example.org/schema/xsd/"
+        xmlns:xs="http://www.w3.org/2001/XMLSchema"
+        elementFormDefault="qualified" attributeFormDefault="unqualified">
+<xs:element name="metadata">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="title" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+</xs:schema>

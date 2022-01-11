@@ -22,6 +22,7 @@ import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
 import javax.servlet.Filter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -47,52 +48,58 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-  @Autowired
-  private Logger logger;
+    @Autowired
+    private Logger logger;
 
-  public WebSecurityConfig(){
-  }
+    @Value("${metastore.security.enable-csrf:true}")
+    private boolean enableCsrf;
+    @Value("${metastore.security.allowedOriginPattern:http[*]://localhost:[*]}")
+    private String allowedOriginPattern;
 
-  @Override
-  public void configure(AuthenticationManagerBuilder auth) throws Exception{
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
-  }
+    public WebSecurityConfig() {
+    }
 
-  @Override
-  protected void configure(HttpSecurity http) throws Exception{
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            .and()
-            .csrf().disable()
-            .addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    @Override
+    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+        auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
+    }
 
-    // if(!applicationProperties.isAuthEnabled()){
-    //   logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-    httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
-    // } else{
-    //   logger.info("Authentication is ENABLED.");
-    //}
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+        HttpSecurity httpSecurity = http.authorizeRequests()
+                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+        if (!enableCsrf) {
+            httpSecurity.csrf().disable();
+        }
+        httpSecurity.addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
 
-    httpSecurity.
-            authorizeRequests().
-            antMatchers("/api/v1").authenticated();
+        // if(!applicationProperties.isAuthEnabled()){
+        //   logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+        httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
+        // } else{
+        //   logger.info("Authentication is ENABLED.");
+        //}
 
-    http.headers().cacheControl().disable();
-  }
+        httpSecurity.
+                authorizeRequests().
+                antMatchers("/api/v1").authenticated();
 
-  @Bean
-  public HttpFirewall allowUrlEncodedSlashHttpFirewall(){
-    DefaultHttpFirewall firewall = new DefaultHttpFirewall();
-    firewall.setAllowUrlEncodedSlash(true);
-    return firewall;
-  }
+        http.headers().cacheControl().disable();
+    }
 
-  @Override
-  public void configure(WebSecurity web) throws Exception{
-    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
-  }
+    @Bean
+    public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
+        DefaultHttpFirewall firewall = new DefaultHttpFirewall();
+        firewall.setAllowUrlEncodedSlash(true);
+        return firewall;
+    }
+
+    @Override
+    public void configure(WebSecurity web) throws Exception {
+        web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+    }
 
 //  @Bean
 //  CorsConfigurationSource corsConfigurationSource(){
@@ -103,23 +110,25 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
 //    source.registerCorsConfiguration("/**", config);
 //    return source;
 //  }
-  @Bean
-  public FilterRegistrationBean<?> corsFilter(){
-    final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    CorsConfiguration config = new CorsConfiguration();
-    config.setAllowCredentials(true);
-    config.addAllowedOrigin("*"); // @Value: http://localhost:8080
-    config.addAllowedHeader("*");
-    config.addAllowedMethod("*");
-    config.addExposedHeader("Content-Range");
-    config.addExposedHeader("ETag");
+    @Bean
+    public FilterRegistrationBean<?> corsFilter() {
+        logger.info("CSRF enabled: '{}'", enableCsrf);
+        logger.info("CORS: allowedOriginPatterns: '{}'", allowedOriginPattern);
+        final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(true);
+        config.addAllowedOriginPattern(allowedOriginPattern); // @Value: http://localhost:8080
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.addExposedHeader("Content-Range");
+        config.addExposedHeader("ETag");
 
-    source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean<Filter> bean;
-    bean = new FilterRegistrationBean<>(new CorsFilter(source));
-    bean.setOrder(0);
-    return bean;
-  }
+        source.registerCorsConfiguration("/**", config);
+        FilterRegistrationBean<Filter> bean;
+        bean = new FilterRegistrationBean<>(new CorsFilter(source));
+        bean.setOrder(0);
+        return bean;
+    }
 
 //  @Bean
 //  CorsConfigurationSource corsConfigurationSource(){
