@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [0.3.7] - 2022-01-11
+### Added
+- First version of GUI for MetaStore.
+
 ## [0.3.6] - 2021-12-18
 ### Security
 - Fix for CWE-611, CWE-776, CWE-827, CWE-352
