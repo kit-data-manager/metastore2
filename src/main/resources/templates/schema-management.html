@@ -53,18 +53,12 @@ and open the template in the editor.
         options = /*[[${request}]]*/ {};
         /*]]>*/
 
-        var table = {
-            layout: "fitColumns",
-            pagination: "remote",
-            ajaxURL: "/api/v1/ui/schemas",
-            paginationSize: 2
-        };
         // add modals to html
         $('body').append(modalTemplate("ALERT"));
         $('body').append(modalTemplate("FAILED"));
         $('body').append(modalTemplate("SUCCESS"));
 
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
+        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items,paginationURL: "/api/v1/ui/schemas",
             readOperation: function (rowColumnvalue) {
                 readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
                     var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
@@ -117,8 +111,12 @@ and open the template in the editor.
                 ,
                 buttonTitle: "Register new Schema"},
             listOperation: function (rowColumnvalue) {
-                window.location.href = "/metadata-management/" + rowColumnvalue.schemaId;
-            }
+                window.location.href = "/metadata-schema-management/" + rowColumnvalue.schemaId;
+            },
+
+            returnOperation: {callback: function () {
+                    window.location.href = "/dashboard";
+                }, buttonTitle: "Dashboard"}
 
         };
         $('#table-schemas').metadataeditorTable(inputs);
@@ -203,7 +201,7 @@ and open the template in the editor.
         function readSchemaRecord(rowColumnValue, callback) {
             $.ajax({
                 type: "GET",
-                url: "api/v1/schemas/" + rowColumnValue.schemaId + "?version=" + rowColumnValue.schemaVersion,
+                url: "/api/v1/schemas/" + rowColumnValue.schemaId + "?version=" + rowColumnValue.schemaVersion,
                 contentType: "application/json",
                 dataType: 'json',
                 headers: {

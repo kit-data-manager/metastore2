@@ -92,10 +92,8 @@ function generateIcon(fontAwesome) {
  */
 var defaultTableLayout = {
     layout: "fitColumns",
-    height: "100%",
-    paginationSize: 10,
-    pagination: "local",
-    placeholder: "No Data Set"
+    pagination: "remote",
+    paginationSize: 2
 };
 //form element
 var formElt = null;
@@ -295,15 +293,6 @@ editorDefinitionTable.prototype.initializeInputsTable = function (options, rende
         _throw("JSON Data Model is missing");
     }
 
-//    if (options.resource !== undefined && options.resource !== null && options.resource !== '') {
-//        this.resource = options.resource;
-////    } else if ((options.readOperation !== undefined) || (options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
-//    } 
-//    else if ((options.updateOperation !== undefined) || (options.deleteOperation !== undefined)) {
-//
-//        _throw("JSON resource is missing");
-//    }
-
     if (options.items !== undefined && options.items !== null && options.items !== '') {
         if (options.items.length <= 6) {
             this.items = options.items;
@@ -356,8 +345,11 @@ editorDefinitionTable.prototype.initializeInputsTable = function (options, rende
 
     if (options.tableLayout !== undefined && options.tableLayout !== null && options.tableLayout !== '') {
         this.tableLayout = options.tableLayout;
-    } else {
+    } else if (options.paginationURL !== undefined && options.paginationURL !== null && options.paginationURL !== '') {
+        defaultTableLayout.ajaxURL = options.paginationURL;
         this.tableLayout = defaultTableLayout;
+    }else{
+        _throw("Table layout or an AJAX Pagination URL should be given");
     }
 
     this.uiForm = options.uiForm || "*";
@@ -378,7 +370,6 @@ editorDefinitionForm.prototype.initializeInputsForm = function (options, renderE
     this.uiForm = options.uiForm || "*";
     this.resource = options.resource || null;
     this.renderElt = renderElt;
-//    this.buttonTitle = options.buttonTitle;
 };
 /**
  * Based on the given operation, a form will be generated.

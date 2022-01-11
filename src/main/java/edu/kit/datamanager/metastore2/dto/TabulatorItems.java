@@ -25,4 +25,6 @@ public class TabulatorItems {
      */
     private String field;
     
+    private String editor;
+    
 }

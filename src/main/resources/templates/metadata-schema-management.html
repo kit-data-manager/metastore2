@@ -53,10 +53,12 @@ and open the template in the editor.
         options = /*[[${request}]]*/ {};
         /*]]>*/
 
+        var currentUrl = window.location.href;
+        var schemaId = currentUrl.substring(currentUrl.indexOf("/metadata-schema-management/") + "/metadata-schema-management/".length, currentUrl.length);
         var table = {
             layout: "fitColumns",
             pagination: "remote",
-            ajaxURL: "/api/v1/ui/metadata/",
+            ajaxURL: "/api/v1/ui/metadataBySchemaId/" + schemaId,
             paginationSize: 2
         };
         // add modals to html
@@ -82,7 +84,7 @@ and open the template in the editor.
             },
             updateOperation: function (rowColumnvalue) {
                 $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
-                    $.getJSON("/jsonSchemas/uiFormmetadataRecord.json", function (uiForm) {
+                    $.getJSON("/jsonSchemas/uiFormMetadataRecord.json", function (uiForm) {
                         var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                         $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
                             readSchema(options.resource.schema.identifier, function (metadataDataModel) {
@@ -115,7 +117,7 @@ and open the template in the editor.
                                 if (record.schemaVersion !== undefined) {
                                     url = url + "?version=" + record.schemaVersion;
                                 }
-
+                                
                                 //upload the metadata document
                                 var input = $('.input-file');
                                 if (input[0].value.length !== 0) {
@@ -135,13 +137,6 @@ and open the template in the editor.
                                         });
                                     });
                                 }
-
-                                readSchema(url, function (schemaDocument) {
-                                    options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
-                                    $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
-                                        createMetadataRecord(metadataRecord, metadata);
-                                    });
-                                });
                             });
                         });
                     });
@@ -150,8 +145,8 @@ and open the template in the editor.
                 buttonTitle: "Register new Metadata Document"},
 
             returnOperation: {callback: function () {
-                    window.location.href = "/dashboard";
-                }, buttonTitle: "Dashboard"}
+                    window.location.href = "/schema-management";
+                }, buttonTitle: "Schema Records"}
 
         };
         $('#table-metadata').metadataeditorTable(inputs);
@@ -162,19 +157,16 @@ and open the template in the editor.
          * @param {type} valueDocument JSOn value of the metadata document.
          * @returns {undefined}
          */
- function updateMetadataRecord(valueRecord, valueSchema) {
+        function updateMetadataRecord(valueRecord, valueDocument) {
 
             var formData = new FormData();
             var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
-            const recordFile = new File([blobRecord], 'recordFile1.json');
-
-          
-                var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
-                const schemaFile = new File([blobSchema], 'schemaFile1.json');
-                formData.append("document", schemaFile);
-          
-
+            const recordFile = new File([blobRecord], 'recordFile.json');
             formData.append("record", recordFile);
+
+            var blobDocument = new Blob([JSON.stringify(JSON.parse(valueDocument), null, 2)], {type: "application/json"});
+            const documentFile = new File([blobDocument], 'documentFile.json');
+            formData.append("document", documentFile);
 
             generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
                 if (status === "success") {
@@ -189,7 +181,7 @@ and open the template in the editor.
                         data: formData,
                         success: function (result) {
                             $("#formModal").modal('hide');
-                            showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
+                            showModal("SUCCESS", "Operation has been sucessfully executed!", "");
                         },
                         error: function (result) {
                             $("#formModal").modal('hide');
