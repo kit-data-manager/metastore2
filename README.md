@@ -176,12 +176,23 @@ Two services may be customized to your needs.
 ## First steps
 As soon as the microservice is started, you can browse to 
 
+http://localhost:8040/dashboard
+
+and start ingesting schemas and metadata documents.
+
+If you want to use a script for doing so please refer to 
+
 http://localhost:8040/swagger-ui.html
 
-in order to see available RESTful endpoints and their documentation. Furthermore, you can use this Web interface to test single API calls in order to get familiar with the 
-service. A small documentation guiding you through the first steps of using the RESTful API you can find at
+in order to see available RESTful endpoints and their documentation. Furthermore, 
+you can use this Web interface to test single API calls in order to get familiar with the 
+service. 
+
+A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 http://localhost:8040/static/docs/documentation.html
+
+
 
 
 ## Setup for production mode
