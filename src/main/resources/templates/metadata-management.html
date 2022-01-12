@@ -82,7 +82,7 @@ and open the template in the editor.
             },
             updateOperation: function (rowColumnvalue) {
                 $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
-                    $.getJSON("/jsonSchemas/uiFormmetadataRecord.json", function (uiForm) {
+                    $.getJSON("/jsonSchemas/uiFormMetadataRecord.json", function (uiForm) {
                         var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                         $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
                             readSchema(options.resource.schema.identifier, function (metadataDataModel) {
