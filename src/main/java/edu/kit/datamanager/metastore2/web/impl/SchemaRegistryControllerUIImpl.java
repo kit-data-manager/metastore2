@@ -17,8 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -76,7 +74,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
 
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .lastPage(tabulatorLastPage(pageSize, pageable))
                 .data(schemaRecords)
                 .build();
 
@@ -95,7 +93,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
 
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .lastPage(tabulatorLastPage(pageSize, pageable))
                 .data(metadataRecords)
                 .build();
 
@@ -115,7 +113,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
 
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .lastPage(tabulatorLastPage(pageSize, pageable))
                 .data(metadataRecords)
                 .build();
 
@@ -214,6 +212,19 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
             Logger.getLogger(SchemaRegistryControllerUIImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
         return items;
+    }
+
+    /**
+     * computes the total number of the available pages. 
+     * @param pageSize pagination size
+     * @param pageable page object
+     * @return the total number of the available pages
+     */
+    private int tabulatorLastPage(String pageSize, Pageable pageable) {
+        if ((Integer.parseInt(pageSize.split("/")[1]) % pageable.getPageSize()) == 0){
+            return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize();
+        }
+        return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()+1;
     }
 
 }
