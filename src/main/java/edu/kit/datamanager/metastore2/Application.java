@@ -184,6 +184,7 @@ public class Application {
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(schemaResourceService);
     rbc.setContentInformationService(schemaInformationService);
@@ -225,6 +226,7 @@ public class Application {
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(applicationProperties.getMetadataFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(dataResourceService);
     rbc.setContentInformationService(contentInformationService);
