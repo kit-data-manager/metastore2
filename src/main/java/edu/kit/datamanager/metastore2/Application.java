@@ -206,6 +206,7 @@ public class Application {
     schemaResourceService.configure(rbc);
     schemaInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
     MetadataRecordUtil.setSchemaConfig(rbc);
@@ -248,6 +249,7 @@ public class Application {
     dataResourceService.configure(rbc);
     contentInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
     
