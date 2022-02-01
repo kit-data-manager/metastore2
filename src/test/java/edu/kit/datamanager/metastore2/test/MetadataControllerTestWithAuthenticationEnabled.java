@@ -20,7 +20,10 @@ import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.Agent;
 import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.io.File;
 import java.io.IOException;
@@ -272,7 +275,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
-    
+
     contentInformationDao.deleteAll();
     dataResourceDao.deleteAll();
     metadataRecordDao.deleteAll();
@@ -328,9 +331,6 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     ObjectMapper map = new ObjectMapper();
     MetadataRecord result = map.readValue(mvcResult.getResponse().getContentAsString(), MetadataRecord.class);
     Assert.assertNotNull(result);
-    for (AclEntry item : result.getAcl()) {
-      System.out.println(item.getSid());
-    }
   }
 
   @Test
@@ -862,25 +862,56 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   @Test
-  public void testGetRecordById() throws Exception {
-    String metadataRecordId = createDCMetadataRecord();
+  public void testGetRecord() throws Exception {
+    MetadataRecord record = new MetadataRecord();
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> acl = new HashSet<>();
+    acl.add(new AclEntry("test1", PERMISSION.ADMINISTRATE));
+    acl.add(new AclEntry("test2", PERMISSION.WRITE));
+    acl.add(new AclEntry("test3", PERMISSION.READ));
+    acl.add(new AclEntry("test4", PERMISSION.NONE));
+    record.setAcl(acl);
+    ObjectMapper mapper = new ObjectMapper();
 
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
+    String etag1 = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+    MetadataRecord mr = mapper.readValue(body, MetadataRecord.class);
+    String locationUri = result.getResponse().getHeader("Location");
+    String recordId = mr.getId();
+
+    result = this.mockMvc.perform(get(locationUri).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    ObjectMapper map = new ObjectMapper();
-    MetadataRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertNotNull(result);
-    Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, result.getSchema().getIdentifierType());
-    String schemaUrl = result.getSchema().getIdentifier();
-    Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
-    Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
-    Assert.assertTrue(schemaUrl.contains(SCHEMA_ID));
-    //Schema URI must not be the actual file URI but the link to the REST endpoint for downloading the schema
-    Assert.assertNotEquals("file:///tmp/dc.xml", result.getMetadataDocumentUri());
+    String content = result.getResponse().getContentAsString();
+    String etag2 = result.getResponse().getHeader("ETag");
+
+    Assert.assertEquals(etag1, etag2);
+    Assert.assertEquals(body, content);
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + recordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    content = result.getResponse().getContentAsString();
+    etag2 = result.getResponse().getHeader("ETag");
+
+    Assert.assertEquals(etag1, etag2);
+    Assert.assertEquals(body, content);
   }
 
   @Test

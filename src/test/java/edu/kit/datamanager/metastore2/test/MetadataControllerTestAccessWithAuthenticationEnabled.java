@@ -22,6 +22,7 @@ import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -49,6 +50,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
 import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.annotation.DirtiesContext;
@@ -151,51 +153,17 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
           + "  <dc:type>info:eu-repo/semantics/other</dc:type>\n"
           + "  <dc:type>dataset</dc:type>\n"
           + "</oai_dc:dc>";
-  private final static String DC_DOCUMENT_VERSION_2 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-          + "  <dc:creator>Else, Someone</dc:creator>\n"
-          + "  <dc:creator>Mungall, Chris</dc:creator>\n"
-          + "  <dc:date>2018-07-02</dc:date>\n"
-          + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
-          + "  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>\n"
-          + "  <dc:identifier>10.5281/zenodo.3477535</dc:identifier>\n"
-          + "  <dc:identifier>oai:zenodo.org:3477535</dc:identifier>\n"
-          + "  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/gene-ontology</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/zenodo</dc:relation>\n"
-          + "  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>\n"
-          + "  <dc:rights>http://creativecommons.org/licenses/by/4.0/legalcode</dc:rights>\n"
-          + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
-          + "  <dc:type>info:eu-repo/semantics/other</dc:type>\n"
-          + "  <dc:type>dataset</dc:type>\n"
-          + "</oai_dc:dc>";
-  private final static String DC_DOCUMENT_WRONG_NAMESPACE = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/NOT_EXIST/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-          + "  <dc:creator>Mungall, Chris</dc:creator>\n"
-          + "  <dc:date>2018-07-02</dc:date>\n"
-          + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
-          + "  <dc:identifier>oai:zenodo.org:3477535</dc:identifier>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/zenodo</dc:relation>\n"
-          + "  <dc:rights>http://creativecommons.org/licenses/by/4.0/legalcode</dc:rights>\n"
-          + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
-          + "  <dc:type>dataset</dc:type>\n"
-          + "</oai_dc:dc>";
-  private final static String DC_DOCUMENT_INVALID = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-          + "  <dc:creater>Carbon, Seth</dc:creater>\n"
-          + "</oai_dc:dc>";
-
+ 
   private String adminToken;
   private String userToken;
   private String otherUserToken;
   private String guestToken;
 
-  private String adminPrincipal = "admin";
-  private String userPrincipal = "user1";
-  private String otherUserPrincipal = "user2";
-  private String guestPrincipal = "guest";
+  private final String adminPrincipal = "admin";
+  private final String userPrincipal = "user1";
+  private final String otherUserPrincipal = "user2";
+  private final String guestPrincipal = "guest";
 
-  private DataResource sampleResource;
   private static Boolean alreadyInitialized = Boolean.FALSE;
 
   private MockMvc mockMvc;
@@ -300,7 +268,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
       int schemaNo = 1;
       for (PERMISSION user1 : PERMISSION.values()) {
         for (PERMISSION guest : PERMISSION.values()) {
-          ingestMetadataRecord(SCHEMA_ID + "_" + schemaNo, user1, guest);
+         ingestMetadataRecord(SCHEMA_ID + "_" + schemaNo, user1, guest);
           schemaNo++;
         }
       }
@@ -314,7 +282,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
             andDo(print()).andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(16)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
   }
 
   @Test
@@ -325,7 +293,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(12)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
   }
 
   @Test
@@ -336,7 +304,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(12)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
   }
 
   @Test
@@ -347,7 +315,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(16)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
   }
 
   @Test
@@ -357,7 +325,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             param("size", Integer.toString(200))).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(0)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
   }
 
   private void ingestSchemaRecord() throws Exception {
@@ -385,7 +353,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
    * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
    *
    * @param schemaId
-   * @param admin
    * @param user
    * @param guest
    * @throws Exception
@@ -416,6 +383,31 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             andDo(print()).andExpect(status().isCreated()).andReturn();
   }
 
+  /**
+   * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
+   *
+   * @param schemaId
+   * @throws Exception
+   */
+  private void ingestMetadataRecord4UnregisteredUsers(String schemaId) throws Exception {
+    MetadataRecord record = new MetadataRecord();
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier("resource of " + schemaId));
+    Set<AclEntry> aclEntries = new HashSet<>();
+      aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+      record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(schemaFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
   public static synchronized boolean isInitialized() {
     boolean returnValue = alreadyInitialized;
     alreadyInitialized = Boolean.TRUE;
@@ -427,6 +419,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
-    return result.getSchemaDocumentUri().replaceFirst("8080", "41408");
+    return result.getSchemaDocumentUri().replaceFirst("8080", "41412");
   }
 }
