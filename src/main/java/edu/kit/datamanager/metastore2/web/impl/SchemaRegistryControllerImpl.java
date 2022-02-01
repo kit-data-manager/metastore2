@@ -239,7 +239,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       if (!isAdmin) {
         List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
         if (authorizationIdentities != null) {
-          LOG.trace("Creating (READ) permission specification.");
+        LOG.trace("Creating (READ) permission specification.");
+          authorizationIdentities.add(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL);
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
           spec = spec.and(permissionSpec);
         } else {
