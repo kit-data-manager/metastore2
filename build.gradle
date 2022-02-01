@@ -104,7 +104,7 @@ dependencies {
     implementation 'xerces:xercesImpl:2.12.1'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:0.9.2"
+    implementation "edu.kit.datamanager:repo-core:0.9.3-SNAPSHOT"
     implementation "edu.kit.datamanager:service-base:0.3.2"
 
     // DOIP SDK
