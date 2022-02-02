@@ -94,6 +94,8 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestAccessWithAuthenticationEnabled {
+  
+  private final static int port = 41412;
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
@@ -103,38 +105,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
   private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryUrlResourceIdentifier("anyOtherResourceId");
-  private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-          + "        xmlns=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<import namespace=\"http://purl.org/dc/elements/1.1/\" schemaLocation=\"https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd\"/>\n"
-          + "\n"
-          + "<element name=\"dc\" type=\"oai_dc:oai_dcType\"/>\n"
-          + "\n"
-          + "<complexType name=\"oai_dcType\">\n"
-          + "  <choice minOccurs=\"0\" maxOccurs=\"unbounded\">\n"
-          + "    <element ref=\"dc:title\"/>\n"
-          + "    <element ref=\"dc:creator\"/>\n"
-          + "    <element ref=\"dc:subject\"/>\n"
-          + "    <element ref=\"dc:description\"/>\n"
-          + "    <element ref=\"dc:publisher\"/>\n"
-          + "    <element ref=\"dc:contributor\"/>\n"
-          + "    <element ref=\"dc:date\"/>\n"
-          + "    <element ref=\"dc:type\"/>\n"
-          + "    <element ref=\"dc:format\"/>\n"
-          + "    <element ref=\"dc:identifier\"/>\n"
-          + "    <element ref=\"dc:source\"/>\n"
-          + "    <element ref=\"dc:language\"/>\n"
-          + "    <element ref=\"dc:relation\"/>\n"
-          + "    <element ref=\"dc:coverage\"/>\n"
-          + "    <element ref=\"dc:rights\"/>\n"
-          + "  </choice>\n"
-          + "</complexType>\n"
-          + "\n"
-          + "</schema>";
-
+          
   private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
           + "  <dc:creator>Carbon, Seth</dc:creator>\n"
@@ -161,7 +132,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
 
   private final String adminPrincipal = "admin";
   private final String userPrincipal = "user1";
-  private final String otherUserPrincipal = "user2";
+  private final String otherUserPrincipal = "test_user";
   private final String guestPrincipal = "guest";
 
   private static Boolean alreadyInitialized = Boolean.FALSE;
@@ -264,7 +235,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
         ex.printStackTrace();
       }
 
-      ingestSchemaRecord();
+      CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, SCHEMA_ID, applicationProperties.getJwtSecret());
       int schemaNo = 1;
       for (PERMISSION user1 : PERMISSION.values()) {
         for (PERMISSION guest : PERMISSION.values()) {
@@ -272,6 +243,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
           schemaNo++;
         }
       }
+      ingestMetadataRecord4UnregisteredUsers(SCHEMA_ID + "_" + schemaNo);
     }
   }
 
@@ -328,27 +300,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
   }
 
-  private void ingestSchemaRecord() throws Exception {
-    MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId(SCHEMA_ID);
-    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    record.setMimeType(MediaType.APPLICATION_XML.toString());
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("test", PERMISSION.READ));
-    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
-
-    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
-
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
-            file(recordFile).
-            file(schemaFile).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).andExpect(status().isCreated()).andReturn();
-  }
-
   /**
    * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
    *
@@ -374,7 +325,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
@@ -399,7 +350,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).

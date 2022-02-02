@@ -185,6 +185,7 @@ public class Application {
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
     rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(schemaResourceService);
     rbc.setContentInformationService(schemaInformationService);
@@ -228,6 +229,7 @@ public class Application {
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(applicationProperties.getMetadataFolder());
     rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(dataResourceService);
     rbc.setContentInformationService(contentInformationService);
