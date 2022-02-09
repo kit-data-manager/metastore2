@@ -57,7 +57,9 @@ and open the template in the editor.
             layout: "fitColumns",
             pagination: "remote",
             ajaxURL: "/api/v1/ui/metadata/",
-            paginationSize: 2
+            paginationSize: 10,
+            paginationSizeSelector:[3, 6, 8, 10, 15, 20],
+
         };
         // add modals to html
         $('body').append(modalTemplate("ALERT"));
