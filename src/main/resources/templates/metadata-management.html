@@ -81,10 +81,14 @@
             /*<![CDATA[*/
             options = /*[[${request}]]*/ {};
             /*]]>*/
+            var currentUrl = window.location.href;
+            var url = new URL(currentUrl);
+            var schemaId = url.searchParams.get("id");
+            var ajaxURL = schemaId === null ? "/api/v1/ui/metadata/" : "/api/v1/ui/metadata?id=" + schemaId;
             var table = {
                 layout: "fitColumns",
                 pagination: "remote",
-                ajaxURL: "/api/v1/ui/metadata/",
+                ajaxURL: ajaxURL,
                 paginationSize: 10,
                 paginationSizeSelector: [3, 6, 8, 10, 15, 20],
 
