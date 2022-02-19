@@ -9,10 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
-
+- Access filter for monitoring.
 ### Changed
 
 ### Fixed
+- Fix bug listing resources without proper authorization (issue #71)
 
 ## [0.3.7] - 2022-01-11
 ### Added

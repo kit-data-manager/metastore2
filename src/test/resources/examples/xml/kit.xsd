@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema targetNamespace="http://www.example.org/kit"
+           xmlns:kit="http://www.example.org/kit"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified">
+  <xs:simpleType name="stringtype">
+    <xs:restriction base="xs:string"></xs:restriction>
+  </xs:simpleType>
+ 
+  <xs:simpleType name="employeeidtype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[a-z]{2}[0-9]{4}"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+ 
+  <xs:simpleType name="shorttype">
+    <xs:restriction base="xs:string">
+      <xs:pattern value="[A-Z\\-]{3,8}"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+ 
+  <xs:complexType name="departmenttype">
+    <xs:sequence>
+      <xs:element name="departmentname" type="kit:stringtype"></xs:element>
+      <xs:element name="shortname" type="kit:shorttype"></xs:element>
+    </xs:sequence>
+  </xs:complexType>
+ 
+  <xs:complexType name="employeetype">
+    <xs:sequence>
+      <xs:element name="name" type="kit:stringtype"></xs:element>
+      <xs:element name="department" type="kit:departmenttype"></xs:element>
+    </xs:sequence>
+    <xs:attribute name="employeeid" type="kit:employeeidtype" use="required"></xs:attribute>
+  </xs:complexType>
+
+  <xs:element name="employee" type="kit:employeetype"></xs:element>
+</xs:schema>

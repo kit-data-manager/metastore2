@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+  <name>John Doe</name>
+  <department>
+    <departmentname>Steinbuch Centre for Computing</departmentname>
+    <shortname>SCC</shortname>
+  </department>
+</employee>
