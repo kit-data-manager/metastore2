@@ -17,8 +17,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
@@ -35,8 +33,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
@@ -66,6 +64,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
 
     @RequestMapping("/api/v1/ui/schemas")
     @ResponseBody
+    @Override
     public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
 
         Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
@@ -76,7 +75,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
 
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .lastPage(tabulatorLastPage(pageSize, pageable))
                 .data(schemaRecords)
                 .build();
 
@@ -86,36 +85,18 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
 
     @RequestMapping("/api/v1/ui/metadata")
     @ResponseBody
-    public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+    @Override
+    public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
 
         Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
-        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, null, null, null, pageable, wr, hsr, ucb);
+        List<String> schemaIds = id == null ? null : Arrays.asList(id);
+        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
         List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
         String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
 
         TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
-                .data(metadataRecords)
-                .build();
-
-        return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
-
-    }
-
-    @RequestMapping("/api/v1/ui/metadataBySchemaId/{id}")
-    @ResponseBody
-    public ResponseEntity<TabulatorRemotePagination> getMetadataSchemaRecordsForUi(@PathVariable(value = "id", required = true) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
-
-        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
-
-        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, Arrays.asList(id), null, null, pageable, wr, hsr, ucb);
-        List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
-
-        String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
-
-        TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
-                .lastPage((Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize()) + 1)
+                .lastPage(tabulatorLastPage(pageSize, pageable))
                 .data(metadataRecords)
                 .build();
 
@@ -136,9 +117,9 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
         return model;
     }
 
-    @RequestMapping("/metadata-schema-management/{id}")
+    @RequestMapping("/metadata-management")
     @Override
-    public ModelAndView metadataSchemaManagement(@PathVariable(value = "id", required = true) String id,
+    public ModelAndView metadataManagement(
             Pageable pgbl,
             WebRequest wr,
             HttpServletResponse hsr,
@@ -149,33 +130,14 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
                 .uiForm(getJsonObject(UIFORMMETADATA))
                 .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
 
-        ModelAndView model = new ModelAndView("metadata-schema-management");
-        model.addObject("request", request);
-        return model;
-    }
-
-    @RequestMapping("/metadata-management")
-    @Override
-    public ModelAndView metadataManagement() {
-        EditorRequestSchema request = EditorRequestSchema.builder()
-                .dataModel(getJsonObject(DATAMODELMETADATA))
-                .uiForm(getJsonObject(UIFORMMETADATA))
-                .items(getJsonArrayOfItems(ITEMSMETADATA)).build();
-
         ModelAndView model = new ModelAndView("metadata-management");
         model.addObject("request", request);
         return model;
     }
 
-    @RequestMapping("/dashboard")
+    @RequestMapping(value = {"/dashboard", "/", ""})
     @Override
     public String dashboard() {
-        return "dashboard";
-    }
-
-    @RequestMapping("/")
-    @Override
-    public String startPage() {
         return "dashboard";
     }
 
@@ -214,6 +176,20 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
             Logger.getLogger(SchemaRegistryControllerUIImpl.class.getName()).log(Level.SEVERE, null, ex);
         }
         return items;
+    }
+
+    /**
+     * computes the total number of the available pages.
+     *
+     * @param pageSize pagination size
+     * @param pageable page object
+     * @return the total number of the available pages
+     */
+    private int tabulatorLastPage(String pageSize, Pageable pageable) {
+        if ((Integer.parseInt(pageSize.split("/")[1]) % pageable.getPageSize()) == 0) {
+            return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize();
+        }
+        return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize() + 1;
     }
 
 }

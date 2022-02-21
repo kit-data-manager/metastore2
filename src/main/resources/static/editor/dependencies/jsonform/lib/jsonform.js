@@ -3237,9 +3237,11 @@
                         schemaElement.required = false;
                     }
                     if (schemaElement.type.length > 1) {
-                        throw new Error("Cannot process schema element with multiple types.");
+                        //throw new Error("Cannot process schema element with multiple types.");
+                        schemaElement.type = 'string';
+                    } else {
+                        schemaElement.type = _.first(schemaElement.type);
                     }
-                    schemaElement.type = _.first(schemaElement.type);
                 }
 
                 if ((schemaElement.type === 'string') &&
@@ -3462,7 +3464,21 @@
 
         var options = this.formDesc;
         if (options.validate !== false) {
-            const ajv = new ajv7.default({strict: false, allErrors: true});
+            var ajv;
+            var schemaVersion = jsonform.util.getObjKey(this.formDesc.schema, "$schema", true);
+            if (schemaVersion == undefined) {
+                console.log("schema Version undefined. Default schema version is draft/2019-09");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            } else if (schemaVersion == "https://json-schema.org/draft/2020-12/schema") {
+                console.log("Schema version defined: https://json-schema.org/draft/2020-12/schema")
+                ajv = new ajv2020.default({strict: false, allErrors: true});
+            } else if(schemaVersion == "https://json-schema.org/draft/2019-09/schema") {
+                console.log("schema Version defined: https://json-schema.org/draft/2019-09/schema");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            }else{
+                console.log("schema Version unknown. Default schema version is draft/2019-09");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            }
 
             try {
                 const validate = ajv.compile(this.formDesc.schema);
@@ -3644,18 +3660,18 @@
         var dataPath;
         for (var i = 0; i < errors.length; i++) {
             if (errors[i].params.missingProperty !== undefined && errors[i].dataPath.length !== 0) {
-                
+
                 key = errors[i].dataPath.substring(1) + "." + errors[i].params.missingProperty;
             } else if (errors[i].params.missingProperty !== undefined) {
                 key = errors[i].params.missingProperty;
-            }else if (errors[i].dataPath.length !== 0) {
-                 key = errors[i].dataPath.substring(1);
+            } else if (errors[i].dataPath.length !== 0) {
+                key = errors[i].dataPath.substring(1);
             }
             if (key !== undefined) {
-                key = key.replace(/\//g, "---");  
+                key = key.replace(/\//g, "---");
                 key = key.replace(/\./g, "---");
-            } else if (dataPath !== undefined){
-                
+            } else if (dataPath !== undefined) {
+
                 key = dataPath.replace(/\//g, "---");
                 key = key.replace(/\./g, "---");
             }
@@ -3725,9 +3741,9 @@
                     escapeHTML(JSON.stringify(options.transloadit.params)) +
                     '\'>');
         }
-        
+
         //if (typeof options.files !== 'undefined' && options.files.length > 0) {
-            
+
         //}
 
 
