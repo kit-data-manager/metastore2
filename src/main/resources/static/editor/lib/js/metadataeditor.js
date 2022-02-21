@@ -93,7 +93,9 @@ function generateIcon(fontAwesome) {
 var defaultTableLayout = {
     layout: "fitColumns",
     pagination: "remote",
-    paginationSize: 2
+    paginationSize: 10,
+    paginationSizeSelector:[3, 6, 8, 10, 15, 20],
+
 };
 //form element
 var formElt = null;
