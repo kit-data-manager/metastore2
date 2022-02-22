@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.filter;
 
+import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
 import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -41,10 +42,15 @@ public class AccessLoggingFilter implements Filter {
           ServletRequest request,
           ServletResponse response,
           FilterChain chain) throws IOException, ServletException {
+    String authToken;
 
     HttpServletRequest req = (HttpServletRequest) request;
     HttpServletResponse resp = (HttpServletResponse) response;
     chain.doFilter(request, response);
-    LOGGER.trace("{}, {}, {}, {}", req.getMethod(), req.getRemoteUser(), req.getRequestURI(), resp.getStatus());
+    
+    // authToken may be null if authentication is disabled.
+    authToken = req.getHeader(JwtAuthenticationFilter.AUTHORIZATION_HEADER);
+    
+    LOGGER.trace("'{}' access to '{}' -> Status: '{}'", req.getMethod(), req.getRequestURI(), resp.getStatus(), authToken);
   }
 }
