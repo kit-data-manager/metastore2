@@ -5,13 +5,13 @@
     {
         "title": "Related Resource",
         "field": "relatedResource.identifier"
-       },
+    },
+    {
+        "title": "Record Version",
+        "field": "recordVersion"
+    },
     {
         "title": "Date Created",
         "field": "createdAt"
-    },
-    {
-        "title": "Date Updated",
-        "field": "lastUpdate"
     }
 ]

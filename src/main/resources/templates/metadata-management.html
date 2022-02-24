@@ -128,36 +128,60 @@
                     $("#formModal").modal('show');
                 },
                 updateOperation: function (rowColumnvalue) {
-                    $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
-                        $.getJSON("/jsonSchemas/uiFormMetadataRecord.json", function (uiForm) {
-                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
+                    $.getJSON("/jsonSchemas/metadataRecordForUpdate.json", function (dataModel) {
+                        $.getJSON("/jsonSchemas/uiFormMetadataRecordForUpdate.json", function (uiForm) {
+                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Update/Generate Metadata Document"};
                             $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
-                                readSchema(options.resource.schema.identifier, function (metadataDataModel) {
-                                    readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
-                                        try {
-                                            JSON.parse(metadataResource);
-                                            options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: JSON.parse(metadataResource), buttonTitle: "Update"};
-                                            $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
-                                                var blobDocument = new Blob([updatedMetadataDocument]);
-                                                const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.json');
-                                                updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
-                                            });
-                                        } catch (e) {
-                                            $.getJSON("/jsonSchemas/xmlDocumentViewerWrapper.json", function (dataModel) {
-                                                $.getJSON("/jsonSchemas/uiFormXmlDocumentViewerWrapper.json", function (uiForm) {
-                                                    var resource = {metadata: metadataResource};
-                                                    options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: resource, buttonTitle: "Update"};
-                                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
-                                                        var xmlMetadataDocument = JSON.parse(updatedMetadataDocument).metadata;
-                                                        var blobDocument = new Blob([xmlMetadataDocument]);
-                                                        const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.xml');
+                                var input = document.getElementsByClassName('input-file');
+                                if (input[0].value.length !== 0) {
+                                    let metadataDocumentFile = input[0].files[0];
+                                    updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
+                                } else {
+                                    readSchema(options.resource.schema.identifier, function (metadataDataModel) {
+                                        readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
+                                            try {
+                                                JSON.parse(metadataResource);
+                                                options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: JSON.parse(metadataResource), buttonTitle: "Update"};
+                                                $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
+                                                    //check if the updatedMetdataDocumet and metadataResource are the same
+                                                    if (_.isEqual(JSON.parse(metadataResource), JSON.parse(updatedMetadataDocument))) {
+                                                        //the updatedMetdataDocumet and metadataResource are the same
+                                                        //update only the record
+                                                        updateMetadataRecord(updatedMetadataRecord, null);
+
+                                                    } else {
+                                                        //the updatedMetdataDocumet and metadataResource are not the same
+                                                        //update the MD record and the MD document
+                                                        var blobDocument = new Blob([updatedMetadataDocument]);
+                                                        const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.json');
                                                         updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
+                                                    }
+                                                });
+                                            } catch (e) {
+                                                $.getJSON("/jsonSchemas/xmlDocumentViewerWrapper.json", function (dataModel) {
+                                                    $.getJSON("/jsonSchemas/uiFormXmlDocumentViewerWrapper.json", function (uiForm) {
+                                                        var resource = {metadata: metadataResource};
+                                                        options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: resource, buttonTitle: "Update"};
+                                                        $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
+                                                            var xmlMetadataDocumentAsString = JSON.parse(updatedMetadataDocument).metadata;
+                                                            //delete line breaks from the strings
+                                                            xmlMetadataDocumentAsString = xmlMetadataDocumentAsString.replace(/\r?\n|\r/g, "");
+                                                            metadataResource = metadataResource.replace(/\r?\n|\r/g, "");
+                                                            //check if the updatedMetdataDocumet and metadataResource are the same
+                                                            if (xmlMetadataDocumentAsString === metadataResource) {
+                                                                updateMetadataRecord(updatedMetadataRecord, null);
+                                                            } else {
+                                                                var blobDocument = new Blob([xmlMetadataDocumentAsString]);
+                                                                const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.xml');
+                                                                updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
+                                                            }
+                                                        });
                                                     });
                                                 });
-                                            });
-                                        }
+                                            }
+                                        });
                                     });
-                                });
+                                }
                             });
                         });
                     });
@@ -236,13 +260,14 @@
              * @returns {undefined}
              */
             function updateMetadataRecord(valueRecord, metadataDocumentFile) {
-
                 var formData = new FormData();
                 var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
                 const recordFile = new File([blobRecord], 'recordFile.json');
 
-                formData.append("document", metadataDocumentFile);
                 formData.append("record", recordFile);
+                if (metadataDocumentFile !== null) {
+                    formData.append("document", metadataDocumentFile);
+                }
 
                 generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
                     if (status === "success") {
