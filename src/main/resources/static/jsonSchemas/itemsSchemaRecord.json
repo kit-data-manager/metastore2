@@ -5,16 +5,26 @@
     {
         "title": "Schema Version",
         "field": "schemaVersion",
-        "editor":"input"},
+        "editor":"input"
+    },
     {
         "title": "Label",
-        "field": "label"  },
+        "field": "label"  
+    },
     {
         "title": "Date Created",
-        "field": "createdAt"
+        "field": "createdAt",
+        "formatter":"datetime",
+        "formatterParams":{
+            "outputFormat":"YYYY-MM-DD HH:mm"
+        }
     },
     {
         "title": "Date Updated",
-        "field": "lastUpdate"
+        "field": "lastUpdate",
+        "formatter":"datetime",
+        "formatterParams":{
+            "outputFormat":"YYYY-MM-DD HH:mm"
+        }
     }
 ]

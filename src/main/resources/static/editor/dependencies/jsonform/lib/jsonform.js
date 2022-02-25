@@ -268,7 +268,24 @@
             'inputfield': true
         }
     };
-
+    
+    var dateTimeFieldTemplate = function (type) {
+        return {
+            'template': '<input type="' + type + '" ' +
+                    'class=\'form-control<%= (fieldHtmlClass ? " " + fieldHtmlClass : "") %>\'' +
+                    'name="<%= node.name %>" value="<%= escape(value.slice(0, 16).replace("T"," ")) %>" id="<%= id %>"' +
+                    '<%= (node.disabled? " disabled" : "")%>' +
+                    '<%= (node.readOnly ? " readonly=\'readonly\'" : "") %>' +
+                    '<%= (node.schemaElement && (node.schemaElement.step > 0 || node.schemaElement.step == "any") ? " step=\'" + node.schemaElement.step + "\'" : "") %>' +
+                    '<%= (node.schemaElement && node.schemaElement.maxLength ? " maxlength=\'" + node.schemaElement.maxLength + "\'" : "") %>' +
+                    '<%= (node.schemaElement && node.schemaElement.required && (node.schemaElement.type !== "boolean") ? " required=\'required\'" : "") %>' +
+                    '<%= (node.placeholder? " placeholder=" + \'"\' + escape(node.placeholder) + \'"\' : "")%>' +
+                    ' />',
+            'fieldtemplate': true,
+            'inputfield': true
+        }
+    };
+    
     jsonform.elementTypes = {
         'none': {
             'template': ''
@@ -279,7 +296,7 @@
         'text': inputFieldTemplate('text'),
         'password': inputFieldTemplate('password'),
         'date': inputFieldTemplate('date'),
-        'datetime': inputFieldTemplate('datetime'),
+        'datetime': dateTimeFieldTemplate('datetime'),
         'datetime-local': inputFieldTemplate('datetime-local'),
         'email': inputFieldTemplate('email'),
         'month': inputFieldTemplate('month'),
@@ -1450,8 +1467,7 @@
             }
         }
     };
-
-
+    
 //Allow to access subproperties by splitting "."
     /**
      * Retrieves the key identified by a path selector in the structured object.

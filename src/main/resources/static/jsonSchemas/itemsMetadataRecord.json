@@ -12,6 +12,10 @@
     },
     {
         "title": "Date Created",
-        "field": "createdAt"
+        "field": "createdAt",
+        "formatter":"datetime",
+        "formatterParams":{
+            "outputFormat":"YYYY-MM-DD HH:mm"
+        }
     }
 ]
