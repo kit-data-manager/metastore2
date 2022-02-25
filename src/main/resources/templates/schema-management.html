@@ -192,7 +192,7 @@
                             },
                             error: function (result) {
                                 $("#formModal").modal('hide');
-                                var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                                var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                                 showModal("FAILED", "Operation failed: " + message, "");
                             }
                         });
@@ -216,7 +216,7 @@
                         callback(result);
                     },
                     error: function (result) {
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });
@@ -242,7 +242,7 @@
                         callback(result);
                     },
                     error: function (result) {
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });
@@ -276,7 +276,7 @@
                     },
                     error: function (result) {
                         $("#formModal").modal('hide');
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });
