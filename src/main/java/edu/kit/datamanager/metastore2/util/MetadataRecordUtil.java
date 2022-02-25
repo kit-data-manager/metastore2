@@ -55,6 +55,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
+import org.datacite.schema.kernel_4.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -127,11 +128,6 @@ public class MetadataRecordUtil {
       record.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
     }
 
-    if (record.getId() != null) {
-      String message = "Not expecting record id to be assigned by user.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
     // validate document
     long nano2 = System.nanoTime() / 1000000;
     // validate schema document
@@ -142,6 +138,10 @@ public class MetadataRecordUtil {
     long nano3 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
+    // add id as internal identifier if exists
+    if (dataResource.getId() != null) {
+      dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
+    }
     long nano4 = System.nanoTime() / 1000000;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     long nano5 = System.nanoTime() / 1000000;

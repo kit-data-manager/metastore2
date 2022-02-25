@@ -328,7 +328,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
-    record.setId("SomeInvalidId");
+    record.setId("AnyValidId");
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -340,7 +340,41 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
+
+  @Test
+  public void testCreateRecordWithIdTwice() throws Exception {
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    record.setRelatedResource(RELATED_RESOURCE);
+    record.setId("AnyValidId");
+    Set<AclEntry> aclEntries = new HashSet<>();
+//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+//    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
+    record.setRelatedResource(RELATED_RESOURCE_2);
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+ 
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile)).
+            andDo(print()).
+            andExpect(status().isConflict()).
+            andReturn();
   }
 
   @Test

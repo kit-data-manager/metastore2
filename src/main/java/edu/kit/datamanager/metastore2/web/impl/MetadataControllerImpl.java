@@ -157,10 +157,6 @@ public class MetadataControllerImpl implements IMetadataController {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
     }
 
-    if (record.getId() != null) {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not expecting record id to be assigned by user.");
-    }
-
     LOG.debug("Test for existing metadata record for given schema and resource");
     ResourceIdentifier schemaIdentifier;
     try {
