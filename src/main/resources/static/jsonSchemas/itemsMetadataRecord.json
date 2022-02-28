@@ -8,7 +8,8 @@
     },
     {
         "title": "Record Version",
-        "field": "recordVersion"
+        "field": "recordVersion",
+        "editor":"input"
     },
     {
         "title": "Date Created",
