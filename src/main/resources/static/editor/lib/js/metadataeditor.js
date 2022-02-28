@@ -533,6 +533,7 @@ editorDefinitionForm.prototype.generateFilledReadForm = function (callback, butt
                     "title": buttonTitle
                 }
             ],
+            "validate": false,
             value: this.resource,
             readonly: "true",
             "onSubmit": function () {
