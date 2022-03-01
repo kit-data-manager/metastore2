@@ -278,7 +278,7 @@ public class MetadataRecordUtilTest {
     fail("Don't reach this line!");
   }
 
-  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  @Test(expected = edu.kit.datamanager.exceptions.UnprocessableEntityException.class)
   public void testCreateMetadataRecordExeption4d() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();

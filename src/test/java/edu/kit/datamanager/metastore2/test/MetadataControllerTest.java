@@ -1039,6 +1039,19 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testUpdateRecordWithInvalidSetting4Json() throws Exception {
+    CreateSchemaUtil.ingestXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V1, schemaConfig.getJwtSecret());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, "testUpdate", 2l, "document", CreateSchemaUtil.XML_DOCUMENT_V2, schemaConfig.getJwtSecret());
+    // Change only version of schema to a version which is not valid.
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, "testUpdate", 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
+    // Change to a nonexistent version of schema.
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, "testUpdate", Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isBadRequest());
+    // Change to another schema
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
+ }
+
+  @Test
   public void testDeleteRecordWithoutAuthentication() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
 

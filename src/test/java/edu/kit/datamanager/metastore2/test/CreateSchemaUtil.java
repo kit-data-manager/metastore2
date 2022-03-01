@@ -8,7 +8,9 @@ package edu.kit.datamanager.metastore2.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import java.util.HashSet;
@@ -16,11 +18,16 @@ import java.util.Set;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -175,47 +182,170 @@ public class CreateSchemaUtil {
   private final static String otherUserPrincipal = "test_user";
 
   public static String ingestKitSchemaRecord(MockMvc mockMvc, String schemaId, String jwtSecret) throws Exception {
-    return ingestSchemaRecord(mockMvc, schemaId, KIT_SCHEMA, jwtSecret);
+    return ingestXmlSchemaRecord(mockMvc, schemaId, KIT_SCHEMA, jwtSecret);
 
   }
 
-  public static String ingestSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret) throws Exception {
+  /**
+   * Ingest schema in MetaStore as user 'test_user' If schema already exists
+   * update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @return
+   * @throws Exception
+   */
+  public static String ingestXmlSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret) throws Exception {
+    return ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, schemaContent, jwtSecret, false, status().isCreated());
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateXmlSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
     String locationUri = null;
     jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
+    userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
+            addSimpleClaim("email", "any@example.org").
+            addSimpleClaim("orcid", "0000-0001-2345-6789").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(schemaId);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    record.setAcl(aclEntries);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile;
+    MockMultipartFile schemaFile;
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
-    MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andReturn();
+    MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
-      userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
-              addSimpleClaim("email", "any@example.org").
-              addSimpleClaim("orcid", "0000-0001-2345-6789").
-              addSimpleClaim("loginFailures", 0).
-              addSimpleClaim("active", true).
-              addSimpleClaim("locked", false).getCompactToken(jwtSecret);
-      MetadataSchemaRecord record = new MetadataSchemaRecord();
-      record.setSchemaId(schemaId);
-      record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-      record.setMimeType(MediaType.APPLICATION_XML.toString());
-      Set<AclEntry> aclEntries = new HashSet<>();
-      aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
-      record.setAcl(aclEntries);
-
-      ObjectMapper mapper = new ObjectMapper();
-
-      MockMultipartFile recordFile;
-      MockMultipartFile schemaFile;
-      recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-      schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
 
       result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
               file(recordFile).
               file(schemaFile).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
-              andDo(print()).andExpect(status().isCreated()).andReturn();
+              andDo(print()).andExpect(expectedStatus).andReturn();
       if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
         locationUri = result.getResponse().getHeader("Location");
       }
+    } else {
+      if (update) {
+        String etag = result.getResponse().getHeader("ETag");
+        // Update metadata document
+        MockHttpServletRequestBuilder header = MockMvcRequestBuilders.
+                multipart("/api/v1/schemas/" + schemaId).
+                file(recordFile).
+                file(schemaFile).
+                header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                header("If-Match", etag).
+                with(putMultipart());
+        mockMvc.perform(header).
+                andDo(print()).
+                andExpect(expectedStatus).
+                andReturn();
+      }
+
     }
     return locationUri;
+  }
+
+  public static void ingestXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret) throws Exception {
+    ingestOrUpdateXmlMetadataDocument(mockMvc, schemaId, version, metadataId, metadataDocument, jwtSecret, false, status().isCreated());
+  }
+
+  public static void ingestOrUpdateXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
+    userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
+            addSimpleClaim("email", "any@example.org").
+            addSimpleClaim("orcid", "0000-0001-2345-6789").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    // Test if metadataId is already registered.
+
+    MvcResult result = null;
+
+    MetadataRecord record = new MetadataRecord();
+    record.setId(metadataId);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
+    if (version != null) {
+      record.setSchemaVersion(version);
+    }
+    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier("any"));
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile;
+    MockMultipartFile metadataFile = null;
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    if (metadataDocument != null) {
+      metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
+    }
+    result = mockMvc.perform(get("/api/v1/metadata/" + metadataId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
+      // Create metadata document
+      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata").file(recordFile);
+      if (metadataFile != null) {
+        file = file.file(metadataFile);
+      }
+      MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken);
+      mockMvc.perform(header).
+              andDo(print()).
+              andExpect(expectedStatus).
+              andReturn();
+    } else {
+      if (update) {
+        // Update metadata document
+        MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataId).file(recordFile);
+        if (metadataFile != null) {
+          file = file.file(metadataFile);
+        }
+        MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                header("If-Match", etag).
+                with(putMultipart());
+        mockMvc.perform(header).
+                andDo(print()).
+                andExpect(expectedStatus).
+                andReturn();
+      }
+
+    }
+  }
+
+  private static RequestPostProcessor putMultipart() { // it's nice to extract into a helper
+    return (MockHttpServletRequest request) -> {
+      request.setMethod("PUT");
+      return request;
+    };
   }
 
 }

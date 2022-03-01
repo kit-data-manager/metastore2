@@ -29,6 +29,7 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -43,6 +44,7 @@ import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,7 +57,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
-import org.datacite.schema.kernel_4.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -242,6 +243,25 @@ public class MetadataRecordUtil {
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
       }
+    } else {
+      // validate if document is still valid due to changed record settings.
+      record = migrateToMetadataRecord(applicationProperties, dataResource, false);
+    URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
+
+    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+    }
+    
+        try {
+    InputStream inputStream = Files.newInputStream(metadataDocumentPath);
+      SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(record.getSchema(), record.getSchemaVersion());
+      MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
+      } catch (IOException ex) {
+        LOG.error("Error validating file!", ex);
+      }
+      
     }
     if (noChanges) {
       Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
@@ -604,7 +624,7 @@ public class MetadataRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-    boolean validationSuccess = false;
+     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
     if (metastoreProperties.getSchemaRegistries().length == 0 || record.getSchema().getIdentifierType() != IdentifierType.INTERNAL) {
       LOG.trace("No external schema registries defined. Try to use internal one...");

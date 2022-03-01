@@ -387,7 +387,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
-    record.setId("AnyValidId");
+    record.setId("AnyValidId_1");
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -413,7 +413,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
-    record.setId("AnyValidId");
+    record.setId("AnyValidId_2");
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -425,7 +425,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
-            file(metadataFile)).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
             andExpect(status().isCreated()).
             andReturn();
@@ -434,7 +435,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
  
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
-            file(metadataFile)).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
             andExpect(status().isConflict()).
             andReturn();

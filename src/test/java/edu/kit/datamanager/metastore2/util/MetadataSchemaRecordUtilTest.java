@@ -205,7 +205,7 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaDocumentUri("any");
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, schemaRecord);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, (MultipartFile)null, schemaRecord);
     fail("Don't reach this line!");
   }
 
