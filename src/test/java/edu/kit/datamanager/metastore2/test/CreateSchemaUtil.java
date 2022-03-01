@@ -87,6 +87,13 @@ public class CreateSchemaUtil {
           + "    <shortname>SCC-DEM</shortname>\n"
           + "  </department>\n"
           + "</employee>";
+  public final static String KIT_DOCUMENT_SMALL_CHANGE = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
+          + "  <name>John Doe</name>\n"
+          + "  <department>\n"
+          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "    <shortname>DEM</shortname>\n"
+          + "  </department>\n"
+          + "</employee>";
   public final static String KIT_DOCUMENT_INVALID_1 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"abcdefg\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
@@ -254,6 +261,9 @@ public class CreateSchemaUtil {
     } else {
       if (update) {
         String etag = result.getResponse().getHeader("ETag");
+        String body = result.getResponse().getContentAsString();
+        record = mapper.readValue(body, MetadataSchemaRecord.class);
+        recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
         // Update metadata document
         MockHttpServletRequestBuilder header = MockMvcRequestBuilders.
                 multipart("/api/v1/schemas/" + schemaId).
@@ -272,11 +282,11 @@ public class CreateSchemaUtil {
     return locationUri;
   }
 
-  public static void ingestXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret) throws Exception {
-    ingestOrUpdateXmlMetadataDocument(mockMvc, schemaId, version, metadataId, metadataDocument, jwtSecret, false, status().isCreated());
+  public static MvcResult ingestXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret) throws Exception {
+    return ingestOrUpdateXmlMetadataDocument(mockMvc, schemaId, version, metadataId, metadataDocument, jwtSecret, false, status().isCreated());
   }
 
-  public static void ingestOrUpdateXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+  public static MvcResult ingestOrUpdateXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
     jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
     userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
             addSimpleClaim("email", "any@example.org").
@@ -310,7 +320,6 @@ public class CreateSchemaUtil {
             header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
-    String etag = result.getResponse().getHeader("ETag");
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
       // Create metadata document
       MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata").file(recordFile);
@@ -318,12 +327,20 @@ public class CreateSchemaUtil {
         file = file.file(metadataFile);
       }
       MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken);
-      mockMvc.perform(header).
+      result = mockMvc.perform(header).
               andDo(print()).
               andExpect(expectedStatus).
               andReturn();
     } else {
       if (update) {
+        String etag = result.getResponse().getHeader("ETag");
+        String body = result.getResponse().getContentAsString();
+        record = mapper.readValue(body, MetadataRecord.class);
+        record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
+        if (version != null) {
+          record.setSchemaVersion(version);
+        }
+        recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
         // Update metadata document
         MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataId).file(recordFile);
         if (metadataFile != null) {
@@ -332,13 +349,14 @@ public class CreateSchemaUtil {
         MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
                 header("If-Match", etag).
                 with(putMultipart());
-        mockMvc.perform(header).
+        result = mockMvc.perform(header).
                 andDo(print()).
                 andExpect(expectedStatus).
                 andReturn();
       }
 
     }
+    return result;
   }
 
   private static RequestPostProcessor putMultipart() { // it's nice to extract into a helper

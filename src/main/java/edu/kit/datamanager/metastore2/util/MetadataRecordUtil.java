@@ -246,22 +246,22 @@ public class MetadataRecordUtil {
     } else {
       // validate if document is still valid due to changed record settings.
       record = migrateToMetadataRecord(applicationProperties, dataResource, false);
-    URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
+      URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
 
-    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-    }
-    
-        try {
-    InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-      SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(record.getSchema(), record.getSchemaVersion());
-      MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
+      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+      }
+
+      try {
+        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
+        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(record.getSchema(), record.getSchemaVersion());
+        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);
       }
-      
+
     }
     if (noChanges) {
       Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
@@ -286,6 +286,13 @@ public class MetadataRecordUtil {
     }
   }
 
+  /**
+   * Migrate metadata record to data resource.
+   *
+   * @param applicationProperties Configuration settings of repository.
+   * @param metadataRecord  Metadata record to migrate.
+   * @return Data resource of metadata record.
+   */
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
           MetadataRecord metadataRecord) {
     DataResource dataResource;
@@ -366,6 +373,14 @@ public class MetadataRecordUtil {
     return dataResource;
   }
 
+  /**
+   * Migrate data resource to metadata record.
+   *
+   * @param applicationProperties Configuration settings of repository.
+   * @param dataResource Data resource to migrate.
+   * @param provideETag Flag for calculating etag.
+   * @return Metadata record of data resource.
+   */
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource,
           boolean provideETag) {
@@ -494,7 +509,6 @@ public class MetadataRecordUtil {
    * @param metastoreProperties Configuration for accessing services
    * @param schemaId SchemaID of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
    */
   public static MetadataSchemaRecord getCurrentInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId) {
@@ -544,7 +558,6 @@ public class MetadataRecordUtil {
    * @param schemaId SchemaID of the schema.
    * @param version Version of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
    */
   public static MetadataSchemaRecord getInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId,
@@ -624,7 +637,7 @@ public class MetadataRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-     boolean validationSuccess = false;
+    boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
     if (metastoreProperties.getSchemaRegistries().length == 0 || record.getSchema().getIdentifierType() != IdentifierType.INTERNAL) {
       LOG.trace("No external schema registries defined. Try to use internal one...");

@@ -196,7 +196,7 @@ public class MetadataControllerImpl implements IMetadataController {
           WebRequest wr,
           HttpServletResponse hsr
   ) {
-   LOG.trace("Performing getRecordById({}, {}).", id, version);
+    LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
@@ -310,6 +310,11 @@ public class MetadataControllerImpl implements IMetadataController {
         }
         for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
           MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
+          // Test for internal URI -> Transform to global URI.
+          if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
+            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, schemaRecord);
+            schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
+          }
           allRelatedIdentifiers.add(schemaRecord.getSchemaDocumentUri());
         }
       }
@@ -318,6 +323,13 @@ public class MetadataControllerImpl implements IMetadataController {
       allRelatedIdentifiers.addAll(relatedIds);
     }
     if (!allRelatedIdentifiers.isEmpty()) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("---------------------------------------------------------");
+        for (String relatedId : allRelatedIdentifiers) {
+          LOG.trace("Look for related Identifier: '{}'", relatedId);
+        }
+        LOG.trace("---------------------------------------------------------");
+      }
       Specification<DataResource> toSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
       spec = spec.and(toSpecification);
     }

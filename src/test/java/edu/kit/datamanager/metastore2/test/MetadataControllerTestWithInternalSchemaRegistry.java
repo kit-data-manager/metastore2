@@ -14,6 +14,12 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_DOCUMENT_V1;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_DOCUMENT_V2;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_DOCUMENT_V3;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_SCHEMA_V1;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_SCHEMA_V2;
+import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.XML_SCHEMA_V3;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -64,6 +70,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
@@ -730,6 +737,33 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(1, result.length);
+  }
+
+  @Test
+  public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
+    String schemaId = "multipleSchemas";
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1,  metadataConfig.getJwtSecret(), false, status().isCreated());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2,  metadataConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3,  metadataConfig.getJwtSecret(), true, status().isOk());
+    ObjectMapper map = new ObjectMapper();
+    String[] multipleVersions = {"1", "2", "3"};
+    // Ingest 1st version of document.
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 1l, multipleVersions[0], XML_DOCUMENT_V1, metadataConfig.getJwtSecret());
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+    // Ingest 2nd version of document
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 2l, multipleVersions[1], XML_DOCUMENT_V2, metadataConfig.getJwtSecret());
+    res = this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(2, result.length);
+    // Ingest 3rd version of document
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 3l, multipleVersions[2], XML_DOCUMENT_V3, metadataConfig.getJwtSecret());
+    res = this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(3, result.length);
   }
 
   @Test
