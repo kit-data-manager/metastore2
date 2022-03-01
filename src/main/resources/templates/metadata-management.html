@@ -100,7 +100,7 @@
             $('body').append(modalTemplate("FAILED"));
             $('body').append(modalTemplate("SUCCESS"));
 
-            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
+            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,tooltip4ReadIcon: "Read Metadata Record",tooltip4EditIcon: "Update Metadata record",
                 readOperation: function (rowColumnvalue) {
                     var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                     $('form').metadataeditorForm(options, function onSubmitValid(value) {
