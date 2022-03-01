@@ -47,6 +47,7 @@ import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -67,7 +68,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -229,7 +229,7 @@ public class MetadataSchemaRecordUtil {
       }
     }
 
-    LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
+    LOG.trace("Obtaining most recent metadata schema record with id {}.", resourceId);
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
@@ -282,6 +282,23 @@ public class MetadataSchemaRecordUtil {
       }
     } else {
       schemaRecordDao.delete(schemaRecord);
+      // validate if document is still valid due to changed record settings.
+      record = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+      URI schemaDocumentUri = URI.create(record.getSchemaDocumentUri());
+
+      Path schemaDocumentPath = Paths.get(schemaDocumentUri);
+      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
+        LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
+        throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
+      }
+
+      try {
+        byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
+        MetadataSchemaRecordUtil.validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDoc);
+      } catch (IOException ex) {
+        LOG.error("Error validating file!", ex);
+      }
+
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
@@ -732,7 +749,9 @@ public class MetadataSchemaRecordUtil {
       throw new BadArgumentException(message);
     }
     try {
-      validateMetadataDocument(metastoreProperties, document.getInputStream(), schemaRecord);
+      try ( InputStream inputStream = document.getInputStream()) {
+        validateMetadataDocument(metastoreProperties, inputStream, schemaRecord);
+      }
     } catch (IOException ex) {
       String message = "Failed to read metadata document from input stream.";
       LOG.error(message, ex);
@@ -928,10 +947,26 @@ public class MetadataSchemaRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
+    try {
+      validateMetadataSchemaDocument(metastoreProperties, schemaRecord, document.getBytes());
+    } catch (IOException ex) {
+      String message = "Failed to read metadata document from input stream.";
+      LOG.error(message, ex);
+      throw new UnprocessableEntityException(message);
+    }
+  }
+
+  private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, byte[] document) {
+    LOG.debug("Validate metadata schema document...");
+    if (document == null || document.length == 0) {
+      String message = "Missing metadata schema document in body. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
 
     IValidator applicableValidator = null;
     try {
-      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, document.getBytes());
+      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, document);
 
       if (applicableValidator == null) {
         String message = "No validator found for schema type " + schemaRecord.getType() + ". Returning HTTP UNPROCESSABLE_ENTITY.";
@@ -940,13 +975,15 @@ public class MetadataSchemaRecordUtil {
       } else {
         LOG.trace("Validator found. Checking provided schema file.");
         LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
-        if (!applicableValidator.isSchemaValid(document.getInputStream())) {
-          String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
-          LOG.warn(message);
-          if (LOG.isTraceEnabled()) {
-            LOG.trace("Schema: " + IOUtils.toString(document.getInputStream(), StandardCharsets.UTF_8.name()));
+        try ( InputStream inputStream = new ByteArrayInputStream(document)) {
+          if (!applicableValidator.isSchemaValid(inputStream)) {
+            String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
+            LOG.warn(message);
+            if (LOG.isTraceEnabled()) {
+              LOG.trace("Schema: " + document);
+            }
+            throw new UnprocessableEntityException(message);
           }
-          throw new UnprocessableEntityException(message);
         }
       }
     } catch (IOException ex) {

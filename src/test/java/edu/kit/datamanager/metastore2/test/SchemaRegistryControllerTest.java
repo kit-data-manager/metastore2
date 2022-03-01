@@ -710,9 +710,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertNull("Check definition for 'null'", record2.getDefinition());
   }
 
-
   @Test
-  public void testUpdateRecordWithInvalidSetting4Json() throws Exception {
+  public void testUpdateRecordWithInvalidSetting4Xml() throws Exception {
     String schemaId = "updateRecord";
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -721,20 +720,13 @@ public class SchemaRegistryControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
-    String mimeTypeBefore = record.getMimeType();
-    String definitionBefore = record.getDefinition();
-    String labelBefore = record.getLabel();
-    String commentBefore = record.getComment();
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
-    record.setDefinition("");
-    record.setComment("new comment");
-    record.setLabel("label changed");
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     // Should fail due to invalid mimetype!
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
   }
-  
+
   @Test
   public void testUpdateRecordWithoutChanges() throws Exception {
     String schemaId = "updateRecordWithoutChanges";
@@ -816,7 +808,13 @@ public class SchemaRegistryControllerTest {
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA_V2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
-            file(schemaFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+            file(schemaFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).
+            andReturn();
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
@@ -835,6 +833,34 @@ public class SchemaRegistryControllerTest {
     String content = result.getResponse().getContentAsString();
 
     Assert.assertEquals(KIT_SCHEMA_V2, content);
+  }
+
+  @Test
+  public void testUpdateRecordWithSmallChangesInDocument() throws Exception {
+    String schemaId = "updateRecordWithSmallChanges";
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaId(schemaId);
+    schemaRecord.setVersion(1l);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.XML_SCHEMA_V1.getBytes());
+////
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+//    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.XML_SCHEMA_V1_TYPO.getBytes());
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(schemaFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + schemaRecord.getSchemaId() + "?version=*")).
+            andReturn();
   }
 
   @Test

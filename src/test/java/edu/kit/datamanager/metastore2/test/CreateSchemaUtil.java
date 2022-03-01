@@ -142,6 +142,18 @@ public class CreateSchemaUtil {
           + "        </xs:complexType>\n"
           + "      </xs:element>\n"
           + "    </xs:schema>";
+  public final static String XML_SCHEMA_V1_TYPO = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
+          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
+          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
+          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
+          + "      <xs:element name=\"metadata\">\n"
+          + "        <xs:complexType>\n"
+          + "          <xs:sequence>\n"
+          + "            <xs:element name=\"titel\" type=\"xs:string\"/>\n"
+          + "          </xs:sequence>\n"
+          + "        </xs:complexType>\n"
+          + "      </xs:element>\n"
+          + "    </xs:schema>";
   public final static String XML_SCHEMA_V2 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"

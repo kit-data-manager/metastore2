@@ -183,6 +183,13 @@ public class MetadataSchemaRecordUtilTest {
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNull_2() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String)null, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNoValue() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     ResourceIdentifier identifier = ResourceIdentifier.factoryInternalResourceIdentifier(null);
