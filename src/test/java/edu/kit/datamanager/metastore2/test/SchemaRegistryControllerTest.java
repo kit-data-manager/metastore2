@@ -682,7 +682,6 @@ public class SchemaRegistryControllerTest {
     String definitionBefore = record.getDefinition();
     String labelBefore = record.getLabel();
     String commentBefore = record.getComment();
-    record.setMimeType(MediaType.APPLICATION_JSON.toString());
     record.setDefinition("");
     record.setComment("new comment");
     record.setLabel("label changed");
@@ -693,7 +692,7 @@ public class SchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type is not allowed to be changed.
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -711,6 +710,31 @@ public class SchemaRegistryControllerTest {
     Assert.assertNull("Check definition for 'null'", record2.getDefinition());
   }
 
+
+  @Test
+  public void testUpdateRecordWithInvalidSetting4Json() throws Exception {
+    String schemaId = "updateRecord";
+    ingestSchemaRecord(schemaId);
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record.getMimeType();
+    String definitionBefore = record.getDefinition();
+    String labelBefore = record.getLabel();
+    String commentBefore = record.getComment();
+    record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    record.setDefinition("");
+    record.setComment("new comment");
+    record.setLabel("label changed");
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    // Should fail due to invalid mimetype!
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+  }
+  
   @Test
   public void testUpdateRecordWithoutChanges() throws Exception {
     String schemaId = "updateRecordWithoutChanges";
