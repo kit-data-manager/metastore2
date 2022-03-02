@@ -233,15 +233,16 @@ public class MetadataSchemaRecordUtil {
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
+    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
     if (record != null) {
       MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
+      mergeSchemaRecord(schemaRecord, existingRecord);
       dataResource = migrateToDataResource(applicationProperties, existingRecord);
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
 
-    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
     if (schemaDocument != null) {
       // Get schema record for this schema
       validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
@@ -613,6 +614,17 @@ public class MetadataSchemaRecordUtil {
     } finally {
       cleanUp(schemaRecord);
     }
+  }
+
+  private static void mergeSchemaRecord(SchemaRecord oldRecord, MetadataSchemaRecord newSettings) {
+    LOG.trace("Merge Schema record...");
+    Objects.requireNonNull(oldRecord);
+    Objects.requireNonNull(newSettings);
+    oldRecord.setDocumentHash(newSettings.getSchemaHash());
+    oldRecord.setSchemaDocumentUri(newSettings.getSchemaDocumentUri());
+    oldRecord.setSchemaId(newSettings.getSchemaId());
+    oldRecord.setVersion(newSettings.getSchemaVersion());
+    oldRecord.setType(newSettings.getType());
   }
 
   /**

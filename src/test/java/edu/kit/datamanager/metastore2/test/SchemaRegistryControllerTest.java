@@ -711,8 +711,8 @@ public class SchemaRegistryControllerTest {
   }
 
   @Test
-  public void testUpdateRecordWithInvalidSetting4Xml() throws Exception {
-    String schemaId = "updateRecord";
+  public void testUpdateRecordWithIgnoringInvalidSetting4Xml() throws Exception {
+    String schemaId = "updateMimetypeOfRecord";
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -722,9 +722,34 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    // Should fail due to invalid mimetype!
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
-            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+    // Should not fail as invalid mimetype is not used validating schema!
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*"));
+  }
+
+  @Test
+  public void testUpdateRecordWithInvalidSetting4Xml() throws Exception {
+    String schemaId = "updateTypeOfRecord";
+    ingestSchemaRecord(schemaId);
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    // Should fail due to invalid type!
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isUnprocessableEntity());
   }
 
   @Test
