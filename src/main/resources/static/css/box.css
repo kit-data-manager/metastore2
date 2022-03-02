@@ -33,6 +33,7 @@
     margin: 0 0 15px;
     padding: 0;
     white-space: nowrap;
+    color: white
 }
 
 .small-box p {
@@ -67,6 +68,7 @@
 .box-title {
     font-weight: 600;
     font-size: 18px;
+    color: white
 }
 
 .box-body {
