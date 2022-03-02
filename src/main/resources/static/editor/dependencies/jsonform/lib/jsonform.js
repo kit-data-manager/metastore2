@@ -3673,25 +3673,19 @@
         // User Inputs is not Valid
         var errorSelectors = [];
         var key;
-        var dataPath;
         for (var i = 0; i < errors.length; i++) {
-            if (errors[i].params.missingProperty !== undefined && errors[i].dataPath.length !== 0) {
-
-                key = errors[i].dataPath.substring(1) + "." + errors[i].params.missingProperty;
+            if (errors[i].params.missingProperty !== undefined && errors[i].instancePath.length !== 0) {
+                key = errors[i].instancePath.substring(1) + "." + errors[i].params.missingProperty;
             } else if (errors[i].params.missingProperty !== undefined) {
                 key = errors[i].params.missingProperty;
-            } else if (errors[i].dataPath.length !== 0) {
-                key = errors[i].dataPath.substring(1);
+            } else if (errors[i].instancePath.length !== 0) {
+                key = errors[i].instancePath.substring(1);
             }
             if (key !== undefined) {
                 key = key.replace(/\//g, "---");
                 key = key.replace(/\./g, "---");
-            } else if (dataPath !== undefined) {
-
-                key = dataPath.replace(/\//g, "---");
-                key = key.replace(/\./g, "---");
             }
-
+            
             var message = errors[i].message;
             var errormarkerclass = ".jsonform-error-" + key;
             errorSelectors.push(errormarkerclass);
