@@ -7,13 +7,12 @@
         "field": "relatedResource.identifier"
     },
     {
-        "title": "Record Version",
-        "field": "recordVersion",
-        "editor":"input"
+        "title": "Schema Identifier",
+        "field": "schema.identifier"
     },
     {
-        "title": "Date Created",
-        "field": "createdAt",
+        "title": "Date Updated",
+        "field": "lastUpdate",
         "formatter":"datetime",
         "formatterParams":{
             "outputFormat":"YYYY-MM-DD HH:mm"

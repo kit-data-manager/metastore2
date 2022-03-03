@@ -8,16 +8,12 @@
         "editor":"input"
     },
     {
-        "title": "Label",
-        "field": "label"  
+        "title": "Type",
+        "field": "type"  
     },
     {
-        "title": "Date Created",
-        "field": "createdAt",
-        "formatter":"datetime",
-        "formatterParams":{
-            "outputFormat":"YYYY-MM-DD HH:mm"
-        }
+        "title": "Label",
+        "field": "label"  
     },
     {
         "title": "Date Updated",
