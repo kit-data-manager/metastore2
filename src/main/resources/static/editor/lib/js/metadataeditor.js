@@ -25,7 +25,7 @@ const modalType = {
 var icons = {
     'EYE': {
         'FONTAWESOME': 'fa fa-eye',
-        'TOOLTIP': 'Read'
+        'TOOLTIP': 'Show'
     },
     'EDIT': {
         'FONTAWESOME': 'fa fa-edit',

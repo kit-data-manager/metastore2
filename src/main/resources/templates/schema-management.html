@@ -88,7 +88,7 @@
             $('body').append(modalTemplate("FAILED"));
             $('body').append(modalTemplate("SUCCESS"));
 
-            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, paginationURL: "/api/v1/ui/schemas",tooltip4ReadIcon: "Read Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
+            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, paginationURL: "/api/v1/ui/schemas",tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
                 readOperation: function (rowColumnvalue) {
                     readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
                         var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
