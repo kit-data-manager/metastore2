@@ -26,9 +26,8 @@
                 <div class="breadcrumb-title">
                     Metadata Management
                 </div>
-                <ol class="breadcrumb">
-                    <li><a href="/dashboard"
-                           th:text="Dashboard"></a></li>
+                <ol class="breadcrumb" id="breadcrumb">
+                    <li><a href="/dashboard">Dashboard</a></li>
                     <li class="active"><a>Metadata Management</a></li>
                 </ol>
             </section>
@@ -86,6 +85,17 @@
             var currentUrl = window.location.href;
             var url = new URL(currentUrl);
             var schemaId = url.searchParams.get("id");
+
+            //add schema identifier to the table url
+            if (schemaId !== null) {
+                var olElement = document.getElementById("breadcrumb");
+                var liElement = document.createElement("li");
+                liElement.classList.add("active");
+                var linkElement = document.createElement("a");
+                linkElement.appendChild(document.createTextNode(schemaId));
+                liElement.appendChild(linkElement);
+                olElement.appendChild(liElement);
+            }
             var ajaxURL = schemaId === null ? "/api/v1/ui/metadata/" : "/api/v1/ui/metadata?id=" + schemaId;
             var table = {
                 layout: "fitColumns",
