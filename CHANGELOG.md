@@ -9,12 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
-- First version of MetaStoreGui
+- Finalized version of MetaStoreGui
   - Fix issue #69
 - Allow also IDs for metadata documents (issue #76)
 - Access filter for monitoring.
 
 ### Changed
+- Downgrade library due to some issues regarding validation
+  - json-schema-validator 1.0.64. -> 1.0.59
 
 ### Fixed
 - Fix bug listing resources without proper authorization (issue #71)

@@ -98,7 +98,7 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.64"
+    implementation "com.networknt:json-schema-validator:1.0.59"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.1'
