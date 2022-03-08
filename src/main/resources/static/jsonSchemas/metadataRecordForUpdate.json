@@ -3,41 +3,23 @@
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "properties": {
+        "id": {
+            "type": "string",
+            "title": "Identifier"
+        },
         "relatedResource": {
             "type": "object",
-             "title": "Related Resource",
+            "title": "Related Resource",
             "properties": {
                 "identifier": {
                     "type": "string",
-                    "title": "Identifier*"
+                    "title": "Identifier"
                 },
                 "identifierType": {
                     "type": "string",
-                    "default": "INTERNAL",
-                    "title": "Identifier Type*"
+                    "title": "Identifier Type"
                 }
-            },
-             "required": ["identifier", "identifierType"]
-        },
-        "schema": {
-            "type": "object",
-             "title": "Schema",
-            "properties": {
-                "identifier": {
-                    "type": "string",
-                    "title": "Identifier*"
-                },
-                "identifierType": {
-                    "type": "string",
-                    "enum": ["URL", "INTERNAL"],
-                    "title": "Identifier Type*"
-                }
-            },
-            "required": ["identifier", "identifierType"]
-        },
-        "schemaVersion": {
-            "type": "integer",
-            "title": "Schema Version"
+            }
         },
         "acl": {
             "type": "array",
@@ -61,7 +43,7 @@
         },
          "metadataDocument": {
             "type": "string",
-            "title": "Metadata Document"
+            "title": "Metadata Document File"
         }
     }
 }

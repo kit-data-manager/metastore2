@@ -26,9 +26,8 @@
                 <div class="breadcrumb-title">
                     Metadata Management
                 </div>
-                <ol class="breadcrumb">
-                    <li><a href="/dashboard"
-                           th:text="Dashboard"></a></li>
+                <ol class="breadcrumb" id="breadcrumb">
+                    <li><a href="/dashboard">Dashboard</a></li>
                     <li class="active"><a>Metadata Management</a></li>
                 </ol>
             </section>
@@ -73,6 +72,7 @@
         <script src="/editor/dependencies/jsonform/deps/ajv/ajv2020.js"></script>  
         <script src="/editor/dependencies/jsonform/deps/ajv/ajv2019.js"></script>  
         <script type="text/javascript" src="/editor/dependencies/jsonform/lib/jsonform.js"></script>
+        <script type="text/javascript" src="/editor/dependencies/tabulator/dep/moment.js"></script>
         <script type="text/javascript" src="/editor/dependencies/tabulator/js/tabulator.min.js"></script>
         <script type="text/javascript" src="/editor/lib/js/metadataeditor.js"></script>
 
@@ -85,6 +85,17 @@
             var currentUrl = window.location.href;
             var url = new URL(currentUrl);
             var schemaId = url.searchParams.get("id");
+
+            //add schema identifier to the table url
+            if (schemaId !== null) {
+                var olElement = document.getElementById("breadcrumb");
+                var liElement = document.createElement("li");
+                liElement.classList.add("active");
+                var linkElement = document.createElement("a");
+                linkElement.appendChild(document.createTextNode(schemaId));
+                liElement.appendChild(linkElement);
+                olElement.appendChild(liElement);
+            }
             var ajaxURL = schemaId === null ? "/api/v1/ui/metadata/" : "/api/v1/ui/metadata?id=" + schemaId;
             var table = {
                 layout: "fitColumns",
@@ -99,7 +110,7 @@
             $('body').append(modalTemplate("FAILED"));
             $('body').append(modalTemplate("SUCCESS"));
 
-            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
+            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table, tooltip4ReadIcon: "Read Metadata Record", tooltip4EditIcon: "Update Metadata record",
                 readOperation: function (rowColumnvalue) {
                     var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
                     $('form').metadataeditorForm(options, function onSubmitValid(value) {
@@ -128,34 +139,62 @@
                     $("#formModal").modal('show');
                 },
                 updateOperation: function (rowColumnvalue) {
-                    $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
-                        $.getJSON("/jsonSchemas/uiFormMetadataRecord.json", function (uiForm) {
-                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
+                    $.getJSON("/jsonSchemas/metadataRecordForUpdate.json", function (dataModel) {
+                        $.getJSON("/jsonSchemas/uiFormMetadataRecordForUpdate.json", function (uiForm) {
+                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Show Metadata Document"};
                             $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
                                 readSchema(options.resource.schema.identifier, function (metadataDataModel) {
-                                    readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
-                                        try {
-                                            JSON.parse(metadataResource);
-                                            options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: JSON.parse(metadataResource), buttonTitle: "Update"};
-                                            $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
-                                                var blobDocument = new Blob([updatedMetadataDocument]);
-                                                const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.json');
-                                                updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
-                                            });
-                                        } catch (e) {
-                                            $.getJSON("/jsonSchemas/xmlDocumentViewerWrapper.json", function (dataModel) {
-                                                $.getJSON("/jsonSchemas/uiFormXmlDocumentViewerWrapper.json", function (uiForm) {
-                                                    var resource = {metadata: metadataResource};
-                                                    options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: resource, buttonTitle: "Update"};
-                                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
-                                                        var xmlMetadataDocument = JSON.parse(updatedMetadataDocument).metadata;
-                                                        var blobDocument = new Blob([xmlMetadataDocument]);
-                                                        const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.xml');
+                                    var input = document.getElementsByClassName('input-file');
+                                    readFile(input, function (documentAsText) {
+                                        readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
+                                            try {
+                                                JSON.parse(metadataResource);
+                                                var resource = JSON.parse(metadataResource);
+                                                if (documentAsText !== null) {
+                                                    resource = JSON.parse(documentAsText);
+                                                }
+                                                options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: resource, buttonTitle: "Update"};
+                                                $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
+                                                    //check if the updatedMetdataDocumet and metadataResource are the same
+                                                    if (_.isEqual(JSON.parse(metadataResource), JSON.parse(updatedMetadataDocument))) {
+                                                        //the updatedMetdataDocumet and metadataResource are the same
+                                                        //update only the record
+                                                        updateMetadataRecord(updatedMetadataRecord, null);
+
+                                                    } else {
+                                                        //the updatedMetdataDocumet and metadataResource are not the same
+                                                        //update the MD record and the MD document
+                                                        var blobDocument = new Blob([updatedMetadataDocument]);
+                                                        const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.json');
                                                         updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
+                                                    }
+                                                });
+                                            } catch (e) {
+                                                $.getJSON("/jsonSchemas/xmlDocumentViewerWrapper.json", function (dataModel) {
+                                                    $.getJSON("/jsonSchemas/uiFormXmlDocumentViewerWrapper.json", function (uiForm) {
+                                                        var resource = {metadata: metadataResource};
+                                                        if (documentAsText !== null) {
+                                                            resource = {metadata: documentAsText};
+                                                        }
+                                                        options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: resource, buttonTitle: "Update"};
+                                                        $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
+                                                            var xmlMetadataDocumentAsString = JSON.parse(updatedMetadataDocument).metadata;
+                                                            //delete line breaks from the strings
+                                                            xmlMetadataDocumentAsString = xmlMetadataDocumentAsString.replace(/\r?\n|\r/g, "");
+                                                            metadataResource = metadataResource.replace(/\r?\n|\r/g, "");
+                                                            //check if the updatedMetdataDocumet and metadataResource are the same
+                                                            if (xmlMetadataDocumentAsString === metadataResource) {
+                                                                updateMetadataRecord(updatedMetadataRecord, null);
+                                                            } else {
+                                                                var blobDocument = new Blob([xmlMetadataDocumentAsString]);
+                                                                const metadataDocumentFile = new File([blobDocument], 'metadataDocumentFile.xml');
+                                                                updateMetadataRecord(updatedMetadataRecord, metadataDocumentFile);
+                                                            }
+                                                        });
                                                     });
                                                 });
-                                            });
-                                        }
+                                            }
+                                        });
                                     });
                                 });
                             });
@@ -166,7 +205,7 @@
                 createOperation: {callback: function () {
                         $.getJSON("/jsonSchemas/metadataRecordForCreate.json", function (dataModel) {
                             $.getJSON("/jsonSchemas/uiFormMetadataRecordForCreate.json", function (uiForm) {
-                                var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Create/Generate Schema"};
+                                var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Show Input Form"};
                                 $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
                                     var record = JSON.parse(metadataRecord);
 
@@ -181,34 +220,35 @@
                                     if (record.schemaVersion !== undefined) {
                                         url = url + "?version=" + record.schemaVersion;
                                     }
-                                    //upload the metadata document
-                                    var input = document.getElementsByClassName('input-file');
-
-                                    //check if the metadata document if uploaded
-                                    if (input[0].value.length !== 0) {
-                                        //document file is uploaded
-                                        let file = input[0].files[0];
-                                        createMetadataRecord(metadataRecord, file);
-                                        //                                    }
-                                    } else {
-                                        //document file is not uploaded
-                                        //generate the appropriate Schema
-                                        readSchema(url, function (schemaDocument) {
+                                    //generate the appropriate Schema
+                                    readSchema(url, function (schemaDocument) {
+                                        var input = document.getElementsByClassName('input-file');
+                                        readFile(input, function (documentAsText) {
                                             try {
                                                 JSON.parse(JSON.stringify(schemaDocument));
-                                                options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
+                                                if (documentAsText !== null) {
+                                                    options = {operation: "UPDATE", dataModel: schemaDocument, uiForm: "*", resource: JSON.parse(documentAsText), buttonTitle: "Register Metadata Document"};
+                                                } else {
+                                                    options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
+                                                }
                                                 $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
                                                     //create a JSON file, which contains the metadata.
                                                     var blobSchema = new Blob([JSON.stringify(JSON.parse(metadata))], {type: "application/json"});
                                                     const metadataDocumentFile = new File([blobSchema], 'metadataDocumentFile.json');
                                                     createMetadataRecord(metadataRecord, metadataDocumentFile);
                                                 });
+
                                             } catch (e) {
                                                 $.getJSON("/jsonSchemas/xmlDocumentViewerWrapper.json", function (dataModel) {
                                                     $.getJSON("/jsonSchemas/uiFormXmlDocumentViewerWrapper.json", function (uiForm) {
-                                                        options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Register Metadata Document"};
+                                                        if (documentAsText !== null) {
+                                                            var resource = {metadata: documentAsText};
+                                                            options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: resource, buttonTitle: "Register Metadata Document"};
+
+                                                        } else {
+                                                            options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Register Metadata Document"};
+                                                        }
                                                         $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
-                                                            //create an XML file, which contains the metadata.
                                                             var xmlDocument = JSON.parse(metadata).metadata;
                                                             var blobDocument = new Blob([xmlDocument]);
                                                             const documentFile = new File([blobDocument], 'documentFile.xml');
@@ -218,7 +258,7 @@
                                                 });
                                             }
                                         });
-                                    }
+                                    });
                                 });
                             });
                         });
@@ -230,19 +270,41 @@
             $('#table-metadata').metadataeditorTable(inputs);
 
             /**
+             * checks if the file is uploaded. If yes, the file is returned, otherwise null.
+             * @param {type} input input field
+             * @param {type} callback callback function
+             * @returns {undefined}
+             */
+            function readFile(input, callback) {
+                if (input[0].value.length !== 0) {
+                    //document file is uploaded
+                    let file = input[0].files[0];
+                    let reader = new FileReader();
+                    reader.readAsText(file);
+                    reader.onload = function () {
+                        var documentAsText = reader.result;
+                        callback(documentAsText);
+                    };
+                } else {
+                    callback(null);
+                }
+            }
+            ;
+            /**
              * updates the metadata record.
              * @param {type} valueRecord JSON value of the metadata record.
              * @param {type} metadataDocumentFile file of the metadata document.
              * @returns {undefined}
              */
             function updateMetadataRecord(valueRecord, metadataDocumentFile) {
-
                 var formData = new FormData();
                 var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
                 const recordFile = new File([blobRecord], 'recordFile.json');
 
-                formData.append("document", metadataDocumentFile);
                 formData.append("record", recordFile);
+                if (metadataDocumentFile !== null) {
+                    formData.append("document", metadataDocumentFile);
+                }
 
                 generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
                     if (status === "success") {
@@ -261,7 +323,7 @@
                             },
                             error: function (result) {
                                 $("#formModal").modal('hide');
-                                var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                                var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                                 showModal("FAILED", "Operation failed: " + message, "");
                             }
                         });
@@ -285,7 +347,7 @@
                         callback(result);
                     },
                     error: function (result) {
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });
@@ -318,7 +380,7 @@
                     },
                     error: function (result) {
                         $("#formModal").modal('hide');
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });
@@ -339,7 +401,7 @@
                         callback(result);
                     },
                     error: function (result) {
-                        var message = result.responseJSON.message !== undefined ? result.responseJSON.message : result.status;
+                        var message = result.responseJSON !== undefined ? result.responseJSON.message : result.status;
                         showModal("FAILED", "Operation failed: " + message, "");
                     }
                 });

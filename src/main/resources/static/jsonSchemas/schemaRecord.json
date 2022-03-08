@@ -24,11 +24,11 @@
             "enum": ["JSON", "XML"]
         },
         "createdAt": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Created"
         },
         "lastUpdate": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Updated"
         },
         "label": {
