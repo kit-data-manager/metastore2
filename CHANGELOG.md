@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
-- Access filter for monitoring.
+- First version of MetaStoreGui
+  - Fix issue #69
 - Allow also IDs for metadata documents (issue #76)
+- Access filter for monitoring.
+
 ### Changed
 
 ### Fixed
