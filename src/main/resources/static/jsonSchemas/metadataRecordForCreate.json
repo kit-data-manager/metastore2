@@ -9,12 +9,12 @@
             "properties": {
                 "identifier": {
                     "type": "string",
-                    "title": "Identifier"
+                    "title": "Identifier*"
                 },
                 "identifierType": {
                     "type": "string",
                     "default": "INTERNAL",
-                    "title": "Identifier Type"
+                    "title": "Identifier Type*"
                 }
             },
              "required": ["identifier", "identifierType"]
@@ -25,12 +25,12 @@
             "properties": {
                 "identifier": {
                     "type": "string",
-                    "title": "Identifier"
+                    "title": "Identifier*"
                 },
                 "identifierType": {
                     "type": "string",
                     "enum": ["URL", "INTERNAL"],
-                    "title": "Identifier Type"
+                    "title": "Identifier Type*"
                 }
             },
             "required": ["identifier", "identifierType"]
