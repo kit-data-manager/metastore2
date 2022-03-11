@@ -3,7 +3,7 @@
     "properties": {
         "schema": {
             "type": "string",
-            "title": "XSD Schema"
+            "title": "Metadata Schema"
         }
     }
 }
