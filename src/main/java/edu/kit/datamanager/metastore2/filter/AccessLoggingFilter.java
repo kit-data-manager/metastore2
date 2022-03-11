@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.filter;
 
-import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
+import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -49,7 +49,7 @@ public class AccessLoggingFilter implements Filter {
     chain.doFilter(request, response);
     
     // authToken may be null if authentication is disabled.
-    authToken = req.getHeader(JwtAuthenticationFilter.AUTHORIZATION_HEADER);
+    authToken = req.getHeader(KeycloakTokenFilter.AUTHORIZATION_HEADER);
     
     LOGGER.trace("'{}' access to '{}' -> Status: '{}'", req.getMethod(), req.getRequestURI(), resp.getStatus(), authToken);
   }

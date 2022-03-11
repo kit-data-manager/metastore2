@@ -15,10 +15,9 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
-import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
-import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
+import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
+import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
-import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
 import javax.servlet.Filter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +65,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Override
   public void configure(AuthenticationManagerBuilder auth) throws Exception {
-    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
+//    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(applicationProperties.getJwtSecret(), logger));
   }
 
   @Override
@@ -74,13 +73,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     HttpSecurity httpSecurity = http.authorizeRequests()
             .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
-      httpSecurity.csrf().disable();
+      httpSecurity = httpSecurity.csrf().disable();
     }
-    httpSecurity.addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+    httpSecurity.addFilterAfter(new KeycloakTokenFilter(KeycloakTokenValidator.builder()
+            .jwtLocalSecret(applicationProperties.getJwtSecret())
+            .build(null, null, null)), BasicAuthenticationFilter.class);
 
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager()), KeycloakTokenFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
@@ -114,9 +115,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 //    return source;
 //  }
   @Bean
-  public FilterRegistrationBean<?> corsFilter() {
-    logger.info("CSRF enabled: '{}'", enableCsrf);
-    logger.info("CORS: allowedOriginPatterns: '{}'", allowedOriginPattern);
+  public FilterRegistrationBean corsFilter() {
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
