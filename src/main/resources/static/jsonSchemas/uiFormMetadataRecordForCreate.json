@@ -1,6 +1,7 @@
 {
     "type": "fieldset",
     "items": [
+        "id",
         "relatedResource",
         "schema",
         "schemaVersion",
