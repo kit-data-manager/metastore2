@@ -9,12 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
+
+### Changed
+
+### Fixed
+
+## [1.0.0] - 2022-03-11
+### Added
 - Finalized version of MetaStoreGui
   - Fix issue #69
 - Allow also IDs for metadata documents (issue #76)
 - Access filter for monitoring.
 
 ### Changed
+- Update to repo-core 1.0.0
+- Update to service-base 1.0.0
 - Downgrade library due to some issues regarding validation
   - json-schema-validator 1.0.64. -> 1.0.59
 
@@ -149,7 +158,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...HEAD
+[0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
+[0.3.7]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...v0.3.5
 [0.3.4]: https://github.com/kit-data-manager/metastore2/compare/v0.3.3...v0.3.4
