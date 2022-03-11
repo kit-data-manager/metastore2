@@ -8,10 +8,31 @@ and open the template in the editor.
     <head>
         <meta charset="UTF-8">
         <title>Metadata Management</title>
+        <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
         <link rel="stylesheet" style="text/css" href="/editor/dependencies/fontawesome/css/all.min.css" />
         <link href="/editor/dependencies/tabulator/css/tabulator_bootstrap4.min.css" rel="stylesheet">
         <link rel="stylesheet" style="text/css" href="/editor/dependencies/jsonform/deps/opt/bootstrap-v4.5.2.css"/>
         <link rel="stylesheet" style="text/css" href="/editor/lib/css/metadataeditor.style.default.css" />
+        <script>
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
+        </script>
     </head>
     <div class="container">
         <div class="col-12">
@@ -48,261 +69,257 @@ and open the template in the editor.
 
     <script th:inline="javascript">
 
-        var options;
-        /*<![CDATA[*/
-        options = /*[[${request}]]*/ {};
-        /*]]>*/
+                    var options;
+                    /*<![CDATA[*/
+                    options = /*[[${request}]]*/ {};
+                    /*]]>*/
 
-        var table = {
-            layout: "fitColumns",
-            pagination: "remote",
-            ajaxURL: "/api/v1/ui/metadata/",
-            paginationSize: 2
-        };
-        // add modals to html
-        $('body').append(modalTemplate("ALERT"));
-        $('body').append(modalTemplate("FAILED"));
-        $('body').append(modalTemplate("SUCCESS"));
-
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
-            readOperation: function (rowColumnvalue) {
-                var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
-                $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                    var resource = options.resource;
-                    var url = resource.schema.identifier;
-                    readSchema(url, function (metadataDataModel) {
-                        readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
-                            options = {operation: "READ", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource};
-                            $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                            });
-                        });
-                    });
-                });
-                $("#formModal").modal('show');
-            },
-            updateOperation: function (rowColumnvalue) {
-                $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
-                    $.getJSON("/jsonSchemas/uiFormmetadataRecord.json", function (uiForm) {
-                        var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
-                        $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
-                            readSchema(options.resource.schema.identifier, function (metadataDataModel) {
-                                readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
-                                    options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource, buttonTitle: "Update"};
-                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
-                                        updateMetadataRecord(updatedMetadataRecord, updatedMetadataDocument);
+                    var table = {
+                    layout: "fitColumns",
+                            pagination: "remote",
+                            ajaxURL: "/api/v1/ui/metadata/",
+                            paginationSize: 2
+                    };
+                    // add modals to html
+                    $('body').append(modalTemplate("ALERT"));
+                    $('body').append(modalTemplate("FAILED"));
+                    $('body').append(modalTemplate("SUCCESS"));
+                    var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,
+                            readOperation: function (rowColumnvalue) {
+                            var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                            var resource = options.resource;
+                                    var url = resource.schema.identifier;
+                                    readSchema(url, function (metadataDataModel) {
+                                    readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
+                                    options = {operation: "READ", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource};
+                                            $('form').metadataeditorForm(options, function onSubmitValid(value) {
                                     });
-                                });
+                                    });
+                                    });
                             });
-                        });
-                    });
-                });
-                $("#formModal").modal('show');
-            },
-            createOperation: {callback: function () {
-                    $.getJSON("/jsonSchemas/metadataRecordForCreate.json", function (dataModel) {
-                        $.getJSON("/jsonSchemas/uiFormMetadataRecordForCreate.json", function (uiForm) {
+                                    $("#formModal").modal('show');
+                            },
+                            updateOperation: function (rowColumnvalue) {
+                            $.getJSON("/jsonSchemas/metadataRecord.json", function (dataModel) {
+                            $.getJSON("/jsonSchemas/uiFormmetadataRecord.json", function (uiForm) {
+                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: rowColumnvalue, buttonTitle: "Metadata Document"};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataRecord) {
+                            readSchema(options.resource.schema.identifier, function (metadataDataModel) {
+                            readMetadataDocument(options.resource.metadataDocumentUri, function (metadataResource) {
+                            options = {operation: "UPDATE", dataModel: metadataDataModel, uiForm: "*", resource: metadataResource, buttonTitle: "Update"};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedMetadataDocument) {
+                            updateMetadataRecord(updatedMetadataRecord, updatedMetadataDocument);
+                            });
+                            });
+                            });
+                            });
+                            });
+                            });
+                                    $("#formModal").modal('show');
+                            },
+                            createOperation: {callback: function () {
+                            $.getJSON("/jsonSchemas/metadataRecordForCreate.json", function (dataModel) {
+                            $.getJSON("/jsonSchemas/uiFormMetadataRecordForCreate.json", function (uiForm) {
                             var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm, buttonTitle: "Create/Generate Schema"};
-                            $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
-                                var record = JSON.parse(metadataRecord);
-                                // check schema identifier type
-                                if (record.schema.identifierType === "INTERNAL") {
-                                    url = "/api/v1/schemas/" + record.schema.identifier;
-                                } else if (record.schema.identifierType === "URL") {
-                                    url = record.schema.identifier;
-                                }
+                                    $('form').metadataeditorForm(options, function onSubmitValid(metadataRecord) {
+                            var record = JSON.parse(metadataRecord);
+                                    // check schema identifier type
+                                    if (record.schema.identifierType === "INTERNAL") {
+                            url = "/api/v1/schemas/" + record.schema.identifier;
+                            } else if (record.schema.identifierType === "URL") {
+                            url = record.schema.identifier;
+                            }
 
-                                //add the schema version if it is given
-                                if (record.schemaVersion !== undefined) {
-                                    url = url + "?version=" + record.schemaVersion;
-                                }
+                            //add the schema version if it is given
+                            if (record.schemaVersion !== undefined) {
+                            url = url + "?version=" + record.schemaVersion;
+                            }
 
-                                //upload the metadata document
-                                var input = $('.input-file');
-                                if (input[0].value.length !== 0) {
-                                    let file = input[0].files[0];
+                            //upload the metadata document
+                            var input = $('.input-file');
+                                    if (input[0].value.length !== 0) {
+                            let file = input[0].files[0];
                                     let reader = new FileReader();
                                     reader.readAsText(file);
                                     reader.onload = function (e) {
-                                        var metadataDocument = reader.result;
-                                        createMetadataRecord(metadataRecord, metadataDocument);
+                                    var metadataDocument = reader.result;
+                                            createMetadataRecord(metadataRecord, metadataDocument);
                                     }
-                                } else {
-                                    //generate the appropriate Schema
-                                    readSchema(url, function (schemaDocument) {
-                                        options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
-                                        $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
-                                            createMetadataRecord(metadataRecord, metadata);
-                                        });
-                                    });
-                                }
-
-                                readSchema(url, function (schemaDocument) {
-                                    options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
+                            } else {
+                            //generate the appropriate Schema
+                            readSchema(url, function (schemaDocument) {
+                            options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
                                     $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
-                                        createMetadataRecord(metadataRecord, metadata);
-                                    });
-                                });
+                            createMetadataRecord(metadataRecord, metadata);
                             });
-                        });
-                    });
-                    $("#formModal").modal('show');
-                },
-                buttonTitle: "Register new Metadata Document"},
+                            });
+                            }
 
-            returnOperation: {callback: function () {
-                    window.location.href = "/dashboard";
-                }, buttonTitle: "Dashboard"}
+                            readSchema(url, function (schemaDocument) {
+                            options = {operation: "CREATE", dataModel: schemaDocument, uiForm: "*", buttonTitle: "Register Metadata Document"};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(metadata) {
+                            createMetadataRecord(metadataRecord, metadata);
+                            });
+                            });
+                            });
+                            });
+                            });
+                                    $("#formModal").modal('show');
+                            },
+                                    buttonTitle: "Register new Metadata Document"},
+                            returnOperation: {callback: function () {
+                            window.location.href = "/dashboard";
+                            }, buttonTitle: "Dashboard"}
 
-        };
-        $('#table-metadata').metadataeditorTable(inputs);
+                    };
+                    $('#table-metadata').metadataeditorTable(inputs);
+                    /**
+                     * updates the metadata record.
+                     * @param {type} valueRecord JSON value of the metadata record.
+                     * @param {type} valueDocument JSOn value of the metadata document.
+                     * @returns {undefined}
+                     */
+                            function updateMetadataRecord(valueRecord, valueSchema) {
 
-        /**
-         * updates the metadata record.
-         * @param {type} valueRecord JSON value of the metadata record.
-         * @param {type} valueDocument JSOn value of the metadata document.
-         * @returns {undefined}
-         */
- function updateMetadataRecord(valueRecord, valueSchema) {
+                            var formData = new FormData();
+                                    var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
+                                    const recordFile = new File([blobRecord], 'recordFile1.json');
+                                    var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
+                                    const schemaFile = new File([blobSchema], 'schemaFile1.json');
+                                    formData.append("document", schemaFile);
+                                    formData.append("record", recordFile);
+                                    generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
+                                    if (status === "success") {
+                                    $.ajax({
+                                    type: "PUT",
+                                            url: "/api/v1/metadata/" + JSON.parse(valueRecord).id,
+                                            contentType: false,
+                                            processData: false,
+                                            headers: {
+                                            "If-Match": etag,
+                                                    Authorization: 'Bearer ' + keycloak.token
+                                            },
+                                            data: formData,
+                                            success: function (result) {
+                                            $("#formModal").modal('hide');
+                                                    showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
+                                            },
+                                            error: function (result) {
+                                            $("#formModal").modal('hide');
+                                                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                                            }
+                                    });
+                                    } else {
+                                    alert("etag couldn't be generated");
+                                    }
+                                    });
+                            }
 
-            var formData = new FormData();
-            var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
-            const recordFile = new File([blobRecord], 'recordFile1.json');
-
-          
-                var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
-                const schemaFile = new File([blobSchema], 'schemaFile1.json');
-                formData.append("document", schemaFile);
-          
-
-            formData.append("record", recordFile);
-
-            generateEtag(JSON.parse(valueRecord).id, function (status, etag) {
-                if (status === "success") {
+                    /**
+                     * reads the schema.
+                     * @param {type} rowColumnValue schema document uri.
+                     * @param {type} callback cb function returns the schema as a JSON value in case the actual method is coorectly executed.
+                     * @returns {undefined}
+                     */
+                    function readSchema(rowColumnValue, callback) {
                     $.ajax({
-                        type: "PUT",
-                        url: "/api/v1/metadata/" + JSON.parse(valueRecord).id,
-                        contentType: false,
-                        processData: false,
-                        "headers": {
-                            "If-Match": etag
-                        },
-                        data: formData,
-                        success: function (result) {
-                            $("#formModal").modal('hide');
-                            showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
-                        },
-                        error: function (result) {
-                            $("#formModal").modal('hide');
+                    type: "GET",
+                            url: rowColumnValue,
+                            contentType: "application/json",
+                            dataType: 'json',
+                            headers: {
+                            Authorization: 'Bearer ' + keycloak.token
+                            },
+                            success: function (result) {
+                            callback(result);
+                            },
+                            error: function (result) {
                             showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                        }
+                            }
                     });
-                } else {
-                    alert("etag couldn't be generated");
-                }
-            });
-        }
+                    }
+                    ;
+                            /**
+                             * registers a new metadata Record.
+                             * @param {type} valueMetadataRecord the JSON value of the metadata record.
+                             * @param {type} valueMetadataDocument the JSON value of the metadata document.
+                             * @returns {undefined}
+                             */
+                                    function createMetadataRecord(valueMetadataRecord, valueMetadataDocument) {
+                                    var formData = new FormData();
+                                            var blobSchema = new Blob([JSON.stringify(JSON.parse(valueMetadataDocument))], {type: "application/json"});
+                                            const metadataDocumentFile = new File([blobSchema], 'metadataDocumentFile.json');
+                                            var blobRecord = new Blob([JSON.stringify(JSON.parse(valueMetadataRecord), null, 2)], {type: "application/json"});
+                                            const metadataRecordFile = new File([blobRecord], 'metadataRecordFile.json');
+                                            formData.append("document", metadataDocumentFile);
+                                            formData.append("record", metadataRecordFile);
+                                            $.ajax({
+                                            type: "POST",
+                                                    url: "/api/v1/metadata/",
+                                                    contentType: false,
+                                                    processData: false,
+                                                    data: formData,
+                                                    headers: {
+                                                    Authorization: 'Bearer ' + keycloak.token
+                                                    },
+                                                    success: function (result) {
+                                                    $("#formModal").modal('hide');
+                                                            showModal("SUCCESS", "Operation has been sucessfully executed!", "");
+                                                    },
+                                                    error: function (result) {
+                                                    $("#formModal").modal('hide');
+                                                            showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                                                    }
+                                            });
+                                    }
 
-        /**
-         * reads the schema.
-         * @param {type} rowColumnValue schema document uri.
-         * @param {type} callback cb function returns the schema as a JSON value in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function readSchema(rowColumnValue, callback) {
-            $.ajax({
-                type: "GET",
-                url: rowColumnValue,
-                contentType: "application/json",
-                dataType: 'json',
-                success: function (result) {
-                    callback(result);
-
-                },
-                error: function (result) {
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-
-        }
-        ;
-        /**
-         * registers a new metadata Record.
-         * @param {type} valueMetadataRecord the JSON value of the metadata record.
-         * @param {type} valueMetadataDocument the JSON value of the metadata document.
-         * @returns {undefined}
-         */
-        function createMetadataRecord(valueMetadataRecord, valueMetadataDocument) {
-            var formData = new FormData();
-
-            var blobSchema = new Blob([JSON.stringify(JSON.parse(valueMetadataDocument))], {type: "application/json"});
-            const metadataDocumentFile = new File([blobSchema], 'metadataDocumentFile.json');
-
-            var blobRecord = new Blob([JSON.stringify(JSON.parse(valueMetadataRecord), null, 2)], {type: "application/json"});
-            const metadataRecordFile = new File([blobRecord], 'metadataRecordFile.json');
-
-            formData.append("document", metadataDocumentFile);
-            formData.append("record", metadataRecordFile);
-            $.ajax({
-                type: "POST",
-                url: "/api/v1/metadata/",
-                contentType: false,
-                processData: false,
-                data: formData,
-                success: function (result) {
-                    $("#formModal").modal('hide');
-                    showModal("SUCCESS", "Operation has been sucessfully executed!", "");
-                },
-                error: function (result) {
-                    $("#formModal").modal('hide');
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-        }
-
-        /**
-         * reads a metadata document.
-         * @param {type} value metadata document uri.
-         * @param {type} callback cb function returns the metadata document as a JSON value in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function readMetadataDocument(value, callback) {
-            $.ajax({
-                type: "GET",
-                url: value,
-                contentType: "application/json",
-                dataType: 'json',
-                success: function (result) {
-                    callback(result);
-
-                },
-                error: function (result) {
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-        }
-        ;
-
-        /**
-         * generates the etag of a metadata record.
-         * @param {type} idValue represents the identifier of a metadata record.
-         * @param {type} callback cb function returns the etag value in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function generateEtag(idValue, callback) {
-            $.ajax({
-                type: "GET",
-                url: "/api/v1/metadata/" + idValue,
-                dataType: "json",
-                headers: {
-                    Accept: "application/vnd.datamanager.metadata-record+json"},
-                success: function (output, status, xhr) {
-                    callback(status, xhr.getResponseHeader("ETag"));
-                },
-
-                error: function (result) {
-                    callback(result.status);
-                }
-            });
-        }
+                            /**
+                             * reads a metadata document.
+                             * @param {type} value metadata document uri.
+                             * @param {type} callback cb function returns the metadata document as a JSON value in case the actual method is coorectly executed.
+                             * @returns {undefined}
+                             */
+                            function readMetadataDocument(value, callback) {
+                            $.ajax({
+                            type: "GET",
+                                    url: value,
+                                    contentType: "application/json",
+                                    dataType: 'json',
+                                    headers: {
+                                    Authorization: 'Bearer ' + keycloak.token
+                                    },
+                                    success: function (result) {
+                                    callback(result);
+                                    },
+                                    error: function (result) {
+                                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                                    }
+                            });
+                            }
+                            ;
+                                    /**
+                                     * generates the etag of a metadata record.
+                                     * @param {type} idValue represents the identifier of a metadata record.
+                                     * @param {type} callback cb function returns the etag value in case the actual method is coorectly executed.
+                                     * @returns {undefined}
+                                     */
+                                            function generateEtag(idValue, callback) {
+                                            $.ajax({
+                                            type: "GET",
+                                                    url: "/api/v1/metadata/" + idValue,
+                                                    dataType: "json",
+                                                    headers: {
+                                                    Accept: "application/vnd.datamanager.metadata-record+json",
+                                                            Authorization: 'Bearer ' + keycloak.token
+                                                    },
+                                                    success: function (output, status, xhr) {
+                                                    callback(status, xhr.getResponseHeader("ETag"));
+                                                    },
+                                                    error: function (result) {
+                                                    callback(result.status);
+                                                    }
+                                            });
+                                            }
     </script>
 </html>

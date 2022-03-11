@@ -8,10 +8,31 @@ and open the template in the editor.
     <head>
         <meta charset="utf-8" />
         <title>Schema Management</title>
+        <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
         <link rel="stylesheet" style="text/css" href="/editor/dependencies/fontawesome/css/all.min.css" />
         <link href="/editor/dependencies/tabulator/css/tabulator_bootstrap4.min.css" rel="stylesheet">
         <link rel="stylesheet" style="text/css" href="/editor/dependencies/jsonform/deps/opt/bootstrap-v4.5.2.css"/>
         <link rel="stylesheet" style="text/css" href="/editor/lib/css/metadataeditor.style.default.css" />
+        <script>
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
+        </script>
     </head>
     <div class="container">
         <div class="col-12">
@@ -48,254 +69,268 @@ and open the template in the editor.
 
     <script th:inline="javascript">
 
-        var options;
-        /*<![CDATA[*/
-        options = /*[[${request}]]*/ {};
-        /*]]>*/
+            var options;
+            /*<![CDATA[*/
+            options = /*[[${request}]]*/ {};
+            /*]]>*/
 
-        // add modals to html
-        $('body').append(modalTemplate("ALERT"));
-        $('body').append(modalTemplate("FAILED"));
-        $('body').append(modalTemplate("SUCCESS"));
+            // add modals to html
+            $('body').append(modalTemplate("ALERT"));
+            $('body').append(modalTemplate("FAILED"));
+            $('body').append(modalTemplate("SUCCESS"));
 
-        var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items,paginationURL: "/api/v1/ui/schemas",
-            readOperation: function (rowColumnvalue) {
-                readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
-                    var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
-                    $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                        readSchema(options.resource.schemaDocumentUri, function (schemaDataModel) {
-                            options = {operation: "READ", dataModel: schemaDataModel, uiForm: "*"};
-                            $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                            });
-                        });
-                    });
-                });
-                $("#formModal").modal('show');
-            },
-            updateOperation: function (rowColumnvalue) {
-                readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
-                    $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
-                        $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
-                            var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: schemaRecordResource, buttonTitle: "Update Schema"};
-                            $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
-                                //TODO check if file is uploaded
-                                uploadFile(function (valueSchema, updateSchema) {
-                                    updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
+            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, paginationURL: "/api/v1/ui/schemas",
+                readOperation: function (rowColumnvalue) {
+                    readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
+                        var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
+                        $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                            readSchema(options.resource.schemaDocumentUri, function (schemaDataModel) {
+                                options = {operation: "READ", dataModel: schemaDataModel, uiForm: "*"};
+                                $('form').metadataeditorForm(options, function onSubmitValid(value) {
                                 });
-
-                            });
-                        });
-                    });
-                });
-                $("#formModal").modal('show');
-            },
-            createOperation: {callback: function () {
-                    $.getJSON("/jsonSchemas/uiFormSchemaRecordForCreate.json", function (uiForm) {
-                        $.getJSON("/jsonSchemas/schemaRecordForCreate.json", function (dataModel) {
-                            var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm};
-                            //TODO check if file is uploaded
-                            $('form').metadataeditorForm(options, function onSubmitValid(valueRecord) {
-                                var input = document.getElementsByClassName('input-file');
-                                let file = input[0].files[0];
-                                let reader = new FileReader();
-                                reader.readAsText(file);
-                                reader.onload = function (e) {
-                                    var valueSchema = reader.result;
-                                    createSchemaRecord(valueRecord, valueSchema);
-                                }
                             });
                         });
                     });
                     $("#formModal").modal('show');
-                }
-                ,
-                buttonTitle: "Register new Schema"},
-            listOperation: function (rowColumnvalue) {
-                window.location.href = "/metadata-schema-management/" + rowColumnvalue.schemaId;
-            },
+                },
+                updateOperation: function (rowColumnvalue) {
+                    readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
+                        $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
+                            $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
+                                var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: schemaRecordResource, buttonTitle: "Update Schema"};
+                                $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
+                                    //TODO check if file is uploaded
+                                    uploadFile(function (valueSchema, updateSchema) {
+                                        updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
+                                    });
 
-            returnOperation: {callback: function () {
-                    window.location.href = "/dashboard";
-                }, buttonTitle: "Dashboard"}
-
-        };
-        $('#table-schemas').metadataeditorTable(inputs);
-
-        /**
-         * generates the appropriate etag and updates the schema record.
-         * @param {type} valueRecord the schema record.
-         * @param {type} valueSchema the JSON schema.
-         * @param {type} updateSchema boolean value and gives if the schema file is uploaded and should be updated or not.
-         * @returns {undefined} 
-         */
-        function updateSchemaRecord(valueRecord, valueSchema, updateSchema) {
-
-            var formData = new FormData();
-            var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
-            const recordFile = new File([blobRecord], 'recordFile.json');
-
-            if (updateSchema) {
-                var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
-                const schemaFile = new File([blobSchema], 'schemaFile.json');
-                formData.append("schema", schemaFile);
-            }
-
-            formData.append("record", recordFile);
-
-            generateEtag(JSON.parse(valueRecord).schemaId, function (status, etag) {
-                if (status === "success") {
-                    $.ajax({
-                        type: "PUT",
-                        url: "/api/v1/schemas/" + JSON.parse(valueRecord).schemaId,
-                        contentType: false,
-                        processData: false,
-                        "headers": {
-                            "If-Match": etag
-                        },
-                        data: formData,
-                        success: function (result) {
-                            $("#formModal").modal('hide');
-                            showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
-                        },
-                        error: function (result) {
-                            $("#formModal").modal('hide');
-                            showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                        }
+                                });
+                            });
+                        });
                     });
-                } else {
-                    alert("etag couldn't be generated");
-                }
-            });
-        }
-
-        /**
-         * reads the schema.
-         * @param {type} value schema document uri.
-         * @param {type} callback cb function returns the schema as a JSON value in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function readSchema(value, callback) {
-            $.ajax({
-                type: "GET",
-                url: value,
-                contentType: "application/json",
-                dataType: 'json',
-                success: function (result) {
-                    callback(result);
-
+                    $("#formModal").modal('show');
                 },
-                error: function (result) {
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-
-        }
-        ;
-
-        /**
-         *  reads the schema record.
-         * @param {type} rowColumnValue the value of the JSON schema record.
-         * @param {type} callback cb function returns schema record as a JSON value in case the actual method is coorectly executed.
-         * @returns {undefined} 
-         */
-        function readSchemaRecord(rowColumnValue, callback) {
-            $.ajax({
-                type: "GET",
-                url: "/api/v1/schemas/" + rowColumnValue.schemaId + "?version=" + rowColumnValue.schemaVersion,
-                contentType: "application/json",
-                dataType: 'json',
-                headers: {
-                    Accept: "application/vnd.datamanager.schema-record+json"},
-                success: function (result) {
-                    callback(result);
-                },
-                error: function (result) {
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-        }
-        ;
-
-        /**
-         * registers a new schema record.
-         * @param {type} valueRecord JSON Value, which represents the schema record that should be created
-         * @param {type} valueSchema JSON Value, which represents the schema that should be created
-         * @returns {undefined}
-         */
-        function createSchemaRecord(valueRecord, valueSchema) {
-            var formData = new FormData();
-
-            var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema))], {type: "application/json"});
-            const schemaFile = new File([blobSchema], 'schemaFile.json');
-
-            var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
-            const recordFile = new File([blobRecord], 'recordFile.json');
-
-            formData.append("schema", schemaFile);
-            formData.append("record", recordFile);
-
-            $.ajax({
-                type: "POST",
-                url: "/api/v1/schemas/",
-                contentType: false,
-                processData: false,
-                data: formData,
-                success: function (result) {
-                    $("#formModal").modal('hide');
-                    showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
-                },
-                error: function (result) {
-                    $("#formModal").modal('hide');
-                    showModal("FAILED", "Operation failed: Error: " + result.status, "");
-                }
-            });
-        }
-
-        /**
-         *  generates the etag of a schema record.
-         * @param {type} idValue represents the identifier of a schema record.
-         * @param {type} callback cb function returns the etag value in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function generateEtag(idValue, callback) {
-            $.ajax({
-                type: "GET",
-                url: "/api/v1/schemas/" + idValue,
-                dataType: "json",
-                headers: {
-                    Accept: "application/vnd.datamanager.schema-record+json"},
-                success: function (output, status, xhr) {
-                    callback(status, xhr.getResponseHeader("ETag"));
+                createOperation: {callback: function () {
+                        $.getJSON("/jsonSchemas/uiFormSchemaRecordForCreate.json", function (uiForm) {
+                            $.getJSON("/jsonSchemas/schemaRecordForCreate.json", function (dataModel) {
+                                var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm};
+                                //TODO check if file is uploaded
+                                $('form').metadataeditorForm(options, function onSubmitValid(valueRecord) {
+                                    var input = document.getElementsByClassName('input-file');
+                                    let file = input[0].files[0];
+                                    let reader = new FileReader();
+                                    reader.readAsText(file);
+                                    reader.onload = function (e) {
+                                        var valueSchema = reader.result;
+                                        createSchemaRecord(valueRecord, valueSchema);
+                                    }
+                                });
+                            });
+                        });
+                        $("#formModal").modal('show');
+                    }
+                    ,
+                    buttonTitle: "Register new Schema"},
+                listOperation: function (rowColumnvalue) {
+                    window.location.href = "/metadata-schema-management/" + rowColumnvalue.schemaId;
                 },
 
-                error: function (result) {
-                    callback(result.status);
+                returnOperation: {callback: function () {
+                        window.location.href = "/dashboard";
+                    }, buttonTitle: "Dashboard"}
+
+            };
+            $('#table-schemas').metadataeditorTable(inputs);
+
+            /**
+             * generates the appropriate etag and updates the schema record.
+             * @param {type} valueRecord the schema record.
+             * @param {type} valueSchema the JSON schema.
+             * @param {type} updateSchema boolean value and gives if the schema file is uploaded and should be updated or not.
+             * @returns {undefined} 
+             */
+            function updateSchemaRecord(valueRecord, valueSchema, updateSchema) {
+                console.log(keycloak.token);
+                var formData = new FormData();
+                var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
+                const recordFile = new File([blobRecord], 'recordFile.json');
+
+                if (updateSchema) {
+                    var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema), null, 2)], {type: "application/json"});
+                    const schemaFile = new File([blobSchema], 'schemaFile.json');
+                    formData.append("schema", schemaFile);
                 }
-            });
-        }
 
-        /**
-         * uploads a file.
-         * @param {type} callback cb function returns the uploaded file in case the actual method is coorectly executed.
-         * @returns {undefined}
-         */
-        function uploadFile(callback) {
-            var updateSchema = false;
-            var valueSchema;
-            var input = document.getElementsByClassName('input-file');
-            if (input[0].value.length !== 0) {
-                let file = input[0].files[0];
-                let reader = new FileReader();
-                reader.readAsText(file);
-                reader.onload = function (e) {
-                    valueSchema = reader.result;
-                    updateSchema = true;
-                    callback(valueSchema, updateSchema);
+                formData.append("record", recordFile);
 
-                };
-            } else {
-                callback(valueSchema, updateSchema);
+                generateEtag(JSON.parse(valueRecord).schemaId, function (status, etag) {
+                    if (status === "success") {
+                        $.ajax({
+                            type: "PUT",
+                            url: "/api/v1/schemas/" + JSON.parse(valueRecord).schemaId,
+                            contentType: false,
+                            processData: false,
+                            headers: {
+                                "If-Match": etag,
+                                "Authorization": 'Bearer ' + keycloak.token
+                            },
+                            data: formData,
+                            success: function (result) {
+                                $("#formModal").modal('hide');
+                                showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
+                            },
+                            error: function (result) {
+                                $("#formModal").modal('hide');
+                                showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                            }
+                        });
+                    } else {
+                        alert("etag couldn't be generated");
+                    }
+                });
             }
-        }
+
+            /**
+             * reads the schema.
+             * @param {type} value schema document uri.
+             * @param {type} callback cb function returns the schema as a JSON value in case the actual method is coorectly executed.
+             * @returns {undefined}
+             */
+            function readSchema(value, callback) {
+                console.log(keycloak.token);
+                $.ajax({
+                    type: "GET",
+                    url: value,
+                    contentType: "application/json",
+                    dataType: 'json',
+                    headers: {
+                        "Authorization": 'Bearer ' + keycloak.token
+                    },
+                    success: function (result) {
+                        callback(result);
+
+                    },
+                    error: function (result) {
+                        showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                    }
+                });
+
+            }
+            ;
+
+            /**
+             *  reads the schema record.
+             * @param {type} rowColumnValue the value of the JSON schema record.
+             * @param {type} callback cb function returns schema record as a JSON value in case the actual method is coorectly executed.
+             * @returns {undefined} 
+             */
+            function readSchemaRecord(rowColumnValue, callback) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/v1/schemas/" + rowColumnValue.schemaId + "?version=" + rowColumnValue.schemaVersion,
+                    contentType: "application/json",
+                    dataType: 'json',
+                    headers: {
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
+                    success: function (result) {
+                        callback(result);
+                    },
+                    error: function (result) {
+                        showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                    }
+                });
+            }
+            ;
+
+            /**
+             * registers a new schema record.
+             * @param {type} valueRecord JSON Value, which represents the schema record that should be created
+             * @param {type} valueSchema JSON Value, which represents the schema that should be created
+             * @returns {undefined}
+             */
+            function createSchemaRecord(valueRecord, valueSchema) {
+                console.log("POST " + keycloak.token);
+                var formData = new FormData();
+
+                var blobSchema = new Blob([JSON.stringify(JSON.parse(valueSchema))], {type: "application/json"});
+                const schemaFile = new File([blobSchema], 'schemaFile.json');
+
+                var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
+                const recordFile = new File([blobRecord], 'recordFile.json');
+
+                formData.append("schema", schemaFile);
+                formData.append("record", recordFile);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/api/v1/schemas/",
+                    headers: {
+                        "Authorization": "Bearer " + keycloak.token
+                    },
+                    contentType: false,
+                    processData: false,
+                    data: formData,
+
+                    success: function (result) {
+                        $("#formModal").modal('hide');
+                        showModal("SUCCESS", "Operation has been sucessfully executed!", "/schema-management");
+                    },
+                    error: function (result) {
+                        $("#formModal").modal('hide');
+                        showModal("FAILED", "Operation failed: Error: " + result.status, "");
+                    }
+                });
+            }
+
+            /**
+             *  generates the etag of a schema record.
+             * @param {type} idValue represents the identifier of a schema record.
+             * @param {type} callback cb function returns the etag value in case the actual method is coorectly executed.
+             * @returns {undefined}
+             */
+            function generateEtag(idValue, callback) {
+                $.ajax({
+                    type: "GET",
+                    url: "/api/v1/schemas/" + idValue,
+                    dataType: "json",
+                    headers: {
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
+                    success: function (output, status, xhr) {
+                        callback(status, xhr.getResponseHeader("ETag"));
+                    },
+
+                    error: function (result) {
+                        callback(result.status);
+                    }
+                });
+            }
+
+            /**
+             * uploads a file.
+             * @param {type} callback cb function returns the uploaded file in case the actual method is coorectly executed.
+             * @returns {undefined}
+             */
+            function uploadFile(callback) {
+                var updateSchema = false;
+                var valueSchema;
+                var input = document.getElementsByClassName('input-file');
+                if (input[0].value.length !== 0) {
+                    let file = input[0].files[0];
+                    let reader = new FileReader();
+                    reader.readAsText(file);
+                    reader.onload = function (e) {
+                        valueSchema = reader.result;
+                        updateSchema = true;
+                        callback(valueSchema, updateSchema);
+
+                    };
+                } else {
+                    callback(valueSchema, updateSchema);
+                }
+            }
     </script>
 </html>

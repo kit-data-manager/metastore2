@@ -15,10 +15,10 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
-import edu.kit.datamanager.security.filter.JwtAuthenticationFilter;
-import edu.kit.datamanager.security.filter.JwtAuthenticationProvider;
+import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
+import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
+import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
-import edu.kit.datamanager.security.filter.NoopAuthenticationEventPublisher;
 import javax.servlet.Filter;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,6 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
@@ -58,35 +57,65 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     @Value("${metastore.security.allowedOriginPattern:http[*]://localhost:[*]}")
     private String allowedOriginPattern;
 
+    @Autowired
+    private ApplicationProperties applicationProperties;
+
+    @Value("${repo.auth.enabled:FALSE}")
+    private boolean authEnabled;
+    // @Value("${repo.auth.jwtSecret:vkfvoswsohwrxgjaxipuiyyjgubggzdaqrcuupbugxtnalhiegkppdgjgwxsmvdb}")
+    //private String jwtSecret;
+    @Autowired
+    private KeycloakJwtProperties properties;
+
     public WebSecurityConfig() {
     }
 
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
-    }
-
+//    @Override
+//    public void configure(AuthenticationManagerBuilder auth) throws Exception {
+//        auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider("test123", logger));
+//    }
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         HttpSecurity httpSecurity = http.authorizeRequests()
-                .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
-        if (!enableCsrf) {
-            httpSecurity.csrf().disable();
-        }
-        httpSecurity.addFilterAfter(new JwtAuthenticationFilter(authenticationManager()), BasicAuthenticationFilter.class);
+                .antMatchers(HttpMethod.OPTIONS, "/**").
+                permitAll().
+                and().
+                sessionManagement().
+                sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
 
-        // if(!applicationProperties.isAuthEnabled()){
-        //   logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-        httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter("test123", authenticationManager()), JwtAuthenticationFilter.class);
-        // } else{
-        //   logger.info("Authentication is ENABLED.");
-        //}
+        if (!enableCsrf) {
+            httpSecurity = httpSecurity.csrf().disable();
+        }
+        httpSecurity = httpSecurity.addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class);
+
+        if (!authEnabled) {
+            logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
+            httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager()), KeycloakTokenFilter.class);
+        } else {
+            logger.info("Authentication is ENABLED.");
+            //  httpSecurity = httpSecurity.addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class);
+        }
 
         httpSecurity.
                 authorizeRequests().
                 antMatchers("/api/v1").authenticated();
 
         http.headers().cacheControl().disable();
+    }
+
+    @Bean
+    public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+        return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
+                .readTimeout(properties.getReadTimeoutms())
+                .connectTimeout(properties.getConnectTimeoutms())
+                .sizeLimit(properties.getSizeLimit())
+                .jwtLocalSecret(applicationProperties.getJwtSecret())
+                .build(properties.getJwkUrl(), properties.getResource(), properties.getJwtClaim()));
+    }
+
+    @Bean
+    public KeycloakJwtProperties properties() {
+        return new KeycloakJwtProperties();
     }
 
     @Bean
