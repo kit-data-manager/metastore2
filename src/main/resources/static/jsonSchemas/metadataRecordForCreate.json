@@ -3,6 +3,10 @@
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "properties": {
+        "id": {
+            "type": "string",
+            "title": "Identifier"
+        },
         "relatedResource": {
             "type": "object",
              "title": "Related Resource",
