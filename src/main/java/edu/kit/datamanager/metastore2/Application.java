@@ -178,6 +178,12 @@ public class Application {
   }
 
   @Bean
+  @ConfigurationProperties("repo")
+  public ApplicationProperties applicationProperties() {
+    return new ApplicationProperties();
+  }
+
+  @Bean
   public MetastoreConfiguration schemaConfig() {
 
     IAuditService<DataResource> auditServiceDataResource;
