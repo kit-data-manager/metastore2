@@ -17,6 +17,7 @@ ext {
     springBootVersion = '2.4.13' 
     springDocVersion  = '1.5.13'
     javersVersion     = '6.5.3'
+    keycloakVersion   = '15.0.2'
 
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
@@ -74,6 +75,14 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+
+   //Keycloak
+    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
+    implementation "com.nimbusds:nimbus-jose-jwt:9.15.2"
+    implementation "io.jsonwebtoken:jjwt-api:0.11.2"
+    implementation "io.jsonwebtoken:jjwt-impl:0.11.2"
+    implementation "io.jsonwebtoken:jjwt-jackson:0.11.2"
+
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
