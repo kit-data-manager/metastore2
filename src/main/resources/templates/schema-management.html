@@ -12,6 +12,28 @@
         <link rel="stylesheet" href="/editor/lib/css/metadataeditor.style.default.css" />
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/>
+
+        <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
+        <script>
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
+        </script>
     </head>
 
     <body>
@@ -165,7 +187,6 @@
              * @returns {undefined} 
              */
             function updateSchemaRecord(valueRecord, schemaFile, updateSchema) {
-
                 var formData = new FormData();
                 var blobRecord = new Blob([JSON.stringify(JSON.parse(valueRecord), null, 2)], {type: "application/json"});
                 const recordFile = new File([blobRecord], 'recordFile.json');
@@ -183,7 +204,9 @@
                             contentType: false,
                             processData: false,
                             "headers": {
-                                "If-Match": etag
+                                "If-Match": etag,
+                                Authorization: 'Bearer ' + keycloak.token
+
                             },
                             data: formData,
                             success: function () {
@@ -212,6 +235,9 @@
                 $.ajax({
                     type: "GET",
                     url: value,
+                    "headers": {
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (result) {
                         callback(result);
                     },
@@ -237,7 +263,9 @@
                     contentType: "application/json",
                     dataType: 'json',
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json"},
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (result) {
                         callback(result);
                     },
@@ -267,6 +295,9 @@
                 $.ajax({
                     type: "POST",
                     url: "/api/v1/schemas/",
+                    headers: {
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     contentType: false,
                     processData: false,
                     data: formData,
@@ -294,7 +325,9 @@
                     url: "/api/v1/schemas/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json"},
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));
                     },

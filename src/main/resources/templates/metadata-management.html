@@ -5,13 +5,35 @@
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
         <title>Metadata Management</title>
 
-        <!--CSS-->
+       <!--CSS-->
         <link rel="stylesheet" href="/editor/dependencies/fontawesome/css/all.min.css" />
         <link rel="stylesheet" href="/editor/dependencies/tabulator/css/tabulator_bootstrap4.min.css">
         <link rel="stylesheet" href="/editor/dependencies/jsonform/deps/opt/bootstrap-v4.5.2.css"/>
         <link rel="stylesheet" href="/editor/lib/css/metadataeditor.style.default.css" />
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/> 
+
+        <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
+        <script>
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
+        </script>
     </head>
 
     <body>
@@ -314,7 +336,8 @@
                             contentType: false,
                             processData: false,
                             "headers": {
-                                "If-Match": etag
+                                "If-Match": etag,
+                                Authorization: 'Bearer ' + keycloak.token
                             },
                             data: formData,
                             success: function () {
@@ -343,6 +366,9 @@
                 $.ajax({
                     type: "GET",
                     url: rowColumnValue,
+                    headers: {
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (result) {
                         callback(result);
                     },
@@ -374,6 +400,9 @@
                     contentType: false,
                     processData: false,
                     data: formData,
+                    headers: {
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function () {
                         $("#formModal").modal('hide');
                         showModal("SUCCESS", "Operation has been sucessfully executed!", "");
@@ -397,6 +426,9 @@
                     type: "GET",
                     url: value,
                     dataType: 'text',
+                    headers: {
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (result) {
                         callback(result);
                     },
@@ -420,7 +452,9 @@
                     url: "/api/v1/metadata/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.metadata-record+json"},
+                        Accept: "application/vnd.datamanager.metadata-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
+                    },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));
                     },

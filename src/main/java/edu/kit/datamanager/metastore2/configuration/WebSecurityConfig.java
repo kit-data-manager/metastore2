@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
+import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
@@ -55,6 +56,9 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Autowired
   private ApplicationProperties applicationProperties;
 
+  @Autowired
+  private KeycloakJwtProperties properties;
+
   @Value("${metastore.security.enable-csrf:true}")
   private boolean enableCsrf;
   @Value("${metastore.security.allowedOriginPattern:http[*]://localhost:[*]}")
@@ -64,20 +68,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   }
 
   @Override
-  public void configure(AuthenticationManagerBuilder auth) throws Exception {
-//    auth.authenticationEventPublisher(new NoopAuthenticationEventPublisher()).authenticationProvider(new JwtAuthenticationProvider(applicationProperties.getJwtSecret(), logger));
-  }
-
-  @Override
   protected void configure(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").permitAll().and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+            .antMatchers(HttpMethod.OPTIONS, "/**").
+            permitAll().
+            and().
+            sessionManagement().
+            sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
       httpSecurity = httpSecurity.csrf().disable();
     }
-    httpSecurity.addFilterAfter(new KeycloakTokenFilter(KeycloakTokenValidator.builder()
-            .jwtLocalSecret(applicationProperties.getJwtSecret())
-            .build(null, null, null)), BasicAuthenticationFilter.class);
+    httpSecurity = httpSecurity.addFilterAfter(keycloaktokenFilterBean(), BasicAuthenticationFilter.class);
 
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
@@ -91,6 +92,21 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             antMatchers("/api/v1").authenticated();
 
     http.headers().cacheControl().disable();
+  }
+
+  @Bean
+  public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+    return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
+            .readTimeout(properties.getReadTimeoutms())
+            .connectTimeout(properties.getConnectTimeoutms())
+            .sizeLimit(properties.getSizeLimit())
+            .jwtLocalSecret(applicationProperties.getJwtSecret())
+            .build(properties.getJwkUrl(), properties.getResource(), properties.getJwtClaim()));
+  }
+
+  @Bean
+  public KeycloakJwtProperties properties() {
+    return new KeycloakJwtProperties();
   }
 
   @Bean
