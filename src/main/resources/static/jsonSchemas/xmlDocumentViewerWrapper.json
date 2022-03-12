@@ -3,7 +3,7 @@
     "properties": {
         "metadata": {
             "type": "string",
-            "title": "XML Metadata Document"
+            "title": "Metadata Document"
         }
     }
 }
