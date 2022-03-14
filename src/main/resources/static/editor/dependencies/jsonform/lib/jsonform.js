@@ -268,7 +268,24 @@
             'inputfield': true
         }
     };
-
+    
+    var dateTimeFieldTemplate = function (type) {
+        return {
+            'template': '<input type="' + type + '" ' +
+                    'class=\'form-control<%= (fieldHtmlClass ? " " + fieldHtmlClass : "") %>\'' +
+                    'name="<%= node.name %>" value="<%= escape(value.slice(0, 16).replace("T"," ")) %>" id="<%= id %>"' +
+                    '<%= (node.disabled? " disabled" : "")%>' +
+                    '<%= (node.readOnly ? " readonly=\'readonly\'" : "") %>' +
+                    '<%= (node.schemaElement && (node.schemaElement.step > 0 || node.schemaElement.step == "any") ? " step=\'" + node.schemaElement.step + "\'" : "") %>' +
+                    '<%= (node.schemaElement && node.schemaElement.maxLength ? " maxlength=\'" + node.schemaElement.maxLength + "\'" : "") %>' +
+                    '<%= (node.schemaElement && node.schemaElement.required && (node.schemaElement.type !== "boolean") ? " required=\'required\'" : "") %>' +
+                    '<%= (node.placeholder? " placeholder=" + \'"\' + escape(node.placeholder) + \'"\' : "")%>' +
+                    ' />',
+            'fieldtemplate': true,
+            'inputfield': true
+        }
+    };
+    
     jsonform.elementTypes = {
         'none': {
             'template': ''
@@ -279,7 +296,7 @@
         'text': inputFieldTemplate('text'),
         'password': inputFieldTemplate('password'),
         'date': inputFieldTemplate('date'),
-        'datetime': inputFieldTemplate('datetime'),
+        'datetime': dateTimeFieldTemplate('datetime'),
         'datetime-local': inputFieldTemplate('datetime-local'),
         'email': inputFieldTemplate('email'),
         'month': inputFieldTemplate('month'),
@@ -1450,8 +1467,7 @@
             }
         }
     };
-
-
+    
 //Allow to access subproperties by splitting "."
     /**
      * Retrieves the key identified by a path selector in the structured object.
@@ -3237,9 +3253,11 @@
                         schemaElement.required = false;
                     }
                     if (schemaElement.type.length > 1) {
-                        throw new Error("Cannot process schema element with multiple types.");
+                        //throw new Error("Cannot process schema element with multiple types.");
+                        schemaElement.type = 'string';
+                    } else {
+                        schemaElement.type = _.first(schemaElement.type);
                     }
-                    schemaElement.type = _.first(schemaElement.type);
                 }
 
                 if ((schemaElement.type === 'string') &&
@@ -3462,7 +3480,21 @@
 
         var options = this.formDesc;
         if (options.validate !== false) {
-            const ajv = new ajv7.default({strict: false, allErrors: true});
+            var ajv;
+            var schemaVersion = jsonform.util.getObjKey(this.formDesc.schema, "$schema", true);
+            if (schemaVersion == undefined) {
+                console.log("schema Version undefined. Default schema version is draft/2019-09");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            } else if (schemaVersion == "https://json-schema.org/draft/2020-12/schema") {
+                console.log("Schema version defined: https://json-schema.org/draft/2020-12/schema")
+                ajv = new ajv2020.default({strict: false, allErrors: true});
+            } else if(schemaVersion == "https://json-schema.org/draft/2019-09/schema") {
+                console.log("schema Version defined: https://json-schema.org/draft/2019-09/schema");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            }else{
+                console.log("schema Version unknown. Default schema version is draft/2019-09");
+                ajv = new ajv2019.default({strict: false, allErrors: true});
+            }
 
             try {
                 const validate = ajv.compile(this.formDesc.schema);
@@ -3641,25 +3673,19 @@
         // User Inputs is not Valid
         var errorSelectors = [];
         var key;
-        var dataPath;
         for (var i = 0; i < errors.length; i++) {
-            if (errors[i].params.missingProperty !== undefined && errors[i].dataPath.length !== 0) {
-                
-                key = errors[i].dataPath.substring(1) + "." + errors[i].params.missingProperty;
+            if (errors[i].params.missingProperty !== undefined && errors[i].instancePath.length !== 0) {
+                key = errors[i].instancePath.substring(1) + "." + errors[i].params.missingProperty;
             } else if (errors[i].params.missingProperty !== undefined) {
                 key = errors[i].params.missingProperty;
-            }else if (errors[i].dataPath.length !== 0) {
-                 key = errors[i].dataPath.substring(1);
+            } else if (errors[i].instancePath.length !== 0) {
+                key = errors[i].instancePath.substring(1);
             }
             if (key !== undefined) {
-                key = key.replace(/\//g, "---");  
-                key = key.replace(/\./g, "---");
-            } else if (dataPath !== undefined){
-                
-                key = dataPath.replace(/\//g, "---");
+                key = key.replace(/\//g, "---");
                 key = key.replace(/\./g, "---");
             }
-
+            
             var message = errors[i].message;
             var errormarkerclass = ".jsonform-error-" + key;
             errorSelectors.push(errormarkerclass);
@@ -3725,9 +3751,9 @@
                     escapeHTML(JSON.stringify(options.transloadit.params)) +
                     '\'>');
         }
-        
+
         //if (typeof options.files !== 'undefined' && options.files.length > 0) {
-            
+
         //}
 
 

@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -32,10 +33,12 @@ import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
+import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -142,8 +145,8 @@ public class MetadataControllerImpl implements IMetadataController {
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
       if (ex instanceof JsonParseException) {
-       message = message + " Reason: " + ex.getMessage();
-    }
+        message = message + " Reason: " + ex.getMessage();
+      }
       LOG.error("Error parsing json: ", ex);
       throw new BadArgumentException(message);
     }
@@ -152,10 +155,6 @@ public class MetadataControllerImpl implements IMetadataController {
     if (record.getRelatedResource() == null || record.getRelatedResource().getIdentifier() == null || record.getSchema() == null || record.getSchema().getIdentifier() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
-    }
-
-    if (record.getId() != null) {
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Not expecting record id to be assigned by user.");
     }
 
     LOG.debug("Test for existing metadata record for given schema and resource");
@@ -273,6 +272,23 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
+    // Add authentication if enabled
+    if (metadataConfig.isAuthEnabled()) {
+      boolean isAdmin;
+      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
+      // Add authorization for non administrators
+      if (!isAdmin) {
+        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+        if (authorizationIdentities != null) {
+          LOG.trace("Creating (READ) permission specification.");
+          authorizationIdentities.add(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL);
+          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
+          spec = spec.and(permissionSpec);
+        } else {
+          LOG.trace("No permission information provided. Skip creating permission specification.");
+        }
+      }
+    }
     List<String> allRelatedIdentifiers = new ArrayList<>();
 //    File file = new File(new URIoa)
     if (schemaIds != null) {
@@ -294,6 +310,11 @@ public class MetadataControllerImpl implements IMetadataController {
         }
         for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
           MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
+          // Test for internal URI -> Transform to global URI.
+          if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
+            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, schemaRecord);
+            schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
+          }
           allRelatedIdentifiers.add(schemaRecord.getSchemaDocumentUri());
         }
       }
@@ -302,6 +323,13 @@ public class MetadataControllerImpl implements IMetadataController {
       allRelatedIdentifiers.addAll(relatedIds);
     }
     if (!allRelatedIdentifiers.isEmpty()) {
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("---------------------------------------------------------");
+        for (String relatedId : allRelatedIdentifiers) {
+          LOG.trace("Look for related Identifier: '{}'", relatedId);
+        }
+        LOG.trace("---------------------------------------------------------");
+      }
       Specification<DataResource> toSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
       spec = spec.and(toSpecification);
     }

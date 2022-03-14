@@ -183,6 +183,13 @@ public class MetadataSchemaRecordUtilTest {
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNull_2() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String)null, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNoValue() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     ResourceIdentifier identifier = ResourceIdentifier.factoryInternalResourceIdentifier(null);
@@ -205,7 +212,7 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaDocumentUri("any");
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, schemaRecord);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, (MultipartFile)null, schemaRecord);
     fail("Don't reach this line!");
   }
 

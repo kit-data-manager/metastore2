@@ -24,16 +24,20 @@ const modalType = {
  */
 var icons = {
     'EYE': {
-        'FONTAWESOME': 'fa fa-eye'
+        'FONTAWESOME': 'fa fa-eye',
+        'TOOLTIP': 'Show'
     },
     'EDIT': {
-        'FONTAWESOME': 'fa fa-edit'
+        'FONTAWESOME': 'fa fa-edit',
+         'TOOLTIP': 'Update'
     },
     'TRASH': {
-        'FONTAWESOME': 'fa fa-trash'
+        'FONTAWESOME': 'fa fa-trash',
+         'TOOLTIP': 'Delete'
     },
     'LIST': {
-        'FONTAWESOME': 'fa fa-list'
+        'FONTAWESOME': 'fa fa-list',
+         'TOOLTIP': 'List'
     },
     'EXCLAMATION': {
         'FONTAWESOME': 'fas fa-exclamation'
@@ -79,12 +83,14 @@ var buttons = {
  * Genereate icon
  * 
  * @param {type} fontAwesome
+ * @param {type} tooltip
  * @returns {String}
  */
-function generateIcon(fontAwesome) {
-    return "<i class='" + fontAwesome + "'>\n\</i>";
+function generateIcon(fontAwesome, tooltip) {
+    return "<i class='" + fontAwesome + "' title='" + tooltip + "'>\n\</i>";
 }
 ;
+
 /**
  * Default table layout
  * 
@@ -93,7 +99,9 @@ function generateIcon(fontAwesome) {
 var defaultTableLayout = {
     layout: "fitColumns",
     pagination: "remote",
-    paginationSize: 2
+    paginationSize: 10,
+    paginationSizeSelector:[3, 6, 8, 10, 15, 20],
+
 };
 //form element
 var formElt = null;
@@ -277,6 +285,7 @@ $.fn.metadataeditorTable = function (options) {
     editor.generateTable(options);
     return editor;
 };
+
 /**
  * Initializes the editor definition structure in case a TABLE will be generated.
  *  
@@ -284,7 +293,6 @@ $.fn.metadataeditorTable = function (options) {
  * @param {type} renderElt
  * @returns {undefined}
  */
-
 editorDefinitionTable.prototype.initializeInputsTable = function (options, renderElt) {
 
     if (options.dataModel !== undefined && options.dataModel !== null && options.dataModel !== '') {
@@ -303,43 +311,53 @@ editorDefinitionTable.prototype.initializeInputsTable = function (options, rende
         _throw("JSON Items List is missing");
     }
 
+    var tooltip4ReadIcon = (options.tooltip4ReadIcon !== undefined && options.tooltip4ReadIcon !== null && options.tooltip4ReadIcon !== '') ? options.tooltip4ReadIcon : icons.EYE.TOOLTIP;
+ 
+    var tooltip4EditIcon = (options.tooltip4EditIcon !== undefined && options.tooltip4EditIcon !== null && options.tooltip4EditIcon !== '') ? options.tooltip4EditIcon : icons.EDIT.TOOLTIP;
+ 
+ 
+    var tooltip4DeleteIcon = (options.tooltip4DeleteIcon !== undefined && options.tooltip4DeleteIcon !== null && options.tooltip4DeleteIcon !== '') ? options.tooltip4DeleteIcon : icons.TRASH.TOOLTIP;
+ 
+ 
+    var tooltip4ListIcon = (options.tooltip4ListIcon !== undefined && options.tooltip4ListIcon !== null && options.tooltip4ListIcon !== '') ? options.tooltip4ListIcon : icons.LIST.TOOLTIP;
+
     if (options.readIcon !== undefined && options.readIcon !== null && options.readIcon !== '') {
         this.readIcon = function () {
-            return generateIcon(options.readIcon);
+            return generateIcon(options.readIcon, tooltip4ReadIcon);
         };
     } else {
         this.readIcon = function () {
-            return generateIcon(icons.EYE.FONTAWESOME);
+            return generateIcon(icons.EYE.FONTAWESOME, tooltip4ReadIcon);
         };
     }
 
     if (options.editIcon !== undefined && options.editIcon !== null && options.editIcon !== '') {
         this.editIcon = function () {
-            return generateIcon(options.editIcon);
+            return generateIcon(options.editIcon, tooltip4EditIcon);
         };
     } else {
         this.editIcon = function () {
-            return generateIcon(icons.EDIT.FONTAWESOME);
+            return generateIcon(icons.EDIT.FONTAWESOME, tooltip4EditIcon);
         };
     }
 
     if (options.deleteIcon !== undefined && options.deleteIcon !== null && options.deleteIcon !== '') {
         this.deleteIcon = function () {
-            return generateIcon(options.deleteIcon);
+            return generateIcon(options.deleteIcon, tooltip4DeleteIcon);
         };
     } else {
         this.deleteIcon = function () {
-            return generateIcon(icons.TRASH.FONTAWESOME);
+            return generateIcon(icons.TRASH.FONTAWESOME, tooltip4DeleteIcon);
         };
     }
 
     if (options.listIcon !== undefined && options.lisIcon !== null && options.listIcon !== '') {
         this.listIcon = function () {
-            return generateIcon(options.listIcon);
+            return generateIcon(options.listIcon, tooltip4ListIcon);
         };
     } else {
         this.listIcon = function () {
-            return generateIcon(icons.LIST.FONTAWESOME);
+            return generateIcon(icons.LIST.FONTAWESOME, tooltip4ListIcon);
         };
     }
 
@@ -531,6 +549,7 @@ editorDefinitionForm.prototype.generateFilledReadForm = function (callback, butt
                     "title": buttonTitle
                 }
             ],
+            "validate": false,
             value: this.resource,
             readonly: "true",
             "onSubmit": function () {

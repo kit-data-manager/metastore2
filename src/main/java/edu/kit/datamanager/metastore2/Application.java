@@ -178,12 +178,20 @@ public class Application {
   }
 
   @Bean
+  @ConfigurationProperties("repo")
+  public ApplicationProperties applicationProperties() {
+    return new ApplicationProperties();
+  }
+
+  @Bean
   public MetastoreConfiguration schemaConfig() {
 
     IAuditService<DataResource> auditServiceDataResource;
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(schemaResourceService);
     rbc.setContentInformationService(schemaInformationService);
@@ -205,6 +213,7 @@ public class Application {
     schemaResourceService.configure(rbc);
     schemaInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
     MetadataRecordUtil.setSchemaConfig(rbc);
@@ -225,6 +234,8 @@ public class Application {
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(applicationProperties.getMetadataFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(dataResourceService);
     rbc.setContentInformationService(contentInformationService);
@@ -246,6 +257,7 @@ public class Application {
     dataResourceService.configure(rbc);
     contentInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
     

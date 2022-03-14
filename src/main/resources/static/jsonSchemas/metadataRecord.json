@@ -1,4 +1,6 @@
 {
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://www.example.org/schema/json",
     "type": "object",
     "properties": {
         "id": {
@@ -20,11 +22,11 @@
             }
         },
         "createdAt": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Created"
         },
         "lastUpdate": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Updated"
         },
         "recordVersion": {

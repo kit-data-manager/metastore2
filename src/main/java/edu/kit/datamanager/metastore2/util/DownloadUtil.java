@@ -148,6 +148,7 @@ public class DownloadUtil {
    * @param tempFile Path to file
    */
   public static void removeFile(Path tempFile) {
+    LOGGER.trace("remove file --> {}", tempFile);
     try {
       Files.deleteIfExists(tempFile);
     } catch (IOException ioe) {

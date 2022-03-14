@@ -29,6 +29,7 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -43,6 +44,7 @@ import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -127,11 +129,6 @@ public class MetadataRecordUtil {
       record.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
     }
 
-    if (record.getId() != null) {
-      String message = "Not expecting record id to be assigned by user.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
     // validate document
     long nano2 = System.nanoTime() / 1000000;
     // validate schema document
@@ -142,6 +139,10 @@ public class MetadataRecordUtil {
     long nano3 = System.nanoTime() / 1000000;
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
+    // add id as internal identifier if exists
+    if (dataResource.getId() != null) {
+      dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
+    }
     long nano4 = System.nanoTime() / 1000000;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     long nano5 = System.nanoTime() / 1000000;
@@ -242,6 +243,25 @@ public class MetadataRecordUtil {
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, document, info.getRelativePath(), null, true, supplier);
       }
+    } else {
+      // validate if document is still valid due to changed record settings.
+      record = migrateToMetadataRecord(applicationProperties, dataResource, false);
+      URI metadataDocumentUri = URI.create(record.getMetadataDocumentUri());
+
+      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+      }
+
+      try {
+        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
+        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(record.getSchema(), record.getSchemaVersion());
+        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
+      } catch (IOException ex) {
+        LOG.error("Error validating file!", ex);
+      }
+
     }
     if (noChanges) {
       Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
@@ -266,6 +286,13 @@ public class MetadataRecordUtil {
     }
   }
 
+  /**
+   * Migrate metadata record to data resource.
+   *
+   * @param applicationProperties Configuration settings of repository.
+   * @param metadataRecord  Metadata record to migrate.
+   * @return Data resource of metadata record.
+   */
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
           MetadataRecord metadataRecord) {
     DataResource dataResource;
@@ -346,6 +373,14 @@ public class MetadataRecordUtil {
     return dataResource;
   }
 
+  /**
+   * Migrate data resource to metadata record.
+   *
+   * @param applicationProperties Configuration settings of repository.
+   * @param dataResource Data resource to migrate.
+   * @param provideETag Flag for calculating etag.
+   * @return Metadata record of data resource.
+   */
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource,
           boolean provideETag) {
@@ -474,7 +509,6 @@ public class MetadataRecordUtil {
    * @param metastoreProperties Configuration for accessing services
    * @param schemaId SchemaID of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
    */
   public static MetadataSchemaRecord getCurrentInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId) {
@@ -524,7 +558,6 @@ public class MetadataRecordUtil {
    * @param schemaId SchemaID of the schema.
    * @param version Version of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
-   * @throws IOException Error reading document.
    */
   public static MetadataSchemaRecord getInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
           String schemaId,

@@ -1,0 +1,9 @@
+{
+    "type": "object",
+    "properties": {
+        "schema": {
+            "type": "string",
+            "title": "Metadata Schema"
+        }
+    }
+}

@@ -27,4 +27,8 @@ public class TabulatorItems {
     
     private String editor;
     
+    private String formatter;
+    
+    private TabulatorFormatterParam formatterParams;
+    
 }
