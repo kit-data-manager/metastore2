@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [1.0.0] - 2022-03-11
+## [1.0.0] - 2022-03-14
 ### Added
 - Finalized version of MetaStoreGui
   - Fix issue #69
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Update to repo-core 1.0.0
 - Update to service-base 1.0.0
+- Update to postgresql 42.2.25
 - Downgrade library due to some issues regarding validation
   - json-schema-validator 1.0.64. -> 1.0.59
 

@@ -96,7 +96,7 @@ dependencies {
     implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.2.1"
+    implementation "org.postgresql:postgresql:42.2.25"
     //driver for h2
     implementation "com.h2database:h2:1.4.200"
     
