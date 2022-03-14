@@ -12,7 +12,8 @@
         <link rel="stylesheet" href="/editor/lib/css/metadataeditor.style.default.css" />
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/> 
-
+        <!-- To enable Keycloak for MetaStore GUI you have to enable and customize 
+             the follwing lines. - ->
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
         <script>
             var keycloak = Keycloak({
@@ -34,6 +35,7 @@
                 });
             }
         </script>
+        <!-- End of Keycloak -->
     </head>
 
     <body>
@@ -336,8 +338,8 @@
                             contentType: false,
                             processData: false,
                             "headers": {
-                                "If-Match": etag,
-                                Authorization: 'Bearer ' + keycloak.token
+                                "If-Match": etag /*,
+                                Authorization: 'Bearer ' + keycloak.token */
                             },
                             data: formData,
                             success: function () {
@@ -366,9 +368,9 @@
                 $.ajax({
                     type: "GET",
                     url: rowColumnValue,
-                    headers: {
+                    /* headers: {
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                    }, */
                     success: function (result) {
                         callback(result);
                     },
@@ -400,9 +402,9 @@
                     contentType: false,
                     processData: false,
                     data: formData,
-                    headers: {
+                    /* headers: {
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                    }, */
                     success: function () {
                         $("#formModal").modal('hide');
                         showModal("SUCCESS", "Operation has been sucessfully executed!", "");
@@ -426,9 +428,9 @@
                     type: "GET",
                     url: value,
                     dataType: 'text',
-                    headers: {
+                    /* headers: {
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                    }, */
                     success: function (result) {
                         callback(result);
                     },
@@ -452,8 +454,8 @@
                     url: "/api/v1/metadata/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.metadata-record+json",
-                        Authorization: 'Bearer ' + keycloak.token
+                        Accept: "application/vnd.datamanager.metadata-record+json" /*,
+                        Authorization: 'Bearer ' + keycloak.token */
                     },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));

@@ -13,6 +13,8 @@
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/>
 
+        <!-- To enable Keycloak for MetaStore GUI you have to enable and customize 
+             the follwing lines. - ->
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
         <script>
             var keycloak = Keycloak({
@@ -34,6 +36,7 @@
                 });
             }
         </script>
+        <!-- End of Keycloak -->
     </head>
 
     <body>
@@ -204,8 +207,8 @@
                             contentType: false,
                             processData: false,
                             "headers": {
-                                "If-Match": etag,
-                                Authorization: 'Bearer ' + keycloak.token
+                                "If-Match": etag/*,
+                                Authorization: 'Bearer ' + keycloak.token */
 
                             },
                             data: formData,
@@ -235,9 +238,9 @@
                 $.ajax({
                     type: "GET",
                     url: value,
-                    "headers": {
+                    /*"headers": {
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                    }, */
                     success: function (result) {
                         callback(result);
                     },
@@ -263,8 +266,8 @@
                     contentType: "application/json",
                     dataType: 'json',
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json",
-                        Authorization: 'Bearer ' + keycloak.token
+                        Accept: "application/vnd.datamanager.schema-record+json"/*,
+                        Authorization: 'Bearer ' + keycloak.token */
                     },
                     success: function (result) {
                         callback(result);
@@ -295,9 +298,9 @@
                 $.ajax({
                     type: "POST",
                     url: "/api/v1/schemas/",
-                    headers: {
+                    /*headers: {
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                    },*/
                     contentType: false,
                     processData: false,
                     data: formData,
@@ -325,8 +328,8 @@
                     url: "/api/v1/schemas/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json",
-                        Authorization: 'Bearer ' + keycloak.token
+                        Accept: "application/vnd.datamanager.schema-record+json"/*,
+                        Authorization: 'Bearer ' + keycloak.token */
                     },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));
