@@ -20,13 +20,22 @@
                 realm: 'NEP',
                 clientId: 'metastore'
             });
+             var table;
             keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
                 console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
                 $.ajaxSetup({
-    beforeSend: function(xhr) {
-        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
-    }
-});
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
+                    }
+                });
+                table = {
+                    layout: "fitColumns",
+                    pagination: "remote",
+                    ajaxURL: "/api/v1/ui/schemas",
+                    paginationSize: 10,
+                    paginationSizeSelector: [3, 6, 8, 10, 15, 20],
+
+                };
             }).error(function () {
                 console.error("Failed to initialize keycloak.");
             });
@@ -38,7 +47,7 @@
                     beforeSend: function(xhr) {
                         xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
                     }
-                });                
+                });
                 }).error(() => {
                     console.error("Failed to refresh keycloak token.");
                 });
@@ -119,14 +128,7 @@
             $('body').append(modalTemplate("ALERT"));
             $('body').append(modalTemplate("FAILED"));
             $('body').append(modalTemplate("SUCCESS"));
-            var table = {
-                layout: "fitColumns",
-                pagination: "remote",
-                ajaxURL: "/api/v1/ui/schemas",
-                paginationSize: 10,
-                paginationSizeSelector: [3, 6, 8, 10, 15, 20],
-
-            };
+            
             console.log(keycloak);
             var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
                 readOperation: function (rowColumnvalue) {
