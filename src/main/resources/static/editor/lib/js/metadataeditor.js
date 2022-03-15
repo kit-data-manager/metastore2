@@ -443,6 +443,11 @@ editorDefinitionTable.prototype.generateTable = function (options) {
 
 
     this.tableLayout.columns = this.items;
+    this.tableLayout.ajaxConfig = {
+                    headers: {
+                        "Authorization": 'Bearer ' + keycloak.token
+                    }
+                };
     var table = new Tabulator(this.tableId, this.tableLayout);
   
     //add buttons after table
