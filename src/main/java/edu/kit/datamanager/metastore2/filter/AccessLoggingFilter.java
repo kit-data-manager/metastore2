@@ -36,6 +36,10 @@ public class AccessLoggingFilter implements Filter {
    * Logger for this class.
    */
   private static final Logger LOGGER = LoggerFactory.getLogger(AccessLoggingFilter.class);
+  /**
+   * Prefix of authorization header.
+   */
+  private static final String BEARER = "Bearer ";
 
   @Override
   public void doFilter(
