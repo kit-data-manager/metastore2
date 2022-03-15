@@ -123,6 +123,11 @@
                 layout: "fitColumns",
                 pagination: "remote",
                 ajaxURL: ajaxURL,
+                ajaxConfig:{
+                    headers: {
+                        "Authorization": 'Bearer ' + keycloak.token;
+                    }
+                },
                 paginationSize: 10,
                 paginationSizeSelector: [3, 6, 8, 10, 15, 20],
 
