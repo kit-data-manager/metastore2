@@ -113,16 +113,12 @@
                 layout: "fitColumns",
                 pagination: "remote",
                 ajaxURL: "/api/v1/ui/schemas",
-                ajaxConfig:{
-                    headers: {
-                        "Authorization": 'Bearer ' + keycloak.token
-                    },
-                },
                 paginationSize: 10,
                 paginationSizeSelector: [3, 6, 8, 10, 15, 20],
 
             };
-            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
+            console.log(keycloak);
+            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, keycloak: keycloak, tableLayout: table,tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
                 readOperation: function (rowColumnvalue) {
                     readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
                         var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
