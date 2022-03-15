@@ -43,13 +43,15 @@ public class AccessLoggingFilter implements Filter {
           ServletResponse response,
           FilterChain chain) throws IOException, ServletException {
     String authToken;
-
     HttpServletRequest req = (HttpServletRequest) request;
     HttpServletResponse resp = (HttpServletResponse) response;
-    chain.doFilter(request, response);
-    
-    // authToken may be null if authentication is disabled.
+
     authToken = req.getHeader(KeycloakTokenFilter.AUTHORIZATION_HEADER);
+    if ((authToken != null) && (authToken.length() > BEARER.length())) {
+      authToken = authToken.substring(BEARER.length());
+    }
+    
+    chain.doFilter(request, response);
     
     LOGGER.trace("'{}' access to '{}' -> Status: '{}'", req.getMethod(), req.getRequestURI(), resp.getStatus(), authToken);
   }
