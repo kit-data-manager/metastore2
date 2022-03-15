@@ -22,15 +22,23 @@
             });
             keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
                 console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
-                $.ajaxSetup({ headers: {"authorization":'Bearer ' + keycloak.token} });
+                $.ajaxSetup({
+    beforeSend: function(xhr) {
+        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
+    }
+});
             }).error(function () {
                 console.error("Failed to initialize keycloak.");
             });
             keycloak.onTokenExpired = () => {
                 console.log('Keycloak token expired. Trying to refresh.');
                 keycloak.updateToken(30).success(() => {
-                    console.log('Successfully got a new token.');
-                    $.ajaxSetup({ headers: {"authorization":'Bearer ' + keycloak.token} });
+                console.log('Successfully got a new token.');
+                $.ajaxSetup({
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
+                    }
+                });                
                 }).error(() => {
                     console.error("Failed to refresh keycloak token.");
                 });
