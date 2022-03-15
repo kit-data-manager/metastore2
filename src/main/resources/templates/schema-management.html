@@ -14,45 +14,6 @@
         <link rel="stylesheet" href="/css/navbar.css"/>
 
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
-        <script>
-            var keycloak = Keycloak({
-                url: 'https://auth.nffa.eu/auth',
-                realm: 'NEP',
-                clientId: 'metastore'
-            });
-             var table;
-            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
-                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
-                $.ajaxSetup({
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
-                    }
-                });
-                table = {
-                    layout: "fitColumns",
-                    pagination: "remote",
-                    ajaxURL: "/api/v1/ui/schemas",
-                    paginationSize: 10,
-                    paginationSizeSelector: [3, 6, 8, 10, 15, 20],
-
-                };
-            }).error(function () {
-                console.error("Failed to initialize keycloak.");
-            });
-            keycloak.onTokenExpired = () => {
-                console.log('Keycloak token expired. Trying to refresh.');
-                keycloak.updateToken(30).success(() => {
-                console.log('Successfully got a new token.');
-                $.ajaxSetup({
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
-                    }
-                });
-                }).error(() => {
-                    console.error("Failed to refresh keycloak token.");
-                });
-            }
-        </script>
     </head>
 
     <body>
@@ -118,18 +79,56 @@
         <script type="text/javascript" src="/editor/lib/js/metadataeditor.js"></script>
 
         <script th:inline="javascript">
-
-            var options;
-            /*<![CDATA[*/
-            options = /*[[${request}]]*/ {};
-            /*]]>*/
-
+        var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+             var table;
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+                $.ajaxSetup({
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
+                    }
+                });
+                var options;
+                /*<![CDATA[*/
+                options = /*[[${request}]]*/ {};
+                /*]]>*/
+                mainMethod (options);
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                console.log('Successfully got a new token.');
+                $.ajaxSetup({
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('authorization', 'Bearer ' + keycloak.token);
+                    }
+                });
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
+            
+            
+            mainMethod (options) {
             // add modals to html
             $('body').append(modalTemplate("ALERT"));
             $('body').append(modalTemplate("FAILED"));
             $('body').append(modalTemplate("SUCCESS"));
             
-            console.log(keycloak);
+             var table = {
+                    layout: "fitColumns",
+                    pagination: "remote",
+                    ajaxURL: "/api/v1/ui/schemas",
+                    paginationSize: 10,
+                    paginationSizeSelector: [3, 6, 8, 10, 15, 20],
+
+             };
             var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table,tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
                 readOperation: function (rowColumnvalue) {
                     readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
@@ -198,6 +197,8 @@
 
             };
             $('#table-schemas').metadataeditorTable(inputs);
+                
+            }
 
             /**
              * generates the appropriate etag and updates the schema record.
