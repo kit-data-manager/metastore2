@@ -13,7 +13,10 @@
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/> 
 
+        <!-- Enable all lines containing keycloak and adapt to your settings
+             if necessary. - ->
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
+        <!- - End include keycloak script. -->
     </head>
 
     <body>
@@ -79,6 +82,8 @@
         <script type="text/javascript" src="/editor/lib/js/metadataeditor.js"></script>
 
         <script th:inline="javascript">
+            /* Enable all lines containing keycloak and adapt to your settings
+                 if necessary. * /
             var keycloak = Keycloak({
                 url: 'https://auth.nffa.eu/auth',
                 realm: 'NEP',
@@ -87,9 +92,7 @@
             keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
                 console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
                 var options;
-                /*<![CDATA[*/
-                options = /*[[${request}]]*/ {};
-                /*]]>*/
+                options = {};
                 mainMethod(options);
             }).error(function () {
                 console.error("Failed to initialize keycloak.");
@@ -102,6 +105,7 @@
                     console.error("Failed to refresh keycloak token.");
                 });
             }
+            /* End of keycloak script. */
 
             function mainMethod(options) {
                 var currentUrl = window.location.href;
@@ -123,12 +127,14 @@
                     layout: "fitColumns",
                     pagination: "remote",
                     ajaxURL: ajaxURL,
+                    /* Add header for keycloak. * /
                     ajaxConfig: {
                         headers: {
-                            "Authorization": 'Bearer ' + keycloak.token
-                        }
+                            Authorization: 'Bearer ' + keycloak.token,
+                        },
                     },
-                    paginationSize: 10,
+                    /* End of keycloak header. */
+              paginationSize: 10,
                     paginationSizeSelector: [3, 6, 8, 10, 15, 20],
 
                 };
@@ -341,8 +347,11 @@
                             contentType: false,
                             processData: false,
                             "headers": {
+                                "If-Match": etag
+                                /* Add header for keycloak. * /
                                 "If-Match": etag,
                                 Authorization: 'Bearer ' + keycloak.token
+                                /* End of keycloak header. */
                             },
                             data: formData,
                             success: function () {
@@ -371,9 +380,11 @@
                 $.ajax({
                     type: "GET",
                     url: rowColumnValue,
+                    /* Add header for keycloak. * /
                     headers: {
-                        Authorization: 'Bearer ' + keycloak.token
+                        Authorization: 'Bearer ' + keycloak.token,
                     },
+                    /* End of keycloak header. */
                     success: function (result) {
                         callback(result);
                     },
@@ -405,9 +416,11 @@
                     contentType: false,
                     processData: false,
                     data: formData,
+                   /* Add header for keycloak. * /
                     headers: {
-                        Authorization: 'Bearer ' + keycloak.token
+                        Authorization: 'Bearer ' + keycloak.token,
                     },
+                    /* End of keycloak header. */
                     success: function () {
                         $("#formModal").modal('hide');
                         showModal("SUCCESS", "Operation has been sucessfully executed!", "");
@@ -431,9 +444,11 @@
                     type: "GET",
                     url: value,
                     dataType: 'text',
+                   /* Add header for keycloak. * /
                     headers: {
-                        Authorization: 'Bearer ' + keycloak.token
+                        Authorization: 'Bearer ' + keycloak.token,
                     },
+                    /* End of keycloak header. */
                     success: function (result) {
                         callback(result);
                     },
@@ -457,9 +472,12 @@
                     url: "/api/v1/metadata/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.metadata-record+json",
+                        Accept: "application/vnd.datamanager.schema-record+json"
+                        /* Add header for keycloak. * /
+                        Accept: "application/vnd.datamanager.schema-record+json",
                         Authorization: 'Bearer ' + keycloak.token
-                    },
+                        /* End of keycloak header. */
+                   },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));
                     },
