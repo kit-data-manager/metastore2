@@ -13,30 +13,7 @@
         <link rel="stylesheet" href="/css/box.css"/>
         <link rel="stylesheet" href="/css/navbar.css"/>
 
-        <!-- To enable Keycloak for MetaStore GUI you have to enable and customize 
-             the follwing lines. - ->
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
-        <script>
-            var keycloak = Keycloak({
-                url: 'https://auth.nffa.eu/auth',
-                realm: 'NEP',
-                clientId: 'metastore'
-            });
-            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
-                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
-            }).error(function () {
-                console.error("Failed to initialize keycloak.");
-            });
-            keycloak.onTokenExpired = () => {
-                console.log('Keycloak token expired. Trying to refresh.');
-                keycloak.updateToken(30).success(() => {
-                    console.log('Successfully got a new token.');
-                }).error(() => {
-                    console.error("Failed to refresh keycloak token.");
-                });
-            }
-        </script>
-        <!-- End of Keycloak -->
     </head>
 
     <body>
@@ -102,85 +79,120 @@
         <script type="text/javascript" src="/editor/lib/js/metadataeditor.js"></script>
 
         <script th:inline="javascript">
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+                var options;
+                /*<![CDATA[*/
+                options = /*[[${request}]]*/ {};
+                /*]]>*/
+                mainMethod(options);
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
 
-            var options;
-            /*<![CDATA[*/
-            options = /*[[${request}]]*/ {};
-            /*]]>*/
 
-            // add modals to html
-            $('body').append(modalTemplate("ALERT"));
-            $('body').append(modalTemplate("FAILED"));
-            $('body').append(modalTemplate("SUCCESS"));
+            function mainMethod(options) {
+                // add modals to html
+                $('body').append(modalTemplate("ALERT"));
+                $('body').append(modalTemplate("FAILED"));
+                $('body').append(modalTemplate("SUCCESS"));
 
-            var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, paginationURL: "/api/v1/ui/schemas",tooltip4ReadIcon: "Show Schema Record",tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
-                readOperation: function (rowColumnvalue) {
-                    readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
-                        var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
-                        $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                            readSchema(options.resource.schemaDocumentUri, function (schemaDataModel) {
-                                try {
-                                    JSON.parse(JSON.stringify(schemaDataModel));
-                                    options = {operation: "READ", dataModel: schemaDataModel, uiForm: "*"};
-                                    $('form').metadataeditorForm(options, function onSubmitValid(value) {
-                                    });
-                                } catch (e) {
-                                    var schemaDataModelAsString = new XMLSerializer().serializeToString(schemaDataModel);
-                                    $.getJSON("/jsonSchemas/xmlViewerWrapper.json", function (dataModel) {
-                                        $.getJSON("/jsonSchemas/uiFormXmlViewerWrapper.json", function (uiForm) {
-                                            var resource = {schema: schemaDataModelAsString};
-                                            options = {operation: "READ", dataModel: dataModel, uiForm: uiForm, resource: resource};
-                                            $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                var table = {
+                    layout: "fitColumns",
+                    pagination: "remote",
+                    ajaxURL: "/api/v1/ui/schemas",
+                    ajaxConfig: {
+                        headers: {
+                            Authorization: 'Bearer ' + keycloak.token,
+                        },
+                    },
+                    paginationSize: 10,
+                    paginationSizeSelector: [3, 6, 8, 10, 15, 20],
+
+                };
+                var inputs = {dataModel: options.dataModel, uiForm: options.uiForm, items: options.items, tableLayout: table, tooltip4ReadIcon: "Show Schema Record", tooltip4EditIcon: "Update Schema Record", tooltip4ListIcon: "List all Metadata Records of this schema",
+                    readOperation: function (rowColumnvalue) {
+                        readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
+                            var options = {operation: "READ", dataModel: inputs.dataModel, uiForm: inputs.uiForm, resource: schemaRecordResource, buttonTitle: "Schema"};
+                            $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                                readSchema(options.resource.schemaDocumentUri, function (schemaDataModel) {
+                                    try {
+                                        JSON.parse(JSON.stringify(schemaDataModel));
+                                        options = {operation: "READ", dataModel: schemaDataModel, uiForm: "*"};
+                                        $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                                        });
+                                    } catch (e) {
+                                        var schemaDataModelAsString = new XMLSerializer().serializeToString(schemaDataModel);
+                                        $.getJSON("/jsonSchemas/xmlViewerWrapper.json", function (dataModel) {
+                                            $.getJSON("/jsonSchemas/uiFormXmlViewerWrapper.json", function (uiForm) {
+                                                var resource = {schema: schemaDataModelAsString};
+                                                options = {operation: "READ", dataModel: dataModel, uiForm: uiForm, resource: resource};
+                                                $('form').metadataeditorForm(options, function onSubmitValid(value) {
+                                                });
                                             });
                                         });
-                                    });
-                                }
-                            });
-                        });
-                    });
-                    $("#formModal").modal('show');
-                },
-                updateOperation: function (rowColumnvalue) {
-                    readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
-                        $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
-                            $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
-                                var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: schemaRecordResource, buttonTitle: "Update Schema"};
-                                $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
-                                    uploadFile(function (valueSchema, updateSchema) {
-                                        updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
-                                    });
-
-                                });
-                            });
-                        });
-                    });
-                    $("#formModal").modal('show');
-                },
-                createOperation: {callback: function () {
-                        $.getJSON("/jsonSchemas/uiFormSchemaRecordForCreate.json", function (uiForm) {
-                            $.getJSON("/jsonSchemas/schemaRecordForCreate.json", function (dataModel) {
-                                var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm};
-                                $('form').metadataeditorForm(options, function onSubmitValid(valueRecord) {
-                                    var input = document.getElementsByClassName('input-file');
-                                    if (input[0].value.length !== 0) {
-                                        let schemaFile = input[0].files[0];
-                                        createSchemaRecord(valueRecord, schemaFile);
-                                    } else {
-                                        showModal("ALERT", "The schema file should be uploaded.", "");
                                     }
                                 });
                             });
                         });
                         $("#formModal").modal('show');
-                    }
-                    ,
-                    buttonTitle: "Register new Schema"},
-                listOperation: function (rowColumnvalue) {
-                    window.location.href = "/metadata-management?id=" + rowColumnvalue.schemaId;
-                }
+                    },
+                    updateOperation: function (rowColumnvalue) {
+                        readSchemaRecord(rowColumnvalue, function (schemaRecordResource) {
+                            $.getJSON("/jsonSchemas/uiFormSchemaRecordForUpdate.json", function (uiForm) {
+                                $.getJSON("/jsonSchemas/schemaRecordForUpdate.json", function (dataModel) {
+                                    var options = {operation: "UPDATE", dataModel: dataModel, uiForm: uiForm, resource: schemaRecordResource, buttonTitle: "Update Schema"};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(updatedSchemaRecordvalue) {
+                                        uploadFile(function (valueSchema, updateSchema) {
+                                            updateSchemaRecord(updatedSchemaRecordvalue, valueSchema, updateSchema);
+                                        });
 
-            };
-            $('#table-schemas').metadataeditorTable(inputs);
+                                    });
+                                });
+                            });
+                        });
+                        $("#formModal").modal('show');
+                    },
+                    createOperation: {callback: function () {
+                            $.getJSON("/jsonSchemas/uiFormSchemaRecordForCreate.json", function (uiForm) {
+                                $.getJSON("/jsonSchemas/schemaRecordForCreate.json", function (dataModel) {
+                                    var options = {operation: "CREATE", dataModel: dataModel, uiForm: uiForm};
+                                    $('form').metadataeditorForm(options, function onSubmitValid(valueRecord) {
+                                        var input = document.getElementsByClassName('input-file');
+                                        if (input[0].value.length !== 0) {
+                                            let schemaFile = input[0].files[0];
+                                            createSchemaRecord(valueRecord, schemaFile);
+                                        } else {
+                                            showModal("ALERT", "The schema file should be uploaded.", "");
+                                        }
+                                    });
+                                });
+                            });
+                            $("#formModal").modal('show');
+                        }
+                        ,
+                        buttonTitle: "Register new Schema"},
+                    listOperation: function (rowColumnvalue) {
+                        window.location.href = "/metadata-management?id=" + rowColumnvalue.schemaId;
+                    }
+
+                };
+                $('#table-schemas').metadataeditorTable(inputs);
+
+            }
 
             /**
              * generates the appropriate etag and updates the schema record.
@@ -207,8 +219,8 @@
                             contentType: false,
                             processData: false,
                             "headers": {
-                                "If-Match": etag/*,
-                                Authorization: 'Bearer ' + keycloak.token */
+                                "If-Match": etag,
+                                Authorization: 'Bearer ' + keycloak.token
 
                             },
                             data: formData,
@@ -238,9 +250,9 @@
                 $.ajax({
                     type: "GET",
                     url: value,
-                    /*"headers": {
+                    "headers": {
                         Authorization: 'Bearer ' + keycloak.token
-                    }, */
+                    },
                     success: function (result) {
                         callback(result);
                     },
@@ -266,8 +278,8 @@
                     contentType: "application/json",
                     dataType: 'json',
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json"/*,
-                        Authorization: 'Bearer ' + keycloak.token */
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
                     },
                     success: function (result) {
                         callback(result);
@@ -298,9 +310,9 @@
                 $.ajax({
                     type: "POST",
                     url: "/api/v1/schemas/",
-                    /*headers: {
+                    headers: {
                         Authorization: 'Bearer ' + keycloak.token
-                    },*/
+                    },
                     contentType: false,
                     processData: false,
                     data: formData,
@@ -328,8 +340,8 @@
                     url: "/api/v1/schemas/" + idValue,
                     dataType: "json",
                     headers: {
-                        Accept: "application/vnd.datamanager.schema-record+json"/*,
-                        Authorization: 'Bearer ' + keycloak.token */
+                        Accept: "application/vnd.datamanager.schema-record+json",
+                        Authorization: 'Bearer ' + keycloak.token
                     },
                     success: function (output, status, xhr) {
                         callback(status, xhr.getResponseHeader("ETag"));
