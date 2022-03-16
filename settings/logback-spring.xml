@@ -17,11 +17,9 @@
             class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <Pattern>%d{YYYY-MM-dd}, %m%n</Pattern>
         </encoder>
-
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>accessLog.%d{yyyy-MM-dd}.log</fileNamePattern>
-
+            <fileNamePattern>${LOGS}/accessLog.%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- keep 1 days' worth of history -->
             <maxHistory>2</maxHistory>
         </rollingPolicy>
@@ -32,7 +30,7 @@
         <appender-ref ref="Console" />
     </root> 
 
-    <!-- LOG "com.baeldung*" at TRACE level -->
+    <!-- LOG "edu.kit.datamanager.metastore2.filter.*" at TRACE level -->
     <logger name="edu.kit.datamanager.metastore2.filter" level="trace" additivity="false">
         <appender-ref ref="RollingFile" />
     </logger>
