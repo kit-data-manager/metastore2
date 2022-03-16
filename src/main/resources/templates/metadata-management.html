@@ -14,31 +14,6 @@
         <link rel="stylesheet" href="/css/navbar.css"/> 
 
         <script src="/editor/dependencies/keycloak/keycloak.min.js"></script>
-        <script>
-            var keycloak = Keycloak({
-                url: 'https://auth.nffa.eu/auth',
-                realm: 'NEP',
-                clientId: 'metastore'
-            });
-            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
-                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
-                var options;
-                /*<![CDATA[*/
-                options = /*[[${request}]]*/ {};
-                /*]]>*/
-                mainMethod(options);
-            }).error(function () {
-                console.error("Failed to initialize keycloak.");
-            });
-            keycloak.onTokenExpired = () => {
-                console.log('Keycloak token expired. Trying to refresh.');
-                keycloak.updateToken(30).success(() => {
-                    console.log('Successfully got a new token.');
-                }).error(() => {
-                    console.error("Failed to refresh keycloak token.");
-                });
-            }
-        </script>
     </head>
 
     <body>
@@ -104,7 +79,29 @@
         <script type="text/javascript" src="/editor/lib/js/metadataeditor.js"></script>
 
         <script th:inline="javascript">
-
+            var keycloak = Keycloak({
+                url: 'https://auth.nffa.eu/auth',
+                realm: 'NEP',
+                clientId: 'metastore'
+            });
+            keycloak.init({onLoad: 'login-required'}).success(function (authenticated) {
+                console.debug(authenticated ? 'Authenticated' : 'Not authenticated', ' using keycloak.');
+                var options;
+                /*<![CDATA[*/
+                options = /*[[${request}]]*/ {};
+                /*]]>*/
+                mainMethod(options);
+            }).error(function () {
+                console.error("Failed to initialize keycloak.");
+            });
+            keycloak.onTokenExpired = () => {
+                console.log('Keycloak token expired. Trying to refresh.');
+                keycloak.updateToken(30).success(() => {
+                    console.log('Successfully got a new token.');
+                }).error(() => {
+                    console.error("Failed to refresh keycloak token.");
+                });
+            }
 
             function mainMethod(options) {
                 var currentUrl = window.location.href;
