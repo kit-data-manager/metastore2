@@ -706,7 +706,7 @@ public class MetadataSchemaRecordUtil {
       if (findByUrl.isEmpty()) {
         // Remove downloaded file
         String uri = schemaRecord.getSchemaDocumentUri();
-        Path pathToFile = Paths.get(uri);
+        Path pathToFile = Paths.get(URI.create(uri));
         DownloadUtil.removeFile(pathToFile);
       }
     }
