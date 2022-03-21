@@ -4,11 +4,13 @@
     },  
     {
         "title": "Related Resource",
-        "field": "relatedResource.identifier"
+        "field": "relatedResource.identifier",
+        "formatter": "textarea"    
     },
     {
         "title": "Schema Identifier",
-        "field": "schema.identifier"
+        "field": "schema.identifier",
+        "formatter": "textarea"    
     },
     {
         "title": "Date Updated",
