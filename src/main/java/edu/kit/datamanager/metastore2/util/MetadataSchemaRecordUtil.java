@@ -52,7 +52,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -67,7 +66,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -704,11 +702,6 @@ public class MetadataSchemaRecordUtil {
       LOG.error(message);
     } else {
       String pathToSchemaDocument = schemaRecord.getSchemaDocumentUri();
-      try {
-        pathToSchemaDocument = URI.create(pathToSchemaDocument).toURL().toString();
-      } catch (MalformedURLException ex) {
-        LOG.error("Error getting url of uri '" + pathToSchemaDocument + "'", ex);
-      }
       List<Url2Path> findByUrl = url2PathDao.findByPath(pathToSchemaDocument);
       if (findByUrl.isEmpty()) {
         // Remove downloaded file
