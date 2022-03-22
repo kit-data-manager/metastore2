@@ -46,6 +46,7 @@ import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -267,7 +268,7 @@ public class Application {
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    
+
     fixBasePath(rbc);
 
     printSettings(rbc);
@@ -311,29 +312,22 @@ public class Application {
     String[] array = allRegistries.toArray(new String[0]);
     return array;
   }
-  
-  /** Fix base path on Windows system due to missing drive in case of relative
-   *  paths. 
+
+  /**
+   * Fix base path on Windows system due to missing drive in case of relative
+   * paths.
+   *
    * @param config Configuration holding setting of repository.
    */
   private void fixBasePath(MetastoreConfiguration config) {
     String basePath = config.getBasepath().toString();
-    if (SystemUtils.IS_OS_WINDOWS) {
-      try {
-        URI uri = URI.create(basePath);
-        LOG.trace("fix base path: '{}'", uri);
-        if (uri.isAbsolute()) {
-          basePath = new URI(basePath).toURL().toURI().toString();
-        } else {
-          basePath = Path.of(basePath).toFile().toURI().toString();
-        }
-        config.setBasepath(URI.create(basePath).toURL());
-      } catch (URISyntaxException | MalformedURLException ex) {
-        LOG.error("Error fixing base path '{}'", basePath);
-        LOG.error("Invalid base path!", ex);
-      }
+    try {
+      basePath = MetadataSchemaRecordUtil.fixRelativeURI(basePath);
+      config.setBasepath(URI.create(basePath).toURL());
+    } catch (MalformedURLException ex) {
+      LOG.error("Error fixing base path '{}'", basePath);
+      LOG.error("Invalid base path!", ex);
     }
-
   }
 
   public static void main(String[] args) {
