@@ -45,7 +45,10 @@ import io.swagger.v3.core.util.Json;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -140,7 +143,24 @@ public class MetadataRecordUtil {
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
     // add id as internal identifier if exists
+    // Note: DataResourceUtils.createResource will ignore id of resource. 
+    // id will be set to alternate identifier if exists. 
     if (dataResource.getId() != null) {
+      // check for valid identifier without any chars which may be encoded
+      try {
+        String originalId = dataResource.getId();
+        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
+        if (!value.equals(originalId)) {
+          String message = "Not a valid id! Encoded: " + value;
+          LOG.error(message);
+          throw new BadArgumentException(message);
+        }
+      } catch (UnsupportedEncodingException ex) {
+        String message = "Error encoding id " + record.getSchemaId();
+        LOG.error(message);
+        throw new CustomInternalServerError(message);
+      }
+
       dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
     }
     long nano4 = System.nanoTime() / 1000000;
@@ -290,7 +310,7 @@ public class MetadataRecordUtil {
    * Migrate metadata record to data resource.
    *
    * @param applicationProperties Configuration settings of repository.
-   * @param metadataRecord  Metadata record to migrate.
+   * @param metadataRecord Metadata record to migrate.
    * @return Data resource of metadata record.
    */
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
