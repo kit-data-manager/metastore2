@@ -1,0 +1,19 @@
+{
+    "type": "fieldset",
+    "items": [
+        "id",
+        "relatedResource",
+        {
+            "type": "array",
+            "title": "ACL",
+            "htmlClass": "acl",
+            "items": [
+                "acl[]"
+            ]
+        },
+         {
+            "key": "metadataDocument",
+            "type": "file"
+        }
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "type": "object",
+    "properties": {
+        "metadata": {
+            "type": "string",
+            "title": "Metadata Document"
+        }
+    }
+}

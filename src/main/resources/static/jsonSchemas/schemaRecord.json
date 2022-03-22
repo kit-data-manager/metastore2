@@ -1,4 +1,6 @@
 {
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://www.example.org/schema/json",
     "type": "object",
     "properties": {
         "schemaId": {
@@ -22,11 +24,11 @@
             "enum": ["JSON", "XML"]
         },
         "createdAt": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Created"
         },
         "lastUpdate": {
-            "type": "string",
+            "type": "datetime",
             "title": "Date Updated"
         },
         "label": {

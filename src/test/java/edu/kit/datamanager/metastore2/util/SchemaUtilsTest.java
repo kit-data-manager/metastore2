@@ -6,6 +6,7 @@
 package edu.kit.datamanager.metastore2.util;
 
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.test.CreateSchemaUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -19,37 +20,7 @@ import static org.junit.Assert.*;
  */
 public class SchemaUtilsTest {
 
-  private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-          + "        xmlns=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<import namespace=\"http://purl.org/dc/elements/1.1/\" schemaLocation=\"https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd\"/>\n"
-          + "\n"
-          + "<element name=\"dc\" type=\"oai_dc:oai_dcType\"/>\n"
-          + "\n"
-          + "<complexType name=\"oai_dcType\">\n"
-          + "  <choice minOccurs=\"0\" maxOccurs=\"unbounded\">\n"
-          + "    <element ref=\"dc:title\"/>\n"
-          + "    <element ref=\"dc:creator\"/>\n"
-          + "    <element ref=\"dc:subject\"/>\n"
-          + "    <element ref=\"dc:description\"/>\n"
-          + "    <element ref=\"dc:publisher\"/>\n"
-          + "    <element ref=\"dc:contributor\"/>\n"
-          + "    <element ref=\"dc:date\"/>\n"
-          + "    <element ref=\"dc:type\"/>\n"
-          + "    <element ref=\"dc:format\"/>\n"
-          + "    <element ref=\"dc:identifier\"/>\n"
-          + "    <element ref=\"dc:source\"/>\n"
-          + "    <element ref=\"dc:language\"/>\n"
-          + "    <element ref=\"dc:relation\"/>\n"
-          + "    <element ref=\"dc:coverage\"/>\n"
-          + "    <element ref=\"dc:rights\"/>\n"
-          + "  </choice>\n"
-          + "</complexType>\n"
-          + "\n"
-          + "</schema>";
+  private final static String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
 
   public SchemaUtilsTest() {
   }
@@ -83,7 +54,7 @@ public class SchemaUtilsTest {
     System.out.println("guessType for XML");
     byte[] schema = null;
     MetadataSchemaRecord.SCHEMA_TYPE expResult = MetadataSchemaRecord.SCHEMA_TYPE.XML;
-    MetadataSchemaRecord.SCHEMA_TYPE result = SchemaUtils.guessType(DC_SCHEMA.getBytes());
+    MetadataSchemaRecord.SCHEMA_TYPE result = SchemaUtils.guessType(KIT_SCHEMA.getBytes());
     assertEquals(expResult, result);
 
   }

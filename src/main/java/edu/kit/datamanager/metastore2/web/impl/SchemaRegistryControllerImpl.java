@@ -15,6 +15,8 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
+import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -24,11 +26,13 @@ import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
+import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -227,6 +231,23 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     }
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    // Add authentication if enabled
+    if (schemaConfig.isAuthEnabled()) {
+      boolean isAdmin;
+      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
+      // Add authorization for non administrators
+      if (!isAdmin) {
+        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+        if (authorizationIdentities != null) {
+        LOG.trace("Creating (READ) permission specification.");
+          authorizationIdentities.add(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL);
+          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
+          spec = spec.and(permissionSpec);
+        } else {
+          LOG.trace("No permission information provided. Skip creating permission specification.");
+        }
+      }
+    }
     //one of given mimetypes.
     if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
       spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
