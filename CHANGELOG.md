@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [1.0.0] - 2022-03-14
+## [1.0.0] - 2022-03-23
 ### Added
 - Finalized version of MetaStoreGui
   - Fix issue #69
@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Access filter for monitoring.
 
 ### Changed
-- Update to repo-core 1.0.0
+- Update to repo-core 1.0.1
 - Update to service-base 1.0.0
 - Update to postgresql 42.2.25
 - Downgrade library due to some issues regarding validation
@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug listing resources without proper authorization (issue #71)
 - Fix bug listing all metadata documents related to a specific schema
 - Fix a bug that can cause the metadata document/schema to become invalid due to an update. (issue #78)
+- Fix bug with path in Windows. (#issue 88)
 
 ## [0.3.7] - 2022-01-11
 ### Added
