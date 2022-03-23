@@ -86,8 +86,8 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"server.port=41405"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_xml_doc;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/xml/schema"})
-@TestPropertySource(properties = {"metastore.schema.metadataFolder=file:///tmp/metastore2/restdocu/xml/metadata"})
-@TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41405/api/v1/"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/restdocu/xml/metadata"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"server.error.include-message=always"})
 public class SchemaRegistryControllerDocumentationTest {
 
