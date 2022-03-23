@@ -133,4 +133,7 @@
 .tabulator .tabulator-row .tabulator-cell[tabulator-field="schemaVersion"]{
     background-color:#F8F8F8;
 }
-
+.tabulator .tabulator-row .tabulator-cell[tabulator-field="schema.identifier"]{
+    overflow-x: scroll;
+    text-overflow: clip; 
+}

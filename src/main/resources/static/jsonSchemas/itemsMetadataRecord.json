@@ -8,7 +8,7 @@
     },
     {
         "title": "Schema Identifier",
-        "field": "schema.identifier"
+        "field": "schema.identifier"   
     },
     {
         "title": "Date Updated",
