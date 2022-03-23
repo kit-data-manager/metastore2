@@ -1182,9 +1182,9 @@ public class MetadataSchemaRecordUtil {
     URI urig = URI.create(uri);
     try {
       if (urig.isAbsolute()) {
-        returnValue = Path.of(new URI(uri)).toAbsolutePath().toUri().toURL().toString();
+        returnValue = Paths.get(new URI(uri)).toAbsolutePath().toUri().toURL().toString();
       } else {
-        returnValue = Path.of(uri).toFile().toURI().toURL().toString();
+        returnValue = Paths.get(uri).toFile().toURI().toURL().toString();
       }
     } catch (URISyntaxException | MalformedURLException ex) {
       LOG.error("Error fixing URI '" + uri + "'", ex);
