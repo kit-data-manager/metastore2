@@ -96,12 +96,14 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_intern;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/internalRegistry/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/internalRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"server.port=41410"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestWithInternalSchemaRegistry {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/internalRegistry/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc";
@@ -115,12 +117,6 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   private final static String KIT_DOCUMENT_WRONG_NAMESPACE = CreateSchemaUtil.KIT_DOCUMENT_WRONG_NAMESPACE;
   private final static String KIT_DOCUMENT_INVALID = CreateSchemaUtil.KIT_DOCUMENT_INVALID_1;
 
-  private String adminToken;
-  private String userToken;
-  private String otherUserToken;
-  private String guestToken;
-
-  private DataResource sampleResource;
   private static Boolean alreadyInitialized = Boolean.FALSE;
 
   private MockMvc mockMvc;
@@ -144,8 +140,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   private IAllIdentifiersDao allIdentifiersDao;
   @Autowired
   private MetastoreConfiguration metadataConfig;
-  @Autowired
-  private MetastoreConfiguration schemaConfig;
+
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -350,7 +345,6 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
 
-
   @Test
   public void testCreateRecordWithIdTwice() throws Exception {
     MetadataRecord record = new MetadataRecord();
@@ -375,7 +369,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             andReturn();
     record.setRelatedResource(RELATED_RESOURCE_2);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
- 
+
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
             file(metadataFile)).
@@ -742,9 +736,9 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   @Test
   public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
     String schemaId = "multipleSchemas";
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1,  metadataConfig.getJwtSecret(), false, status().isCreated());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2,  metadataConfig.getJwtSecret(), true, status().isOk());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3,  metadataConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2, metadataConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3, metadataConfig.getJwtSecret(), true, status().isOk());
     ObjectMapper map = new ObjectMapper();
     String[] multipleVersions = {"1", "2", "3"};
     // Ingest 1st version of document.

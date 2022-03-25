@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.entities.messaging.IAMQPSubmittable;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
@@ -46,21 +47,19 @@ import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.lang3.SystemUtils;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -159,10 +158,29 @@ public class Application {
   }
 
   @Bean
+  @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "true")
   public IMessagingService messagingService() {
+    LOG.trace("LOAD RabbitMQ");
     return new RabbitMQMessagingService();
   }
+   @Bean(name = "messagingService")
+   @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "false")
+  public IMessagingService dummyMessagingService() {
+    LOG.trace("LOAD DUMMY RabbitMQ");
+    return new IMessagingService() {
+      @Override
+      public void send(IAMQPSubmittable iamqps) {
+        LOG.trace("RabbitMQ send dummy");
+      }
 
+      @Override
+      public Health health() {
+        LOG.trace("RabbitMQ health dummy");
+        return new Health.Builder().up().build();
+      }
+    };
+  }
+  
   @Bean
   public IDataResourceService dataResourceService() {
     return new DataResourceService();

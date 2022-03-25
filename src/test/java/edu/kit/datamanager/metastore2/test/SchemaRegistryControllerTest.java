@@ -142,11 +142,6 @@ public class SchemaRegistryControllerTest {
   private final static String XML_DOCUMENT_V3 = CreateSchemaUtil.XML_DOCUMENT_V3;
   private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
 
-  private String adminToken;
-  private String userToken;
-  private String otherUserToken;
-  private String guestToken;
-
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;

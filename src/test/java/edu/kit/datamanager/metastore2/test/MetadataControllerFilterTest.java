@@ -75,13 +75,14 @@ import org.springframework.web.context.WebApplicationContext;
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_filter;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/jsonfilter/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/jsonfilter/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerFilterTest {
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/jsonfilter/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
-  private static final String INVALID_SCHEMA_ID = "invalid/json";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String JSON_SCHEMA = "{\n"
           + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
@@ -514,6 +515,12 @@ public class MetadataControllerFilterTest {
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
     } catch (IOException ex) {
       ex.printStackTrace();
     }
