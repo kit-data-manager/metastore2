@@ -146,6 +146,7 @@ test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
 
+    maxHeapSize = "8192m"
     testLogging {
         outputs.upToDateWhen {false}
         showStandardStreams = true
