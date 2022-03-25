@@ -202,6 +202,7 @@ http://localhost:8040/static/docs/documentation.html
 1. Don't open port to public (as long as AAI is not implemented)
 2. Use a productive database (e.g. postgres)
 3. Setup directories for schemata and metadata to a reliable disc. (metastore.schema.schemaFolder, metastore.metadata.metadataFolder)
+4. Check all settings in application.properties. (e.g. CSRF)
 
 :information_source: If metaStore should be used standalone (without KIT Data Manager) 
 you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
