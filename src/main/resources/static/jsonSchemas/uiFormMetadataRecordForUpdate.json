@@ -3,6 +3,8 @@
     "items": [
         "id",
         "relatedResource",
+         "schema",
+        "schemaVersion",
         {
             "type": "array",
             "title": "ACL",
