@@ -89,20 +89,20 @@ public class MetadataSchemaRecordUtilTest {
   public void testMergeRecords() {
     System.out.println("mergeRecords");
     MetadataSchemaRecord managed = new MetadataSchemaRecord();
-    MetadataSchemaRecord provided = createSchemaRecord(3, 5, 7, 11, 12);
-    MetadataSchemaRecord expResult = createSchemaRecord(3, 5, 7, 11, 12);
+    MetadataSchemaRecord provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    MetadataSchemaRecord expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
     MetadataSchemaRecord result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
     managed = new MetadataSchemaRecord();
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(provided, managed);
     assertEquals(expResult, result);
-    managed = createSchemaRecord(3, 5, 7, 11, 12);
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
-    managed = createSchemaRecord(3, 5, 7, 11, 12);
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     provided.setDoNotSync(Boolean.FALSE);
     expResult.setDoNotSync(Boolean.FALSE);
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);

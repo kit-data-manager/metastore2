@@ -111,7 +111,9 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
    */
   public void setAcl(Set<AclEntry> newAclList) {
     acl.clear();
-    acl.addAll(newAclList);
+    if (newAclList != null) {
+      acl.addAll(newAclList);
+    }
   }
   /**
    * Set creation date (truncated to milliseconds).

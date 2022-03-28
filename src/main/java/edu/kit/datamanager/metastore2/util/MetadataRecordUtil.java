@@ -18,6 +18,9 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
+import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.RepoServiceRole;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -37,9 +40,11 @@ import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import java.io.File;
@@ -66,6 +71,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -774,8 +780,13 @@ public class MetadataRecordUtil {
       //update acl
       if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
-          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-          managed.setAcl(provided.getAcl());
+          // check for special access rights 
+          // - only administrators are allowed to change ACL
+          // - at least principal has to remain as ADMIN 
+          if (checkAccessRights(provided.getAcl())) {
+            LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+            managed.setAcl(provided.getAcl());
+          }
         }
       }
       //update getRelatedResource
@@ -860,5 +871,32 @@ public class MetadataRecordUtil {
       }
       LOG.trace("Data record saved: {}", dataRecord);
     }
+  }
+
+  public static boolean checkAccessRights(Set<AclEntry> provided) {
+    LOG.trace("Check access rights for changing ACL list!");
+    boolean isAllowed = false;
+    String principal = AuthenticationHelper.getPrincipal();
+    Authentication authentication = AuthenticationHelper.getAuthentication();
+    if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString()) ||
+        AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
+      // User is allowed to change ACLs. 
+      List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+      Iterator<AclEntry> iterator = provided.iterator();
+      // Check if ADMINISTRATOR is still ADMINISTRATOR
+      while (iterator.hasNext()) {
+        AclEntry aclEntry = iterator.next();
+        if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
+          if (authorizationIdentities.contains(aclEntry.getSid())) {
+            isAllowed = true;
+            LOG.trace("ACL list is OK, ready to set new ACL list.");
+            break;
+          }
+        }
+      }
+    } else {
+      LOG.warn("Only ADMINISTRATORS are allowed to change ACL entries");
+    }
+    return isAllowed;
   }
 }
