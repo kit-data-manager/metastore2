@@ -21,6 +21,26 @@
                 }
             }
         },
+         "schema": {
+            "type": "object",
+             "title": "Schema",
+            "properties": {
+                "identifier": {
+                    "type": "string",
+                    "title": "Identifier*"
+                },
+                "identifierType": {
+                    "type": "string",
+                    "enum": ["URL", "INTERNAL"],
+                    "title": "Identifier Type*"
+                }
+            },
+            "required": ["identifier", "identifierType"]
+        },
+        "schemaVersion": {
+            "type": "integer",
+            "title": "Schema Version"
+        },
         "acl": {
             "type": "array",
             "title": "ACL",
