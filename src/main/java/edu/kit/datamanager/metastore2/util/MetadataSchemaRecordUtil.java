@@ -67,7 +67,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -883,8 +882,13 @@ public class MetadataSchemaRecordUtil {
       //update acl
       if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
-          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-          managed.setAcl(provided.getAcl());
+          // check for special access rights 
+          // - only administrators are allowed to change ACL
+          // - at least principal has to remain as ADMIN 
+          if (MetadataRecordUtil.checkAccessRights(provided.getAcl())) {
+            LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+            managed.setAcl(provided.getAcl());
+          }
         }
       }
       //update mimetype

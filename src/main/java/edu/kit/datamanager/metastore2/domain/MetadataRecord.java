@@ -75,41 +75,47 @@ public class MetadataRecord implements EtagSupport, Serializable {
 
   @NotNull(message = "A list of access control entries for resticting access.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-   private final Set<AclEntry> acl = new HashSet<>();
+  private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
   @JsonIgnore
   private String eTag;
+
   /**
    * Set new access control list.
+   *
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
     acl.clear();
-    acl.addAll(newAclList);
+    if (newAclList != null) {
+      acl.addAll(newAclList);
+    }
   }
 
   /**
    * Set creation date (truncated to milliseconds).
+   *
    * @param instant creation date
    */
   public void setCreatedAt(Instant instant) {
     if (instant != null) {
-    createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
+      createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
     } else {
       createdAt = null;
     }
   }
-  
+
   /**
    * Set update date (truncated to milliseconds).
+   *
    * @param instant update date
    */
   public void setLastUpdate(Instant instant) {
     if (instant != null) {
-    lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
+      lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
     } else {
       lastUpdate = null;
     }
@@ -121,13 +127,13 @@ public class MetadataRecord implements EtagSupport, Serializable {
     return eTag;
   }
 
-  /** 
+  /**
    * Get (internal) schema identifier.
-   * 
+   *
    * @return schema identifier.
    */
-   @JsonIgnore
-   public String getSchemaId() {
+  @JsonIgnore
+  public String getSchemaId() {
     if (schema.getIdentifierType() == ResourceIdentifier.IdentifierType.INTERNAL) {
       return schema.getIdentifier();
     }
