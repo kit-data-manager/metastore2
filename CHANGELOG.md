@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [1.0.0] - 2022-03-26
+## [1.0.0] - 2022-03-29
 ### Added
 - Finalized version of MetaStoreGui
   - Fix issue #69
@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix a bug that can cause the metadata document/schema to become invalid due to an update. (issue #78)
 - Fix bug with path in Windows. (#issue 88)
 - CSRF is now disabled by default. (#issue 70) 
+- Check ACLs while creating/updating records (#issue 39)
 
 ## [0.3.7] - 2022-01-11
 ### Added
