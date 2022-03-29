@@ -14,27 +14,17 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
-import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.Agent;
-import edu.kit.datamanager.repo.domain.ContentInformation;
-import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.Date;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
@@ -85,7 +75,7 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"server.port=41406"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_no_reg;DB_CLOSE_DELAY=-1"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/withoutRegistry/schema"})
-@TestPropertySource(properties = {"metastore.schema.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithoutRegistryTest {
@@ -96,55 +86,9 @@ public class MetadataControllerWithoutRegistryTest {
   private static final String SCHEMA_ID = "my_dc";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier("anyResourceId");
 
-  private final static String DC_SCHEMA = "<schema targetNamespace=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\"\n"
-          + "        xmlns:dc=\"http://purl.org/dc/elements/1.1/\"\n"
-          + "        xmlns=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "        elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "\n"
-          + "<import namespace=\"http://purl.org/dc/elements/1.1/\" schemaLocation=\"https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dc.xsd\"/>\n"
-          + "\n"
-          + "<element name=\"dc\" type=\"oai_dc:oai_dcType\"/>\n"
-          + "\n"
-          + "<complexType name=\"oai_dcType\">\n"
-          + "  <choice minOccurs=\"0\" maxOccurs=\"unbounded\">\n"
-          + "    <element ref=\"dc:title\"/>\n"
-          + "    <element ref=\"dc:creator\"/>\n"
-          + "    <element ref=\"dc:subject\"/>\n"
-          + "    <element ref=\"dc:description\"/>\n"
-          + "    <element ref=\"dc:publisher\"/>\n"
-          + "    <element ref=\"dc:contributor\"/>\n"
-          + "    <element ref=\"dc:date\"/>\n"
-          + "    <element ref=\"dc:type\"/>\n"
-          + "    <element ref=\"dc:format\"/>\n"
-          + "    <element ref=\"dc:identifier\"/>\n"
-          + "    <element ref=\"dc:source\"/>\n"
-          + "    <element ref=\"dc:language\"/>\n"
-          + "    <element ref=\"dc:relation\"/>\n"
-          + "    <element ref=\"dc:coverage\"/>\n"
-          + "    <element ref=\"dc:rights\"/>\n"
-          + "  </choice>\n"
-          + "</complexType>\n"
-          + "\n"
-          + "</schema>";
-  private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
-          + "  <dc:creator>Carbon, Seth</dc:creator>\n"
-          + "  <dc:creator>Mungall, Chris</dc:creator>\n"
-          + "  <dc:date>2018-07-02</dc:date>\n"
-          + "  <dc:description>Archival bundle of GO data release.</dc:description>\n"
-          + "  <dc:identifier>https://zenodo.org/record/3477535</dc:identifier>\n"
-          + "  <dc:identifier>10.5281/zenodo.3477535</dc:identifier>\n"
-          + "  <dc:identifier>oai:zenodo.org:3477535</dc:identifier>\n"
-          + "  <dc:relation>doi:10.5281/zenodo.1205166</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/gene-ontology</dc:relation>\n"
-          + "  <dc:relation>url:https://zenodo.org/communities/zenodo</dc:relation>\n"
-          + "  <dc:rights>info:eu-repo/semantics/openAccess</dc:rights>\n"
-          + "  <dc:rights>http://creativecommons.org/licenses/by/4.0/legalcode</dc:rights>\n"
-          + "  <dc:title>Gene Ontology Data Archive</dc:title>\n"
-          + "  <dc:type>info:eu-repo/semantics/other</dc:type>\n"
-          + "  <dc:type>dataset</dc:type>\n"
-          + "</oai_dc:dc>";
+  private final static String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
+
+  private final static String KIT_DOCUMENT = CreateSchemaUtil.KIT_DOCUMENT;
 
   @Autowired
   private MockMvc mockMvc;
@@ -221,7 +165,7 @@ public class MetadataControllerWithoutRegistryTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile metadataFile = new MockMultipartFile("document", DC_DOCUMENT.getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", KIT_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
@@ -241,7 +185,7 @@ public class MetadataControllerWithoutRegistryTest {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", DC_SCHEMA.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).

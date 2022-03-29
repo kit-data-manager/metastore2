@@ -1,0 +1,7 @@
+# Sonatype Lift Configuration
+
+# gitignore formatted string of files to ignore.
+ignoreFiles = """
+.github/**
+src/main/resources/static/editor/dependencies/**
+"""

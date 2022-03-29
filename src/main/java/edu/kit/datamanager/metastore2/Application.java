@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.entities.messaging.IAMQPSubmittable;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
@@ -46,6 +47,8 @@ import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import org.javers.core.Javers;
@@ -54,7 +57,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InjectionPoint;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.ApplicationContext;
@@ -153,10 +158,29 @@ public class Application {
   }
 
   @Bean
+  @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "true")
   public IMessagingService messagingService() {
+    LOG.trace("LOAD RabbitMQ");
     return new RabbitMQMessagingService();
   }
+   @Bean(name = "messagingService")
+   @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "false")
+  public IMessagingService dummyMessagingService() {
+    LOG.trace("LOAD DUMMY RabbitMQ");
+    return new IMessagingService() {
+      @Override
+      public void send(IAMQPSubmittable iamqps) {
+        LOG.trace("RabbitMQ send dummy");
+      }
 
+      @Override
+      public Health health() {
+        LOG.trace("RabbitMQ health dummy");
+        return new Health.Builder().up().build();
+      }
+    };
+  }
+  
   @Bean
   public IDataResourceService dataResourceService() {
     return new DataResourceService();
@@ -178,12 +202,20 @@ public class Application {
   }
 
   @Bean
+  @ConfigurationProperties("repo")
+  public ApplicationProperties applicationProperties() {
+    return new ApplicationProperties();
+  }
+
+  @Bean
   public MetastoreConfiguration schemaConfig() {
 
     IAuditService<DataResource> auditServiceDataResource;
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(this.applicationProperties.getSchemaFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(schemaResourceService);
     rbc.setContentInformationService(schemaInformationService);
@@ -205,6 +237,7 @@ public class Application {
     schemaResourceService.configure(rbc);
     schemaInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
     MetadataRecordUtil.setSchemaConfig(rbc);
@@ -212,9 +245,11 @@ public class Application {
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
-    
+
+    fixBasePath(rbc);
+
     printSettings(rbc);
-    
+
     return rbc;
   }
 
@@ -225,6 +260,8 @@ public class Application {
     IAuditService<ContentInformation> contentAuditService;
     MetastoreConfiguration rbc = new MetastoreConfiguration();
     rbc.setBasepath(applicationProperties.getMetadataFolder());
+    rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
+    rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
     rbc.setDataResourceService(dataResourceService);
     rbc.setContentInformationService(contentInformationService);
@@ -246,15 +283,20 @@ public class Application {
     dataResourceService.configure(rbc);
     contentInformationService.configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
+    rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    
+
+    fixBasePath(rbc);
+
     printSettings(rbc);
-    
+
     return rbc;
   }
+
   /**
    * Print current settings for repository
+   *
    * @param config Settings.
    */
   public void printSettings(MetastoreConfiguration config) {
@@ -269,22 +311,41 @@ public class Application {
     for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
       LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
     }
-    
+
   }
-  /** 
+
+  /**
    * Check settings for empty entries and remove them.
+   *
    * @param currentRegistries Current list of schema registries.
    * @return Fitered list of schema registries.
    */
   public String[] checkRegistries(String[] currentRegistries) {
     List<String> allRegistries = new ArrayList<>();
-    for (String schemaRegistry : currentRegistries){
-      if (!schemaRegistry.trim().isEmpty()) { 
-       allRegistries.add(schemaRegistry);
+    for (String schemaRegistry : currentRegistries) {
+      if (!schemaRegistry.trim().isEmpty()) {
+        allRegistries.add(schemaRegistry);
       }
     }
     String[] array = allRegistries.toArray(new String[0]);
     return array;
+  }
+
+  /**
+   * Fix base path on Windows system due to missing drive in case of relative
+   * paths.
+   *
+   * @param config Configuration holding setting of repository.
+   */
+  private void fixBasePath(MetastoreConfiguration config) {
+    String basePath = config.getBasepath().toString();
+    try {
+      basePath = MetadataSchemaRecordUtil.fixRelativeURI(basePath);
+      config.setBasepath(URI.create(basePath).toURL());
+    } catch (MalformedURLException ex) {
+      LOG.error("Error fixing base path '{}'", basePath);
+      LOG.error("Invalid base path!", ex);
+    }
   }
 
   public static void main(String[] args) {

@@ -17,6 +17,7 @@ ext {
     springBootVersion = '2.4.13' 
     springDocVersion  = '1.5.13'
     javersVersion     = '6.5.3'
+    keycloakVersion   = '15.0.2'
 
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
@@ -74,6 +75,14 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+
+   //Keycloak
+    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
+    implementation "com.nimbusds:nimbus-jose-jwt:9.15.2"
+    implementation "io.jsonwebtoken:jjwt-api:0.11.2"
+    implementation "io.jsonwebtoken:jjwt-impl:0.11.2"
+    implementation "io.jsonwebtoken:jjwt-jackson:0.11.2"
+
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
@@ -87,7 +96,7 @@ dependencies {
     implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.2.1"
+    implementation "org.postgresql:postgresql:42.2.25"
     //driver for h2
     implementation "com.h2database:h2:1.4.200"
     
@@ -98,14 +107,14 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.64"
+    implementation "com.networknt:json-schema-validator:1.0.59"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.1'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:0.9.2"
-    implementation "edu.kit.datamanager:service-base:0.3.2"
+    implementation "edu.kit.datamanager:repo-core:1.0.2"
+    implementation "edu.kit.datamanager:service-base:1.0.1"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
@@ -137,6 +146,7 @@ test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
 
+    maxHeapSize = "8192m"
     testLogging {
         outputs.upToDateWhen {false}
         showStandardStreams = true

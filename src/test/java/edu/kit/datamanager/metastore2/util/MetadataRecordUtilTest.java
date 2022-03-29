@@ -13,22 +13,13 @@ import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
-import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
-import edu.kit.datamanager.repo.service.IContentInformationService;
-import java.io.ByteArrayInputStream;
-import java.nio.file.attribute.AclEntry;
-import java.nio.file.attribute.AclEntryPermission;
 import java.time.Instant;
 import java.util.function.Function;
 import org.javers.core.Javers;
@@ -278,7 +269,7 @@ public class MetadataRecordUtilTest {
     fail("Don't reach this line!");
   }
 
-  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  @Test(expected = edu.kit.datamanager.exceptions.UnprocessableEntityException.class)
   public void testCreateMetadataRecordExeption4d() throws JsonProcessingException {
     System.out.println("createMetadataRecord");
     MetadataRecord record = new MetadataRecord();
@@ -668,6 +659,7 @@ public class MetadataRecordUtilTest {
     RepoBaseConfiguration applicationProperties = metadataConfig;
     DataResource dataResource = null;
     MetadataRecord expResult = new MetadataRecord();
+    expResult.setAcl(null);
     MetadataRecord result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
     assertEquals(expResult, result);
     dataResource = DataResource.factoryNewDataResource();
@@ -770,12 +762,14 @@ public class MetadataRecordUtilTest {
     assertNotNull(result);
     assertEquals(provided, result);
     
+    // Cannot test merging ACL list due to missing access rights
     managed = new MetadataRecord();
     provided = new MetadataRecord();
     provided.getAcl().add(new edu.kit.datamanager.repo.domain.acl.AclEntry(SCHEMA_ID, PERMISSION.WRITE));
     result = MetadataRecordUtil.mergeRecords(managed, provided);
     assertNotNull(result);
-    provided.setPid(result.getPid());
+    assertNotEquals(provided, result);
+    provided.getAcl().clear();
     assertEquals(provided, result);
     
     managed = new MetadataRecord();

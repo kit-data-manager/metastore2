@@ -1,9 +1,11 @@
 {
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
+    "$id": "http://www.example.org/schema/json",
     "type": "object",
     "properties": {
         "schemaId": {
             "type": "string",
-            "title": "Schema Record Identifier"
+            "title": "Schema Record Identifier*"
         },
         "mimeType": {
             "type": "string",

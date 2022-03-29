@@ -89,20 +89,20 @@ public class MetadataSchemaRecordUtilTest {
   public void testMergeRecords() {
     System.out.println("mergeRecords");
     MetadataSchemaRecord managed = new MetadataSchemaRecord();
-    MetadataSchemaRecord provided = createSchemaRecord(3, 5, 7, 11, 12);
-    MetadataSchemaRecord expResult = createSchemaRecord(3, 5, 7, 11, 12);
+    MetadataSchemaRecord provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    MetadataSchemaRecord expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
     MetadataSchemaRecord result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
     managed = new MetadataSchemaRecord();
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(provided, managed);
     assertEquals(expResult, result);
-    managed = createSchemaRecord(3, 5, 7, 11, 12);
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
-    managed = createSchemaRecord(3, 5, 7, 11, 12);
-    provided = createSchemaRecord(3, 5, 7, 11, 12);
+    managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     provided.setDoNotSync(Boolean.FALSE);
     expResult.setDoNotSync(Boolean.FALSE);
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
@@ -183,6 +183,13 @@ public class MetadataSchemaRecordUtilTest {
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
+  public void testValidateResourceIdentifierNull_2() {
+    MetastoreConfiguration conf = new MetastoreConfiguration();
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String)null, 1l);
+    fail("Don't reach this line!");
+  }
+
+  @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNoValue() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     ResourceIdentifier identifier = ResourceIdentifier.factoryInternalResourceIdentifier(null);
@@ -205,7 +212,7 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaDocumentUri("any");
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, schemaRecord);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, (MultipartFile)null, schemaRecord);
     fail("Don't reach this line!");
   }
 

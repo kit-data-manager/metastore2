@@ -5,13 +5,17 @@
     {
         "title": "Related Resource",
         "field": "relatedResource.identifier"
-       },
+    },
     {
-        "title": "Date Created",
-        "field": "createdAt"
+        "title": "Schema Identifier",
+        "field": "schema.identifier"   
     },
     {
         "title": "Date Updated",
-        "field": "lastUpdate"
+        "field": "lastUpdate",
+        "formatter":"datetime",
+        "formatterParams":{
+            "outputFormat":"YYYY-MM-DD HH:mm"
+        }
     }
 ]

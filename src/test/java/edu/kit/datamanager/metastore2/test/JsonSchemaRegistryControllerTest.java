@@ -653,7 +653,7 @@ public class JsonSchemaRegistryControllerTest {
   @Test
   public void testValidateUnknownVersion() throws Exception {
     ingestSchemaRecord();
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/json/validate?version=666").file("document", JSON_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/json/validate?version=666").file("document", JSON_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
   
   @Test

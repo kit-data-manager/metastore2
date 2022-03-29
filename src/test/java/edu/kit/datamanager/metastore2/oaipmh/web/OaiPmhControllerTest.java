@@ -120,9 +120,6 @@ public class OaiPmhControllerTest {
   private static final String SCHEMA_ID_1 = "schemaV1";
   private static final String SCHEMA_ID_2 = "schemaV2";
   private static final String SCHEMA_ID_3 = "schemaV3";
-  private static final String TITLE_1 = "Title 1";
-  private static final String TITLE_2 = "Title 2";
-  private static final String TITLE_3 = "Title 3";
   private final static String SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/%s\"\n"
           + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"

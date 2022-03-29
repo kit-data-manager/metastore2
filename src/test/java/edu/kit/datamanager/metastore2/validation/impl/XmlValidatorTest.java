@@ -26,11 +26,10 @@ import org.xml.sax.SAXException;
 public class XmlValidatorTest {
 
     File schemaFile = new File("src/test/resources/examples/xml/example.xsd");
-    File schema_simple_dc = new File("src/test/resources/examples/xml/simpledc20021212.xsd");
-    File schema_oai_dc = new File("src/test/resources/examples/xml/oai_dc.xsd");
+    File schema_oai_dc = new File("src/test/resources/examples/xml/kit.xsd");
     File invalidSchemaWithDoctype = new File("src/test/resources/examples/xml/forbidden.xsd");
     File xmlFile = new File("src/test/resources/examples/xml/example.xml");
-    File xmlFile_oai_dc = new File("src/test/resources/examples/xml/oai_dc.xml");
+    File xmlFile_oai_dc = new File("src/test/resources/examples/xml/kit.xml");
     File invalidXmlFile = new File("src/test/resources/examples/xml/invalidExample.xml");
 
     public XmlValidatorTest() {
@@ -106,18 +105,6 @@ public class XmlValidatorTest {
         assertEquals(expResult, result);
     }
 
-    /**
-     * Test of isSchemaValid method, of class XmlValidator.
-     */
-    @Test
-    public void testIsSchemaValid_simple_DC() throws FileNotFoundException {
-        System.out.println("isSchemaValid");
-       InputStream schemaStream = new FileInputStream(schema_simple_dc);
-        IValidator instance = new XmlValidator().getInstance();
-        boolean expResult = true;
-        boolean result = instance.isSchemaValid(schemaStream);
-        assertEquals(expResult, result);
-    }
 
     /**
      * Test of isSchemaValid method, of class XmlValidator.

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <property name="LOGS" value="./log/" />
+
+    <appender name="Console"
+        class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+          <pattern>%gray(%d{YYYY-MM-dd HH:mm:ss.SSS}) %green(%highlight(%5p)) - %gray([%10thread]) %cyan(%42logger{42}) : %msg%n</pattern> 
+        </layout>
+    </appender>
+
+    <appender name="RollingFile"
+        class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOGS}/accessLog.log</file>
+        <encoder
+            class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <Pattern>%d{YYYY-MM-dd}, %m%n</Pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- daily rollover -->
+            <fileNamePattern>${LOGS}/accessLog.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- keep 1 days' worth of history -->
+            <maxHistory>2</maxHistory>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- LOG everything at INFO level  -->
+    <root level="info">
+        <appender-ref ref="Console" />
+    </root> 
+
+    <!-- LOG "edu.kit.datamanager.metastore2.filter.*" at TRACE level -->
+    <logger name="edu.kit.datamanager.metastore2.filter" level="trace" additivity="false">
+        <appender-ref ref="RollingFile" />
+    </logger>
+
+</configuration>
