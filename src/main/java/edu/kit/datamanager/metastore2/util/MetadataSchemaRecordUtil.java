@@ -67,7 +67,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -703,14 +702,16 @@ public class MetadataSchemaRecordUtil {
       String message = "Missing resource locator for schema.";
       LOG.error(message);
     } else {
-      String pathToSchemaDocument = schemaRecord.getSchemaDocumentUri();
-      try {
-        pathToSchemaDocument = URI.create(pathToSchemaDocument).toURL().toString();
-      } catch (MalformedURLException ex) {
-        LOG.error("Error getting url of uri '" + pathToSchemaDocument + "'", ex);
-      }
+      String pathToSchemaDocument = fixRelativeURI(schemaRecord.getSchemaDocumentUri());
       List<Url2Path> findByUrl = url2PathDao.findByPath(pathToSchemaDocument);
       if (findByUrl.isEmpty()) {
+        if (LOG.isTraceEnabled()) {
+          LOG.trace("-----------------------------------------");
+          url2PathDao.findAll().forEach((item) -> {
+            LOG.trace("- {}", item);
+          });
+          LOG.trace("-----------------------------------------");
+        }
         // Remove downloaded file
         String uri = schemaRecord.getSchemaDocumentUri();
         Path pathToFile = Paths.get(URI.create(uri));
@@ -881,8 +882,13 @@ public class MetadataSchemaRecordUtil {
       //update acl
       if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
-          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-          managed.setAcl(provided.getAcl());
+          // check for special access rights 
+          // - only administrators are allowed to change ACL
+          // - at least principal has to remain as ADMIN 
+          if (MetadataRecordUtil.checkAccessRights(provided.getAcl())) {
+            LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+            managed.setAcl(provided.getAcl());
+          }
         }
       }
       //update mimetype
@@ -1168,4 +1174,27 @@ public class MetadataSchemaRecordUtil {
   public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
     url2PathDao = aUrl2PathDao;
   }
+
+  /**
+   * Fix relative URI.
+   *
+   * @param uri (relative) URI
+   * @return absolute URL
+   */
+  public static String fixRelativeURI(String uri) {
+    String returnValue = null;
+    URI urig = URI.create(uri);
+    try {
+      if (urig.isAbsolute()) {
+        returnValue = Paths.get(new URI(uri)).toAbsolutePath().toUri().toURL().toString();
+      } else {
+        returnValue = Paths.get(uri).toFile().toURI().toURL().toString();
+      }
+    } catch (URISyntaxException | MalformedURLException ex) {
+      LOG.error("Error fixing URI '" + uri + "'", ex);
+    }
+    LOG.trace("Fix URI '{}' -> '{}'", uri, returnValue);
+    return returnValue;
+  }
+
 }

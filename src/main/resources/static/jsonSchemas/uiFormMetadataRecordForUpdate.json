@@ -3,7 +3,7 @@
     "items": [
         "id",
         "relatedResource",
-         "schema",
+        "schema",
         "schemaVersion",
         {
             "type": "array",

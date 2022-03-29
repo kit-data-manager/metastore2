@@ -18,6 +18,9 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
+import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.RepoServiceRole;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -37,15 +40,20 @@ import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,6 +71,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -140,7 +149,24 @@ public class MetadataRecordUtil {
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, record);
     // add id as internal identifier if exists
+    // Note: DataResourceUtils.createResource will ignore id of resource. 
+    // id will be set to alternate identifier if exists. 
     if (dataResource.getId() != null) {
+      // check for valid identifier without any chars which may be encoded
+      try {
+        String originalId = dataResource.getId();
+        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
+        if (!value.equals(originalId)) {
+          String message = "Not a valid id! Encoded: " + value;
+          LOG.error(message);
+          throw new BadArgumentException(message);
+        }
+      } catch (UnsupportedEncodingException ex) {
+        String message = "Error encoding id " + record.getSchemaId();
+        LOG.error(message);
+        throw new CustomInternalServerError(message);
+      }
+
       dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
     }
     long nano4 = System.nanoTime() / 1000000;
@@ -290,7 +316,7 @@ public class MetadataRecordUtil {
    * Migrate metadata record to data resource.
    *
    * @param applicationProperties Configuration settings of repository.
-   * @param metadataRecord  Metadata record to migrate.
+   * @param metadataRecord Metadata record to migrate.
    * @return Data resource of metadata record.
    */
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
@@ -754,8 +780,13 @@ public class MetadataRecordUtil {
       //update acl
       if (!provided.getAcl().isEmpty()) {
         if (!provided.getAcl().equals(managed.getAcl())) {
-          LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-          managed.setAcl(provided.getAcl());
+          // check for special access rights 
+          // - only administrators are allowed to change ACL
+          // - at least principal has to remain as ADMIN 
+          if (checkAccessRights(provided.getAcl())) {
+            LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+            managed.setAcl(provided.getAcl());
+          }
         }
       }
       //update getRelatedResource
@@ -840,5 +871,32 @@ public class MetadataRecordUtil {
       }
       LOG.trace("Data record saved: {}", dataRecord);
     }
+  }
+
+  public static boolean checkAccessRights(Set<AclEntry> provided) {
+    LOG.trace("Check access rights for changing ACL list!");
+    boolean isAllowed = false;
+    String principal = AuthenticationHelper.getPrincipal();
+    Authentication authentication = AuthenticationHelper.getAuthentication();
+    if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString()) ||
+        AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
+      // User is allowed to change ACLs. 
+      List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+      Iterator<AclEntry> iterator = provided.iterator();
+      // Check if ADMINISTRATOR is still ADMINISTRATOR
+      while (iterator.hasNext()) {
+        AclEntry aclEntry = iterator.next();
+        if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
+          if (authorizationIdentities.contains(aclEntry.getSid())) {
+            isAllowed = true;
+            LOG.trace("ACL list is OK, ready to set new ACL list.");
+            break;
+          }
+        }
+      }
+    } else {
+      LOG.warn("Only ADMINISTRATORS are allowed to change ACL entries");
+    }
+    return isAllowed;
   }
 }

@@ -54,9 +54,9 @@ public class AccessLoggingFilter implements Filter {
     if ((authToken != null) && (authToken.length() > BEARER.length())) {
       authToken = authToken.substring(BEARER.length());
     }
-    
     chain.doFilter(request, response);
-    
+
+    // authToken may be null if authentication is disabled.
     LOGGER.trace("'{}' access to '{}' -> Status: '{}'", req.getMethod(), req.getRequestURI(), resp.getStatus(), authToken);
   }
 }

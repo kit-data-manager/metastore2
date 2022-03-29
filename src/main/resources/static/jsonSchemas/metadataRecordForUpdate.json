@@ -21,7 +21,7 @@
                 }
             }
         },
-         "schema": {
+        "schema": {
             "type": "object",
              "title": "Schema",
             "properties": {

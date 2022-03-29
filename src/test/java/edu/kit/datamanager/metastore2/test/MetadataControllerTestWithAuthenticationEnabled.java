@@ -853,9 +853,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
     String content = result.getResponse().getContentAsString();
     String etag2 = result.getResponse().getHeader("ETag");
+    MetadataRecord mr2 = mapper.readValue(content, MetadataRecord.class);
 
     Assert.assertEquals(etag1, etag2);
-    Assert.assertEquals(body, content);
+    Assert.assertEquals(mr, mr2);
     result = this.mockMvc.perform(get("/api/v1/metadata/" + recordId).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
@@ -864,9 +865,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
     content = result.getResponse().getContentAsString();
     etag2 = result.getResponse().getHeader("ETag");
+    mr2 = mapper.readValue(content, MetadataRecord.class);
 
     Assert.assertEquals(etag1, etag2);
-    Assert.assertEquals(body, content);
+    Assert.assertEquals(mr, mr2);
   }
 
   @Test
@@ -1074,6 +1076,68 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = KIT_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
+
+    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+  }
+
+
+  @Test
+  public void testUpdateRecordWithWrongACL() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord oldRecord = mapper.readValue(body, MetadataRecord.class);
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // Set all ACL to WRITE
+    for (AclEntry entry: record.getAcl()) {
+      entry.setPermission(PERMISSION.WRITE);
+    } 
+    record.getAcl().add(new AclEntry("testacl", PERMISSION.ADMINISTRATE));
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    if (record.getAcl() != null) {
+      Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
