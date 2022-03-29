@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug with path in Windows. (#issue 88)
 - CSRF is now disabled by default. (#issue 70) 
 - Check ACLs while creating/updating records (#issue 39)
+- Added missing spaces to swagger-ui.
 
 ## [0.3.7] - 2022-01-11
 ### Added

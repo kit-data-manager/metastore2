@@ -71,7 +71,7 @@ public interface ISchemaRegistryController {
           final UriComponentsBuilder uriBuilder);
 
   @Operation(summary = "Get schema record by schema id (and version).", description = "Obtain is single schema record by its schema id. "
-          + "Depending on a user's role, accessing a specific record may be allowed or forbidden."
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
@@ -114,10 +114,10 @@ public interface ISchemaRegistryController {
           HttpServletResponse hsr);
 
   @Operation(summary = "Get all schema records.", description = "List all schema records in a paginated and/or sorted form. The result can be refined by providing schemaId, a list of one or more mimetypes and/or a date range. Returned schema record(s) must match. "
-          + "if 'schemaId' is provided all other parameters were skipped and all versions of the given schemaId record will be returned."
+          + "if 'schemaId' is provided all other parameters were skipped and all versions of the given schemaId record will be returned. "
           + "If 'mimetype' is provided, a record matches if its associated mime type matchs. "
           + "Furthermore, the UTC time of the last update can be provided in three different fashions: 1) Providing only updateFrom returns all records updated at or after the provided date, 2) Providing only updateUntil returns all records updated before or "
-          + "at the provided date, 3) Providing both returns all records updated within the provided date range."
+          + "at the provided date, 3) Providing both returns all records updated within the provided date range. "
           + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataSchemaRecord.class))))})
@@ -139,7 +139,7 @@ public interface ISchemaRegistryController {
           + "Only the associated mimeType and acl can be changed.  All other fields are updated automatically or are read-only. Updating only the metadata record does not affect the version number. "
           + "A new version is only created while providing a (new) schema document.",
           responses = {
-            @ApiResponse(responseCode = "200", description = "OK is returned in case of a successful update."
+            @ApiResponse(responseCode = "200", description = "OK is returned in case of a successful update. "
                     + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record/schema document is invalid."),
             @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
