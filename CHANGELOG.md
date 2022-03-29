@@ -26,15 +26,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to service-base 1.0.1
 - Update to postgresql 42.2.25
 - Downgrade library due to some issues regarding validation
-  - json-schema-validator 1.0.64. -> 1.0.59 (#issue 77)
+  - json-schema-validator 1.0.64. -> 1.0.59 (issue #77)
 
 ### Fixed
 - Fix bug listing resources without proper authorization (issue #71)
 - Fix bug listing all metadata documents related to a specific schema
 - Fix a bug that can cause the metadata document/schema to become invalid due to an update. (issue #78)
-- Fix bug with path in Windows. (#issue 88)
-- CSRF is now disabled by default. (#issue 70) 
-- Check ACLs while creating/updating records (#issue 39)
+- Fix bug with path in Windows. (issue #88)
+- CSRF is now disabled by default. (issue #70) 
+- Check ACLs while creating/updating records (issue #39)
 - Added missing spaces to swagger-ui.
 
 ## [0.3.7] - 2022-01-11
