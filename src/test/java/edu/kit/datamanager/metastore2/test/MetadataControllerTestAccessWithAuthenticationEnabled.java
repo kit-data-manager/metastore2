@@ -6,6 +6,7 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
@@ -29,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -59,6 +61,7 @@ import org.springframework.test.context.support.DirtiesContextTestExecutionListe
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -89,13 +92,13 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestAccessWithAuthenticationEnabled {
-  
+
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc_access_aai";
   private static final String INVALID_SCHEMA = "invalid_dc";
-          
+
   private String adminToken;
   private String userToken;
   private String otherUserToken;
@@ -189,14 +192,14 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
 
       try {
         // Create schema only once.
-        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
         }
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -210,7 +213,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
       int schemaNo = 1;
       for (PERMISSION user1 : PERMISSION.values()) {
         for (PERMISSION guest : PERMISSION.values()) {
-         ingestMetadataRecord(SCHEMA_ID + "_" + schemaNo, user1, guest);
+          ingestMetadataRecord(SCHEMA_ID + "_" + schemaNo, user1, guest);
           schemaNo++;
         }
       }
@@ -220,55 +223,108 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
 
   @Test
   public void testAccessRecordListAdmin() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
-            andDo(print()).andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17))).
+            andReturn();
+    List<MetadataRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/metadata/" + item.getId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListUser() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13))).
+            andReturn();
+    List<MetadataRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/metadata/" + item.getId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListGuest() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
-            andDo(print()).
-            andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
+            andDo(print()).andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13))).
+            andReturn();
+    List<MetadataRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/metadata/" + item.getId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListOtherUser() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17))).
+            andReturn();
+    List<MetadataRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/metadata/" + item.getId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListWithoutAuthentication() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
             param("size", Integer.toString(200))).
-            andDo(print()).
-            andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+            andDo(print()).andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1))).
+            andReturn();
+    List<MetadataRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/metadata/" + item.getId())).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   /**
@@ -302,7 +358,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).andExpect(status().isCreated()).andReturn();
+            andDo(print()).andExpect(status().isCreated()).
+            andReturn();
   }
 
   /**
@@ -316,8 +373,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier("resource of " + schemaId));
     Set<AclEntry> aclEntries = new HashSet<>();
-      aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
-      record.setAcl(aclEntries);
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -327,7 +384,9 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).andExpect(status().isCreated()).andReturn();
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
   }
 
   public static synchronized boolean isInitialized() {
