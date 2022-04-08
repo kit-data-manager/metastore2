@@ -1,0 +1,78 @@
+/* When there is not enough space for the logo (e.g. on mobile)
+   we simply add a new header for logos above. */
+.logo-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+/* Rough estimation of the spacing guidelines for the KIT logo.
+   The border of the browser window does not need to be affected,
+   so you may use this in all other cases only. */
+.logo-spacing-general {
+    display: inline;
+    vertical-align: middle;
+    margin: 0em 2em 0em 2em;
+}
+
+/* Makes the border around the KIT logo. May be used on the <a> tag or similar. */
+.logo-card {
+    display: inline-block;
+    border-width: 1px;
+    border-style: solid;
+    border-top-right-radius: 0.7em;
+    border-bottom-left-radius: 0.7em;
+    padding: 0.4em;
+    border-color: rgb(143, 143, 143);
+    margin: 0.1em;
+}
+
+/* Sizes and aligns images in logo cards properly. */
+.logo-card img {
+    height: 2em;
+    vertical-align: middle;
+}
+
+/* Workaround to make the logo header clickable. */
+.click-transparent {
+    pointer-events: none;
+}
+
+/* show desktop things by default */
+.mobile-off {
+    position: inherit;
+}
+
+/* hide mobile things by default */
+.mobile-on {
+    position: absolute;
+    left: -999px;
+}
+
+/* if mobile */
+@media screen and (max-width: 1000px) {
+    /* hide desktop things */
+    .mobile-off {
+        position: absolute;
+        left: -999px;
+    }
+
+    /* show mobile things */
+    .mobile-on {
+        position: inherit;
+    }
+}
+
+/* Always hide elements with this class. Can be changed via Javascript. */
+.hideme {
+    position: absolute;
+    left: -999px;
+}
+
+.centerbox {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+}
