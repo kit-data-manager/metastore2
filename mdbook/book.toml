@@ -1,0 +1,17 @@
+[book]
+authors = ["Volker Hartmann"]
+language = "en"
+multilingual = false
+src = "src"
+title = "MetaStore Cookbook"
+
+[build]
+build-dir = "public"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "ttps://github.com/kit-data-manager/metastore2/"
+no-section-label = true
+fold = {enable = true, level = 0}
+additional-css = ["hierarchical_numbered_lists.css", "chapter_list.css", "theme-adjustments.css"]

@@ -1,0 +1,15 @@
+/* Trick from: https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Lists_and_Counters/Using_CSS_counters */
+/*
+    Unfortunately, this solution is not mixable with <ul> yet,
+    so to not break things, let's make it optional by using a custom tag
+    around the ordered list of we need it.
+ */
+nestednumerationlist ol {
+    counter-reset: section;
+    list-style-type: none;
+}
+
+nestednumerationlist ol > li::before {
+    counter-increment: section;
+    content: counters(section, ".") ". ";
+}
