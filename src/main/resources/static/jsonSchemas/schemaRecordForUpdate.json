@@ -9,7 +9,7 @@
         },
         "mimeType": {
             "type": "string",
-            "title": "mime Type",
+            "title": "MIME Type",
             "enum": ["application/json", "application/xml"]
         },
         "type": {
@@ -56,7 +56,7 @@
         },
          "fileSchema": {
             "type": "string",
-            "title": "file Schema"
+            "title": "Schema File"
         }
     },
     "required": ["schemaId"]
