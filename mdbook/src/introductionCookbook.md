@@ -16,19 +16,18 @@ possibilities provided by MetaStore.
 
 <nestednumerationlist>
 
-1. [Schema Registration and Management](./schema/schema_managemenent_step_1.md)
-2. [Schema Registration and Management](./schema/schema_managemenent_step_1.md)
-   1. [Registering a new schema Document](./schema/schema_managemenent_step_1.md)
-   2. [Describe/model envisioned data type (offline)](./datatypes_step_2.md)
-   1. [Decide on Data Type‘s level of detail](./datatypes_step_2_1.md)
-   2. [DTR Inquiry](./datatypes_step_2_2.md)
-3. [Metadata Management](./datatypes_step_3.md)
+1. [Working with schema( document)s](./schema/introduction.md)
+   1. [Selecting a schema](./schema/select.md)
+   2. [Registering a new schema document](./schema/register.md)
+   3. [Update an existing schema document](./schema/update.md)
+   4. [Extend an existing schema document](./schema/extend.md)
+2. [Working with metadata documents](./metadata/metadata_mangement_step_1.md)
    1. [Register new Child-Data Type(s)](./datatypes_step_3_1.md)
    2. [Register extended Child-Data Type(s)](./datatypes_step_3_2.md)
    3. [Register main Data Type](./datatypes_step_3_3.md)
-4. [Managing Access Rights](./datatypes_step_3_1.md)
-   1. [Make Document available for other Users](./datatypes_step_3_1.md)
-   2. [Make Document public available](./datatypes_step_3_2.md)
+3. Managing Access Rights
+   1. [Make Document available for other Users](./acl/accessible.md)
+   2. [Make Document public available](./acl/publish.md)
    
 </nestednumerationlist>
 
