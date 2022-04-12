@@ -1,0 +1,11 @@
+{
+    "relatedResource": {
+        "identifier": "anyResourceId",
+        "identifierType": "INTERNAL"
+    },
+    "schema": {
+        "identifier": "aaa",
+        "identifierType": "INTERNAL"
+    },
+    "schemaVersion": 1
+}

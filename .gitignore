@@ -13,3 +13,6 @@ nbproject
 build
 config
 nbproject
+
+# Ignore output of mdbook
+mdbook/public
