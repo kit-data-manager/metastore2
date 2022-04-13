@@ -14,8 +14,8 @@ First of all we have to register at least one schema which defines the structure
 
 <nestednumerationlist>
 
-1. [Selecting/creating a schema](./select.md)
-2. [Registering a new schema document](./register.md)
+1. [Select/create a schema](./select.md)
+2. [Register a new schema document](./register.md)
 3. [Update an existing schema document](./update.md)
 4. [Extend an existing schema document](./extend.md)
    

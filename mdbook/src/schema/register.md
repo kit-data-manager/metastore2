@@ -32,7 +32,7 @@ a schema from the Metadata Standards Catalog use the short name or abbreviation 
 the schema as identifier (e.g.: Dublin Core -> schemaID = DublinCore).
 
 
-## Step 2: 
+## Step 2: Create new schema
 Register schema if it not already exists.
 
 <div class="centerbox">

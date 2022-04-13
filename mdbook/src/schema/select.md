@@ -1,4 +1,4 @@
-# Selecting/creating a Schema
+# Select/create a Schema
 Before starting ingesting metadata documents in MetaStore an appropriate schema 
 should be selected. To do this, some fundamental decisions must be made.
 
@@ -19,7 +19,7 @@ should be selected. To do this, some fundamental decisions must be made.
 
 ## Work Steps (Summary)
 
-### Selecting a Schema
+### Select/create a Schema
 * Step 1: Which metadata do I need?
 * Step 2: Search for existing metadata standards
 * Step 3: Create your own schema (optional)
