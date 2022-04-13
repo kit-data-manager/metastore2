@@ -1,4 +1,4 @@
-# Selecting a Schema
+# Selecting/creating a Schema
 Before starting ingesting metadata documents in MetaStore an appropriate schema 
 should be selected. To do this, some fundamental decisions must be made.
 
@@ -72,7 +72,7 @@ There are several tools for creating a schema from scratch:
   - [https://www.xmlfox.com/](https://www.xmlfox.com/)
   - [https://www.liquid-technologies.com/xml-schema-editor](https://www.liquid-technologies.com/xml-schema-editor) (commercial)
   - [https://www.oxygenxml.com/xml_editor/xml_schema_editor.html](https://www.oxygenxml.com/xml_editor/xml_schema_editor.html)(commercial)
-
+  - [...](https://www.w3.org/XML/Schema#Tools)
 
 Let's start with a simple JSON Schema containing 
 - author
@@ -81,38 +81,35 @@ Let's start with a simple JSON Schema containing
 
 The JSON document may look like this:
 ```
-{
-  "author": "Last Name, First Name",
-  "title": "My first document",
-  "creation_date": "2022-04-11"
-}
+{{#include ./my_first_json_document.json}}
 ```
 This example results in the following schema using the first link given above:
 ```
-{
-    "$schema": "http://json-schema.org/draft-07/schema",
-    "type": "object",
-    "required": [
-        "author",
-        "title",
-        "creation_date"
-    ],
-    "properties": {
-        "author": {
-            "type": "string"
-        },
-        "title": {
-            "type": "string"
-        },
-        "creation_date": {
-            "type": "string"
-        }
-    },
-    "additionalProperties": false
- }
+{{#include ./my_first_json_schema.json}}
 ```
 ***Note:*** The following JSON Schema specifications are supported by the library used:
-* Draft v4
-* Draft v6
 * Draft v7 
 * Draft v2019-09
+
+### Recommendations for JSON Schemas
+If the scientists will later use the web interface to store their metadata 
+documents, here are a few hints to make their work a little easier. 
+As the web interface uses the entries from the schema to create a form from them, 
+some fields should be filled with meaningful values.
+Each property of the schema contains some optional entries:
+1. title - The text of the title will be displayed above the input field.
+2. description - The text of the description will be displayed below the input 
+   field and should contain some additional infos.
+3. default - The input field will be prefilled with the default value. This might
+   be helpful if a field mostly contains a fixed value. 
+4. enum - Defines an array of possible values which is displayed as a dropdown menu.
+
+The entry 'additionalProperties' at the end of the schema should be always 'false' 
+to forbid custom entries.
+
+The used schema above will result in the following form:
+
+<div class="centerbox">
+    <img src="/images/SchemaRecordFormExample.png" alt="Schema Record Form Example" style="max-height:50em;" />
+</div>
+

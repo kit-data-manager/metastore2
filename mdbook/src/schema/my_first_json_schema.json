@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "http://example.com/example.json",
+    "type": "object",
+    "title": "The root schema",
+    "description": "The root schema comprises the entire JSON document.",
+    "default": {},
+    "examples": [
+        {
+            "author": "Last Name, First Name",
+            "title": "My first document",
+            "creation_date": "2022-04-11"
+        }
+    ],
+    "required": [
+        "author",
+        "title",
+        "creation_date"
+    ],
+    "properties": {
+        "author": {
+            "$id": "#/properties/author",
+            "type": "string",
+            "title": "Author:",
+            "description": "The person who wrote the document.",
+            "default": "",
+            "examples": [
+                "Last Name, First Name"
+            ]
+        },
+        "title": {
+            "$id": "#/properties/title",
+            "type": "string",
+            "title": "Title:",
+            "description": "The title of the document.",
+            "default": "",
+            "examples": [
+                "My first document"
+            ]
+        },
+        "creation_date": {
+            "$id": "#/properties/creation_date",
+            "type": "string",
+            "title": "Creation Date:",
+            "description": "Creation date in the format 'YYYY-MM-DD'.",
+            "default": "2022-01-01",
+            "examples": [
+                "2022-04-11"
+            ]
+        }
+    },
+    "additionalProperties": false
+}
