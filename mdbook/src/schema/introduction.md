@@ -12,6 +12,8 @@ First of all we have to register at least one schema which defines the structure
 
 ## Recipes
 
+The following steps will be explained in detail on the next pages:
+
 <nestednumerationlist>
 
 1. [Select/create a schema](./select.md)
@@ -20,9 +22,3 @@ First of all we have to register at least one schema which defines the structure
 4. [Extend an existing schema document](./extend.md)
    
 </nestednumerationlist>
-
-The following steps will be explained in detail on the next pages:
-
-First of all we have to find  an appropriate schema which defines the structure 
-of the metadata documents.
-
