@@ -35,7 +35,7 @@ an updated schema.
 
 ## Step 1: Update metadata record
 Click on <img src="/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
-to get a form with the metadata record. Change like shown above:
+to get a form with the metadata record. Change like shown below:
 
 <div class="centerbox">
     <img src="/images/MetadataManagement_Step6.png" alt="List of Schema Records" style="max-height:50em;" />

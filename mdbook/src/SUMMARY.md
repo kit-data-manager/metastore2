@@ -13,3 +13,7 @@
     - [Ingest a metadata document](./metadata/ingest.md)
     - [Read a metadata document](./metadata/read.md)
     - [Update an existing metadata document](./metadata/update.md)
+  - [Managing Access Rights](./acl/introduction.md)
+    - [Make Document available for other Users](./acl/accessible.md)
+    - [Make Document public available](./acl/publish.md)
+    - [Disable public access for a single Document](./acl/reject.md)
