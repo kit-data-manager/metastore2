@@ -11,8 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Changed some labels in GUI
 
 ### Fixed
+- Fix bug ignoring type of related resource. (issue #105)
 
 ## [1.0.0] - 2022-03-29
 ### Added
