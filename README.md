@@ -111,7 +111,7 @@ user@localhost:/home/user/metastore2$ docker start metastore4docker
 ### Prerequisites
 In order to run this microservice via docker you'll need:
 
-* [Java SE Development Kit 8 or higher](https://openjdk.java.net/) 
+* [Java SE Development Kit >=8 and <=17](https://openjdk.java.net/) 
 * [git](https://git-scm.com/) 
 
 ### Installation
