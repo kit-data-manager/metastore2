@@ -63,6 +63,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -378,6 +380,7 @@ public class MetadataRecordUtil {
     }
     if (!relationFound) {
       RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource().getIdentifier(), null, null);
+      relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
       dataResource.getRelatedIdentifiers().add(relatedResource);
     }
     if (!schemaIdFound) {
@@ -452,15 +455,25 @@ public class MetadataRecordUtil {
       metadataRecord.setRecordVersion(recordVersion);
 
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
+          LOG.trace("Found related Identifier: '{}'", relatedIds);
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-          LOG.trace("Set relation to '{}'", relatedIds.getValue());
-          metadataRecord.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue()));
+          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
+          LOG.trace("Set relation to '{}'", resourceIdentifier);
+          metadataRecord.setRelatedResource(resourceIdentifier);
         }
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
           metadataRecord.setSchema(resourceIdentifier);
-          metadataRecord.setSchemaVersion(1l);
-          LOG.trace("Set schema to '{}'", metadataRecord.getSchema());
+          if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
+            //Try to fetch version from URL (only works with URLs including the version as query parameter.
+            Matcher matcher = Pattern.compile(".*[&?]version=([0-9]*).*").matcher(resourceIdentifier.getIdentifier());
+            while (matcher.find()) {
+              metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
+            }
+          } else {
+            metadataRecord.setSchemaVersion(1l);
+          }
+          LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
       }
       DataRecord dataRecord = null;
@@ -878,8 +891,8 @@ public class MetadataRecordUtil {
     boolean isAllowed = false;
     String principal = AuthenticationHelper.getPrincipal();
     Authentication authentication = AuthenticationHelper.getAuthentication();
-    if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString()) ||
-        AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
+    if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())
+            || AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
       // User is allowed to change ACLs. 
       List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
       Iterator<AclEntry> iterator = provided.iterator();
