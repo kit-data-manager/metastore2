@@ -796,10 +796,12 @@ public class MetadataRecordUtil {
         if (!provided.getAcl().equals(managed.getAcl())) {
           // check for special access rights 
           // - only administrators are allowed to change ACL
-          // - at least principal has to remain as ADMIN 
-          if (checkAccessRights(provided.getAcl())) {
-            LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-            managed.setAcl(provided.getAcl());
+          if (checkAccessRights(managed.getAcl())) {
+            // - at least principal has to remain as ADMIN 
+            if (checkAccessRights(provided.getAcl())) {
+              LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
+              managed.setAcl(provided.getAcl());
+            }
           }
         }
       }
@@ -887,37 +889,32 @@ public class MetadataRecordUtil {
     }
   }
 
-  public static boolean checkAccessRights(Set<AclEntry> provided) {
+  public static boolean checkAccessRights(Set<AclEntry> aclEntries) {
     boolean isAllowed = false;
-    String principal = AuthenticationHelper.getPrincipal();
     Authentication authentication = AuthenticationHelper.getAuthentication();
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    for (GrantedAuthority authority : authentication.getAuthorities()) {
+      authorizationIdentities.add(authority.getAuthority());
+    }
     if (LOG.isTraceEnabled()) {
       LOG.trace("Check access rights for changing ACL list!");
-      LOG.trace("Principal: " + principal);
-      for (GrantedAuthority authority : authentication.getAuthorities()) {
-        LOG.trace("Authority: '{}' -> '{}'", authority, authority.getAuthority());
-      }
-      for (String identities : AuthenticationHelper.getAuthorizationIdentities()) {
-        LOG.trace("Found identity: '{}'", identities);
+      for (String authority : authorizationIdentities) {
+        LOG.trace("Indentity/Authority: '{}'", authority);
       }
     }
-    if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())
-            || AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
-      // User is allowed to change ACLs. 
-      List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-      Iterator<AclEntry> iterator = provided.iterator();
-      // Check if ADMINISTRATOR is still ADMINISTRATOR
-      while (iterator.hasNext()) {
-        AclEntry aclEntry = iterator.next();
-        if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
-          if (authorizationIdentities.contains(aclEntry.getSid())) {
-            isAllowed = true;
-            LOG.trace("ACL list is OK, ready to set new ACL list.");
-            break;
-          }
+    // Check if authorized user has ADMINISTRATOR rights
+    Iterator<AclEntry> iterator = aclEntries.iterator();
+    while (iterator.hasNext()) {
+      AclEntry aclEntry = iterator.next();
+      if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
+        if (authorizationIdentities.contains(aclEntry.getSid())) {
+          isAllowed = true;
+          LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
+          break;
         }
       }
-    } else {
+    }
+    if (!isAllowed) {
       LOG.warn("Only ADMINISTRATORS are allowed to change ACL entries");
     }
     return isAllowed;
