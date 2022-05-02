@@ -74,6 +74,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
@@ -455,7 +456,7 @@ public class MetadataRecordUtil {
       metadataRecord.setRecordVersion(recordVersion);
 
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-          LOG.trace("Found related Identifier: '{}'", relatedIds);
+        LOG.trace("Found related Identifier: '{}'", relatedIds);
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
           LOG.trace("Set relation to '{}'", resourceIdentifier);
@@ -887,10 +888,19 @@ public class MetadataRecordUtil {
   }
 
   public static boolean checkAccessRights(Set<AclEntry> provided) {
-    LOG.trace("Check access rights for changing ACL list!");
     boolean isAllowed = false;
     String principal = AuthenticationHelper.getPrincipal();
     Authentication authentication = AuthenticationHelper.getAuthentication();
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Check access rights for changing ACL list!");
+      LOG.trace("Principal: " + principal);
+      for (GrantedAuthority authority : authentication.getAuthorities()) {
+        LOG.trace("Authority: '{}' -> '{}'", authority, authority.getAuthority());
+      }
+      for (String identities : AuthenticationHelper.getAuthorizationIdentities()) {
+        LOG.trace("Found identity: '{}'", identities);
+      }
+    }
     if (AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString())
             || AuthenticationHelper.hasAuthority(RepoServiceRole.SERVICE_WRITE.toString())) {
       // User is allowed to change ACLs. 
