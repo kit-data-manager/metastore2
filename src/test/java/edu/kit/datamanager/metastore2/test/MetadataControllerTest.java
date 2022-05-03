@@ -1191,6 +1191,66 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testUpdateRecordWithoutDocumentChangingRelatedResource() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    String expectedRelatedResource; 
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
+    expectedRelatedResource = record2.getRelatedResource().getIdentifier() + "_NEW";
+    record2.getRelatedResource().setIdentifier(expectedRelatedResource);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataRecordId).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+//    this.mockMvc.perform(put("/api/v1/metadata/dc").contentType("application/json").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    body = result.getResponse().getContentAsString();
+    etag = result.getResponse().getHeader("ETag");
+
+    record2 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    Assert.assertEquals(record.getMetadataDocumentUri(), record2.getMetadataDocumentUri());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
+    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());// version should be  the same
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    Assert.assertNotEquals("Related resource should be updated!", record.getRelatedResource().getIdentifier(), record2.getRelatedResource().getIdentifier());
+    Assert.assertEquals("Related resource should be updated!", expectedRelatedResource, record2.getRelatedResource().getIdentifier());
+    
+    // Test also updating related type only...
+    IdentifierType expectedIdentifierType = IdentifierType.ISBN;
+    record2.getRelatedResource().setIdentifierType(expectedIdentifierType);
+    
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataRecordId).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+//    this.mockMvc.perform(put("/api/v1/metadata/dc").contentType("application/json").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record3 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record.getDocumentHash(), record3.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record3.getCreatedAt());
+    Assert.assertEquals(record.getMetadataDocumentUri(), record3.getMetadataDocumentUri());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record3.getSchema().getIdentifier());
+    Assert.assertEquals(record.getRecordVersion(), record3.getRecordVersion());// version should be  the same
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record3.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record3.getLastUpdate()));
+    Assert.assertEquals("Related resource should be the same!", record2.getRelatedResource().getIdentifier(), record3.getRelatedResource().getIdentifier());
+    Assert.assertEquals("Related resource type should be changed!", expectedIdentifierType, record3.getRelatedResource().getIdentifierType());
+
+  }
+
+  @Test
   public void testUpdateRecordWithInvalidSetting4Json() throws Exception {
     CreateSchemaUtil.ingestXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V1, schemaConfig.getJwtSecret());
     CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());

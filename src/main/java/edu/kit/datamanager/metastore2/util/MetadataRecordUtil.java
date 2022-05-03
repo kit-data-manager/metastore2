@@ -372,6 +372,7 @@ public class MetadataRecordUtil {
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
         LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
         relatedIds.setValue(metadataRecord.getRelatedResource().getIdentifier());
+        relatedIds.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
         relationFound = true;
       }
       if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
