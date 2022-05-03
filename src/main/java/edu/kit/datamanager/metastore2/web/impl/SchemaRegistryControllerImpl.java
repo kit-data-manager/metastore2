@@ -28,10 +28,10 @@ import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -42,6 +42,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -240,7 +241,6 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
         List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
         if (authorizationIdentities != null) {
         LOG.trace("Creating (READ) permission specification.");
-          authorizationIdentities.add(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL);
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
           spec = spec.and(permissionSpec);
         } else {
@@ -255,6 +255,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
+    // Hide revoked and gone data resources. 
+    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
+    List<DataResource.State> stateList = Arrays.asList(states);
+    spec = spec.and(StateSpecification.toSpecification(stateList));
 
     LOG.debug("Performing query for records.");
     Page<DataResource> records = null;
