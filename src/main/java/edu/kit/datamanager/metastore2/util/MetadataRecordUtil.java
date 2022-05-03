@@ -459,7 +459,10 @@ public class MetadataRecordUtil {
       for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
         LOG.trace("Found related Identifier: '{}'", relatedIds);
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
+          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue());
+          if (relatedIds.getIdentifierType() != null) {
+           resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
+          } 
           LOG.trace("Set relation to '{}'", resourceIdentifier);
           metadataRecord.setRelatedResource(resourceIdentifier);
         }
