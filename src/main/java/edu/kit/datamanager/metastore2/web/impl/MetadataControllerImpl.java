@@ -36,6 +36,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -49,6 +50,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
@@ -281,7 +283,6 @@ public class MetadataControllerImpl implements IMetadataController {
         List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
         if (authorizationIdentities != null) {
           LOG.trace("Creating (READ) permission specification.");
-          authorizationIdentities.add(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL);
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
           spec = spec.and(permissionSpec);
         } else {
@@ -337,7 +338,11 @@ public class MetadataControllerImpl implements IMetadataController {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
 
-    //if security is enabled, include principal in query
+    // Hide revoked and gone data resources. 
+    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
+    List<DataResource.State> stateList = Arrays.asList(states);
+    spec = spec.and(StateSpecification.toSpecification(stateList));
+    
     if (LOG.isTraceEnabled()) {
       Page<DataResource> records = dataResourceDao.findAll(pgbl);
       LOG.trace("List all data resources...");

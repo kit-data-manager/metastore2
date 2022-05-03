@@ -1277,13 +1277,24 @@ public class MetadataControllerTest {
 
   @Test
   public void testDeleteRecord() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
     String metadataRecordId = createDCMetadataRecord();
-
-    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    
+    // Get a list of all records
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata").
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int  noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    
+    // Get Etag
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
-
+    // Delete record
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
-    //delete second time
+    
+    // Delete second time
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isPreconditionRequired()).andReturn();
 //    Recreation should be no problem.
 //    //try to create after deletion (Should return HTTP GONE)
@@ -1298,6 +1309,15 @@ public class MetadataControllerTest {
 //    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
 //            file(recordFile).
 //            file(metadataFile)).andDo(print()).andExpect(status().isGone()).andReturn();
+
+    // List of records should be smaller afterwards
+    result = this.mockMvc.perform(get("/api/v1/metadata").
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int  noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
 
   @Test
