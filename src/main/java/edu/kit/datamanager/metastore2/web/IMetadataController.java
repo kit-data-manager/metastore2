@@ -118,7 +118,7 @@ public interface IMetadataController {
           @Parameter(description = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          @PageableDefault(sort = {"lastUpdate"}, direction = Sort.Direction.DESC) Pageable pgbl,
+          @Parameter(hidden = true)@PageableDefault(sort = {"lastUpdate"}, direction = Sort.Direction.DESC) Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
@@ -130,7 +130,7 @@ public interface IMetadataController {
                     + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation using the provided schema failed."),
             @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id or no schema for the provided schema id was found.")})
-  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, produces = {"application/json"})
+  @RequestMapping(value = "/{id}", method = RequestMethod.PUT, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {"application/json"})
   @Parameters({
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
