@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix bug ignoring type of related resource. (issue #105)
 - Fix bug not hiding revoked resources in listings.
+- Fix bugs using Swagger UI for REST calls.
 
 ## [1.0.0] - 2022-03-29
 ### Added
