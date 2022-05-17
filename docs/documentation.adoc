@@ -1021,7 +1021,7 @@ If there are more than 20 schemas registered you have to provide page and/or siz
 
 The modified HTTP request  with pagination looks like follows:
 
-include::{snippets}/get-all-schemas-pagination/http-request.adoc[]
+include::{snippets}/get-all-json-schemas-pagination/http-request.adoc[]
 
 ==== Getting a List of all Schema Records for a Specific SchemaId
 
