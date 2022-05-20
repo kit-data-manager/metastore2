@@ -1,0 +1,500 @@
+/*
+ * Copyright 2018 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package edu.kit.datamanager.metastore2.documentation;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.stream.Stream;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.restdocs.JUnitRestDocumentation;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import org.springframework.restdocs.operation.preprocess.Preprocessors;
+import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
+import org.springframework.restdocs.templates.TemplateFormats;
+import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
+import org.springframework.security.web.FilterChainProxy;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestExecutionListeners;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.support.DependencyInjectionTestExecutionListener;
+import org.springframework.test.context.support.DirtiesContextTestExecutionListener;
+import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
+import org.springframework.test.context.web.ServletTestExecutionListener;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+/**
+ *
+ */
+//@ActiveProfiles("doc")
+@RunWith(SpringRunner.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
+@AutoConfigureMockMvc
+@TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
+  DependencyInjectionTestExecutionListener.class,
+  DirtiesContextTestExecutionListener.class,
+  TransactionalTestExecutionListener.class,
+  WithSecurityContextTestExecutionListener.class})
+@ActiveProfiles("test")
+@TestPropertySource(properties = {"server.port=41407"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc_json;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/restdocu/json/metadata"})
+@TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
+@TestPropertySource(properties = {"server.error.include-message=always"})
+public class RestDocumentation4WebpageTest {
+
+  private MockMvc mockMvc;
+  @Autowired
+  private WebApplicationContext context;
+  @Autowired
+  private FilterChainProxy springSecurityFilterChain;
+  @Rule
+  public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
+
+  private final static String EXAMPLE_SCHEMA_ID = "my_first_json";
+  private final static String ANOTHER_SCHEMA_ID = "another_json";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
+  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
+  private final static String SCHEMA_V1 = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private final static String SCHEMA_V2 = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private final static String SCHEMA_V3 = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        },\n"
+          + "        \"note\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Note\",\n"
+          + "            \"description\": \"Additonal information about object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private final static String ANOTHER_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json/example\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Another Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"description\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"description\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Description\",\n"
+          + "            \"description\": \"Any description.\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private final static String DOCUMENT_V1 = "{\n"
+          + "\"title\": \"My first JSON document\"\n"
+          + "}";
+
+  private final static String DOCUMENT_V2 = "{\n"
+          + "\"title\": \"My second JSON document\",\n"
+          + "\"date\": \"2018-07-02\"\n"
+          + "}";
+
+  private final static String DOCUMENT_V3 = "{\n"
+          + "\"title\": \"My third JSON document\",\n"
+          + "\"date\": \"2018-07-02\",\n"
+          + "\"note\": \"since version 3 notes are allowed\"\n"
+          + "}";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("https://repo/anyResourceId");
+
+  @Before
+  public void setUp() throws JsonProcessingException {
+    try {
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
+      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        walk.sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+      }
+      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
+    } catch (IOException ex) {
+      ex.printStackTrace();
+    }
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+            .addFilters(springSecurityFilterChain)
+            .apply(documentationConfiguration(this.restDocumentation)
+                    .snippets().withTemplateFormat(TemplateFormats.markdown())
+                    .and()
+                    .uris().withPort(8040).and()
+                    .operationPreprocessors()
+                    .withRequestDefaults(prettyPrint())
+                    .withResponseDefaults(Preprocessors.removeHeaders("X-Content-Type-Options", "X-XSS-Protection", "X-Frame-Options"), prettyPrint()))
+            .build();
+  }
+
+  @Test
+  public void documentSchemaRegistry4Json() throws Exception {
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
+    //  1. Registering metadata schema
+    //**************************************************************************
+    schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.registerModule(new JavaTimeModule());
+
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", SCHEMA_V1.getBytes());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "schema-record4json.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
+
+    //create resource and obtain location from response header
+    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(schemaFile).
+            file(recordFile)).
+            andDo(document("webpage/register-json-schema")).
+            andExpect(status().isCreated()).
+            andReturn().getResponse().getHeader("Location");
+
+    Assert.assertNotNull(location);
+    //  2. Getting metadata Schema Record
+    //**************************************************************************
+    // Get single metadata schema record
+    String etag = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            accept("application/vnd.datamanager.schema-record+json")).
+            andDo(document("webpage/get-json-schema-record")).
+            andExpect(status().isOk()).
+            andReturn().getResponse().getHeader("ETag");
+
+    //  3. Getting metadata Schema document
+    //**************************************************************************
+    // Get metadata schema
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).
+            andDo(document("webpage/get-json-schema-document")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+    //  4. Update to second version of schema
+    //**************************************************************************
+    //update schema document and create new version
+    schemaFile = new MockMultipartFile("schema", "schema-v2.json", "application/json", SCHEMA_V2.getBytes());
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            file(schemaFile).
+            header("If-Match", etag).with(putMultipart())).
+            andDo(document("webpage/update-json-schema-v2")).
+            andExpect(status().isOk()).
+            andReturn().getResponse().getHeader("ETag");
+    //  5. Update to third version of schema
+    //**************************************************************************
+    // SKIPPED
+    //  6. Registering another metadata schema
+    //**************************************************************************
+    // SKIPPED
+    //  7. List all schema records (only current schemas)
+    //**************************************************************************
+    this.mockMvc.perform(get("/api/v1/schemas")).
+            andDo(document("webpage/get-all-json-schemas")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    this.mockMvc.perform(get("/api/v1/schemas").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
+            andDo(document("webpage/get-all-json-schemas-pagination")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    //  8. List all versions of a schema
+    //**************************************************************************
+    this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
+            andDo(document("webpage/get-all-versions-of-a-json-schema")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    //  9. Getting current schema
+    //**************************************************************************
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).
+            andDo(document("webpage/get-json-schema-v2")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    // 10. Getting specific version of a schema
+    //**************************************************************************
+    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).param("version", "1")).
+            andDo(document("webpage/get-json-schema-v1")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    // 11. Validate metadata document
+    //**************************************************************************
+    MockMultipartFile metadataFile_v2 = new MockMultipartFile("document", "metadata-v2.json", "application/json", DOCUMENT_V2.getBytes());
+    // 11 a) Validate with version=1 --> invalid
+    //**************************************************************************
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").
+            file(metadataFile_v2).queryParam("version", "1")).
+            andDo(document("webpage/validate-json-document-v1")).
+            andExpect(status().isUnprocessableEntity()).
+            andReturn().getResponse();
+    // 11 b) Validate without version --> version 3 (should be valid)
+    //**************************************************************************
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").
+            file(metadataFile_v2)).
+            andDo(document("webpage/validate-json-document-v2")).
+            andExpect(status().isNoContent()).
+            andReturn().getResponse();
+
+    // 12. Update metadata Schema Record
+    //**************************************************************************
+    // Update metadata record to allow admin to edit schema as well.
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    mapper = new ObjectMapper();
+    schemaRecord = mapper.readValue(body, MetadataSchemaRecord.class);
+    schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
+
+    recordFile = new MockMultipartFile("record", "schema-record4json-v4.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+            file(recordFile).
+            header("If-Match", etag).with(putMultipart())).
+            andDo(document("webpage/update-json-schema-record")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    //**************************************************************************
+    // metadata management
+    //**************************************************************************
+    // 1. Ingest metadata document
+    //**************************************************************************
+    // Create a metadata record.
+    MetadataRecord metadataRecord = new MetadataRecord();
+//    record.setId("my_id");
+    metadataRecord.setRelatedResource(RELATED_RESOURCE);
+    metadataRecord.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
+    metadataRecord.setSchemaVersion(1l);
+
+    recordFile = new MockMultipartFile("record", "metadata-record4json.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.json", "application/json", DOCUMENT_V1.getBytes());
+
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile)).
+            andDo(document("webpage/ingest-json-metadata-document")).
+            andExpect(status().isCreated()).
+            andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
+            andReturn().getResponse().getHeader("Location");
+    // Get URL
+    String newLocation = location.split("[?]")[0];
+
+    // 2. Accessing metadata document
+    //**************************************************************************
+    this.mockMvc.perform(get(location).accept("application/json")).
+            andDo(document("webpage/get-json-metadata-document")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    // 3. Accessing metadata record
+    //**************************************************************************
+    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(document("webpage/get-json-metadata-record")).
+            andExpect(status().isOk()).
+            andReturn().getResponse();
+
+    // 4. Update metadata record & document
+    //**************************************************************************
+    result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
+    mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
+    record.setSchemaVersion(2l);
+    recordFile = new MockMultipartFile("record", "metadata-record4json-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    metadataFile = new MockMultipartFile("document", "metadata-v2.json", "application/xml", DOCUMENT_V2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(location).
+            file(recordFile).
+            file(metadataFile).
+            header("If-Match", etag).with(putMultipart())).
+            andDo(print()).
+            andDo(document("webpage/update-json-metadata-record-v2")).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    location = result.getResponse().getHeader("Location");
+    // 5. Update metadata record
+    //**************************************************************************
+    // update once more to newest version of schema
+    // Get Etag
+    // SKIP due to missing version 3 of schema
+    // 5. List all (recent) metadata document records
+    //**************************************************************************
+    String resourceId = record.getId();
+    this.mockMvc.perform(get("/api/v1/metadata")).
+            andDo(print()).
+            andDo(document("webpage/list-all-metadata-records")).
+            andExpect(status().isOk()).
+            andReturn();
+    // 6. List all versions of a record
+    //**************************************************************************
+    this.mockMvc.perform(get("/api/v1/metadata").param("id", resourceId)).
+            andDo(print()).
+            andDo(document("webpage/list-all-versions-of-json-metadata-document")).
+            andExpect(status().isOk()).
+            andReturn();
+
+    // 7. Find a metadata record.
+    //**************************************************************************
+    // find all metadata for a resource
+    Instant oneHourBefore = Instant.now().minusSeconds(3600);
+    Instant twoHoursBefore = Instant.now().minusSeconds(7200);
+    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier())).
+            andDo(print()).
+            andDo(document("webpage/find-json-metadata-record-resource")).
+            andExpect(status().isOk()).
+            andReturn();
+
+    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString())).
+            andDo(print()).
+            andDo(document("webpage/find-json-metadata-record-from")).
+            andExpect(status().isOk()).
+            andReturn();
+
+    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).
+            andDo(document("webpage/find-json-metadata-record-from-to")).
+            andExpect(status().isOk()).
+            andReturn();
+
+  }
+
+  private static RequestPostProcessor putMultipart() { // it's nice to extract into a helper
+    return (MockHttpServletRequest request) -> {
+      request.setMethod("PUT");
+      return request;
+    };
+  }
+
+}

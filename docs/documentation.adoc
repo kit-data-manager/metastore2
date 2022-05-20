@@ -577,7 +577,7 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
 include::{snippets}/update-metadata-record-v2/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
@@ -1186,7 +1186,7 @@ At least the following elements are expected to be provided by the user:
 - schema: Identifier of the linked schema. (INTERNAL and URL supported as type)
 - relatedResource: The link to the resource. 
 
-metadataDocuIn addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
@@ -1300,7 +1300,7 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/update-json-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. Version number was incremented by one, 'lastUpdate' and 'recordVersion' are also modified by the server.
+You will get the new metadata record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
 include::{snippets}/update-json-metadata-record-v2/http-response.adoc[]
 
 What you see is, that the metadata record looks different from the original document. 
