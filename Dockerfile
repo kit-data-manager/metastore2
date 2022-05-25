@@ -16,10 +16,9 @@ LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=build-env
 
 # Install git as additional requirement
-RUN apt-get update && \
-    apt-get upgrade  && \
-    apt-get install git && \
-    apt-get install bash
+RUN apt-get -y update && \
+    apt-get -y upgrade  && \
+    apt-get -y install git bash
 
 ####################################################
 # Building service
@@ -62,9 +61,9 @@ ENV SERVICE_DIRECTORY=${SERVICE_ROOT_DIRECTORY_DEFAULT}${REPO_NAME}
 ENV REPO_PORT=${REPO_PORT_DEFAULT}
 
 # Install bash as additional requirement
-RUN apt-get update && \
-    apt-get upgrade  && \
-    apt-get install bash
+RUN apt-get -y update && \
+    apt-get -y upgrade  && \
+    apt-get -y install bash
 
 # Copy service from build container
 RUN mkdir -p ${SERVICE_DIRECTORY}
