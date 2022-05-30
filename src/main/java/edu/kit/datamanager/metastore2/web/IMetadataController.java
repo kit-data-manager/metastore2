@@ -108,7 +108,7 @@ public interface IMetadataController {
           + "at the provided date, 3) Providing both returns all records updated within the provided date range."
           + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed (except in case of 'id' is provided).",
           responses = {
-            @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataRecord.class))))})
+            @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list if no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataRecord.class))))})
   @RequestMapping(value = {""}, method = {RequestMethod.GET})
   @PageableAsQueryParam
   @ResponseBody
