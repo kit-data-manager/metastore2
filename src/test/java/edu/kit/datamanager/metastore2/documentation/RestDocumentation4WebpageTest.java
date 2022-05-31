@@ -83,10 +83,10 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41407"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_doc_json;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/restdocu/json/schema"})
-@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/restdocu/json/metadata"})
+@TestPropertySource(properties = {"server.port=41414"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_webpage_doc_json;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/webpage/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/webpage/json/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"server.error.include-message=always"})
 public class RestDocumentation4WebpageTest {
@@ -101,7 +101,7 @@ public class RestDocumentation4WebpageTest {
 
   private final static String EXAMPLE_SCHEMA_ID = "my_first_json";
   private final static String ANOTHER_SCHEMA_ID = "another_json";
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/restdocu/json/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/webpage/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String SCHEMA_V1 = "{\n"

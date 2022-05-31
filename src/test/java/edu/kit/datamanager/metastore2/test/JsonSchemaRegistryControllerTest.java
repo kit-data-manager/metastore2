@@ -927,7 +927,7 @@ public class JsonSchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/json").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     
-    this.mockMvc.perform(put("/api/v1/schemas/json").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    this.mockMvc.perform(put("/api/v1/schemas/json").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isUnsupportedMediaType()).andReturn();
   }
   
   @Test
