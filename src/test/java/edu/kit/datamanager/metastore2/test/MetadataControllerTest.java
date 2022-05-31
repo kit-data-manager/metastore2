@@ -92,7 +92,9 @@ import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41401"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"})
+@TestPropertySource(properties = {"spring.jpa.defer-datasource-initialization=true"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41401/api/v3/,http://localhost:41401/api/v1/"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {

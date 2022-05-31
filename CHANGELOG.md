@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Security
+- Update to h2 2.1.212:
+  - Please migrate your database if you want to update MetaStore while using h2!
+    See: https://h2database.com/html/migration-to-v2.html 
 
 ### Added
 
