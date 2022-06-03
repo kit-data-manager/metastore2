@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+- Update to service-base 1.0.2
 
 ### Fixed
 - Access public documents of other users is broken.(issue #100)
@@ -165,7 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Registry for XSD files and support for XML metadata
 
 [Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...HEAD
-[0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
+[1.0.0]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
 [0.3.7]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...v0.3.5
