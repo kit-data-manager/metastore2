@@ -6,6 +6,7 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
@@ -28,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -58,6 +60,7 @@ import org.springframework.test.context.support.DirtiesContextTestExecutionListe
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -218,55 +221,110 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
 
   @Test
   public void testAccessRecordListAdmin() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
-            andDo(print()).andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17))).
+            andReturn();
+    List<MetadataSchemaRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataSchemaRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/schemas/" + item.getSchemaId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListUser() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13))).
+            andReturn();
+    List<MetadataSchemaRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataSchemaRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/schemas/" + item.getSchemaId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListGuest() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(13))).
+            andReturn();
+    List<MetadataSchemaRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataSchemaRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/schemas/" + item.getSchemaId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListOtherUser() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(17))).
+            andReturn();
+    List<MetadataSchemaRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataSchemaRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/schemas/" + item.getSchemaId()).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   @Test
   public void testAccessRecordListWithoutAuthentication() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    CollectionType mapCollectionType = mapper.getTypeFactory()
+            .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
             param("size", Integer.toString(200))).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1)));
+            andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1))).
+            andReturn();
+    List<MetadataSchemaRecord> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
+    for (MetadataSchemaRecord item : resultList) {
+      this.mockMvc.perform(get("/api/v1/schemas/" + item.getSchemaId())).
+              andDo(print()).
+              andExpect(status().isOk());
+    }
   }
 
   /**
@@ -300,7 +358,9 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).andExpect(status().isCreated()).andReturn();
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
   }
 
   /**
@@ -325,7 +385,9 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).andExpect(status().isCreated()).andReturn();
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
   }
 
   public static synchronized boolean isInitialized() {
