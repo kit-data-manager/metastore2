@@ -18,7 +18,9 @@ LABEL stage=build-env
 # Install git as additional requirement
 RUN apt-get -y update && \
     apt-get -y upgrade  && \
-    apt-get -y install git bash
+    apt-get install -y --no-install-recommends git bash && \
+    apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 ####################################################
 # Building service
@@ -63,7 +65,9 @@ ENV REPO_PORT=${REPO_PORT_DEFAULT}
 # Install bash as additional requirement
 RUN apt-get -y update && \
     apt-get -y upgrade  && \
-    apt-get -y install bash
+    apt-get install -y --no-install-recommends bash && \
+    apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy service from build container
 RUN mkdir -p ${SERVICE_DIRECTORY}
