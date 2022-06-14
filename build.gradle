@@ -98,7 +98,7 @@ dependencies {
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.25"
     //driver for h2
-    implementation "com.h2database:h2:1.4.200"
+    implementation "com.h2database:h2:2.1.212"
     
     // apache
     implementation "commons-io:commons-io:2.11.0"
@@ -114,7 +114,7 @@ dependencies {
 
     // datamanager
     implementation "edu.kit.datamanager:repo-core:1.0.2"
-    implementation "edu.kit.datamanager:service-base:1.0.1"
+    implementation "edu.kit.datamanager:service-base:1.0.3"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"

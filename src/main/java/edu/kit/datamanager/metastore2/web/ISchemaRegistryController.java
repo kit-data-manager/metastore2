@@ -129,7 +129,7 @@ public interface ISchemaRegistryController {
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          @PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC)Pageable pgbl,
+          @Parameter(hidden = true)@PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC)Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
@@ -143,7 +143,7 @@ public interface ISchemaRegistryController {
                     + "The updated record is returned in the response.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided schema record/schema document is invalid."),
             @ApiResponse(responseCode = "404", description = "Not Found is returned if no record for the provided id was found.")})
-  @RequestMapping(value = "/{schemaId}", method = RequestMethod.PUT, produces = {"application/json"})
+  @RequestMapping(value = "/{schemaId}", method = RequestMethod.PUT, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @Parameters({
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
