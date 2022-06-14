@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-- Update to service-base 1.0.2
+- Update to service-base 1.0.3
 - Changed some labels in GUI
 
 ### Fixed
