@@ -17,17 +17,17 @@ TAG_NAME=local
 ################################################################################
 function usage {
 ################################################################################
-  echo USAGE:
-  echo   $0 [TAG_NAME]
+  echo "USAGE:"
+  echo " $0 [TAG_NAME]"
   exit 1
 }
 
 ################################################################################
 function printInfo {
 ################################################################################
-echo ---------------------------------------------------------------------------
-echo $*
-echo ---------------------------------------------------------------------------
+  echo "---------------------------------------------------------------------------"
+  echo "$*"
+  echo "---------------------------------------------------------------------------"
 }
 
 ################################################################################
@@ -41,8 +41,7 @@ testForCommands="dirname date docker git"
 
 for command in $testForCommands
 do 
-  type $command >> /dev/null
-  if [ $? -ne 0 ]; then
+  if ! type $command >> /dev/null; then
     echo "Error: command '$command' is not installed!"
     exit 1
   fi
@@ -56,7 +55,7 @@ ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ################################################################################
 # Determine repo name 
 ################################################################################
-REPO_NAME=`$ACTUAL_DIR/../gradlew -q printProjectName`
+REPO_NAME=$($ACTUAL_DIR/../gradlew -q printProjectName)
 # Use only last line
 REPO_NAME=${REPO_NAME##*$'\n'}
 
@@ -81,7 +80,7 @@ else
   TAG_NAME=$LAST_TAG-`date -u +%Y-%m-%d`
 fi
 
-cd $ACTUAL_DIR/..
+cd $ACTUAL_DIR/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; exit 1; }
 
 ################################################################################
 # Build local docker
