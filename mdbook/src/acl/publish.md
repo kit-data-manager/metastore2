@@ -25,7 +25,7 @@ want to make it publicly available, you must update the access rights.
 ---
 
 ## Step 1: Update record for Digital Object
-Click on <img src="/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
+Click on <img src="/metastore2/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
 to get a form with the schema/metadata record. 
 Click 'ADD' to add another entry to the ACL, insert 'anonymousUser' as SID and grant the
 appropriate permission. 
@@ -33,7 +33,7 @@ appropriate permission.
 This may look like this:
 
 <div class="centerbox">
-    <img src="/images/ACL_Step2.png" alt="Add ACL Entry" style="max-height:50em;" />
+    <img src="/metastore2/images/ACL_Step2.png" alt="Add ACL Entry" style="max-height:50em;" />
 </div>
 
 ***Note:*** 

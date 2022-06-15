@@ -36,7 +36,7 @@ the schema as identifier (e.g.: Dublin Core -> schemaID = DublinCore).
 Register schema if it not already exists.
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step1.png" alt="Schema Management GUI" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step1.png" alt="Schema Management GUI" style="max-height:50em;" />
 </div>
 
 Click on 'Register new Schema' to register a new schema. Fill the form with the metadata for the
@@ -49,7 +49,7 @@ schema document. The following values are mandatory:
 Afterwards the form should look like this:
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step2.png" alt="Schema Record Form" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step2.png" alt="Schema Record Form" style="max-height:50em;" />
 </div>
 
 ***Note:*** If no authentication is made, all users are registered as 'SELF'. 
@@ -58,7 +58,7 @@ Otherwise the one who registers the schema gets the administration rights.
 After clicking 'CREATE' the new schema will be listed inside the table:
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step3.png" alt="List of Schemas" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step3.png" alt="List of Schemas" style="max-height:50em;" />
 </div>
 
 

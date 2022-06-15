@@ -39,7 +39,7 @@ do the following steps:
 3. Right click page and select 'Save page as...' in the context menu. 
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step3.png" alt="List of Schema Records" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step3.png" alt="List of Schema Records" style="max-height:50em;" />
 </div>
 
 
@@ -59,20 +59,20 @@ Store the new schema in a file named 'my_first_json_schema_version_2.json'.
 Click the pencil of the appropriate schema and a form will open
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step4.png" alt="Update Schema Record Form" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step4.png" alt="Update Schema Record Form" style="max-height:50em;" />
 </div>
 
 After selecting updated schema press 'Update Schema'. 
 Now the version of the schema was increased.
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step5.png" alt="Updated Schema List" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step5.png" alt="Updated Schema List" style="max-height:50em;" />
 </div>
 
 The new form for the metadata documents now looks like this:
 
 <div class="centerbox">
-    <img src="/images/SchemaManagement_Step6.png" alt="New Schema Record Form" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaManagement_Step6.png" alt="New Schema Record Form" style="max-height:50em;" />
 </div>
 
 ***Congratulations, you successfully updated your schema!***

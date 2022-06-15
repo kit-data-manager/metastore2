@@ -34,11 +34,11 @@ is still available.
 an updated schema.
 
 ## Step 1: Update metadata record
-Click on <img src="/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
+Click on <img src="/metastore2/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
 to get a form with the metadata record. Change like shown below:
 
 <div class="centerbox">
-    <img src="/images/MetadataManagement_Step6.png" alt="List of Schema Records" style="max-height:50em;" />
+    <img src="/metastore2/images/MetadataManagement_Step6.png" alt="List of Schema Records" style="max-height:50em;" />
 </div>
 
 Click on 'Show Metadata Document' and then click 'Update' to update metadata record.
@@ -48,13 +48,13 @@ Click on 'Show Metadata Document' and then click 'Update' to update metadata rec
 
 
 ## Step 2: Update metadata document
-Click once more on <img src="/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
+Click once more on <img src="/metastore2/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
 to get a form with the metadata record. As the schema version was already changed 
 you can directly click on 'Show Metadata Document'
 The new form will be showed:
 
 <div class="centerbox">
-    <img src="/images/MetadataManagement_Step7.png" alt="List of Schema Records" style="max-height:50em;" />
+    <img src="/metastore2/images/MetadataManagement_Step7.png" alt="List of Schema Records" style="max-height:50em;" />
 </div>
 
 Add some notes and 'Update'

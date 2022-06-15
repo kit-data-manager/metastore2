@@ -110,6 +110,6 @@ to forbid custom entries.
 The used schema above will result in the following form:
 
 <div class="centerbox">
-    <img src="/images/SchemaRecordFormExample.png" alt="Schema Record Form Example" style="max-height:50em;" />
+    <img src="/metastore2/images/SchemaRecordFormExample.png" alt="Schema Record Form Example" style="max-height:50em;" />
 </div>
 

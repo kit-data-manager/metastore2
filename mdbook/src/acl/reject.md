@@ -27,14 +27,14 @@ forbid any access to them by setting the permission to 'NONE'.
 ---
 
 ## Step 1: Update record for Digital Object
-Click on <img src="/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
+Click on <img src="/metastore2/images/EditEntry.png" alt="Edit Entry" style="max-height:15px;" />
 to get a form with the schema/metadata record. 
 Set permission for 'anonymousUser' to 'NONE'. 
 
 This may look like this:
 
 <div class="centerbox">
-    <img src="/images/ACL_Step3.png" alt="Add ACL Entry" style="max-height:50em;" />
+    <img src="/metastore2/images/ACL_Step3.png" alt="Add ACL Entry" style="max-height:50em;" />
 </div>
 
 

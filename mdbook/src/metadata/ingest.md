@@ -45,7 +45,7 @@ Fortunately the GUI of MetaStore supports users to input metadata document.
 
 
 <div class="centerbox">
-    <img src="/images/MetadataManagement_Step1.png" alt="Metadata Management Form" style="max-height:50em;" />
+    <img src="/metastore2/images/MetadataManagement_Step1.png" alt="Metadata Management Form" style="max-height:50em;" />
 </div>
 
 ***Notes:*** 
@@ -62,14 +62,14 @@ After clicking 'Show Input Form' the GUI creates an input form which queries all
 entries. The filled form may look like this:
 
 <div class="centerbox">
-    <img src="/images/MetadataManagement_Step2.png" alt="Input Form for metadata document" style="max-height:50em;" />
+    <img src="/metastore2/images/MetadataManagement_Step2.png" alt="Input Form for metadata document" style="max-height:50em;" />
 </div>
 Click on 'Register Metadata Document' to register the new metadata document.
 
 The new metadata document will be listed inside the table:
 
 <div class="centerbox">
-    <img src="/images/MetadataManagement_Step3.png" alt="List of Metadata Documents" style="max-height:50em;" />
+    <img src="/metastore2/images/MetadataManagement_Step3.png" alt="List of Metadata Documents" style="max-height:50em;" />
 </div>
 
 
