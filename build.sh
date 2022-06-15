@@ -48,32 +48,31 @@ function checkParameters {
   INSTALLATION_DIRECTORY=$1
 
   # Check if directory exists
-  if [ ! -d "$INSTALLATION_DIRECTORY" ]; then
+  if [ ! -d "$INSTALLATION_DIRECTORY" ]; then 
     # Create directory if it doesn't exists.
-    mkdir -p "$INSTALLATION_DIRECTORY"
-    if [ $? -ne 0 ]; then
+    if ! mkdir -p "$INSTALLATION_DIRECTORY"; then
       echo "Error creating directory '$INSTALLATION_DIRECTORY'!"
       echo "Please make sure that you have the correct access permissions for the specified directory."
       exit 1
     fi
   fi
   # Check if directory is empty
-  if [ ! -z "$(ls -A "$INSTALLATION_DIRECTORY")" ]; then
+  if [ -n "$(ls -A "$INSTALLATION_DIRECTORY")" ]; then
      echo "Directory '$INSTALLATION_DIRECTORY' is not empty!"
      echo "Please enter an empty or a new directory!"
      exit 1
   fi
   # Convert variable of installation directory to an absolute path
-    cd "$INSTALLATION_DIRECTORY"
-    INSTALLATION_DIRECTORY=`pwd`
-    cd "$ACTUAL_DIR"
+  cd "$INSTALLATION_DIRECTORY"  || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
+  INSTALLATION_DIRECTORY=$(pwd)
+  cd "$ACTUAL_DIR"
 }
 
 ################################################################################
 function printInfo {
 ################################################################################
 echo "---------------------------------------------------------------------------"
-echo $*
+echo "$*"
 echo "---------------------------------------------------------------------------"
 }
 
@@ -145,34 +144,35 @@ cd "$INSTALLATION_DIRECTORY"
 # Determine name of jar file.
 jarFile=(`ls $REPO_NAME*.jar`)
 
-echo "#!/bin/bash"                                                                              >  run.sh
-echo "################################################################################"         >> run.sh
-echo "# Run microservice '$REPO_NAME'"                                                          >> run.sh
-echo "# /"                                                                                      >> run.sh
-echo "# |- application.properties    - Default configuration for microservice"                  >> run.sh
-echo "# |- '$REPO_NAME'*.jar"        - Microservice                                             >> run.sh
-echo "# |- run.sh                    - Start script    "                                        >> run.sh
-echo "# |- lib/                      - Directory for plugins (if supported)"                    >> run.sh
-echo "# |- config/ "                                                                            >> run.sh
-echo "#    |- application.properties - Overwrites default configuration (optional)"             >> run.sh
-echo "################################################################################"         >> run.sh
-echo " "                                                                                        >> run.sh
-echo "################################################################################"         >> run.sh
-echo "# Define jar file"                                                                        >> run.sh
-echo "################################################################################"         >> run.sh
-echo jarFile=$jarFile                                                                           >> run.sh
-echo " "                                                                                        >> run.sh
-echo "################################################################################"         >> run.sh
-echo "# Determine directory of script."                                                         >> run.sh
-echo "################################################################################"         >> run.sh
-echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'           >> run.sh
-echo 'cd "$ACTUAL_DIR"'                                                                         >> run.sh
-echo " "                                                                                        >> run.sh
-echo "################################################################################"         >> run.sh
-echo "# Start micro service"                                                                    >> run.sh
-echo "################################################################################"         >> run.sh
-echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile' >> run.sh
-
+{
+  echo "#!/bin/bash"                                                                             
+  echo "################################################################################"        
+  echo "# Run microservice '$REPO_NAME'"                                                         
+  echo "# /"                                                                                     
+  echo "# |- application.properties    - Default configuration for microservice"                 
+  echo "# |- '$REPO_NAME'*.jar         - Microservice"
+  echo "# |- run.sh                    - Start script"                                       
+  echo "# |- lib/                      - Directory for plugins (if supported)"                   
+  echo "# |- config/"                                                                           
+  echo "#    |- application.properties - Overwrites default configuration (optional)"            
+  echo "################################################################################"        
+  echo " "                                                                                       
+  echo "################################################################################"        
+  echo "# Define jar file"                                                                       
+  echo "################################################################################"        
+  echo "jarFile=${jarFile[0]}"
+  echo " "                                                                                       
+  echo "################################################################################"        
+  echo "# Determine directory of script."                                                        
+  echo "################################################################################"        
+  echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'          
+  echo 'cd "$ACTUAL_DIR"'                                                                        
+  echo " "                                                                                       
+  echo "################################################################################"        
+  echo "# Start micro service"                                                                   
+  echo "################################################################################"        
+  echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile'
+} > run.sh
 # make script executable
 chmod 755 run.sh
 
