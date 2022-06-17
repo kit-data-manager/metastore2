@@ -73,7 +73,7 @@ if [ "$1" != "" ]; then
     usage
   fi
 else
-  LAST_TAG=`git describe --abbrev=0 --tags` >> /dev/null
+  LAST_TAG=$(git describe --abbrev=0 --tags) >> /dev/null
   if [ "$LAST_TAG" = "" ]; then
     LAST_TAG=$TAG_NAME
   fi
@@ -87,9 +87,7 @@ cd $ACTUAL_DIR/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; exit
 ################################################################################
 printInfo Build docker container kitdm/$REPO_NAME:$TAG_NAME 
 
-docker build -t kitdm/$REPO_NAME:$TAG_NAME .
-
-if [ $? -ne 0 ]; then
+if ! docker build -t kitdm/$REPO_NAME:$TAG_NAME .; then
   echo .
   printInfo "ERROR while building docker container!"
   usage

@@ -101,12 +101,12 @@ ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ################################################################################
 # Check parameters
 ################################################################################
-checkParameters $*
+checkParameters "$*"
 
 ################################################################################
 # Determine repo name 
 ################################################################################
-REPO_NAME=`./gradlew -q printProjectName`
+REPO_NAME=$(./gradlew -q printProjectName)
 # Use only last line
 REPO_NAME=${REPO_NAME##*$'\n'}
 
