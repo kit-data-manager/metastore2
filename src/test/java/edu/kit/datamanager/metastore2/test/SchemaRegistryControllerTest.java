@@ -103,7 +103,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41409"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_schema_xsd;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_schema_xsd;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/schematest/schema"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SchemaRegistryControllerTest {
@@ -1010,7 +1010,7 @@ public class SchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/dc").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
-    this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isUnsupportedMediaType()).andReturn();
   }
 
   @Test

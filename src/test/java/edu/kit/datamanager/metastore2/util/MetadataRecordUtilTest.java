@@ -72,7 +72,7 @@ import org.springframework.web.multipart.MultipartFile;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_util;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_util;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataRecordUtilTest {
 
