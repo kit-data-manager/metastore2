@@ -12,9 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
-- Docker: Add support for M1 chip architecture (issue #107)
 
-## [1.0.0] - 2022-06-14
+## [1.0.1] - 2022-06-17
 ### Security
 - Update to h2 2.1.212:
   - Please migrate your database if you want to update MetaStore while using h2!
@@ -25,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed some labels in GUI
 
 ### Fixed
+- Docker: Add support for M1 chip architecture (issue #107)
 - Access public documents of other users is broken.(issue #100)
 - Fix bug ignoring type of related resource. (issue #105)
 - Fix bug not hiding revoked resources in listings.
