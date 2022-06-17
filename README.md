@@ -175,6 +175,12 @@ Two services may be customized to your needs.
    - overwrite settings by copying your application.properties file to ./settings/indexing
 
 ## First steps
+To get familiar with the GUI of MetaStore you may have a look at the
+cookbook:
+
+https://kit-data-manager.github.io/metastore2/
+
+
 As soon as the microservice is started, you can browse to 
 
 http://localhost:8040/
@@ -192,8 +198,6 @@ service.
 A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 http://localhost:8040/static/docs/documentation.html
-
-
 
 
 ## Setup for production mode

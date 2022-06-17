@@ -5,7 +5,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-
 ### Security
 
 ### Added
@@ -13,6 +12,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 ### Fixed
+
+## [1.0.1] - 2022-06-17
+### Security
+- Update to h2 2.1.212:
+  - Please migrate your database if you want to update MetaStore while using h2!
+    See: https://h2database.com/html/migration-to-v2.html 
+
+### Changed
+- Update to service-base 1.0.3
+- Changed some labels in GUI
+
+### Fixed
+- Docker: Add support for M1 chip architecture (issue #107)
+- Access public documents of other users is broken.(issue #100)
+- Fix bug ignoring type of related resource. (issue #105)
+- Fix bug not hiding revoked resources in listings.
+- Fix bugs using Swagger UI for REST calls.
+- Fix typos in documentation.
 
 ## [1.0.0] - 2022-03-29
 ### Added
@@ -163,8 +180,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...HEAD
-[0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
 [0.3.7]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...v0.3.7
 [0.3.6]: https://github.com/kit-data-manager/metastore2/compare/v0.3.5...v0.3.6
 [0.3.5]: https://github.com/kit-data-manager/metastore2/compare/v0.3.4...v0.3.5

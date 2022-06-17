@@ -103,7 +103,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41409"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_schema_xsd;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_schema_xsd;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/schematest/schema"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SchemaRegistryControllerTest {
@@ -1010,7 +1010,7 @@ public class SchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/dc").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
-    this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    this.mockMvc.perform(put("/api/v1/schemas/dc").header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isUnsupportedMediaType()).andReturn();
   }
 
   @Test
@@ -1056,10 +1056,23 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testDeleteSchemaRecord() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
     String schemaId = "testDelete";
     ingestSchemaRecord(schemaId);
 
-    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    // Get a list of all records
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int  noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
+
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
     this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
@@ -1068,7 +1081,6 @@ public class SchemaRegistryControllerTest {
     schemaRecord.setSchemaId(schemaId);
     schemaRecord.setVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
-    ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
@@ -1084,6 +1096,11 @@ public class SchemaRegistryControllerTest {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isGone()).andReturn();
+
+    // List of records should be smaller afterwards
+    result = this.mockMvc.perform(get("/api/v1/schemas").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    int  noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
+    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
 
   @Test
