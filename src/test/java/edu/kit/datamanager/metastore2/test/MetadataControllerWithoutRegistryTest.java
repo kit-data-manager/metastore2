@@ -73,7 +73,7 @@ import org.springframework.web.context.WebApplicationContext;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41406"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_no_reg;DB_CLOSE_DELAY=-1"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_no_reg;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/withoutRegistry/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})

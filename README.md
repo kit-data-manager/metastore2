@@ -111,7 +111,7 @@ user@localhost:/home/user/metastore2$ docker start metastore4docker
 ### Prerequisites
 In order to run this microservice via docker you'll need:
 
-* [Java SE Development Kit 8 or higher](https://openjdk.java.net/) 
+* [Java SE Development Kit >=8 and <=17](https://openjdk.java.net/) 
 * [git](https://git-scm.com/) 
 
 ### Installation
@@ -175,6 +175,12 @@ Two services may be customized to your needs.
    - overwrite settings by copying your application.properties file to ./settings/indexing
 
 ## First steps
+To get familiar with the GUI of MetaStore you may have a look at the
+cookbook:
+
+https://kit-data-manager.github.io/metastore2/
+
+
 As soon as the microservice is started, you can browse to 
 
 http://localhost:8040/
@@ -192,8 +198,6 @@ service.
 A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 http://localhost:8040/static/docs/documentation.html
-
-
 
 
 ## Setup for production mode

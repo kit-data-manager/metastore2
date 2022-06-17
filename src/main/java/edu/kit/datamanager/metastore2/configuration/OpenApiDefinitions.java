@@ -38,7 +38,7 @@ public class OpenApiDefinitions{
             .components(new Components())
             .info(new Info().title("MetaStore Microservice - RESTful API").
                     description("This webpage describes the RESTful interface of the KIT Data Manager MetaStore Microservice.").
-                    version("0.1").
+                    version("1.0.0").
                     contact(
                             new Contact().
                                     name("KIT Data Manager Support").

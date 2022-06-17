@@ -110,6 +110,9 @@ import org.xml.sax.SAXException;
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41403"})
+//@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/oaipmh/schema"})
+//@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/oaipmh/metadata"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_oaipmh;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class OaiPmhControllerTest {
 
@@ -985,7 +988,7 @@ public class OaiPmhControllerTest {
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
     UUID randomUUID = UUID.randomUUID();
-    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(randomUUID.toString()));
+    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier("http://example.org/" + randomUUID.toString()));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
