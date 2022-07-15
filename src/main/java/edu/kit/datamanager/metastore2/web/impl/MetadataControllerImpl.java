@@ -18,6 +18,7 @@ package edu.kit.datamanager.metastore2.web.impl;
 import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
@@ -39,6 +40,8 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.service.IMessagingService;
+import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
@@ -52,6 +55,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -97,6 +101,14 @@ public class MetadataControllerImpl implements IMetadataController {
   private final MetastoreConfiguration metadataConfig;
   @Autowired
   private final IDataResourceDao dataResourceDao;
+
+  /**
+   * Optional messagingService bean may or may not be available, depending on a
+   * service's configuration. If messaging capabilities are disabled, this bean
+   * should be not available. In that case, messages are only logged.
+   */
+  @Autowired
+  private Optional<IMessagingService> messagingService;
 
   private final String guestToken;
 
@@ -187,6 +199,9 @@ public class MetadataControllerImpl implements IMetadataController {
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
     long nano7 = System.nanoTime() / 1000000;
     LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
+
+    LOG.trace("Sending CREATE event.");
+    messagingService.orElse(new LogfileMessagingService()).send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
@@ -342,7 +357,7 @@ public class MetadataControllerImpl implements IMetadataController {
     DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
     List<DataResource.State> stateList = Arrays.asList(states);
     spec = spec.and(StateSpecification.toSpecification(stateList));
-    
+
     if (LOG.isTraceEnabled()) {
       Page<DataResource> records = dataResourceDao.findAll(pgbl);
       LOG.trace("List all data resources...");
