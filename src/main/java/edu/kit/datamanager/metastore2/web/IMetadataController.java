@@ -15,8 +15,8 @@
  */
 package edu.kit.datamanager.metastore2.web;
 
+import edu.kit.datamanager.metastore2.domain.AclRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
@@ -88,7 +88,7 @@ public interface IMetadataController {
           WebRequest wr,
           HttpServletResponse hsr);
 
-  @Operation(summary = "Get ACL for id.", description = "Obtain a ACLsingle record by its resource identifier. "
+  @Operation(summary = "Get a metadata record by id.", description = "Obtain a single record by its resource identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
           + "by providing a version number as request parameter.",
           responses = {
@@ -97,7 +97,7 @@ public interface IMetadataController {
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.acl+json"})
   @ResponseBody
-  public ResponseEntity<List<AclEntry>> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+  public ResponseEntity<AclRecord> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);

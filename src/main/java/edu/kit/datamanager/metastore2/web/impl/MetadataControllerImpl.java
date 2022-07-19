@@ -16,6 +16,9 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.BadArgumentException;
@@ -24,6 +27,7 @@ import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
+import edu.kit.datamanager.metastore2.domain.AclRecord;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -48,14 +52,17 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -213,7 +220,7 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   @Override
-  public ResponseEntity<List<AclEntry>> getAclById(
+  public ResponseEntity<AclRecord> getAclById(
           @PathVariable(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
@@ -222,8 +229,25 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getAclById({}, {}).", id, version);
 
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    AclRecord aclRecord = new AclRecord();
+    aclRecord.setAcl(record.getAcl());
     List<AclEntry> aclList = List.copyOf(record.getAcl());
-    return ResponseEntity.ok().body(aclList);
+    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
+    ObjectMapper mapper = new ObjectMapper();
+    String jsonString;
+    try {
+      jsonString = FileUtils.readFileToString(metadataDocumentPath.toFile(), Charset.forName("UTF-8"));
+      JsonNode rootNode = mapper.readValue(jsonString, JsonNode.class);
+      aclRecord.setMetadataDocument(rootNode);
+    } catch (JsonProcessingException ex) {
+      LOG.error("Error parsing metadata document", ex);
+      throw new BadArgumentException(ex.getMessage());
+    } catch (IOException ex) {
+      LOG.error("Error parsing metadata document", ex);
+      throw new BadArgumentException(ex.getMessage());
+    }
+  
+    return ResponseEntity.ok().body(aclRecord);
   }
 
   @Override
@@ -236,7 +260,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
     Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
-
+  
     return ResponseEntity.
             ok().
             header(HttpHeaders.CONTENT_LENGTH, String.valueOf(metadataDocumentPath.toFile().length())).
