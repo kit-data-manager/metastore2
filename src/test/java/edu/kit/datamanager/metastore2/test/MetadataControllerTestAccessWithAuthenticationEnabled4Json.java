@@ -16,7 +16,9 @@ import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -84,10 +86,10 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41412"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_accesswithaai;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/md/aai/access/schema"})
-@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/md/aai/access/metadata"})
+@TestPropertySource(properties = {"server.port=41415"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_accesswithaai4json;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/md/aai/access/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/md/aai/access/json/metadata"})
 @TestPropertySource(properties = {"repo.auth.enabled=true"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
@@ -98,6 +100,33 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc_access_aai";
   private static final String INVALID_SCHEMA = "invalid_dc";
+  private final static String JSON_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
 
   private String adminToken;
   private String userToken;
@@ -178,7 +207,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
     if (!isInitialized()) {
-      System.out.println("------MetadataControllerAccessTestWithAAI-------------");
+      System.out.println("------MetadataControllerAccessTestWithAAI4Json--------");
       System.out.println("------" + this.metadataConfig);
       System.out.println("------------------------------------------------------");
 
@@ -192,14 +221,14 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
 
       try {
         // Create schema only once.
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
         }
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -209,7 +238,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
         ex.printStackTrace();
       }
 
-      CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, SCHEMA_ID, applicationProperties.getJwtSecret());
+      ingestSchemaRecord(SCHEMA_ID);
       int schemaNo = 1;
       for (PERMISSION user1 : PERMISSION.values()) {
         for (PERMISSION guest : PERMISSION.values()) {
@@ -387,6 +416,25 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
             andDo(print()).
             andExpect(status().isCreated()).
             andReturn();
+  }
+
+  private void ingestSchemaRecord(String schemaId) throws Exception {
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
+    schemaRecord.setSchemaId(schemaId);
+    schemaRecord.setSchemaVersion(1l);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    schemaRecord.setAcl(aclEntries);
+    
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
 
   public static synchronized boolean isInitialized() {
