@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
@@ -43,6 +44,8 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.service.IMessagingService;
+import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
@@ -58,6 +61,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
@@ -106,7 +110,15 @@ public class MetadataControllerImpl implements IMetadataController {
   @Autowired
   private final IDataResourceDao dataResourceDao;
 
-  private final String guestToken;
+  /**
+   * Optional messagingService bean may or may not be available, depending on a
+   * service's configuration. If messaging capabilities are disabled, this bean
+   * should be not available. In that case, messages are only logged.
+   */
+  @Autowired
+  private Optional<IMessagingService> messagingService;
+
+ private final String guestToken;
 
   /**
    *
@@ -195,6 +207,10 @@ public class MetadataControllerImpl implements IMetadataController {
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
     long nano7 = System.nanoTime() / 1000000;
     LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
+
+    LOG.trace("Sending CREATE event.");
+    messagingService.orElse(new LogfileMessagingService()).
+            send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
