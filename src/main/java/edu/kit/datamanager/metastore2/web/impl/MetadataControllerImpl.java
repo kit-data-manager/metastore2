@@ -449,6 +449,10 @@ public class MetadataControllerImpl implements IMetadataController {
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateMetadataRecord.getId(), updateMetadataRecord.getRecordVersion(), null, null)).toUri();
 
+    LOG.trace("Sending UPDATE event.");
+    messagingService.orElse(new LogfileMessagingService()).
+            send(MetadataResourceMessage.factoryUpdateMetadataMessage(updateMetadataRecord, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateMetadataRecord);
   }
 
