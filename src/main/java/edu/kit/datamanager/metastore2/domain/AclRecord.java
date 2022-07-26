@@ -56,11 +56,19 @@ public class AclRecord implements Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    acl.clear();
+    read.clear();
+    write.clear();
+    admin.clear();
     if (newAclList != null) {
       for (AclEntry item : newAclList) {
         if (item.getPermission().atLeast(PERMISSION.READ)) {
-          acl.add(item.getSid());
+          read.add(item.getSid());
+        }
+        if (item.getPermission().atLeast(PERMISSION.WRITE)) {
+          write.add(item.getSid());
+        }
+        if (item.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
+          admin.add(item.getSid());
         }
       }
     }
