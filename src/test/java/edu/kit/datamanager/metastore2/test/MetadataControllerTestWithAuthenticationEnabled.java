@@ -1093,6 +1093,85 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   @Test
+  public void testUpdateAclOnly() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.getAcl().clear();
+    record.getAcl().add(new AclEntry("testacl", PERMISSION.ADMINISTRATE));
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
+    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+  }
+
+  @Test
+  public void testUpdateWrongAclOnly() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.getAcl().clear();
+    record.getAcl().add(new AclEntry("testacl", PERMISSION.WRITE));
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
+    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+  }
+
+  @Test
   public void testUpdateRecordWithWrongACL() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
