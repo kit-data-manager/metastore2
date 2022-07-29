@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
@@ -243,25 +244,13 @@ public class MetadataControllerImpl implements IMetadataController {
           HttpServletResponse hsr
   ) {
     LOG.trace("Performing getAclById({}, {}).", id, version);
+    if (!AuthenticationHelper.isAuthenticatedAsService()) {
+                  throw new AccessForbiddenException("Only for services!");
+    }
 
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(record.getAcl());
-    List<AclEntry> aclList = List.copyOf(record.getAcl());
-    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
-    ObjectMapper mapper = new ObjectMapper();
-    String jsonString;
-    try {
-      jsonString = FileUtils.readFileToString(metadataDocumentPath.toFile(), Charset.forName("UTF-8"));
-      JsonNode rootNode = mapper.readValue(jsonString, JsonNode.class);
-      aclRecord.setMetadataDocument(rootNode);
-    } catch (JsonProcessingException ex) {
-      LOG.error("Error parsing metadata document", ex);
-      throw new BadArgumentException(ex.getMessage());
-    } catch (IOException ex) {
-      LOG.error("Error parsing metadata document", ex);
-      throw new BadArgumentException(ex.getMessage());
-    }
   
     return ResponseEntity.ok().body(aclRecord);
   }
