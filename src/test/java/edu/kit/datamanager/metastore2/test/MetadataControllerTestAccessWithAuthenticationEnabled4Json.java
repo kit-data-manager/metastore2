@@ -95,7 +95,7 @@ import org.springframework.web.context.WebApplicationContext;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc_access_aai";
@@ -126,6 +126,10 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
           + "        }\n"
           + "    },\n"
           + "    \"additionalProperties\": false\n"
+          + "}";
+  private final static String JSON_DOCUMENT = "{\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"date\": \"2022-07-29\"\n"
           + "}";
 
   private String adminToken;
@@ -381,7 +385,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
@@ -407,7 +411,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
@@ -434,7 +438,11 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+            file(schemaFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
   }
 
   public static synchronized boolean isInitialized() {
