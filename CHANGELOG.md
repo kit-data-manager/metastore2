@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
+- More specific messages for creating/updating metadata documents.
+- Add ACL info for services to enable authorization.
 
 ### Changed
 
