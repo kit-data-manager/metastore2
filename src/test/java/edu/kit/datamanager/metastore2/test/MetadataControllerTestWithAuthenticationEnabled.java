@@ -1106,7 +1106,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
-    record.getAcl().clear();
+    MetadataRecord oldRecord = mapper.readValue(body, MetadataRecord.class);
+     
+    // add one more user
     record.getAcl().add(new AclEntry("testacl", PERMISSION.ADMINISTRATE));
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
@@ -1128,7 +1130,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());
     if (record.getAcl() != null) {
-      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(record2.getAcl().containsAll(oldRecord.getAcl()));
+      // There should be an additional entry
+      Assert.assertFalse(oldRecord.getAcl().containsAll(record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
   }
@@ -1147,28 +1151,19 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // remove old users
     record.getAcl().clear();
-    record.getAcl().add(new AclEntry("testacl", PERMISSION.WRITE));
+    // add new user with administration rights
+    record.getAcl().add(new AclEntry("testacl", PERMISSION.ADMINISTRATE));
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
             file(recordFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header("If-Match", etag).
             with(putMultipart())).
             andDo(print()).
-            andExpect(status().isOk()).
-            andReturn();
-
-//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
-    body = result.getResponse().getContentAsString();
-
-    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
-    Assert.assertEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
-    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals(record.getRecordVersion(), record2.getRecordVersion());
-    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+            andExpect(status().isForbidden());
   }
 
   @Test
@@ -1194,42 +1189,14 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
 
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
             file(recordFile).
             file(metadataFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).
             header("If-Match", etag).
             with(putMultipart())).
             andDo(print()).
-            andExpect(status().isOk()).
-            andReturn();
-
-//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
-    body = result.getResponse().getContentAsString();
-
-    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
-    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
-    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
-    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
-    if (record.getAcl() != null) {
-      Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
-      Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-    }
-    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
-    // Check for new metadata document.
-    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
-            andDo(print()).
-            andExpect(status().isOk()).
-            andReturn();
-    String content = result.getResponse().getContentAsString();
-
-    String dcMetadata = KIT_DOCUMENT_VERSION_2;
-
-    Assert.assertEquals(dcMetadata, content);
-
-    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+            andExpect(status().isForbidden());
   }
 
   @Test
