@@ -14,7 +14,7 @@ description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
 ext {
-    springBootVersion = '2.4.13' 
+    springBootVersion = '2.7.2' 
     springDocVersion  = '1.5.13'
     javersVersion     = '6.5.3'
     keycloakVersion   = '15.0.2'
@@ -94,6 +94,7 @@ dependencies {
 
     // javers
     implementation "org.javers:javers-spring-boot-starter-sql:${javersVersion}"
+    implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
     implementation "org.postgresql:postgresql:42.2.25"
@@ -104,8 +105,6 @@ dependencies {
     implementation "commons-io:commons-io:2.11.0"
     implementation "org.apache.tika:tika-core:1.27"
 
-    implementation "org.javers:javers-core:${javersVersion}"
-
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.0.59"
   
@@ -113,8 +112,8 @@ dependencies {
     implementation 'xerces:xercesImpl:2.12.1'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:1.0.2"
-    implementation "edu.kit.datamanager:service-base:1.0.3"
+    implementation "edu.kit.datamanager:repo-core:1.0.3"
+    implementation "edu.kit.datamanager:service-base:1.0.4"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
