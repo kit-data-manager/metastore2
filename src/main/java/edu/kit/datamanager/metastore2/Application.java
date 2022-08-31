@@ -32,6 +32,7 @@ import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
+import edu.kit.datamanager.repo.configuration.StorageServiceProperties;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -44,6 +45,9 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceService;
 import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
+import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
+import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
+import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
@@ -83,10 +87,10 @@ public class Application {
   private static final Logger LOG = LoggerFactory.getLogger(Application.class);
   @Autowired
   private Javers javers;
-  @Autowired
+  /*@Autowired
   private IDataResourceService schemaResourceService;
   @Autowired
-  private IContentInformationService schemaInformationService;
+  private IContentInformationService schemaInformationService;*/
   @Autowired
   private ApplicationEventPublisher eventPublisher;
   @Autowired
@@ -111,10 +115,11 @@ public class Application {
   private OaiPmhConfiguration oaiPmhConfiguration;
   @Autowired
   private IValidator[] validators;
-  @Autowired
+
+  /*@Autowired
   private IDataResourceService dataResourceService;
   @Autowired
-  private IContentInformationService contentInformationService;
+  private IContentInformationService contentInformationService;*/
 
   @Bean
   @Scope("prototype")
@@ -138,10 +143,11 @@ public class Application {
     return new MetastoreConfiguration();
   }
 
-//  @Bean
-//  public IdBasedStorageProperties idBasedStorageProperties() {
-//    return new IdBasedStorageProperties();
-//  }
+  @Bean
+  public StorageServiceProperties storageServiceProperties() {
+    return new StorageServiceProperties();
+  }
+
   @Bean
   public DateBasedStorageProperties dateBasedStorageProperties() {
     return new DateBasedStorageProperties();
@@ -163,8 +169,9 @@ public class Application {
     LOG.trace("LOAD RabbitMQ");
     return new RabbitMQMessagingService();
   }
-   @Bean(name = "messagingService")
-   @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "false")
+
+  @Bean(name = "messagingService")
+  @ConditionalOnProperty(prefix = "repo.messaging", name = "enabled", havingValue = "false")
   public IMessagingService dummyMessagingService() {
     LOG.trace("LOAD DUMMY RabbitMQ");
     return new IMessagingService() {
@@ -180,7 +187,7 @@ public class Application {
       }
     };
   }
-  
+
   @Bean
   public IDataResourceService dataResourceService() {
     return new DataResourceService();
@@ -202,9 +209,35 @@ public class Application {
   }
 
   @Bean
+  public IdBasedStorageService idBasedStorageService() {
+    IdBasedStorageService ibss = new IdBasedStorageService();
+    ibss.configure(storageServiceProperties());
+    return ibss;
+  }
+
+  @Bean
   @ConfigurationProperties("repo")
   public ApplicationProperties applicationProperties() {
     return new ApplicationProperties();
+  }
+
+  @Bean
+  public KeycloakJwtProperties keycloakProperties() {
+    return new KeycloakJwtProperties();
+  }
+
+  @Bean
+  @ConditionalOnProperty(
+          value = "repo.auth.enabled",
+          havingValue = "true",
+          matchIfMissing = false)
+  public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
+    return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
+            .readTimeout(keycloakProperties().getReadTimeoutms())
+            .connectTimeout(keycloakProperties().getConnectTimeoutms())
+            .sizeLimit(keycloakProperties().getSizeLimit())
+            .jwtLocalSecret(applicationProperties().getJwtSecret())
+            .build(keycloakProperties().getJwkUrl(), keycloakProperties().getResource(), keycloakProperties().getJwtClaim()));
   }
 
   @Bean
@@ -217,16 +250,20 @@ public class Application {
     rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
     rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
-    rbc.setDataResourceService(schemaResourceService);
-    rbc.setContentInformationService(schemaInformationService);
+    rbc.setDataResourceService(schemaResourceService());
+    rbc.setContentInformationService(schemaInformationService());
     rbc.setEventPublisher(eventPublisher);
+    LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
+      LOG.trace(".... '{}'", versioningService.getServiceName());
       if ("simple".equals(versioningService.getServiceName())) {
         rbc.setVersioningService(versioningService);
         break;
       }
     }
+    LOG.trace("Looking for storageServices....");
     for (IRepoStorageService storageService : this.storageServices) {
+      LOG.trace(".... '{}'", storageService.getServiceName());
       if ("simple".equals(storageService.getServiceName())) {
         rbc.setStorageService(storageService);
         break;
@@ -234,8 +271,8 @@ public class Application {
     }
     auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
     contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-    schemaResourceService.configure(rbc);
-    schemaInformationService.configure(rbc);
+    schemaResourceService().configure(rbc);
+    schemaInformationService().configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
@@ -263,25 +300,29 @@ public class Application {
     rbc.setAuthEnabled(this.applicationProperties.isAuthEnabled());
     rbc.setJwtSecret(this.applicationProperties.getJwtSecret());
     rbc.setReadOnly(false);
-    rbc.setDataResourceService(dataResourceService);
-    rbc.setContentInformationService(contentInformationService);
+    rbc.setDataResourceService(dataResourceService());
+    rbc.setContentInformationService(contentInformationService());
     rbc.setEventPublisher(eventPublisher);
+    LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
+      LOG.trace(".... '{}'", versioningService.getServiceName());
       if ("simple".equals(versioningService.getServiceName())) {
         rbc.setVersioningService(versioningService);
         break;
       }
     }
+    LOG.trace("Looking for storageServices....");
     for (IRepoStorageService storageService : this.storageServices) {
-      if (IdBasedStorageService.SERVICE_NAME.equals(storageService.getServiceName())) {
+      LOG.trace(".... '{}'", storageService.getServiceName());
+      if ("simple".equals(storageService.getServiceName())) {
         rbc.setStorageService(storageService);
         break;
       }
     }
     auditServiceDataResource = new DataResourceAuditService(this.javers, rbc);
     contentAuditService = new ContentInformationAuditService(this.javers, rbc);
-    dataResourceService.configure(rbc);
-    contentInformationService.configure(rbc);
+    dataResourceService().configure(rbc);
+    contentInformationService().configure(rbc);
     rbc.setAuditService(auditServiceDataResource);
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
@@ -339,8 +380,10 @@ public class Application {
    */
   private void fixBasePath(MetastoreConfiguration config) {
     String basePath = config.getBasepath().toString();
+    LOG.trace("fixBasePath: '{}'", basePath);
     try {
       basePath = MetadataSchemaRecordUtil.fixRelativeURI(basePath);
+      LOG.trace("fixBasePath: --> '{}'", basePath);
       config.setBasepath(URI.create(basePath).toURL());
     } catch (MalformedURLException ex) {
       LOG.error("Error fixing base path '{}'", basePath);
