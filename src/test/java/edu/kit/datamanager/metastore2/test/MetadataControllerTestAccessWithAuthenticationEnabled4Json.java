@@ -8,7 +8,6 @@ package edu.kit.datamanager.metastore2.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoServiceRole;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -16,9 +15,10 @@ import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
-import edu.kit.datamanager.metastore2.domain.AclRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -87,34 +86,61 @@ import org.springframework.web.context.WebApplicationContext;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41412"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_accesswithaai;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
-@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/md/aai/access/schema"})
-@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/md/aai/access/metadata"})
+@TestPropertySource(properties = {"server.port=41415"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_md_accesswithaai4json;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/md/aai/access/json/schema"})
+@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/md/aai/access/json/metadata"})
 @TestPropertySource(properties = {"repo.auth.enabled=true"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
-public class MetadataControllerTestAccessWithAuthenticationEnabled {
+public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/";
+  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/md/aai/access/json/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc_access_aai";
   private static final String INVALID_SCHEMA = "invalid_dc";
+  private final static String JSON_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\",\n"
+          + "        \"date\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        },\n"
+          + "        \"date\": {\n"
+          + "            \"$id\": \"#/properties/string\",\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"format\": \"date\",\n"
+          + "            \"title\": \"Date\",\n"
+          + "            \"description\": \"Date of object\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+  private final static String JSON_DOCUMENT = "{\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"date\": \"2022-07-29\"\n"
+          + "}";
 
   private String adminToken;
   private String userToken;
   private String otherUserToken;
   private String guestToken;
-  private String serviceToken;
 
   private final String adminPrincipal = "admin";
   private final String userPrincipal = "user1";
   private final String otherUserPrincipal = "test_user";
   private final String guestPrincipal = "guest";
-  private final String servicePrincipal = "any_service";
-
-  private final String ANONYMOUS_ID = "id_for_public_available_do";
 
   private static Boolean alreadyInitialized = Boolean.FALSE;
 
@@ -184,16 +210,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
-
-    serviceToken = edu.kit.datamanager.util.JwtBuilder.createServiceToken(servicePrincipal, RepoServiceRole.SERVICE_READ).
-            addSimpleClaim("email", "thomas.jejkal@kit.edu").
-            addSimpleClaim("orcid", "0000-0003-2804-688X").
-            addSimpleClaim("loginFailures", 0).
-            addSimpleClaim("active", true).
-            addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
-
     if (!isInitialized()) {
-      System.out.println("------MetadataControllerAccessTestWithAAI-------------");
+      System.out.println("------MetadataControllerAccessTestWithAAI4Json--------");
       System.out.println("------" + this.metadataConfig);
       System.out.println("------------------------------------------------------");
 
@@ -207,14 +225,14 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
 
       try {
         // Create schema only once.
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
         }
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -224,7 +242,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
         ex.printStackTrace();
       }
 
-      CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, SCHEMA_ID, applicationProperties.getJwtSecret());
+      ingestSchemaRecord(SCHEMA_ID);
       int schemaNo = 1;
       for (PERMISSION user1 : PERMISSION.values()) {
         for (PERMISSION guest : PERMISSION.values()) {
@@ -342,51 +360,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     }
   }
 
-  @Test
-  public void testAccessAclForServiceWithoutAuthentication() throws Exception {
-    this.mockMvc.perform(get("/api/v1/metadata/" + ANONYMOUS_ID).
-            header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE)).
-            andDo(print()).
-            andExpect(status().isForbidden());
-  }
-
-  @Test
-  public void testAccessAclForServiceWithAuthentication() throws Exception {
-    this.mockMvc.perform(get("/api/v1/metadata/" + ANONYMOUS_ID).
-            header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
-            andDo(print()).
-            andExpect(status().isForbidden());
-  }
-
-  @Test
-  public void testAccessAclForServiceWithAdminAuthentication() throws Exception {
-    this.mockMvc.perform(get("/api/v1/metadata/" + ANONYMOUS_ID).
-            header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
-            andDo(print()).
-            andExpect(status().isForbidden());
-  }
-
-  @Test
-  public void testAccessAclForServiceWithServiceToken() throws Exception {
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/" + ANONYMOUS_ID).
-            header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)).
-            andDo(print()).
-            andExpect(status().isOk()).
-            andReturn();
-    ObjectMapper map = new ObjectMapper();
-    AclRecord result = map.readValue(mvcResult.getResponse().getContentAsString(), AclRecord.class);
-    Assert.assertNotNull(result);
-    Assert.assertTrue(result.getRead().contains(otherUserPrincipal));
-    Assert.assertTrue(result.getRead().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
-    Assert.assertTrue(result.getWrite().contains(otherUserPrincipal));
-    Assert.assertFalse(result.getWrite().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
-    Assert.assertTrue(result.getAdmin().contains(otherUserPrincipal));
-    Assert.assertFalse(result.getAdmin().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
-  }
-
   /**
    * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
    *
@@ -412,7 +385,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
@@ -430,7 +403,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
    */
   private void ingestMetadataRecord4UnregisteredUsers(String schemaId) throws Exception {
     MetadataRecord record = new MetadataRecord();
-    record.setId(ANONYMOUS_ID);
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier("resource of " + schemaId));
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -439,9 +411,32 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.xml", "application/xml", CreateSchemaUtil.KIT_DOCUMENT.getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(schemaFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
+  }
+
+  private void ingestSchemaRecord(String schemaId) throws Exception {
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
+    schemaRecord.setSchemaId(schemaId);
+    schemaRecord.setSchemaVersion(1l);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    schemaRecord.setAcl(aclEntries);
+    
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).

@@ -16,14 +16,20 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
+import edu.kit.datamanager.metastore2.domain.AclRecord;
 import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -39,6 +45,9 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.service.IMessagingService;
+import edu.kit.datamanager.service.impl.LogfileMessagingService;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
@@ -47,14 +56,18 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -98,7 +111,15 @@ public class MetadataControllerImpl implements IMetadataController {
   @Autowired
   private final IDataResourceDao dataResourceDao;
 
-  private final String guestToken;
+  /**
+   * Optional messagingService bean may or may not be available, depending on a
+   * service's configuration. If messaging capabilities are disabled, this bean
+   * should be not available. In that case, messages are only logged.
+   */
+  @Autowired
+  private Optional<IMessagingService> messagingService;
+
+ private final String guestToken;
 
   /**
    *
@@ -188,6 +209,10 @@ public class MetadataControllerImpl implements IMetadataController {
     long nano7 = System.nanoTime() / 1000000;
     LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
+    LOG.trace("Sending CREATE event.");
+    messagingService.orElse(new LogfileMessagingService()).
+            send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
     return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
   }
 
@@ -212,6 +237,25 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   @Override
+  public ResponseEntity<AclRecord> getAclById(
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr
+  ) {
+    LOG.trace("Performing getAclById({}, {}).", id, version);
+    if (!AuthenticationHelper.isAuthenticatedAsService()) {
+                  throw new AccessForbiddenException("Only for services!");
+    }
+
+    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    AclRecord aclRecord = new AclRecord();
+    aclRecord.setAcl(record.getAcl());
+  
+    return ResponseEntity.ok().body(aclRecord);
+  }
+
+  @Override
   public ResponseEntity getMetadataDocumentById(
           @PathVariable(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
@@ -221,7 +265,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
     Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
-
+  
     return ResponseEntity.
             ok().
             header(HttpHeaders.CONTENT_LENGTH, String.valueOf(metadataDocumentPath.toFile().length())).
@@ -393,6 +437,10 @@ public class MetadataControllerImpl implements IMetadataController {
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateMetadataRecord.getId(), updateMetadataRecord.getRecordVersion(), null, null)).toUri();
+
+    LOG.trace("Sending UPDATE event.");
+    messagingService.orElse(new LogfileMessagingService()).
+            send(MetadataResourceMessage.factoryUpdateMetadataMessage(updateMetadataRecord, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateMetadataRecord);
   }

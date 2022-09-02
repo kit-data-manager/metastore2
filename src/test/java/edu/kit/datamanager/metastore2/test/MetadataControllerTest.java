@@ -972,7 +972,7 @@ public class MetadataControllerTest {
     if (record.getAcl() != null) {
       Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
       Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-    }
+  }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
     result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
