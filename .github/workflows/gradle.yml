@@ -7,7 +7,7 @@ on:
   push:
     branches: [ master, main, testWorkflow, NEP ]
   pull_request:
-    branches: [ master, main, NEP ]
+    branches: [ master, main, dev, NEP ]
 
 env:
     # JDK version used for building jar file
@@ -19,7 +19,7 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         # Use both LTS releases and latest one for tests
-        jdk: [ 8, 11, 16 ]
+        jdk: [ 8, 11, 17 ]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v2
