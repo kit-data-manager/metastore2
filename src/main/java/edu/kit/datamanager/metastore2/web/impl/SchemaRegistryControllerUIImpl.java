@@ -64,7 +64,52 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
   @Autowired
   private SchemaRegistryControllerImpl schemaControllerImpl;
 
-  @RequestMapping("/api/v1/ui/schemas")
+@RequestMapping(value = "/api/v1/ui/schemas", method = RequestMethod.GET, produces = {"application/tabulator+json"})
+    @ResponseBody
+    @PageableAsQueryParam
+    public ResponseEntity<TabulatorLocalPagination> findAllSchemasForTabulator(
+            @Parameter(hidden = true) final Pageable pgbl,
+            final WebRequest wr,
+            final HttpServletResponse hsr,
+            final UriComponentsBuilder ucb) {
+
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+        ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
+        List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
+        String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+
+        TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
+                .lastPage(tabulatorLastPage(pageSize, pageable))
+                .data(schemaRecords)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(tabulatorLocalPagination);
+    }
+
+    @RequestMapping(value = "/api/v1/ui/metadata", method = RequestMethod.GET, produces = {"application/tabulator+json"})
+    @ResponseBody
+    @PageableAsQueryParam
+    public ResponseEntity<TabulatorLocalPagination> findAllMetadataForTabulator(
+            @RequestParam(value = "id", required = false) String id,
+            @Parameter(hidden = true) final Pageable pgbl,
+            final WebRequest wr,
+            final HttpServletResponse hsr,
+            final UriComponentsBuilder ucb) {
+        Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+        List<String> schemaIds = id == null ? null : Arrays.asList(id);
+        ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
+        List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
+
+        String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+
+        TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
+                .lastPage(tabulatorLastPage(pageSize, pageable))
+                .data(metadataRecords)
+                .build();
+        return ResponseEntity.status(HttpStatus.OK).body(tabulatorLocalPagination);
+    }
+
+   @RequestMapping(value = "/api/v1/ui/schemas", method = RequestMethod.GET, produces = {"application/json"})
   @ResponseBody
   @Override
   public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
@@ -85,7 +130,7 @@ public class SchemaRegistryControllerUIImpl implements ISchemaRegistryController
 
   }
 
-  @RequestMapping("/api/v1/ui/metadata")
+  @RequestMapping(value = "/api/v1/ui/metadata", method = RequestMethod.GET, produces = {"application/json"})
   @ResponseBody
   @Override
   public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
