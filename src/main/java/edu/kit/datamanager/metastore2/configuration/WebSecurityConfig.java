@@ -59,7 +59,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Value("${metastore.security.enable-csrf:true}")
   private boolean enableCsrf;
-  @Value("${metastore.security.allowedOriginPattern:http[*]://localhost:[*]}")
+  @Value("${metastore.security.allowedOriginPattern:http*://localhost:*}")
   private String allowedOriginPattern;
 
   public WebSecurityConfig() {
