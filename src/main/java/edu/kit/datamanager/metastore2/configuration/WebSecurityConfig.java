@@ -76,14 +76,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     if (!enableCsrf) {
       httpSecurity = httpSecurity.csrf().disable();
     }
-    System.out.println("WebSecurityConfig-> keycloak present? " + keycloaktokenFilterBean.isPresent());
     if (keycloaktokenFilterBean.isPresent()) {
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
     }
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-            httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager()), BasicAuthenticationFilter.class);
-            
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager()), BasicAuthenticationFilter.class);
+
       logger.info("Authentication is ENABLED.");
     }
 
@@ -111,7 +110,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
-    config.addAllowedOriginPattern(allowedOriginPattern); // @Value: http://localhost:8080
+    String[] allOrigins = allowedOriginPattern.split("[ ]*,[ ]*");
+    for (String origin : allOrigins) {
+      logger.info("Add origin pattern: '{}'", origin);
+      config.addAllowedOriginPattern(origin); // @Value: http://localhost:8080
+    }
     config.addAllowedHeader("*");
     config.addAllowedMethod("*");
     config.addExposedHeader("Content-Range");
