@@ -140,6 +140,28 @@ public class IDataRecordDaoTest {
   }
 
   /**
+   * Test of findBySchemaId method, of class IDataRecordDao.
+   */
+  @Test
+  public void testFindBySchemaIdWithPage() {
+    System.out.println("findBySchemaId");
+    String schemaId = "schemaId";
+    int totalNoOfHits = 6;
+    int reducedPageSize = 4;
+    Pageable page1 = PageRequest.of(0, 20);
+    List<DataRecord> result = instance.findBySchemaId(schemaId, page1);
+    assertEquals(totalNoOfHits, result.size());
+    page1 = PageRequest.of(0, reducedPageSize);
+    result = instance.findBySchemaId(schemaId, page1);
+    assertEquals(reducedPageSize, result.size());
+     page1 = PageRequest.of(1, reducedPageSize);
+    result = instance.findBySchemaId(schemaId, page1);
+    assertEquals(totalNoOfHits - reducedPageSize, result.size());
+   result = instance.findBySchemaId("invalidId", page1);
+    assertEquals(0, result.size());
+  }
+
+  /**
    * Test of findBySchemaIdAndLastUpdateAfter method, of class IDataRecordDao.
    */
   @Test

@@ -28,8 +28,10 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 @Component
 public class SpringRestConfiguration implements RepositoryRestConfigurer {
 
-    @Override
-    public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
-        config.setRepositoryDetectionStrategy(RepositoryDetectionStrategy.RepositoryDetectionStrategies.ALL);
-    }
+  @Override
+  public void configureRepositoryRestConfiguration(RepositoryRestConfiguration config, CorsRegistry cors) {
+    config.setRepositoryDetectionStrategy(RepositoryDetectionStrategy.RepositoryDetectionStrategies.ALL);
+    config.setRepositoryDetectionStrategy(RepositoryDetectionStrategy.RepositoryDetectionStrategies.ANNOTATED);
+    config.setExposeRepositoryMethodsByDefault(false);
+  }
 }
