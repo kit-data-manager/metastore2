@@ -74,9 +74,11 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
+      logger.info("CSRF disabled!");
       httpSecurity = httpSecurity.csrf().disable();
     }
     if (keycloaktokenFilterBean.isPresent()) {
+      logger.info("Add keycloak filter!");
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
     }
     if (!applicationProperties.isAuthEnabled()) {
