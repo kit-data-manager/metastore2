@@ -181,6 +181,10 @@ asciidoctor {
     outputDir "build/docs/html5"
 }
 
+jar {
+    // disable plain jar file
+    enabled = false
+}
    
 bootJar {
     println 'Create bootable jar...'
