@@ -1,8 +1,8 @@
 plugins { 
     id "org.springframework.boot" version "${springBootVersion}"
     id "io.spring.dependency-management" version "1.0.14.RELEASE"
-    id "io.freefair.lombok" version "6.5.0.3"
-    id "io.freefair.maven-publish-java" version "6.5.0.3"
+    id "io.freefair.lombok" version "6.5.1"
+    id "io.freefair.maven-publish-java" version "6.5.1"
     id "org.owasp.dependencycheck" version "7.2.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '3.0.2'
