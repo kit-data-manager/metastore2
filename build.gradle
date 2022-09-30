@@ -5,7 +5,7 @@ plugins {
     id "io.freefair.maven-publish-java" version "6.5.0.3"
     id "org.owasp.dependencycheck" version "7.2.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
-    id 'net.researchgate.release' version '3.0.0'
+    id 'net.researchgate.release' version '3.0.2'
     id 'java'
     id 'jacoco'
 }
