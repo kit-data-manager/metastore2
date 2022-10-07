@@ -26,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to postgresql 42.4.0
 - Update to jjwt 0.11.5
 - Update to h2 2.1.214
-- Update to gradle version 7.4.2
+- Update to gradle version 7.5.1
 - Get rid of powermock
 - Support for Java 17 (tests)
 
