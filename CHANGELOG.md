@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Security
+- Switch to 'eclipse-temurin' for docker due to end of support for 'openjdk'.
 
 ### Added
 - More specific messages for creating/updating metadata documents.

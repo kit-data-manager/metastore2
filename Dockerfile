@@ -11,7 +11,7 @@ ARG SERVICE_ROOT_DIRECTORY_DEFAULT=/spring/
 ####################################################
 # Building environment (java & git)
 ####################################################
-FROM openjdk:16-bullseye AS build-env-java
+FROM eclipse-temurin:17 AS build-env-java
 LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=build-env
 
@@ -48,7 +48,7 @@ RUN bash ./build.sh $SERVICE_DIRECTORY
 ####################################################
 # Runtime environment 4 metastore2
 ####################################################
-FROM openjdk:16-bullseye AS run-service-metastore2
+FROM eclipse-temurin:17 AS run-service-metastore2
 LABEL maintainer=webmaster@datamanager.kit.edu
 LABEL stage=run
 
