@@ -1,0 +1,173 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package edu.kit.datamanager.metastore2.web.impl;
+
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.metastore2.dto.TabulatorLocalPagination;
+import edu.kit.datamanager.metastore2.dto.TabulatorRemotePagination;
+import edu.kit.datamanager.metastore2.web.IFrontendController;
+import edu.kit.datamanager.util.AuthenticationHelper;
+import io.swagger.v3.oas.annotations.Hidden;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Arrays;
+import java.util.List;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.util.UriComponentsBuilder;
+
+/**
+ *
+ * @author sabrinechelbi
+ */
+@Controller
+@RequestMapping(value = "/api/v1/ui")
+@Hidden
+@Tag(name = "REST endpoints 4 GUI")
+public class FrontendControllerImpl implements IFrontendController {
+
+  private static final Logger LOG = LoggerFactory.getLogger(FrontendControllerImpl.class);
+
+  @Autowired
+  private MetadataControllerImpl metadtaControllerImpl;
+
+  @Autowired
+  private SchemaRegistryControllerImpl schemaControllerImpl;
+
+  @Override
+  public ResponseEntity<TabulatorLocalPagination> findAllSchemasForTabulator(
+          @Parameter(hidden = true) final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse hsr,
+          final UriComponentsBuilder ucb) {
+
+    LOG.trace("Performing findAllSchemasForTabulator().");
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    if (authorizationIdentities != null) {
+      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
+    } else {
+      LOG.trace("No permission information provided. Skip creating permission specification.");
+    }
+    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+    ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
+    List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
+    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+
+    TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
+            .lastPage(tabulatorLastPage(pageSize, pageable))
+            .data(schemaRecords)
+            .build();
+    return ResponseEntity.status(HttpStatus.OK).body(tabulatorLocalPagination);
+  }
+
+  @Override
+  public ResponseEntity<TabulatorLocalPagination> findAllMetadataForTabulator(
+          @RequestParam(value = "id", required = false) String id,
+          @Parameter(hidden = true) final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse hsr,
+          final UriComponentsBuilder ucb) {
+    LOG.trace("Performing findAllMetadataForTabulator().");
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    if (authorizationIdentities != null) {
+      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
+    } else {
+      LOG.trace("No permission information provided. Skip creating permission specification.");
+    }
+    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+    List<String> schemaIds = id == null ? null : Arrays.asList(id);
+    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
+    List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
+
+    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+
+    TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
+            .lastPage(tabulatorLastPage(pageSize, pageable))
+            .data(metadataRecords)
+            .build();
+    return ResponseEntity.status(HttpStatus.OK).body(tabulatorLocalPagination);
+  }
+
+  @Override
+  public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+    LOG.trace("Performing getSchemaRecordsForUi().");
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    if (authorizationIdentities != null) {
+      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
+    } else {
+      LOG.trace("No permission information provided. Skip creating permission specification.");
+    }
+
+    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+
+    ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
+    List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
+
+    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+
+    TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
+            .lastPage(tabulatorLastPage(pageSize, pageable))
+            .data(schemaRecords)
+            .build();
+
+    return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
+
+  }
+
+  @Override
+  public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
+    LOG.trace("Performing getMetadataRecordsForUi().");
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    if (authorizationIdentities != null) {
+      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
+    } else {
+      LOG.trace("No permission information provided. Skip creating permission specification.");
+    }
+
+    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+    List<String> schemaIds = id == null ? null : Arrays.asList(id);
+    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
+    List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
+
+    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+
+    TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
+            .lastPage(tabulatorLastPage(pageSize, pageable))
+            .data(metadataRecords)
+            .build();
+
+    return ResponseEntity.status(HttpStatus.OK).body(tabulatorRemotePagination);
+
+  }
+
+  /**
+   * computes the total number of the available pages.
+   *
+   * @param pageSize pagination size
+   * @param pageable page object
+   * @return the total number of the available pages
+   */
+  private int tabulatorLastPage(String pageSize, Pageable pageable) {
+    if ((Integer.parseInt(pageSize.split("/")[1]) % pageable.getPageSize()) == 0) {
+      return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize();
+    }
+    return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize() + 1;
+  }
+
+}

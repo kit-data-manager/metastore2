@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to javers 6.6.5
 - Update to io.freefair.lombok 6.5.0.3
 - Update to org.owasp.dependencycheck 7.1.1
-- Update to spring-boot 2.7.3
+- Update to spring-boot 2.7.4
 - Update to spring-doc 1.6.9
 - Update to spring-cloud 3.1.3
 - Update to spring-messaging 5.3.22

@@ -1,11 +1,11 @@
 plugins { 
     id "org.springframework.boot" version "${springBootVersion}"
-    id "io.spring.dependency-management" version "1.0.11.RELEASE" 
-    id "io.freefair.lombok" version "6.5.0.3"
-    id "io.freefair.maven-publish-java" version "6.5.0.3"
-    id "org.owasp.dependencycheck" version "7.1.1"
+    id "io.spring.dependency-management" version "1.0.14.RELEASE"
+    id "io.freefair.lombok" version "6.5.1"
+    id "io.freefair.maven-publish-java" version "6.5.1"
+    id "org.owasp.dependencycheck" version "7.2.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
-    id 'net.researchgate.release' version '3.0.0'
+    id 'net.researchgate.release' version '3.0.2'
     id 'java'
     id 'jacoco'
 }
@@ -73,12 +73,12 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
 
-   //Keycloak
-    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
-    implementation "com.nimbusds:nimbus-jose-jwt:9.23"
-    implementation "io.jsonwebtoken:jjwt-api:0.11.5"
-    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
-    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
+   //Keycloak already imported in service-base
+//    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
+//    implementation "com.nimbusds:nimbus-jose-jwt:9.23"
+//    implementation "io.jsonwebtoken:jjwt-api:0.11.5"
+//    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
+//    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
 
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
@@ -103,7 +103,7 @@ dependencies {
     implementation "org.apache.tika:tika-core:1.27"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.59"
+    implementation "com.networknt:json-schema-validator:1.0.73"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.1'
@@ -118,13 +118,13 @@ dependencies {
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
     
     // Additional libraries for tests
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.6.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:4.7.0"
+    testImplementation "org.mockito:mockito-core:4.8.0"
     testImplementation "junit:junit:4.13.2"
 }
 
@@ -181,6 +181,10 @@ asciidoctor {
     outputDir "build/docs/html5"
 }
 
+jar {
+    // disable plain jar file
+    enabled = false
+}
    
 bootJar {
     println 'Create bootable jar...'
