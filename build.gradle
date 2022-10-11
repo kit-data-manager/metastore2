@@ -46,7 +46,7 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:5.3.22'
+    implementation 'org.springframework:spring-messaging:5.3.23'
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-amqp"
