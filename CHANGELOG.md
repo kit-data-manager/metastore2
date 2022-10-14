@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for Keycloak tokens.
 
 ### Changed
-- Update to service-base 1.0.5
+- Update to service-base 1.0.7
 - Update to repo-core 1.0.4
 - Update to javers 6.6.5
 - Update to io.freefair.lombok 6.5.1
