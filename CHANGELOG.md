@@ -6,6 +6,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Security
+
+### Added
+
+### Changed
+
+### Fixed
+
+## [1.1.0] - 2022-10-14
+### Security
 - Switch to 'eclipse-temurin' for docker due to end of support for 'openjdk'.
 
 ### Added
@@ -23,12 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to spring-doc 1.6.11
 - Update to spring-cloud 3.1.4
 - Update to spring-messaging 5.3.23
-- Update to postgresql 42.4.0
-- Update to jjwt 0.11.5
+- Update to postgresql 42.5.0
 - Update to h2 2.1.214
 - Update to gradle version 7.5.1
 - Get rid of powermock
 - Support for Java 17 (tests)
+- Remove jwt libraries (already part of service-base).
 
 ### Fixed
 
@@ -199,7 +208,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
 [0.3.7]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...v0.3.7
