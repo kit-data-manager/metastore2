@@ -19,8 +19,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoServiceRole;
-import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -906,10 +905,11 @@ public class MetadataRecordUtil {
         LOG.trace("Indentity/Authority: '{}'", authority);
       }
     }
-    // Check if authorized user has ADMINISTRATOR rights
+    // Check if authorized user still has ADMINISTRATOR rights
     Iterator<AclEntry> iterator = aclEntries.iterator();
     while (iterator.hasNext()) {
       AclEntry aclEntry = iterator.next();
+          LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
       if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
         if (authorizationIdentities.contains(aclEntry.getSid())) {
           isAllowed = true;
@@ -920,6 +920,9 @@ public class MetadataRecordUtil {
     }
     if (!isAllowed) {
       LOG.warn("Only ADMINISTRATORS are allowed to change ACL entries");
+      if (schemaConfig.isAuthEnabled()) {
+        throw new AccessForbiddenException("Error wrong ACL!");
+      }
     }
     return isAllowed;
   }

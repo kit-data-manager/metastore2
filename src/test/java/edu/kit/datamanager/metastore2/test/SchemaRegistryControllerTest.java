@@ -744,7 +744,7 @@ public class SchemaRegistryControllerTest {
     if (record.getAcl() != null) {
       Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
       Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-    }
+  }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     Assert.assertEquals("Check label: ", record.getLabel(), record2.getLabel());
     Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());

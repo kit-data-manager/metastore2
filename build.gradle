@@ -1,11 +1,11 @@
 plugins { 
     id "org.springframework.boot" version "${springBootVersion}"
-    id "io.spring.dependency-management" version "1.0.11.RELEASE" 
-    id "io.freefair.lombok" version "6.5.0.3"
-    id "io.freefair.maven-publish-java" version "6.5.0.3"
-    id "org.owasp.dependencycheck" version "7.1.1"
+    id "io.spring.dependency-management" version "1.0.14.RELEASE"
+    id "io.freefair.lombok" version "6.5.1"
+    id "io.freefair.maven-publish-java" version "6.5.1"
+    id "org.owasp.dependencycheck" version "7.2.1"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
-    id 'net.researchgate.release' version '3.0.0'
+    id 'net.researchgate.release' version '3.0.2'
     id 'java'
     id 'jacoco'
 }
@@ -46,7 +46,7 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:5.3.22'
+    implementation 'org.springframework:spring-messaging:5.3.23'
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-amqp"
@@ -65,20 +65,20 @@ dependencies {
     implementation "org.springframework.security:spring-security-config:5.5.2"
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.3"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.3"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.4"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
     implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
 
-   //Keycloak
-    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
-    implementation "com.nimbusds:nimbus-jose-jwt:9.23"
-    implementation "io.jsonwebtoken:jjwt-api:0.11.5"
-    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
-    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
+   //Keycloak already imported in service-base
+//    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
+//    implementation "com.nimbusds:nimbus-jose-jwt:9.23"
+//    implementation "io.jsonwebtoken:jjwt-api:0.11.5"
+//    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
+//    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
 
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
@@ -94,7 +94,7 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.4.0"
+    implementation "org.postgresql:postgresql:42.5.0"
     //driver for h2
     implementation "com.h2database:h2:2.1.214"
     
@@ -103,14 +103,14 @@ dependencies {
     implementation "org.apache.tika:tika-core:1.27"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.59"
+    implementation "com.networknt:json-schema-validator:1.0.73"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.1'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:1.0.3"
-    implementation "edu.kit.datamanager:service-base:1.0.4"
+    implementation "edu.kit.datamanager:repo-core:1.0.4"
+    implementation "edu.kit.datamanager:service-base:1.0.7"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
@@ -118,13 +118,13 @@ dependencies {
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
     
     // Additional libraries for tests
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.5.RELEASE"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.6.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:4.7.0"
+    testImplementation "org.mockito:mockito-core:4.8.0"
     testImplementation "junit:junit:4.13.2"
 }
 
@@ -181,6 +181,10 @@ asciidoctor {
     outputDir "build/docs/html5"
 }
 
+jar {
+    // disable plain jar file
+    enabled = false
+}
    
 bootJar {
     println 'Create bootable jar...'
