@@ -972,7 +972,7 @@ public class MetadataControllerTest {
     if (record.getAcl() != null) {
       Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
       Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-    }
+  }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
     result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -1375,7 +1375,14 @@ public class MetadataControllerTest {
 
     // Test get record with one version
     // Read all versions 
-    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
+    MvcResult result = this.mockMvc
+            .perform(get("/api/v1/metadata")
+                    .param("id", metadataRecordId)
+                    .header(HttpHeaders.ACCEPT, "application/json"))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version)))
+            .andReturn();
     Assert.assertTrue("Reference to " + RELATED_RESOURCE_STRING + " is not available", result.getResponse().getContentAsString().contains("\"" + RELATED_RESOURCE_STRING + "\""));
     // check for higher versions which should be not available
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
@@ -1431,6 +1438,16 @@ public class MetadataControllerTest {
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testSwaggerUI() throws Exception {
+
+    // Test for swagger definition
+    this.mockMvc.perform(get("/v3/api-docs"))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.info.title", Matchers.startsWith("MetaStore")));
   }
 
   private String createJsonMetadataRecord() throws Exception {

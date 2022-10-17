@@ -13,6 +13,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.1.0] - 2022-10-17
+### Security
+- Switch to 'eclipse-temurin' for docker due to end of support for 'openjdk'.
+
+### Added
+- More specific messages for creating/updating metadata documents.
+- Add ACL info for services to enable authorization.
+- Support for Keycloak tokens.
+
+### Changed
+- Update to service-base 1.0.7
+- Update to repo-core 1.0.4
+- Update to javers 6.6.5
+- Update to io.freefair.lombok 6.5.1
+- Update to org.owasp.dependencycheck 7.2.1
+- Update to spring-boot 2.7.4
+- Update to spring-doc 1.6.11
+- Update to spring-cloud 3.1.4
+- Update to spring-messaging 5.3.23
+- Update to postgresql 42.5.0
+- Update to h2 2.1.214
+- Update to gradle version 7.5.1
+- Get rid of powermock
+- Support for Java 17 (tests)
+- Remove jwt libraries (already part of service-base).
+
+### Fixed
+
 ## [1.0.1] - 2022-06-17
 ### Security
 - Update to h2 2.1.212:
@@ -180,7 +208,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0
 [0.3.7]: https://github.com/kit-data-manager/metastore2/compare/v0.3.6...v0.3.7

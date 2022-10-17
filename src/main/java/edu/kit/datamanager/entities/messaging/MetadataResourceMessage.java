@@ -74,7 +74,9 @@ public class MetadataResourceMessage extends DataResourceMessage {
    * Create Message for create event.
    *
    * @param metadataRecord record holding all properties of document
-   * @param caller caller of the event
+   * @param action message was triggered by this action 
+   * @param subCategory the sub category of the message
+   * @param principal who triggered this message
    * @param sender sender of the event.
    * @return Message for create event.
    */
