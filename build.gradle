@@ -110,7 +110,7 @@ dependencies {
 
     // datamanager
     implementation "edu.kit.datamanager:repo-core:1.0.4"
-    implementation "edu.kit.datamanager:service-base:1.0.７"
+    implementation "edu.kit.datamanager:service-base:1.0.7"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
