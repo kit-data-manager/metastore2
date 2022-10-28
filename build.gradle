@@ -61,7 +61,7 @@ dependencies {
     
     implementation "org.springframework.security:spring-security-web:5.7.2"
 
-    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
+    implementation "de.codecentric:spring-boot-admin-starter-client:2.7.6"
     implementation "org.springframework.security:spring-security-config:5.7.4"
     
     // cloud support
