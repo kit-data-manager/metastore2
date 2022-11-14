@@ -61,7 +61,9 @@ dependencies {
     
     implementation "org.springframework.security:spring-security-web:5.7.5"
 
-    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
+    // JSON Parser for Metadata Editor
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
     implementation "org.springframework.security:spring-security-config:5.7.4"
     
     // cloud support
@@ -84,7 +86,7 @@ dependencies {
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.10.0"
+    implementation "org.apache.commons:commons-text:1.9"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
