@@ -1,9 +1,9 @@
 plugins { 
     id "org.springframework.boot" version "${springBootVersion}"
-    id "io.spring.dependency-management" version "1.0.14.RELEASE"
+    id "io.spring.dependency-management" version "1.1.0"
     id "io.freefair.lombok" version "6.5.1"
     id "io.freefair.maven-publish-java" version "6.5.1"
-    id "org.owasp.dependencycheck" version "7.2.1"
+    id "org.owasp.dependencycheck" version "7.3.0"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '3.0.2'
     id 'java'
@@ -59,13 +59,15 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"    
     implementation "org.springframework.boot:spring-boot-starter-mail"
     
-    implementation "org.springframework.security:spring-security-web:5.7.2"
+    implementation "org.springframework.security:spring-security-web:5.7.5"
 
-    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
-    implementation "org.springframework.security:spring-security-config:5.5.2"
+    // JSON Parser for Metadata Editor
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+
+    implementation "org.springframework.security:spring-security-config:5.7.5"
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.5"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.4"
 
     // springdoc
@@ -84,7 +86,7 @@ dependencies {
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.9"
+    implementation "org.apache.commons:commons-text:1.10.0"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
@@ -94,19 +96,19 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.5.0"
+    implementation "org.postgresql:postgresql:42.5.1"
     //driver for h2
     implementation "com.h2database:h2:2.1.214"
     
     // apache
     implementation "commons-io:commons-io:2.11.0"
-    implementation "org.apache.tika:tika-core:1.27"
+    implementation "org.apache.tika:tika-core:2.6.0"
 
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.0.73"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
-    implementation 'xerces:xercesImpl:2.12.1'
+    implementation 'xerces:xercesImpl:2.12.2'
 
     // datamanager
     implementation "edu.kit.datamanager:repo-core:1.0.4"
@@ -124,7 +126,7 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:4.8.0"
+    testImplementation "org.mockito:mockito-core:4.8.1"
     testImplementation "junit:junit:4.13.2"
 }
 
