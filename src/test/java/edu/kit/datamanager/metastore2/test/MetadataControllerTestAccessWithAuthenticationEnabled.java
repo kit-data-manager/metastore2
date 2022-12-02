@@ -379,12 +379,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
     ObjectMapper map = new ObjectMapper();
     AclRecord result = map.readValue(mvcResult.getResponse().getContentAsString(), AclRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertTrue(result.getRead().contains(otherUserPrincipal));
-    Assert.assertTrue(result.getRead().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
-    Assert.assertTrue(result.getWrite().contains(otherUserPrincipal));
-    Assert.assertFalse(result.getWrite().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
-    Assert.assertTrue(result.getAdmin().contains(otherUserPrincipal));
-    Assert.assertFalse(result.getAdmin().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
+    Assert.assertTrue(result.getReadSids().contains(otherUserPrincipal));
+    Assert.assertTrue(result.getReadSids().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
   }
 
   /**

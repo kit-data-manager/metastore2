@@ -249,8 +249,10 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    fixMetadataDocumentUri(record);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(record.getAcl());
+    aclRecord.setMetadataRecord(record);
   
     return ResponseEntity.ok().body(aclRecord);
   }
