@@ -20,7 +20,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
@@ -57,7 +56,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -257,9 +255,11 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    fixMetadataDocumentUri(record);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(record.getAcl());
-
+    aclRecord.setMetadataRecord(record);
+  
     return ResponseEntity.ok().body(aclRecord);
   }
 
