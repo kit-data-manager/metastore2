@@ -101,7 +101,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Tag(name = "Metadata Repository")
 @Schema(description = "Metadata Resource Management")
 public class MetadataControllerImpl implements IMetadataController {
-  
+
   public static final String POST_FILTER = "post_filter";
   private static final String SID_READ = "read";
   final JsonNodeFactory factory = JsonNodeFactory.instance;
@@ -259,7 +259,7 @@ public class MetadataControllerImpl implements IMetadataController {
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(record.getAcl());
     aclRecord.setMetadataRecord(record);
-  
+
     return ResponseEntity.ok().body(aclRecord);
   }
 
@@ -471,27 +471,39 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   @PostMapping("/search")
-  @Operation(summary = "Search for metadata using elastic query language.", description = "Obtaining search results. "
+  @Operation(summary = "Search proxy for metadata using elastic query language.", description = "Obtaining search results. "
           + "Depending on a user's role, the results are filtered.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and the search result is returned.")
           })
   public ResponseEntity<?> proxy(@RequestBody JsonNode body, ProxyExchange<byte[]> proxy) throws Exception {
-    if (AuthenticationHelper.isAnonymous()) {
-      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-    }
-    LOG.error("bodyclass: '{}'", body.getClass().toString());
-    LOG.error("body: '{}'", body);
-    LOG.error("body(String): '{}'", body.toString());
-    
+    LOG.trace("proxy for elasticsearch: '{}'", body.toString());
+
     // Set or replace post-filter
-    ObjectNode on = (ObjectNode)body;
+    ObjectNode on = (ObjectNode) body;
     on.replace(POST_FILTER, buildPostFilter());
-    
+
     return proxy.uri("http://localhost:9200/metastore/_search").post();
   }
+
+  /**
+   * Build post filter for elasticsearch query due to authentication issues.
+   *
+   * @return JsonNode containing post_filter.
+   */
   private JsonNode buildPostFilter() {
     JsonNode postFilter;
+    /* Post filter may look like this: 
+     {
+       "bool" : {
+         "should" : [
+           { "match" : { "read" : "me" } },
+           { "match" : { "read" : "everybody" } }
+         ],
+         "minimum_should_match" : 1
+       }
+     } 
+     */
     ArrayNode arrayNode = factory.arrayNode();
     for (String sid : AuthenticationHelper.getAuthorizationIdentities()) {
       JsonNode match = factory.objectNode().set("match", factory.objectNode().put(SID_READ, sid));
@@ -500,9 +512,11 @@ public class MetadataControllerImpl implements IMetadataController {
     ObjectNode should = factory.objectNode().set("should", arrayNode);
     should.put("minimum_should_match", 1);
     postFilter = factory.objectNode().set("bool", should);
-    LOG.error("PostFilter: '{}'", postFilter);
+    LOG.trace("PostFilter: '{}'", postFilter);
+
     return postFilter;
   }
+
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();
