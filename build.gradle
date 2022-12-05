@@ -59,7 +59,7 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"    
     implementation "org.springframework.boot:spring-boot-starter-mail"
     
-    implementation "org.springframework.security:spring-security-web:5.7.5"
+    implementation "org.springframework.security:spring-security-web:5.8.0"
 
     // JSON Parser for Metadata Editor
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
