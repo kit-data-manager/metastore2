@@ -470,14 +470,35 @@ public class MetadataControllerImpl implements IMetadataController {
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
+  @PostMapping("/{schemaId}/search")
+  @Operation(summary = "Search for metadata refered to given schemaId(s) using elastic query language.", description = "Obtaining search results. "
+          + "Depending on a user's role, the results are filtered.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the search result is returned.")
+          })
+  public ResponseEntity<?> proxy(@RequestBody JsonNode body,
+          @PathVariable(value = "schemaId") String schemaIds,
+          ProxyExchange<byte[]> proxy) throws Exception {
+
+    // Set or replace post-filter
+    ObjectNode on = (ObjectNode) body;
+    on.replace(POST_FILTER, buildPostFilter());
+    StringBuilder elasticsearchUri = new StringBuilder("http://localhost:9200/");
+    elasticsearchUri.append(schemaIds);
+    elasticsearchUri.append("/_search");
+    LOG.error("ElasticsearchURI(String): '{}'", elasticsearchUri.toString());
+
+    return proxy.body(on).uri(elasticsearchUri.toString()).post();
+  }
+
   @PostMapping("/search")
   @Operation(summary = "Search proxy for metadata using elastic query language.", description = "Obtaining search results. "
           + "Depending on a user's role, the results are filtered.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and the search result is returned.")
           })
-  public ResponseEntity<?> proxy(@RequestBody JsonNode body, ProxyExchange<byte[]> proxy) throws Exception {
-    LOG.trace("proxy for elasticsearch: '{}'", body.toString());
+  public ResponseEntity<?> proxy(@RequestBody JsonNode body,
+          ProxyExchange<byte[]> proxy) throws Exception {
 
     // Set or replace post-filter
     ObjectNode on = (ObjectNode) body;
