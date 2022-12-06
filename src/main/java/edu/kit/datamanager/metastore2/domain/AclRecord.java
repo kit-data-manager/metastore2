@@ -40,11 +40,16 @@ public class AclRecord implements Serializable {
 
   @NotNull(message = "A list of access control entries with at least access for READ.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> readSids = new HashSet<>();
+  private final Set<String> readSids;
   @NotBlank(message = "The metadata record.")
   private Object metadataRecord;
   @NotBlank(message = "The metadata document.")
   private Object metadataDocument;
+
+  @java.lang.SuppressWarnings(value = "all")
+  public AclRecord() {
+    this.readSids = new HashSet<>();
+  }
 
   /**
    * Set new access control list.
