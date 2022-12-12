@@ -114,7 +114,7 @@ dependencies {
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
 
-    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.7.RELEASE"
