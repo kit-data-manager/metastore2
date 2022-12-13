@@ -102,7 +102,7 @@ dependencies {
     implementation "org.apache.tika:tika-core:2.6.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.73"
+    implementation "com.networknt:json-schema-validator:1.0.75"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.2'
