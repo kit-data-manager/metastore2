@@ -65,7 +65,7 @@ dependencies {
     
     // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.5"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.0.0"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
