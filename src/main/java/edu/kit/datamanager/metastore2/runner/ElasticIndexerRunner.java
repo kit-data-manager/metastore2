@@ -15,6 +15,8 @@
  */
 package edu.kit.datamanager.metastore2.runner;
 
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.Parameter;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
@@ -28,10 +30,10 @@ import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.ControllerUtils;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +48,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ElasticIndexerRunner implements CommandLineRunner {
+
+  @Parameter(names = {"--reindex"}, description = "Elasticsearch index should be build from existing documents.")
+  boolean updateIndex;
+  @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
+  List<String> indices;
+  @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
+  Date updateDate;
 
   private static final Logger LOG = LoggerFactory.getLogger(ElasticIndexerRunner.class);
   @Autowired
@@ -65,49 +74,72 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
   @Override
   public void run(String... args) throws Exception {
-    Set<String> indices = new HashSet<>();
-    for (String argument : args) {
-      LOG.trace("Start ElasticIndexerRunner with param: '{}'.", argument);
-    }
-    if (args.length > 0) {
-      if (args[0].equalsIgnoreCase("reindex")) {
-        LOG.info("Start ElasticIndexer Runner");
-        // Try to determine URL of repository
-        List<SchemaRecord> findAll = schemaRecordDao.findAll();
-        if (!findAll.isEmpty()) {
-          // There is at least one schema.
-          // Try to fetch baseURL from this
-          SchemaRecord get = findAll.get(0);
-          Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
-          String baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
-          LOG.trace("Found baseUrl: '{}'", baseUrl);
-
-          if (args.length > 1) {
-            for (int index = 1; index < args.length; index++) {
-              LOG.trace("Reindex '{}'", args[index]);
-              indices.add(args[index]);
-            }
-          } else {
-            LOG.info("Reindex all indices!");
-            for (SchemaRecord item : schemaRecordDao.findAll()) {
-              indices.add(item.getSchemaId());
-            }
-          }
-
-          for (String index : indices) {
-            LOG.info("Reindex '{}'", index);
-            List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(index);
-            for (DataRecord item : findBySchemaId) {
-              MetadataRecord result = toMetadataRecord(item, baseUrl);
-              LOG.trace("Sending CREATE event.");
-              messagingService.orElse(new LogfileMessagingService()).
-                      send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
-            }
-
-          }
-          Thread.sleep(5000);
-        }
+    JCommander argueParser = JCommander.newBuilder()
+            .addObject(this)
+            .build();
+    try {
+      argueParser.parse(args);
+      if (updateDate == null) {
+        updateDate = new Date(0);
       }
+      if (indices == null) {
+        indices = new ArrayList<>();
+      }
+    } catch (Exception ex) {
+      argueParser.usage();
+      System.exit(0);
+    }
+    if (updateIndex) {
+      LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
+      // Try to determine URL of repository
+      List<SchemaRecord> findAll = schemaRecordDao.findAll();
+      if (!findAll.isEmpty()) {
+        // There is at least one schema.
+        // Try to fetch baseURL from this
+        SchemaRecord get = findAll.get(0);
+        Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
+        String baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
+        LOG.trace("Found baseUrl: '{}'", baseUrl);
+
+        if (indices.isEmpty()) {
+          LOG.info("Reindex all indices!");
+          for (SchemaRecord item : findAll) {
+            indices.add(item.getSchemaId());
+          }
+        }
+
+        for (String index : indices) {
+          LOG.info("Reindex '{}'", index);
+          List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
+          for (DataRecord item : findBySchemaId) {
+            MetadataRecord result = toMetadataRecord(item, baseUrl);
+            LOG.trace("Sending CREATE event.");
+            messagingService.orElse(new LogfileMessagingService()).
+                    send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
+          }
+          LOG.trace("Search for alternative schemaId (given as URL)");
+          DataRecord templateRecord = new DataRecord();
+          for (SchemaRecord debug : schemaRecordDao.findBySchemaIdOrderByVersionDesc(index)) {
+            templateRecord.setSchemaId(debug.getSchemaId());
+            templateRecord.setSchemaVersion(debug.getVersion());
+            List<Url2Path> findByPath1 = url2PathDao.findByPath(debug.getSchemaDocumentUri());
+            for (Url2Path path : findByPath1) {
+              LOG.trace("SchemaRecord: '{}'", debug);
+              List<DataRecord> findBySchemaUrl = dataRecordDao.findBySchemaIdAndLastUpdateAfter(path.getUrl(), updateDate.toInstant());
+              for (DataRecord item : findBySchemaUrl) {
+                templateRecord.setMetadataId(item.getMetadataId());
+                templateRecord.setVersion(item.getVersion());
+                MetadataRecord result = toMetadataRecord(templateRecord, baseUrl);
+                LOG.trace("Sending CREATE event.");
+                messagingService.orElse(new LogfileMessagingService()).
+                        send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
+              }
+            }
+          }
+        }
+        Thread.sleep(5000);
+      }
+
       LOG.trace("Finished ElasticIndexerRunner!");
     }
   }
