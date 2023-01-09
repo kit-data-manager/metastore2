@@ -92,18 +92,18 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     if (updateIndex) {
       LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
       // Try to determine URL of repository
-      List<SchemaRecord> findAll = schemaRecordDao.findAll();
-      if (!findAll.isEmpty()) {
+      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll();
+      if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
         // Try to fetch baseURL from this
-        SchemaRecord get = findAll.get(0);
+        SchemaRecord get = findAllSchemas.get(0);
         Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
         String baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
 
         if (indices.isEmpty()) {
           LOG.info("Reindex all indices!");
-          for (SchemaRecord item : findAll) {
+          for (SchemaRecord item : findAllSchemas) {
             indices.add(item.getSchemaId());
           }
         }
@@ -145,9 +145,10 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   }
 
   private MetadataRecord toMetadataRecord(DataRecord record, String baseUrl) {
+    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(record.getMetadataId(), record.getVersion(), null, null)).toUri().toString();
     MetadataRecord returnValue = new MetadataRecord();
-    returnValue.setId(record.getMetadataId());
-    returnValue.setMetadataDocumentUri(baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(record.getMetadataId(), record.getVersion(), null, null)).toUri().toString());
+    returnValue.setId(metadataIdWithVersion);
+    returnValue.setMetadataDocumentUri(metadataIdWithVersion);
     returnValue.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(record.getSchemaId()));
     LOG.trace("MetadataRecord: '{}'", returnValue);
     return returnValue;
