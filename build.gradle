@@ -1,5 +1,5 @@
 plugins { 
-    id "org.springframework.boot" version "${springBootVersion}"
+    id "org.springframework.boot" version "2.7.6"
     id "io.spring.dependency-management" version "1.1.0"
     id "io.freefair.lombok" version "6.6.1"
     id "io.freefair.maven-publish-java" version "6.6.1"
@@ -14,7 +14,11 @@ description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
 ext {
-    // Moved properties to gradle.properties
+    // versions of dependencies
+    springBootVersion = '2.7.6'
+    springDocVersion  = '1.6.11'
+    javersVersion     = '6.6.5'
+    keycloakVersion   = '19.0.0'
 
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
