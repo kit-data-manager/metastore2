@@ -1,9 +1,9 @@
 plugins { 
     id "org.springframework.boot" version "${springBootVersion}"
     id "io.spring.dependency-management" version "1.1.0"
-    id "io.freefair.lombok" version "6.5.1"
-    id "io.freefair.maven-publish-java" version "6.5.1"
-    id "org.owasp.dependencycheck" version "7.3.0"
+    id "io.freefair.lombok" version "6.6.1"
+    id "io.freefair.maven-publish-java" version "6.6.1"
+    id "org.owasp.dependencycheck" version "7.4.4"
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '3.0.2'
     id 'java'
@@ -46,9 +46,9 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:5.3.23'
+    implementation 'org.springframework:spring-messaging:5.3.24'
     implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:3.1.4'
-//    implementation 'org.springframework.coud:spring-cloud-gateway'
+
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-amqp"
@@ -61,12 +61,9 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"    
     implementation "org.springframework.boot:spring-boot-starter-mail"
     
-    implementation "org.springframework.security:spring-security-web:5.7.5"
-
     // JSON Parser for Metadata Editor
     implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 
-    implementation "org.springframework.security:spring-security-config:5.7.5"
     
     // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.5"
@@ -110,7 +107,7 @@ dependencies {
     implementation "org.apache.tika:tika-core:2.6.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.73"
+    implementation "com.networknt:json-schema-validator:1.0.76"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.2'
@@ -122,16 +119,16 @@ dependencies {
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
 
-    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.6.RELEASE"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.7.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:4.8.1"
+    testImplementation "org.mockito:mockito-core:4.11.0"
     testImplementation "junit:junit:4.13.2"
 }
 
