@@ -1,0 +1,19 @@
+# Automatically close issue after a pull request merge
+autoCloseIssue: true
+
+# Override the source branch 
+defaultBranch: 'development'
+
+#Skip branch creation based on issue label 'question'
+branches:
+  - label: question
+    skip: true
+
+# Automatically open a Pull Request
+openPR: true
+
+# Copy attributes from issue
+copyIssueDescriptionToPR: true
+copyIssueLabelsToPR: true
+copyIssueAssigneeToPR: true
+copyIssueMilestoneToPR: true
