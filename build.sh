@@ -63,9 +63,9 @@ function checkParameters {
      exit 1
   fi
   # Convert variable of installation directory to an absolute path
-  cd "$INSTALLATION_DIRECTORY"  || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
+  cd "$INSTALLATION_DIRECTORY" || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
   INSTALLATION_DIRECTORY=$(pwd)
-  cd "$ACTUAL_DIR"
+  cd "$ACTUAL_DIR" || { echo "Failure changing to directory $ACTUAL_DIR"; exit 1; }
 }
 
 ################################################################################
@@ -138,7 +138,7 @@ mkdir "$INSTALLATION_DIRECTORY"/lib
 ################################################################################
 printInfo "Create run script ..."
 
-cd "$INSTALLATION_DIRECTORY"
+cd "$INSTALLATION_DIRECTORY" || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
 
 # Determine name of jar file.
 jarFile=($(ls $REPO_NAME*.jar))
