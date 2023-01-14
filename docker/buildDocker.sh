@@ -77,7 +77,7 @@ else
   if [ "$LAST_TAG" = "" ]; then
     LAST_TAG=$TAG_NAME
   fi
-  TAG_NAME=$LAST_TAG-`date -u +%Y-%m-%d`
+  TAG_NAME=$LAST_TAG-$(date -u +%Y-%m-%d)
 fi
 
 cd $ACTUAL_DIR/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; exit 1; }
