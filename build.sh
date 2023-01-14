@@ -141,7 +141,7 @@ printInfo "Create run script ..."
 cd "$INSTALLATION_DIRECTORY"
 
 # Determine name of jar file.
-jarFile=(`ls $REPO_NAME*.jar`)
+jarFile=($(ls $REPO_NAME*.jar))
 
 {
   echo "#!/bin/bash"                                                                             
