@@ -164,13 +164,13 @@ jarFile=($(ls $REPO_NAME*.jar))
   echo "################################################################################"        
   echo "# Determine directory of script."                                                        
   echo "################################################################################"        
-  echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'          
-  echo 'cd "$ACTUAL_DIR"'                                                                        
+  echo "ACTUAL_DIR=\"\$( cd \"\$( dirname \"\${BASH_SOURCE[0]}\" )\" >/dev/null 2>&1 && pwd )\""
+  echo "cd \"\$ACTUAL_DIR\""                                                                       
   echo " "                                                                                       
   echo "################################################################################"        
   echo "# Start micro service"                                                                   
   echo "################################################################################"        
-  echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile'
+  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile"
 } > run.sh
 # make script executable
 chmod 755 run.sh
