@@ -1,5 +1,5 @@
 plugins { 
-    id "org.springframework.boot" version "2.7.6"
+    id "org.springframework.boot" version "2.7.7"
     id "io.spring.dependency-management" version "1.1.0"
     id "io.freefair.lombok" version "6.6.1"
     id "io.freefair.maven-publish-java" version "6.6.1"
@@ -15,7 +15,6 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springBootVersion = '2.7.6'
     springDocVersion  = '1.6.14'
     javersVersion     = '6.8.2'
     keycloakVersion   = '19.0.0'
@@ -134,10 +133,6 @@ dependencies {
     //Java 11 Support 
     testImplementation "org.mockito:mockito-core:4.11.0"
     testImplementation "junit:junit:4.13.2"
-}
-
-dependencyManagement {
-    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") }
 }
 
 compileJava {
