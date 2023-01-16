@@ -17,7 +17,7 @@ ext {
     // versions of dependencies
     springBootVersion = '2.7.6'
     springDocVersion  = '1.6.14'
-    javersVersion     = '6.6.5'
+    javersVersion     = '6.8.2'
     keycloakVersion   = '19.0.0'
 
     // directory for generated code snippets during tests
