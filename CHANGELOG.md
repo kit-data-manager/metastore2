@@ -8,8 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
+- Add proxy for authenticated search via elasticsearch
+- Add commandline parser for reindexing elasticsearch
 
 ### Changed
+- Bump commons-text from 1.9 to 1.10.0
+- Bump gradle from 7.5.1 to 7.6
+- Bump httpclient from 4.5.13 to 4.5.14 
+- Bump io.freefair.lombok from 6.5.1 to 6.6.1
+- Bump io.freefair.maven-publish-java from 6.5.1 to 6.6.1 
+- Bump io.spring.dependency-management from 1.0.14.RELEASE to 1.1.0 
+- Bump javersVersion from 6.6.5 to 6.8.2 
+- Bump json-schema-validator from 1.0.73 to 1.0.76 
+- Bump mockito-core from 4.8.0 to 4.11.0 
+- Bump org.owasp.dependencycheck from 7.2.1 to 7.4.4 
+- Bump org.springframework.boot from 2.7.4 to 2.7.7.
+- Bump repo-core from 1.0.4 to 1.1.0 
+- Bump springDocVersion from 1.6.11 to 1.6.14
+- Bump spring-cloud-starter-config from 3.1.4 to 3.1.5
+- Bump spring-messaging from 5.3.23 to 5.3.25 
+- Bump spring-security-config from 5.5.2 to 5.7.5
+- Bump spring-security-web from 5.7.2 to 5.7.5
+- Bump tika-core from 1.2.7 to 2.6.0 
+- Bump xercesImpl from 2.12.1 to 2.12.2 
 
 ### Fixed
 
