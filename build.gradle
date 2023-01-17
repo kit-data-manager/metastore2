@@ -35,10 +35,6 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
  
-configurations {
-    all*.exclude module : 'spring-boot-starter-logging'
-}
-
 if (System.getProperty('profile') == 'minimal') {
     println 'Using minimal profile for building ' + project.getName()
     apply from: 'gradle/profile-minimal.gradle'   
