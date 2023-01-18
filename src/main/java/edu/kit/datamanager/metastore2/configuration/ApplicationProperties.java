@@ -47,8 +47,10 @@ public class ApplicationProperties extends GenericApplicationProperties{
   // @Value("${metastore.schema.synchronization.schemaSources}")
   private List<SynchronizationSource> schemaSources;
 
+  @edu.kit.datamanager.annotations.LocalFolderURL
   @Value("${metastore.metadata.metadataFolder}")
   private URL metadataFolder;
+
   @Value("${metastore.metadata.schemaRegistries: }")
   private String[] schemaRegistries;
 
