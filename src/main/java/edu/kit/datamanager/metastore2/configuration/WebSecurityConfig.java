@@ -80,9 +80,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
             antMatchers(HttpMethod.OPTIONS, "/**").
             permitAll().and().
             sessionManagement().
-            sessionCreationPolicy(SessionCreationPolicy.STATELESS).
-            and()
-            .csrf().disable();
+            sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
       logger.info("CSRF disabled!");
       httpSecurity = httpSecurity.csrf().disable();
