@@ -15,9 +15,8 @@
  */
 package edu.kit.datamanager.metastore2.health;
 
-import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import java.io.File;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
@@ -27,18 +26,17 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.info.Info;
 import org.springframework.boot.actuate.info.InfoContributor;
-import org.springframework.stereotype.Component;
 
 /**
- *
+ * Abstract class for actuators collecting information details about 
+ * local directory.
  */
 public abstract class HealthCheck implements HealthIndicator, InfoContributor {
-
+  /** 
+   * Logger
+   */
   private static final Logger LOG = LoggerFactory.getLogger(HealthCheck.class);
 
   /**
@@ -48,8 +46,8 @@ public abstract class HealthCheck implements HealthIndicator, InfoContributor {
    */
   protected final Map<String, String> testDirectory(URL pathUrl) {
     Map<String, String> properties = new HashMap<>();
-    String totalSpace = null;
-    String freeSpace = null;
+    String totalSpace;
+    String freeSpace;
     try {
       Path path = Paths.get(pathUrl.toURI());
       Path probe = Paths.get(path.toString(), "probe.txt");
@@ -64,12 +62,12 @@ public abstract class HealthCheck implements HealthIndicator, InfoContributor {
         properties.put("Total space", totalSpace);
         properties.put("Free space", freeSpace);
 
-      } catch (Throwable t) {
-        LOG.error("Failed to check repository folder at '" + path.toString() + "'. Returning negative health status.", t);
+      } catch (IOException ioe) {
+        LOG.error("Failed to check repository folder at '" + path.toString() + "'.");
       } finally {
         try {
           Files.deleteIfExists(probe);
-        } catch (Throwable ignored) {
+        } catch (IOException ignored) {
         }
       }
     } catch (URISyntaxException ex) {
@@ -77,5 +75,4 @@ public abstract class HealthCheck implements HealthIndicator, InfoContributor {
     }
     return properties;
   }
-
 }

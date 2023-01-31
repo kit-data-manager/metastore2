@@ -17,40 +17,41 @@ package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
-import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Map;
-import static org.hibernate.tool.schema.SchemaToolingLogging.LOGGER;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.info.Info;
 import org.springframework.stereotype.Component;
 
 /**
- *
- * @author hartmann-v
+ * Collect information about metadata document repository for actuators.
  */
 @Component("MetadataRepo")
 public class MetadataRepoHealthCheck extends HealthCheck  {
 
+  /** 
+   * Logger
+   */
   private static final Logger LOG = LoggerFactory.getLogger(MetadataRepoHealthCheck.class);
   
+  /** 
+   * Configuration settings of metadata repo.
+   */
   private final MetastoreConfiguration metadataConfig;
 
+  /**
+   * Database holding all metadata records.
+   */
   @Autowired
   private final ILinkedMetadataRecordDao metadataRecordDao;
 
   /**
-   *
-   * @param metadataConfig
-   * @param metadataRecordDao
+   * Constructor for initializing class.
+   * @param metadataConfig Configuration settings of metadata repo.
+   * @param metadataRecordDao Database holding all metadata records.
    */
   public MetadataRepoHealthCheck(MetastoreConfiguration metadataConfig,
           ILinkedMetadataRecordDao metadataRecordDao) {
@@ -85,6 +86,4 @@ public class MetadataRepoHealthCheck extends HealthCheck  {
       builder.withDetail("metadataRepo", details);
     }
   }
-
-
 }

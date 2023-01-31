@@ -17,41 +17,38 @@ package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import java.io.File;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.actuate.info.Info;
-import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.stereotype.Component;
 
 /**
- *
- * @author hartmann-v
+ * Collect information about schema repository for actuators.
  */
 @Component("SchemaRepo")
 public class SchemaRepoHealthCheck extends HealthCheck {
-
+  /** 
+   * Logger
+   */
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRepoHealthCheck.class);
-
+  /** 
+   * Configuration settings of schema repo.
+   */
   private final MetastoreConfiguration schemaConfig;
-
+  /**
+   * Database holding all schema records.
+   */
   @Autowired
   private final ISchemaRecordDao schemaRecordDao;
 
   /**
-   *
-   * @param schemaConfig
-   * @param schemaRecordDao
+   * Constructor for initializing class.
+   * @param schemaConfig Configuration settings of schema repo.
+   * @param schemaRecordDao Database holding all schema records.
    */
   public SchemaRepoHealthCheck(MetastoreConfiguration schemaConfig,
           ISchemaRecordDao schemaRecordDao) {
@@ -67,7 +64,7 @@ public class SchemaRepoHealthCheck extends HealthCheck {
     Map<String, String> details = testDirectory(basePath);
 
     if (details.isEmpty()) {
-      return Health.down().withDetail("No of metadata documents", 0).build();
+      return Health.down().withDetail("No of schema documents", 0).build();
     } else {
       details.put("No of schema documents", Long.toString(schemaRecordDao.count()));
       return Health.up().withDetails(details).build();
