@@ -299,7 +299,8 @@ public class IDataRecordDaoTest {
     DataRecord dataRecord = new DataRecord();
     dataRecord.setDocumentHash(documentHash);
     dataRecord.setMetadataId(metadataId);
-    dataRecord.setVersion(Long.parseLong(version));
+    dataRecord.setVersion(Long.valueOf(version));
+    dataRecord.setSchemaVersion(1l);
     dataRecord.setSchemaId(schemaId);
     dataRecord.setLastUpdate(instant);
     dataRecord.setMetadataDocumentUri(metadataDocumentUri);

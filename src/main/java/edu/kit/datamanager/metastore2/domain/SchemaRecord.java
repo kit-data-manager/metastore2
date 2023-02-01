@@ -25,6 +25,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
@@ -42,11 +43,11 @@ public class SchemaRecord implements Serializable {
   Long id;
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
-  @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
+  @NotNull(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
           + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
   private Long version;
   @Enumerated(EnumType.STRING)
-  @NotBlank(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
+  @NotNull(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
   private MetadataSchemaRecord.SCHEMA_TYPE type;
 
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
