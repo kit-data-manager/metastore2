@@ -19,6 +19,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import edu.kit.datamanager.configuration.SearchConfiguration;
 import edu.kit.datamanager.entities.messaging.IAMQPSubmittable;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -74,8 +75,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 
 /**
  */
@@ -122,7 +121,6 @@ public class Application {
   private IDataResourceService dataResourceService;
   @Autowired
   private IContentInformationService contentInformationService;*/
-
   @Bean
   @Scope("prototype")
   public Logger logger(InjectionPoint injectionPoint) {
@@ -221,6 +219,13 @@ public class Application {
   @ConfigurationProperties("repo")
   public ApplicationProperties applicationProperties() {
     return new ApplicationProperties();
+  }
+
+  @Bean
+  @ConfigurationProperties("repo.search")
+  @ConditionalOnProperty(prefix = "repo.search", name = "enabled", havingValue = "true")
+  public SearchConfiguration searchConfiguration() {
+    return new SearchConfiguration();
   }
 
   @Bean
