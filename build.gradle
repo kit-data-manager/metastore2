@@ -46,7 +46,7 @@ if (System.getProperty('profile') == 'minimal') {
 dependencies {
     // Spring
     implementation 'org.springframework:spring-messaging:5.3.25'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:3.1.4'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:3.1.5'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
