@@ -197,6 +197,7 @@ public class IUrl2PathDaoTest {
           Path metadataDocumentUri) {
 
     Url2Path dataRecord = new Url2Path();
+    dataRecord.setVersion(Long.valueOf(1));
     dataRecord.setUrl(metadataId);
     dataRecord.setPath(metadataDocumentUri.toString());
     dataRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);

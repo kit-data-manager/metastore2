@@ -1059,6 +1059,7 @@ public class JsonSchemaRegistryControllerTest {
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId());
     schemaRecord.setVersion(1l);
+    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());
     schemaRecord.setDocumentHash(ci.getHash());
     schemaRecordDao.save(schemaRecord);
