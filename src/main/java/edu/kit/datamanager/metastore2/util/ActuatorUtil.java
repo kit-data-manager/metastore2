@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.metastore2.health;
+package edu.kit.datamanager.metastore2.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,25 +26,23 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.actuate.health.HealthIndicator;
-import org.springframework.boot.actuate.info.InfoContributor;
 
 /**
- * Abstract class for actuators collecting information details about 
+ * Utility class for actuators collecting information details about 
  * local directory.
  */
-public abstract class HealthCheck implements HealthIndicator, InfoContributor {
-  /** 
+public class ActuatorUtil {
+   /** 
    * Logger
    */
-  private static final Logger LOG = LoggerFactory.getLogger(HealthCheck.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ActuatorUtil.class);
 
   /**
    * Determine all details for given directory.
    * @param pathUrl URL of directory
    * @return Map with details.
    */
-  protected final Map<String, String> testDirectory(URL pathUrl) {
+  public static final Map<String, String> testDirectory(URL pathUrl) {
     Map<String, String> properties = new HashMap<>();
     String totalSpace;
     String freeSpace;
@@ -75,4 +73,5 @@ public abstract class HealthCheck implements HealthIndicator, InfoContributor {
     }
     return properties;
   }
+ 
 }

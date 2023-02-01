@@ -16,21 +16,21 @@
 package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import java.net.URL;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.info.Info;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 /**
- * Collect information about schema repository for actuators.
+ * Collect information about schema repository for health actuator.
  */
 @Component("SchemaRepo")
-public class SchemaRepoHealthCheck extends HealthCheck {
+public class SchemaRepoHealthCheck implements HealthIndicator {
   /** 
    * Logger
    */
@@ -39,21 +39,13 @@ public class SchemaRepoHealthCheck extends HealthCheck {
    * Configuration settings of schema repo.
    */
   private final MetastoreConfiguration schemaConfig;
-  /**
-   * Database holding all schema records.
-   */
-  @Autowired
-  private final ISchemaRecordDao schemaRecordDao;
 
   /**
    * Constructor for initializing class.
    * @param schemaConfig Configuration settings of schema repo.
-   * @param schemaRecordDao Database holding all schema records.
    */
-  public SchemaRepoHealthCheck(MetastoreConfiguration schemaConfig,
-          ISchemaRecordDao schemaRecordDao) {
+  public SchemaRepoHealthCheck(MetastoreConfiguration schemaConfig) {
     this.schemaConfig = schemaConfig;
-    this.schemaRecordDao = schemaRecordDao;
   }
 
   @Override
@@ -61,26 +53,13 @@ public class SchemaRepoHealthCheck extends HealthCheck {
     LOG.trace("Check for SchemaRepo health information...");
 
     URL basePath = schemaConfig.getBasepath();
-    Map<String, String> details = testDirectory(basePath);
+    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
 
     if (details.isEmpty()) {
       return Health.down().withDetail("No of schema documents", 0).build();
     } else {
-      details.put("No of schema documents", Long.toString(schemaRecordDao.count()));
+      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
       return Health.up().withDetails(details).build();
-    }
-  }
-
-  @Override
-  public void contribute(Info.Builder builder) {
-    LOG.trace("Check for SchemaRepo information...");
-
-    URL basePath = schemaConfig.getBasepath();
-    Map<String, String> details = testDirectory(basePath);
-
-    if (!details.isEmpty()) {
-      details.put("No of schema documents", Long.toString(schemaRecordDao.count()));
-      builder.withDetail("schemaRepo", details);
     }
   }
 }

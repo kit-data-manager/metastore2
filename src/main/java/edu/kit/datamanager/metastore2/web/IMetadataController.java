@@ -32,6 +32,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -54,7 +55,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface IMetadataController {
+public interface IMetadataController extends InfoContributor {
 
   @Operation(summary = "Ingest a new metadata document and its record.", description = "This endpoint allows to create a new metadata record by providing the record metadata as JSON document as well as the actual metadata as file upload. The record metadata mainly contains "
           + "the resource identifier the record is associated with as well as the identifier of the schema which can be used to validate the provided metadata document. In the current version, both parameters are required. If no schema version is given (if 'INTERNAL' reference"

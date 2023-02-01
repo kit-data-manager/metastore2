@@ -16,21 +16,21 @@
 package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import java.net.URL;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.info.Info;
+import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
 
 /**
- * Collect information about metadata document repository for actuators.
+ * Collect information about metadata document repository for health actuator.
  */
 @Component("MetadataRepo")
-public class MetadataRepoHealthCheck extends HealthCheck  {
+public class MetadataRepoHealthCheck  implements HealthIndicator {
 
   /** 
    * Logger
@@ -43,20 +43,11 @@ public class MetadataRepoHealthCheck extends HealthCheck  {
   private final MetastoreConfiguration metadataConfig;
 
   /**
-   * Database holding all metadata records.
-   */
-  @Autowired
-  private final ILinkedMetadataRecordDao metadataRecordDao;
-
-  /**
    * Constructor for initializing class.
    * @param metadataConfig Configuration settings of metadata repo.
-   * @param metadataRecordDao Database holding all metadata records.
    */
-  public MetadataRepoHealthCheck(MetastoreConfiguration metadataConfig,
-          ILinkedMetadataRecordDao metadataRecordDao) {
+  public MetadataRepoHealthCheck(MetastoreConfiguration metadataConfig) {
     this.metadataConfig = metadataConfig;
-    this.metadataRecordDao = metadataRecordDao;
   }
 
   @Override
@@ -64,26 +55,13 @@ public class MetadataRepoHealthCheck extends HealthCheck  {
     LOG.trace("Check for MetadataRepo health information...");
 
     URL basePath = metadataConfig.getBasepath();
-    Map<String, String> details = testDirectory(basePath);
+    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
 
     if (details.isEmpty()) {
       return Health.down().withDetail("No of metadata documents", 0).build();
     } else {
-      details.put("No of metadata documents", Long.toString(metadataRecordDao.count()));
+      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
       return Health.up().withDetails(details).build();
-    }
-  }
-
-  @Override
-  public void contribute(Info.Builder builder) {
-    LOG.trace("Check for MetadataRepo information...");
-
-    URL basePath = metadataConfig.getBasepath();
-    Map<String, String> details = testDirectory(basePath);
-
-    if (!details.isEmpty()) {
-      details.put("No of metadata documents", Long.toString(metadataRecordDao.count()));
-      builder.withDetail("metadataRepo", details);
     }
   }
 }
