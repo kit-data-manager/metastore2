@@ -71,14 +71,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   @Override
   protected void configure(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeRequests().
+            antMatchers(HttpMethod.OPTIONS, "/**").permitAll().
             requestMatchers(EndpointRequest.to(
                     InfoEndpoint.class,
                     HealthEndpoint.class
             )).permitAll().
-            requestMatchers(EndpointRequest.toAnyEndpoint()). //
-            hasAnyRole("ADMIN", "ACTUATOR"). //
-            antMatchers(HttpMethod.OPTIONS, "/**").
-            permitAll().and().
+            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR"). and().
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
