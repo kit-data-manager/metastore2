@@ -23,18 +23,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.security.web.firewall.DefaultHttpFirewall;
 import org.springframework.security.web.firewall.HttpFirewall;
@@ -49,7 +50,7 @@ import org.springframework.web.filter.CorsFilter;
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-public class WebSecurityConfig {
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   private static final Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
 
@@ -67,18 +68,15 @@ public class WebSecurityConfig {
   public WebSecurityConfig() {
   }
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-    return authenticationConfiguration.getAuthenticationManager();
-  }
-
-  @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").
-            permitAll().
-            and().
+  @Override
+  protected void configure(HttpSecurity http) throws Exception {
+    HttpSecurity httpSecurity = http.authorizeRequests().
+            antMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+            requestMatchers(EndpointRequest.to(
+                    InfoEndpoint.class,
+                    HealthEndpoint.class
+            )).permitAll().
+            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR"). and().
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
@@ -91,7 +89,7 @@ public class WebSecurityConfig {
     }
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager), BasicAuthenticationFilter.class);
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager()), BasicAuthenticationFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
@@ -101,8 +99,12 @@ public class WebSecurityConfig {
             antMatchers("/api/v1").authenticated();
 
     http.headers().cacheControl().disable();
+  }
 
-    return http.build();
+
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean
@@ -110,11 +112,6 @@ public class WebSecurityConfig {
     DefaultHttpFirewall firewall = new DefaultHttpFirewall();
     firewall.setAllowUrlEncodedSlash(true);
     return firewall;
-  }
-
-  @Bean
-  public WebSecurityCustomizer webSecurityCustomizer() {
-    return (web) -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean

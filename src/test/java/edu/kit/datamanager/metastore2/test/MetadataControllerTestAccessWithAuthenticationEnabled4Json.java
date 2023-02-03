@@ -178,7 +178,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
             .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation).uris()
-                    .withPort(41412))
+                    .withPort(41415))
             .build();
     adminToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(adminPrincipal, RepoUserRole.ADMINISTRATOR).
             addSimpleClaim("email", "thomas.jejkal@kit.edu").

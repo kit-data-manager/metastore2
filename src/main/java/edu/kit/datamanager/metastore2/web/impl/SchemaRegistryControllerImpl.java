@@ -21,9 +21,9 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
-import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
@@ -37,6 +37,7 @@ import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,6 +45,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import javax.servlet.http.HttpServletRequest;
@@ -51,6 +53,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.info.Info;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -86,8 +89,6 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Autowired
   private final IDataResourceDao dataResourceDao;
   @Autowired
-  private final IContentInformationDao contentInformationDao;
-  @Autowired
   private final IUrl2PathDao url2PathDao;
 
   /**
@@ -98,11 +99,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao,
-          IContentInformationDao contentInformationDao,
           IUrl2PathDao url2PathDao) {
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
-    this.contentInformationDao = contentInformationDao;
     this.url2PathDao = url2PathDao;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
@@ -328,6 +327,19 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     MetadataSchemaRecordUtil.deleteMetadataSchemaRecord(schemaConfig, schemaId, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+  }
+
+  @Override
+  public void contribute(Info.Builder builder) {
+    LOG.trace("Check for SchemaRepo actuator information...");
+
+    URL basePath = schemaConfig.getBasepath();
+    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
+
+    if (!details.isEmpty()) {
+      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
+      builder.withDetail("schemaRepo", details);
+    }
   }
 
   /**

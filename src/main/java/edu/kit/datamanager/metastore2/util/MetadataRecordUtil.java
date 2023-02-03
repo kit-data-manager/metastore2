@@ -837,6 +837,16 @@ public class MetadataRecordUtil {
     return managed;
   }
 
+  /**
+   * Return the number of ingested documents. If there are two versions of the
+   * same document this will be counted as two.
+   *
+   * @return Number of registered documents.
+   */
+  public static long getNoOfDocuments() {
+    return dataRecordDao.count();
+  }
+
   public static void setToken(String bearerToken) {
     guestToken = bearerToken;
   }
