@@ -211,6 +211,10 @@ bootJar {
     launchScript()
 }
 
+release {
+    tagTemplate = 'v${version}'
+}
+
 // task for printing project name.
 task printProjectName {
     doLast {
