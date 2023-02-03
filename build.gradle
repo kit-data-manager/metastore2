@@ -1,11 +1,12 @@
 plugins { 
-    id "org.springframework.boot" version "${springBootVersion}"
-    id "io.spring.dependency-management" version "1.0.14.RELEASE"
-    id "io.freefair.lombok" version "6.5.1"
-    id "io.freefair.maven-publish-java" version "6.5.1"
-    id "org.owasp.dependencycheck" version "7.2.1"
+    id 'org.springframework.boot' version '2.7.8'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'io.freefair.lombok' version '6.6.1'
+    id 'io.freefair.maven-publish-java' version '6.6.1'
+    id 'org.owasp.dependencycheck' version '8.0.2'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.researchgate.release' version '3.0.2'
+    id 'com.gorylenko.gradle-git-properties' version '2.4.1'
     id 'java'
     id 'jacoco'
 }
@@ -14,7 +15,10 @@ description = 'General purpose metadata repository and schema registry service'
 group = 'edu.kit.datamanager'
 
 ext {
-    // Moved properties to gradle.properties
+    // versions of dependencies
+    springDocVersion  = '1.6.14'
+    javersVersion     = '6.8.2'
+    keycloakVersion   = '19.0.0'
 
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
@@ -32,10 +36,6 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
  
-configurations {
-    all*.exclude module : 'spring-boot-starter-logging'
-}
-
 if (System.getProperty('profile') == 'minimal') {
     println 'Using minimal profile for building ' + project.getName()
     apply from: 'gradle/profile-minimal.gradle'   
@@ -46,7 +46,9 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:5.3.23'
+    implementation 'org.springframework:spring-messaging:5.3.25'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:3.1.5'
+
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
     implementation "org.springframework.boot:spring-boot-starter-amqp"
@@ -59,13 +61,12 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-validation"    
     implementation "org.springframework.boot:spring-boot-starter-mail"
     
-    implementation "org.springframework.security:spring-security-web:5.7.2"
+    // JSON Parser for Metadata Editor
+    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
 
-    implementation "de.codecentric:spring-boot-admin-starter-client:2.1.6"
-    implementation "org.springframework.security:spring-security-config:5.5.2"
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.5"
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.4"
 
     // springdoc
@@ -80,11 +81,14 @@ dependencies {
 //    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
 //    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
 
+    // CLI Parser
+    implementation "com.beust:jcommander:1.82"
+
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.9"
+    implementation "org.apache.commons:commons-text:1.10.0"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
@@ -94,42 +98,41 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.5.0"
+    implementation "org.postgresql:postgresql:42.5.1"
     //driver for h2
     implementation "com.h2database:h2:2.1.214"
     
     // apache
     implementation "commons-io:commons-io:2.11.0"
-    implementation "org.apache.tika:tika-core:1.27"
+    implementation "org.apache.tika:tika-core:2.6.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.73"
+    implementation "com.networknt:json-schema-validator:1.0.76"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
-    implementation 'xerces:xercesImpl:2.12.1'
+    implementation 'xerces:xercesImpl:2.12.2'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:1.0.4"
-    implementation "edu.kit.datamanager:service-base:1.0.7"
+    implementation "edu.kit.datamanager:repo-core:1.1.1"
+    implementation "edu.kit.datamanager:service-base:1.1.0"
+
+    // elasticsearch (since service-base 1.1.0)
+    implementation "org.springframework.data:spring-data-elasticsearch:4.4.7"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.1.0"
 
-    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.13"
+    runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.6.RELEASE"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.7.RELEASE"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:4.8.0"
+    testImplementation "org.mockito:mockito-core:5.1.0"
     testImplementation "junit:junit:4.13.2"
-}
-
-dependencyManagement {
-    imports { mavenBom("org.springframework.boot:spring-boot-dependencies:${springBootVersion}") }
 }
 
 compileJava {
@@ -179,6 +182,10 @@ asciidoctor {
     dependsOn test  
     sourceDir "docs/"
     outputDir "build/docs/html5"
+    inProcess = JAVA_EXEC
+    forkOptions {
+      jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED"
+    }
 }
 
 jar {
@@ -186,6 +193,10 @@ jar {
     enabled = false
 }
    
+springBoot {    
+    buildInfo()
+}
+
 bootJar {
     println 'Create bootable jar...'
 

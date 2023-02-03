@@ -38,17 +38,18 @@ public class AclRecord implements Serializable {
 
   public final static MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
-  @NotNull(message = "A list of access control entries for resticting access for READ.")
+  @NotNull(message = "A list of access control entries with at least access for READ.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> read = new HashSet<>();
-  @NotNull(message = "A list of access control entries for resticting access for WRITE.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> write = new HashSet<>();
-  @NotNull(message = "A list of access control entries for resticting access for ADMINISTRATION.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> admin = new HashSet<>();
+  private final Set<String> readSids;
+  @NotBlank(message = "The metadata record.")
+  private Object metadataRecord;
   @NotBlank(message = "The metadata document.")
   private Object metadataDocument;
+
+  @java.lang.SuppressWarnings(value = "all")
+  public AclRecord() {
+    this.readSids = new HashSet<>();
+  }
 
   /**
    * Set new access control list.
@@ -56,19 +57,11 @@ public class AclRecord implements Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    read.clear();
-    write.clear();
-    admin.clear();
+    readSids.clear();
     if (newAclList != null) {
       for (AclEntry item : newAclList) {
         if (item.getPermission().atLeast(PERMISSION.READ)) {
-          read.add(item.getSid());
-        }
-        if (item.getPermission().atLeast(PERMISSION.WRITE)) {
-          write.add(item.getSid());
-        }
-        if (item.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
-          admin.add(item.getSid());
+          readSids.add(item.getSid());
         }
       }
     }

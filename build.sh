@@ -63,9 +63,9 @@ function checkParameters {
      exit 1
   fi
   # Convert variable of installation directory to an absolute path
-  cd "$INSTALLATION_DIRECTORY"  || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
+  cd "$INSTALLATION_DIRECTORY" || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
   INSTALLATION_DIRECTORY=$(pwd)
-  cd "$ACTUAL_DIR"
+  cd "$ACTUAL_DIR" || { echo "Failure changing to directory $ACTUAL_DIR"; exit 1; }
 }
 
 ################################################################################
@@ -138,10 +138,10 @@ mkdir "$INSTALLATION_DIRECTORY"/lib
 ################################################################################
 printInfo "Create run script ..."
 
-cd "$INSTALLATION_DIRECTORY"
+cd "$INSTALLATION_DIRECTORY" || { echo "Failure changing to directory $INSTALLATION_DIRECTORY"; exit 1; }
 
 # Determine name of jar file.
-jarFile=(`ls $REPO_NAME*.jar`)
+jarFile=($(ls $REPO_NAME*.jar))
 
 {
   echo "#!/bin/bash"                                                                             
@@ -164,13 +164,13 @@ jarFile=(`ls $REPO_NAME*.jar`)
   echo "################################################################################"        
   echo "# Determine directory of script."                                                        
   echo "################################################################################"        
-  echo 'ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"'          
-  echo 'cd "$ACTUAL_DIR"'                                                                        
+  echo "ACTUAL_DIR=\"\$( cd \"\$( dirname \"\${BASH_SOURCE[0]}\" )\" >/dev/null 2>&1 && pwd )\""
+  echo "cd \"\$ACTUAL_DIR\""                                                                       
   echo " "                                                                                       
   echo "################################################################################"        
   echo "# Start micro service"                                                                   
   echo "################################################################################"        
-  echo 'java -cp ".:$jarFile" -Dloader.path="file://$ACTUAL_DIR/$jarFile,./lib/,." -jar $jarFile'
+  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile"
 } > run.sh
 # make script executable
 chmod 755 run.sh

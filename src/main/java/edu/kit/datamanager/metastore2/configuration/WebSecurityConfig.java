@@ -23,6 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,10 +70,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
   @Override
   protected void configure(HttpSecurity http) throws Exception {
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").
-            permitAll().
-            and().
+    HttpSecurity httpSecurity = http.authorizeRequests().
+            antMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+            requestMatchers(EndpointRequest.to(
+                    InfoEndpoint.class,
+                    HealthEndpoint.class
+            )).permitAll().
+            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR"). and().
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
@@ -95,16 +101,17 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     http.headers().cacheControl().disable();
   }
 
+
+  @Override
+  public void configure(WebSecurity web) throws Exception {
+    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+  }
+
   @Bean
   public HttpFirewall allowUrlEncodedSlashHttpFirewall() {
     DefaultHttpFirewall firewall = new DefaultHttpFirewall();
     firewall.setAllowUrlEncodedSlash(true);
     return firewall;
-  }
-
-  @Override
-  public void configure(WebSecurity web) throws Exception {
-    web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean

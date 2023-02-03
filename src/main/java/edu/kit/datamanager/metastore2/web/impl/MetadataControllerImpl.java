@@ -16,9 +16,10 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
@@ -34,6 +35,7 @@ import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
@@ -47,30 +49,32 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
+import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Level;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.info.Info;
+import org.springframework.cloud.gateway.mvc.ProxyExchange;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
@@ -82,6 +86,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -100,12 +106,14 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Schema(description = "Metadata Resource Management")
 public class MetadataControllerImpl implements IMetadataController {
 
+  public static final String POST_FILTER = "post_filter";
+  private static final String SID_READ = "read";
+  final JsonNodeFactory factory = JsonNodeFactory.instance;
+
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
-  @Autowired
-  private ApplicationProperties applicationProperties;
 
   @Autowired
-  private ILinkedMetadataRecordDao metadataRecordDao;
+  private final ILinkedMetadataRecordDao metadataRecordDao;
 
   private final MetastoreConfiguration metadataConfig;
   @Autowired
@@ -119,7 +127,7 @@ public class MetadataControllerImpl implements IMetadataController {
   @Autowired
   private Optional<IMessagingService> messagingService;
 
- private final String guestToken;
+  private final String guestToken;
 
   /**
    *
@@ -245,13 +253,15 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing getAclById({}, {}).", id, version);
     if (!AuthenticationHelper.isAuthenticatedAsService()) {
-                  throw new AccessForbiddenException("Only for services!");
+      throw new AccessForbiddenException("Only for services!");
     }
 
     MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    fixMetadataDocumentUri(record);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(record.getAcl());
-  
+    aclRecord.setMetadataRecord(record);
+
     return ResponseEntity.ok().body(aclRecord);
   }
 
@@ -265,7 +275,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
     Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
-  
+
     return ResponseEntity.
             ok().
             header(HttpHeaders.CONTENT_LENGTH, String.valueOf(metadataDocumentPath.toFile().length())).
@@ -386,7 +396,7 @@ public class MetadataControllerImpl implements IMetadataController {
     DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
     List<DataResource.State> stateList = Arrays.asList(states);
     spec = spec.and(StateSpecification.toSpecification(stateList));
-    
+
     if (LOG.isTraceEnabled()) {
       Page<DataResource> records = dataResourceDao.findAll(pgbl);
       LOG.trace("List all data resources...");
@@ -462,6 +472,19 @@ public class MetadataControllerImpl implements IMetadataController {
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
+  @Override
+  public void contribute(Info.Builder builder) {
+    LOG.trace("Check for MetadataRepo actuator information...");
+
+    URL basePath = metadataConfig.getBasepath();
+    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
+
+    if (!details.isEmpty()) {
+      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
+      builder.withDetail("metadataRepo", details);
+    }
+  }
+  
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();

@@ -1171,6 +1171,16 @@ public class MetadataSchemaRecordUtil {
   }
 
   /**
+   * Return the number of registered schemas. If there are two versions of the
+   * same schema this will be counted as two.
+   *
+   * @return Number of registered schemas.
+   */
+  public static long getNoOfSchemas() {
+    return schemaRecordDao.count();
+  }
+
+  /**
    * @param aUrl2PathDao the url2PathDao to set
    */
   public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
