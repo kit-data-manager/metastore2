@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  elasticsearch4metastore:
+    image: elasticsearch:7.9.3
+    container_name: elastic4indexing
+    environment:
+      - discovery.type=single-node
+#      - logger.org.elasticsearch=ERROR
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+  rabbitmq4docker:
+    image: rabbitmq:3-management
+    depends_on:
+      - elastic4indexing
+    container_name: rabbitmq4indexing
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+  indexing4metastore:
+    image: kitdm/indexing-service:latest
+    container_name: indexing4metastore
+    depends_on:
+      elasticsearch4metastore:
+        condition: service_healthy
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./settings/indexing-service:/spring/indexing-service/config
+  metastore4docker:
+    image: kitdm/metastore2:latest
+    container_name: metastore4docker
+    depends_on:
+      - rabbitmq4docker
+    ports:
+      - "8040:8040"
+    volumes:
+      - ./settings/metastore:/spring/metastore2/config
