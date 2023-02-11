@@ -1,11 +1,30 @@
 version: "3.8"
 services:
-  elasticsearch4metastore:
+  dps:
+    image: defreitas/dns-proxy-server
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/resolv.conf:/etc/resolv.conf
+    environment:
+      - MG_LOG_LEVEL=ERROR
+    hostname: dns.mageddo
+    networks:
+      dps:
+        ipv4_address: 172.0.0.10
+  my-apache:
+    build: https://github.com/VolkerHartmann/frontend-collection.git#docker
+    image: my-apache
+    ports:
+     - "80:80"
+    networks:
+      - dps
+  elasticsearch:
     image: elasticsearch:7.9.3
     container_name: elastic4indexing
     environment:
       - discovery.type=single-node
 #      - logger.org.elasticsearch=ERROR
+      - HOSTNAMES=elastic.docker
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
@@ -15,30 +34,47 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
-  rabbitmq4docker:
+    networks:
+      - dps
+  rabbitmq:
     image: rabbitmq:3-management
     depends_on:
-      - elastic4indexing
+      - elasticsearch
     container_name: rabbitmq4indexing
+    environment:
+      - HOSTNAMES=rabbitmq.docker
     ports:
       - "5672:5672"
       - "15672:15672"
-  indexing4metastore:
-    image: kitdm/indexing-service:latest
+    networks:
+      - dps
+  indexing-service:
+    image: kitdm/indexing-service:23
     container_name: indexing4metastore
     depends_on:
-      elasticsearch4metastore:
+      elasticsearch:
         condition: service_healthy
     ports:
       - "8050:8050"
     volumes:
       - ./settings/indexing-service:/spring/indexing-service/config
-  metastore4docker:
-    image: kitdm/metastore2:latest
-    container_name: metastore4docker
+    networks:
+      - dps
+  metastore:
+    image: kitdm/metastore2:23
+    container_name: metastore.docker
+    environment:
+      - HOSTNAMES=metastore.docker
     depends_on:
-      - rabbitmq4docker
+      - rabbitmq
     ports:
       - "8040:8040"
     volumes:
       - ./settings/metastore:/spring/metastore2/config
+    networks:
+      - dps
+networks:
+  dps:
+    ipam:
+      config:
+        - subnet: 172.0.0.0/24
