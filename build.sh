@@ -123,7 +123,7 @@ echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
 find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
-find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
+find build/libs -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
 
 echo "Create config directory"
 mkdir "$INSTALLATION_DIRECTORY"/config
