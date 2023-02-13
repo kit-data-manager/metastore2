@@ -149,47 +149,27 @@ only contain your adapted settings. e.g. in case you want to change only the por
 server.port: 1234
 ```
 ## Build framework using docker
-The metaStore framework consists of the following services:
-- RabbitMQ - messaging service
-- Elasticsearch - indexing service
-- Indexing-service - service transforming metadata documents to json
-- MetaStore2 - service managing metadata schema and metadata documents
-To build the whole framework use the shell script ('metatoreFramework.sh'). 
+Based on Docker Compose, the entire framework, including elasticsearch and the UI, can now be installed with a single command.
 ```
-user@localhost:/home/user/metastore2$ bash metaStoreFramework.sh --help
-Script for managing MetaStore service.
-USAGE:
-  metaStoreFramework.sh [init|start|stop]
- 
-  init - Initialize/Reset the whole framework
-  start - Start stopped framework
-  stop - Stop framework
-user@localhost:/home/user/metastore2$ 
+user@localhost:/home/user/metastore2$ docker compose up
 ```
+As soon all services are running you can browst to http://localhost/index.html
 
-### Customize settings
-Two services may be customized to your needs.
-1. MetaStore 
-   - overwrite settings by copying your application.properties file to ./settings/metastore
-2. Indexing-Service
-   - overwrite settings by copying your application.properties file to ./settings/indexing
+### First steps using framework
+To get familiar with the Usage of of MetaStore you may have a look at 
+this documentation:
 
-## First steps
-To get familiar with the GUI of MetaStore you may have a look at the
-cookbook:
+https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.html
+
+Right now there is no manual for the new UI. But it works quite similar to the
+old one which is described in this cookbook:
 
 https://kit-data-manager.github.io/metastore2/
 
 
-As soon as the microservice is started, you can browse to 
-
-http://localhost:8040/
-
-and start ingesting schemas and metadata documents.
-
 If you want to use a script for doing so please refer to 
 
-http://localhost:8040/swagger-ui.html
+http://metastore.docker:8040/swagger-ui.html
 
 in order to see available RESTful endpoints and their documentation. Furthermore, 
 you can use this Web interface to test single API calls in order to get familiar with the 
@@ -197,8 +177,11 @@ service.
 
 A small documentation guiding you through the first steps of using the RESTful API you can find at
 
-http://localhost:8040/static/docs/documentation.html
+http://metastore.docker:8040/static/docs/documentation.html
 
+### First steps using MetaStore standalone
+If you're using MetaStore without the whole framework the service is reachable via
+http://localhost:8040/....
 
 ## Setup for production mode
 :WARNING: If you want to use the service in production mode you have modify your configuration (application.properties).
