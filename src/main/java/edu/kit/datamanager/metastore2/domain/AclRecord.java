@@ -40,7 +40,7 @@ public class AclRecord implements Serializable {
 
   @NotNull(message = "A list of access control entries with at least access for READ.")
   @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> readSids;
+  private final Set<String> read;
   @NotBlank(message = "The metadata record.")
   private Object metadataRecord;
   @NotBlank(message = "The metadata document.")
@@ -48,7 +48,7 @@ public class AclRecord implements Serializable {
 
   @java.lang.SuppressWarnings(value = "all")
   public AclRecord() {
-    this.readSids = new HashSet<>();
+    this.read = new HashSet<>();
   }
 
   /**
@@ -57,11 +57,11 @@ public class AclRecord implements Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    readSids.clear();
+    read.clear();
     if (newAclList != null) {
       for (AclEntry item : newAclList) {
         if (item.getPermission().atLeast(PERMISSION.READ)) {
-          readSids.add(item.getSid());
+          read.add(item.getSid());
         }
       }
     }
