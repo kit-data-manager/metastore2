@@ -47,73 +47,73 @@ public class AclRecordTest {
     Set<AclEntry> newAclList = null;
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getReadSids().isEmpty());
+    assertTrue(instance.getRead().isEmpty());
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
   }
 
   /**
-   * Test of getReadSids method, of class AclRecord.
+   * Test of getRead method, of class AclRecord.
    */
   @Test
   public void testGetReadSidsWithoutPermission() {
-    System.out.println("getReadSids");
+    System.out.println("getRead");
     Set<AclEntry> newAclList = new HashSet<>();
     newAclList.add(new AclEntry("undesired", PERMISSION.NONE));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getReadSids().isEmpty());
+    assertTrue(instance.getRead().isEmpty());
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
   }
 
   /**
-   * Test of getReadSids method, of class AclRecord.
+   * Test of getRead method, of class AclRecord.
    */
   @Test
   public void testGetReadSidsWithAdminPermission() {
-    System.out.println("getReadSids");
+    System.out.println("getRead");
     String sid = "admin";
     Set<AclEntry> newAclList = new HashSet<>();
     newAclList.add(new AclEntry(sid, PERMISSION.ADMINISTRATE));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getReadSids().size() == 1);
-    assertTrue(instance.getReadSids().contains(sid));
+    assertTrue(instance.getRead().size() == 1);
+    assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
   }
 
   /**
-   * Test of getReadSids method, of class AclRecord.
+   * Test of getRead method, of class AclRecord.
    */
   @Test
   public void testGetReadSidsWithWritePermission() {
-    System.out.println("getReadSids");
+    System.out.println("getRead");
     String sid = "write";
     Set<AclEntry> newAclList = new HashSet<>();
     newAclList.add(new AclEntry(sid, PERMISSION.WRITE));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getReadSids().size() == 1);
-    assertTrue(instance.getReadSids().contains(sid));
+    assertTrue(instance.getRead().size() == 1);
+    assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
   }
 
   /**
-   * Test of getReadSids method, of class AclRecord.
+   * Test of getRead method, of class AclRecord.
    */
   @Test
   public void testGetReadSidsWithReadPermission() {
-    System.out.println("getReadSids");
+    System.out.println("getRead");
     String sid = "read";
     Set<AclEntry> newAclList = new HashSet<>();
     newAclList.add(new AclEntry(sid, PERMISSION.READ));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getReadSids().size() == 1);
-    assertTrue(instance.getReadSids().contains(sid));
+    assertTrue(instance.getRead().size() == 1);
+    assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
   }
