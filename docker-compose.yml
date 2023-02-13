@@ -12,7 +12,7 @@ services:
       dps:
         ipv4_address: 172.0.0.10
   my-apache:
-    build: https://github.com/VolkerHartmann/frontend-collection.git#docker
+    build: https://github.com/kit-data-manager/frontend-collection.git#docker-metastore
     image: my-apache
     ports:
      - "80:80"
@@ -49,7 +49,7 @@ services:
     networks:
       - dps
   indexing-service:
-    image: kitdm/indexing-service:23
+    image: kitdm/indexing-service:v0.1.3
     container_name: indexing4metastore
     depends_on:
       elasticsearch:
@@ -61,7 +61,7 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:23
+    image: kitdm/metastore2:v1.2.1
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
