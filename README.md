@@ -17,7 +17,7 @@ It allows you to
 - update added metadata
  
 ## Installation
-There are three ways to install metaStore2 as a micorservice:
+There are three ways to install metaStore2 as a microservice:
 - [Using](#Installation-via-DockerHub) the image available via [DockerHub](https://hub.docker.com/r/kitdm/) (***recommended***)
 - [Building](#Build-docker-container-locally) docker image locally
 - [Building](#Build-and-run-locally) and running locally
@@ -52,7 +52,7 @@ user@localhost:/home/user/metastore2$
 ```
 
 #### Create image
-Now you'll have to create an image containing the micro service. This can be done via a script.
+Now you'll have to create an image containing the microservice. This can be done via a script.
 On default the created images will be tagged as follows:
 
 *'latest tag'-'actual date(yyyy-mm-dd)'* (e.g.: 0.1.1-2020-10-05)
@@ -153,10 +153,10 @@ Based on Docker Compose, the entire framework, including elasticsearch and the U
 ```
 user@localhost:/home/user/metastore2$ docker compose up
 ```
-As soon all services are running you can browst to http://localhost/index.html
+As soon all services are running you can browse to http://localhost/index.html
 
 ### First steps using framework
-To get familiar with the Usage of of MetaStore you may have a look at 
+To get familiar with the Usage of MetaStore you may have a look at 
 this documentation:
 
 https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.html
