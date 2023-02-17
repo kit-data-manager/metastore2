@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.2.1] - 2023-02-13
+### Added
+- Add docker compose file for building whole framework (MetaStore, elasticsearch and UI)
+
+### Fixed
+- Fix wrong document format for indexing metadata documents. (https://github.com/kit-data-manager/metastore2/issues/208)
+
+### Changed
+- Bump javersVersion from 6.8.2 to 6.9.1
+- Bump org.apache.tika:tika-core from 2.6.0 to 2.7.0 
+- Bump org.mockito:mockito-core from 5.1.0 to 5.1.1 
+- Bump org.owasp.dependencycheck from 8.0.2 to 8.1.0
+- Bump org.postgresql:postgresql from 42.5.1 to 42.5.3
+
 ## [1.2.0] - 2023-02-03
 ### Security
 

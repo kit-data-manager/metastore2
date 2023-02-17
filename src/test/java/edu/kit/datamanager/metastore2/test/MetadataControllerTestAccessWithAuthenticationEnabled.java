@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.greaterThan;
 import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -375,12 +376,13 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)).
             andDo(print()).
             andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$.read.length()", greaterThan(1))).
             andReturn();
     ObjectMapper map = new ObjectMapper();
     AclRecord result = map.readValue(mvcResult.getResponse().getContentAsString(), AclRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertTrue(result.getReadSids().contains(otherUserPrincipal));
-    Assert.assertTrue(result.getReadSids().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
+    Assert.assertTrue(result.getRead().contains(otherUserPrincipal));
+    Assert.assertTrue(result.getRead().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
   }
 
   /**
