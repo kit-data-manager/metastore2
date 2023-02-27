@@ -120,7 +120,15 @@ echo Build service...
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties.temp \;
+
+################################################################################
+# Replace constants
+################################################################################
+while IFS='' read -r line; do
+    echo "${line//INSTALLATION_DIR/$INSTALLATION_DIRECTORY}"
+done < "$INSTALLATION_DIRECTORY"/application.properties.temp > "$INSTALLATION_DIRECTORY"/application.properties
+rm "$INSTALLATION_DIRECTORY"/application.properties.temp
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
 find build/libs -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
