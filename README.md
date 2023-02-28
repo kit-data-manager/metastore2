@@ -148,10 +148,10 @@ only contain your adapted settings. e.g. in case you want to change only the por
 # Server settings
 server.port: 1234
 ```
-## Build framework using docker
+## Build framework using docker (Linux only)
 Based on Docker Compose, the entire framework, including elasticsearch and the UI, can now be installed with a single command.
 ```
-user@localhost:/home/user/metastore2$ docker compose up
+user@localhost:/home/user/metastore2$ docker compose up -d
 ```
 As soon all services are running you can browse to http://localhost/index.html
 
@@ -172,7 +172,29 @@ in order to see available RESTful endpoints and their documentation. Furthermore
 you can use this Web interface to test single API calls in order to get familiar with the 
 service. 
 
-### First steps using MetaStore standalone
+### Managing framework using docker
+To stop and start all services do the following:
+```
+user@localhost:/home/user/metastore2$ docker compose stop
+[+] Running 6/6
+ ⠿ Container dockercompose-my-apache-1  Stopped                            1.5s
+ ⠿ Container indexing4metastore         Stopped                           13.2s
+ ⠿ Container dockercompose-dps-1        Stopped                            0.3s
+ ⠿ Container metastore.docker           St...                             13.1s
+ ⠿ Container rabbitmq4indexing          S...                               6.5s
+ ⠿ Container elastic4indexing           St...                              0.8s
+user@localhost:/home/user/metastore2$ docker compose start
+[+] Running 6/6
+ ⠿ Container dockercompose-dps-1        Started                            0.4s
+ ⠿ Container dockercompose-my-apache-1  Started                            0.6s
+ ⠿ Container elastic4indexing           He...                             10.9s
+ ⠿ Container rabbitmq4indexing          S...                               0.3s
+ ⠿ Container metastore.docker           St...                              0.5s
+ ⠿ Container indexing4metastore         Started                            0.5s
+user@localhost:/home/user/metastore2$
+```
+
+## First steps using MetaStore standalone
 If you're using MetaStore without the whole framework the service is reachable via
 http://localhost:8040/....
 
