@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.2.2] - 2023-02-28
+### Fixed
+- Add configuration to use the service behind a proxy. (https://github.com/kit-data-manager/metastore2/issues/218)
+- Typos in README
+
+### Changed
+- Improve documentation on setting up the MetaStore framework using Docker.
+- Document directories are now set up as subfolders of the installation directory by default.
+- Bump io.freefair.lombok from 6.6.1 to 6.6.3
+- Bump io.freefair.maven-publish-java from 6.6.1 to 6.6.3
+- Bump javersVersion from 6.9.1 to 6.11.0
+- Bump json-schema-validator from 1.0.76 to 1.0.77
+- Bump org.postgresql:postgresql from 42.5.3 to 42.5.4
+- Bump org.springframework.boot from 2.7.8 to 2.7.9
+- Bump spring-cloud-gateway-mvc from 3.1.5 to 3.1.6
+- Bump spring-cloud-starter-netflix-eureka-client from 3.1.4 to 3.1.5
+- Bump spring-data-elasticsearch from 4.4.7 to 4.4.8
+
 ## [1.2.1] - 2023-02-13
 ### Added
 - Add docker compose file for building whole framework (MetaStore, elasticsearch and UI)
@@ -262,7 +280,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/kit-data-manager/metastore2/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/kit-data-manager/metastore2/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...v1.0.1
