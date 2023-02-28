@@ -17,7 +17,7 @@ It allows you to
 - update added metadata
  
 ## Installation
-There are three ways to install metaStore2 as a micorservice:
+There are three ways to install metaStore2 as a microservice:
 - [Using](#Installation-via-DockerHub) the image available via [DockerHub](https://hub.docker.com/r/kitdm/) (***recommended***)
 - [Building](#Build-docker-container-locally) docker image locally
 - [Building](#Build-and-run-locally) and running locally
@@ -52,7 +52,7 @@ user@localhost:/home/user/metastore2$
 ```
 
 #### Create image
-Now you'll have to create an image containing the micro service. This can be done via a script.
+Now you'll have to create an image containing the microservice. This can be done via a script.
 On default the created images will be tagged as follows:
 
 *'latest tag'-'actual date(yyyy-mm-dd)'* (e.g.: 0.1.1-2020-10-05)
@@ -148,24 +148,21 @@ only contain your adapted settings. e.g. in case you want to change only the por
 # Server settings
 server.port: 1234
 ```
-## Build framework using docker
+## Build framework using docker (Linux only)
 Based on Docker Compose, the entire framework, including elasticsearch and the UI, can now be installed with a single command.
 ```
-user@localhost:/home/user/metastore2$ docker compose up
+user@localhost:/home/user/metastore2$ docker compose up -d
 ```
-As soon all services are running you can browst to http://localhost/index.html
+As soon all services are running you can browse to http://localhost/index.html
 
 ### First steps using framework
-To get familiar with the Usage of of MetaStore you may have a look at 
-this documentation:
+If you want to use the (external) web frontend please visit:
+
+https://kit-data-manager.github.io/webpage/metastore/documentation/frontend/index.html
+
+A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.html
-
-Right now there is no manual for the new UI. But it works quite similar to the
-old one which is described in this cookbook:
-
-https://kit-data-manager.github.io/metastore2/
-
 
 If you want to use a script for doing so please refer to 
 
@@ -175,11 +172,29 @@ in order to see available RESTful endpoints and their documentation. Furthermore
 you can use this Web interface to test single API calls in order to get familiar with the 
 service. 
 
-A small documentation guiding you through the first steps of using the RESTful API you can find at
+### Managing framework using docker
+To stop and start all services do the following:
+```
+user@localhost:/home/user/metastore2$ docker compose stop
+[+] Running 6/6
+ ⠿ Container dockercompose-my-apache-1  Stopped                            1.5s
+ ⠿ Container indexing4metastore         Stopped                           13.2s
+ ⠿ Container dockercompose-dps-1        Stopped                            0.3s
+ ⠿ Container metastore.docker           St...                             13.1s
+ ⠿ Container rabbitmq4indexing          S...                               6.5s
+ ⠿ Container elastic4indexing           St...                              0.8s
+user@localhost:/home/user/metastore2$ docker compose start
+[+] Running 6/6
+ ⠿ Container dockercompose-dps-1        Started                            0.4s
+ ⠿ Container dockercompose-my-apache-1  Started                            0.6s
+ ⠿ Container elastic4indexing           He...                             10.9s
+ ⠿ Container rabbitmq4indexing          S...                               0.3s
+ ⠿ Container metastore.docker           St...                              0.5s
+ ⠿ Container indexing4metastore         Started                            0.5s
+user@localhost:/home/user/metastore2$
+```
 
-http://metastore.docker:8040/static/docs/documentation.html
-
-### First steps using MetaStore standalone
+## First steps using MetaStore standalone
 If you're using MetaStore without the whole framework the service is reachable via
 http://localhost:8040/....
 
@@ -191,8 +206,8 @@ http://localhost:8040/....
 3. Setup directories for schemata and metadata to a reliable disc. (metastore.schema.schemaFolder, metastore.metadata.metadataFolder)
 4. Check all settings in application.properties. (e.g. CSRF)
 
-:information_source: If metaStore should be used standalone (without KIT Data Manager) 
-you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
+:information_source: If MetaStore should be used standalone (without KIT Data Manager) 
+you have to install a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
 
 #### Setup MetaStore2
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
