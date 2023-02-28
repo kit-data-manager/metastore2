@@ -156,16 +156,13 @@ user@localhost:/home/user/metastore2$ docker compose up
 As soon all services are running you can browse to http://localhost/index.html
 
 ### First steps using framework
-To get familiar with the Usage of MetaStore you may have a look at 
-this documentation:
+If you want to use the (external) web frontend please visit:
+
+https://kit-data-manager.github.io/webpage/metastore/documentation/frontend/index.html
+
+A small documentation guiding you through the first steps of using the RESTful API you can find at
 
 https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.html
-
-Right now there is no manual for the new UI. But it works quite similar to the
-old one which is described in this cookbook:
-
-https://kit-data-manager.github.io/metastore2/
-
 
 If you want to use a script for doing so please refer to 
 
@@ -174,10 +171,6 @@ http://metastore.docker:8040/swagger-ui.html
 in order to see available RESTful endpoints and their documentation. Furthermore, 
 you can use this Web interface to test single API calls in order to get familiar with the 
 service. 
-
-A small documentation guiding you through the first steps of using the RESTful API you can find at
-
-http://metastore.docker:8040/static/docs/documentation.html
 
 ### First steps using MetaStore standalone
 If you're using MetaStore without the whole framework the service is reachable via
@@ -191,8 +184,8 @@ http://localhost:8040/....
 3. Setup directories for schemata and metadata to a reliable disc. (metastore.schema.schemaFolder, metastore.metadata.metadataFolder)
 4. Check all settings in application.properties. (e.g. CSRF)
 
-:information_source: If metaStore should be used standalone (without KIT Data Manager) 
-you have to setup a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
+:information_source: If MetaStore should be used standalone (without KIT Data Manager) 
+you have to install a database before. (See ['Installation PostgreSQL'](installation_postgres.md)) 
 
 #### Setup MetaStore2
 Before you are able to start the repository microservice, you have to modify the file 'application.properties' according to your local setup. 
