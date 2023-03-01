@@ -1,5 +1,6 @@
 # MetaStore 2 repository
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7685007.svg)](https://doi.org/10.5281/zenodo.7685007)
 [![Build Status](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/gradle.yml)
 [![Codecov](https://codecov.io/gh/kit-data-manager/metastore2/graph/badge.svg)](https://codecov.io/gh/kit-data-manager/metastore2)
 [![CodeQL](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml)
