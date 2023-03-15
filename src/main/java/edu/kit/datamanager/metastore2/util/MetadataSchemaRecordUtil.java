@@ -236,6 +236,7 @@ public class MetadataSchemaRecordUtil {
     ControllerUtils.checkEtag(eTag, dataResource);
     SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
     if (record != null) {
+      record.setSchemaVersion(schemaRecord.getVersion());
       MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
       existingRecord = mergeRecords(existingRecord, record);
       mergeSchemaRecord(schemaRecord, existingRecord);
