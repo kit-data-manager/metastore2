@@ -114,7 +114,7 @@ dependencies {
 
     // datamanager
     implementation "edu.kit.datamanager:repo-core:1.1.2"
-    implementation "edu.kit.datamanager:service-base:1.1.0"
+    implementation "edu.kit.datamanager:service-base:1.1.1"
 
     // elasticsearch (since service-base 1.1.0)
     implementation "org.springframework.data:spring-data-elasticsearch:4.4.9"
