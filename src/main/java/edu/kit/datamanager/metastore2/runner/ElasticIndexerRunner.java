@@ -26,6 +26,7 @@ import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
+import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
@@ -34,10 +35,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import org.openarchives.oai._2.MetadataFormatType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
@@ -92,7 +95,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     if (updateIndex) {
       LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
       // Try to determine URL of repository
-      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll();
+      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 3)).getContent();
       if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
         // Try to fetch baseURL from this
@@ -103,9 +106,18 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
         if (indices.isEmpty()) {
           LOG.info("Reindex all indices!");
-          for (SchemaRecord item : findAllSchemas) {
-            indices.add(item.getSchemaId());
-          }
+          long noOfEntries = url2PathDao.count();
+          long entriesPerPage = 50;
+          long page = 0;
+          // add also the schema registered in the schema registry
+          do {
+            List<SchemaRecord> allSchemas = schemaRecordDao.findAll(PageRequest.of((int) page, (int) entriesPerPage)).getContent();
+            LOG.trace("Add '{}' schemas of '{}'", allSchemas.size(), noOfEntries);
+            for (SchemaRecord item : allSchemas) {
+              indices.add(item.getSchemaId());
+            }
+            page++;
+          } while (page * entriesPerPage < noOfEntries);
         }
 
         for (String index : indices) {

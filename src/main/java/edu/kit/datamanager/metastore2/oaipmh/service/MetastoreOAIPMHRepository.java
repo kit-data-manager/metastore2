@@ -64,6 +64,9 @@ import org.openarchives.oai._2.ResumptionTokenType;
 import org.purl.dc.elements._1.ElementContainer;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -181,13 +184,15 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     boolean exists = DC_SCHEMA.getMetadataPrefix().equals(prefix) || DATACITE_SCHEMA.getMetadataPrefix().equals(prefix);
     LOGGER.trace(prefix + ": " + exists);
     if (!exists) {
-      List<MetadataFormat> findAll = metadataFormatDao.findAll();
-      for (MetadataFormat item : findAll) {
-        LOGGER.trace("." + item.getMetadataPrefix());
-        if (prefix.equalsIgnoreCase(item.getMetadataPrefix())) {
-          exists = true;
-          break;
-        }
+      MetadataFormat metadataFormat = new MetadataFormat();
+      metadataFormat.setMetadataPrefix(prefix);
+      ExampleMatcher caseInsensitive = ExampleMatcher.matchingAll().withIgnoreCase();
+      Example<MetadataFormat> example = Example.of(metadataFormat, caseInsensitive);
+      Optional<MetadataFormat> findOne = metadataFormatDao.findOne(example);
+      if (findOne.isPresent()) {
+        MetadataFormat item = findOne.get();
+        LOGGER.trace("Found at least one item with prefix: " + item.getMetadataPrefix());
+        exists = true;
       }
     }
     return exists;
@@ -213,16 +218,21 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     //@TODO extend by other formats
     builder.addMetadataFormat(DC_SCHEMA);
     builder.addMetadataFormat(DATACITE_SCHEMA);
-    List<MetadataFormat> allXmlSchemas = metadataFormatDao.findAll();
+    long noOfEntries = metadataFormatDao.count();
+    long entriesPerPage = 50;
+    long page = 0;
     // add also the schema registered in the schema registry
-    for (MetadataFormat metadataFormat : allXmlSchemas) {
-      MetadataFormatType item = new MetadataFormatType();
-      item.setMetadataNamespace(metadataFormat.getMetadataNamespace());
-      item.setMetadataPrefix(metadataFormat.getMetadataPrefix());
-      item.setSchema(metadataFormat.getSchema());
-      builder.addMetadataFormat(item);
-    }
-
+    do {
+      List<MetadataFormat> allXmlSchemas = metadataFormatDao.findAll(PageRequest.of((int) page, (int) entriesPerPage)).getContent();
+      for (MetadataFormat metadataFormat : allXmlSchemas) {
+        MetadataFormatType item = new MetadataFormatType();
+        item.setMetadataNamespace(metadataFormat.getMetadataNamespace());
+        item.setMetadataPrefix(metadataFormat.getMetadataPrefix());
+        item.setSchema(metadataFormat.getSchema());
+        builder.addMetadataFormat(item);
+      }
+      page++;
+    } while (page * entriesPerPage < noOfEntries);
   }
 
   @Override
@@ -344,7 +354,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       try {
         URL url = new URL(object.getMetadataDocumentUri());
         byte[] readFileToByteArray = FileUtils.readFileToByteArray(Paths.get(url.toURI()).toFile());
-        try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)) {
+        try ( InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)) {
           IOUtils.copy(inputStream, bout);
           wasError = false;
         }
@@ -482,23 +492,23 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", findMetadataPrefix, from, until, page, maxElementsPerList);
       overallCount = dataRecordDao.countBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until);
       results = dataRecordDao.findBySchemaIdInAndLastUpdateBetween(findMetadataPrefix, from, until, PageRequest.of(page, maxElementsPerList));
-      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.count() + "' elements in total!");
     } else {
       LOGGER.trace("findBySchemaIdAndLastUpdateBetween({},{},{}, Page({},{}))", prefix, from, until, page, maxElementsPerList);
       overallCount = dataRecordDao.countBySchemaIdAndLastUpdateBetween(prefix, from, until);
       results = dataRecordDao.findBySchemaIdAndLastUpdateBetween(prefix, from, until, PageRequest.of(page, maxElementsPerList));
-      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.findAll().size() + "' elements in total!");
+      LOGGER.trace("Found '" + results.size() + "' elements of '" + dataRecordDao.count() + "' elements in total!");
     }
     if (LOGGER.isTraceEnabled()) {
-         LOGGER.trace("List all items:");
-     List<DataRecord> findAll = dataRecordDao.findAll();
+      LOGGER.trace("List top 100 of all items:");
+      List<DataRecord> findAll = dataRecordDao.findAll(PageRequest.of(0, 100)).getContent();
       for (DataRecord item : findAll) {
         LOGGER.trace("-> " + item);
       }
     }
     LOGGER.trace("Setting next resumption token.");
     int cursor = currentCursor + results.size();
-            
+
     if (cursor == overallCount) {
       LOGGER.debug("New cursor {} exceeds element count {}, no more elements available. Setting resumption token to 'null'.", (currentCursor + maxElementsPerList), overallCount);
       //lsit complete, add no resumptiontoken
