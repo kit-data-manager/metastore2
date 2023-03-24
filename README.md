@@ -20,7 +20,7 @@ It allows you to
  
 ## Installation
 There are three ways to install metaStore2 as a microservice:
-- [Using](#Installation-via-DockerHub) the image available via [DockerHub](https://hub.docker.com/r/kitdm/) (***recommended***)
+- [Using](#Installation-via-DockerHub) the image available via [GitHub Packages](https://github.com/kit-data-manager/metastore2/pkgs/container/metastore2%2Fmetastore2) (***recommended***)
 - [Building](#Build-docker-container-locally) docker image locally
 - [Building](#Build-and-run-locally) and running locally
 
@@ -77,7 +77,7 @@ After building image you have to create (and start) a container for executing mi
 # If you want to use a specific image you may list all possible tags first.
 user@localhost:/home/user/metastore2$ docker images kitdm/metastore2 --format {{.Tag}}
 0.1.1-2020-10-05
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker ghcr.io/kit-data-manager/metastore2/metastore2:1.2.2
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
