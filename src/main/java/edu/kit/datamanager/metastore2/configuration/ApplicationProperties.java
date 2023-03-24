@@ -51,6 +51,9 @@ public class ApplicationProperties extends GenericApplicationProperties{
   @Value("${metastore.metadata.metadataFolder}")
   private URL metadataFolder;
 
+  @Value("${metastore.metadata.storagepattern:dateBased}")
+  private String storagePattern;
+
   @Value("${metastore.metadata.schemaRegistries: }")
   private String[] schemaRegistries;
 
