@@ -53,6 +53,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -617,7 +618,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testGetSchemaDocumentWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
-    String contentUri = contentInformationDao.findAll().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -678,7 +679,7 @@ public class SchemaRegistryControllerTest {
   public void testValidateWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
     // Get location of schema file.
-    String contentUri = contentInformationDao.findAll().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));

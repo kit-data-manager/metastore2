@@ -178,7 +178,7 @@ jarFile=($(ls $REPO_NAME*.jar))
   echo "################################################################################"        
   echo "# Start micro service"                                                                   
   echo "################################################################################"        
-  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile"
+  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile \$*"
 } > run.sh
 # make script executable
 chmod 755 run.sh

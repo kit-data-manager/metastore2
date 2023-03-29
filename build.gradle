@@ -133,6 +133,7 @@ dependencies {
     //Java 11 Support 
     testImplementation "org.mockito:mockito-core:5.2.0"
     testImplementation "junit:junit:4.13.2"
+    testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 }
 
 compileJava {

@@ -708,7 +708,10 @@ public class MetadataSchemaRecordUtil {
       if (findByUrl.isEmpty()) {
         if (LOG.isTraceEnabled()) {
           LOG.trace("-----------------------------------------");
-          url2PathDao.findAll().forEach((item) -> {
+          Page<Url2Path> page = url2PathDao.findAll(PageRequest.of(0, 100));
+          LOG.trace("List '{}' of '{}'", page.getSize(), page.getTotalElements());
+          LOG.trace("-----------------------------------------");
+          page.getContent().forEach((item) -> {
             LOG.trace("- {}", item);
           });
           LOG.trace("-----------------------------------------");
@@ -1120,7 +1123,10 @@ public class MetadataSchemaRecordUtil {
     if (LOG.isTraceEnabled()) {
       LOG.trace("Looking for path '{}'", metadataSchemaRecord.getSchemaDocumentUri());
       LOG.trace("-----------------------------------------");
-      url2PathDao.findAll().forEach((item) -> {
+      Page<Url2Path> page = url2PathDao.findAll(PageRequest.of(0, 100));
+      LOG.trace("List '{}' of '{}'", page.getSize(), page.getTotalElements());
+      LOG.trace("-----------------------------------------");
+      page.getContent().forEach((item) -> {
         LOG.trace("- {}", item);
       });
       LOG.trace("-----------------------------------------");
