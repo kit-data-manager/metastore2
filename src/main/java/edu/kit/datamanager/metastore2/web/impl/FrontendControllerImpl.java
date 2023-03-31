@@ -56,14 +56,12 @@ public class FrontendControllerImpl implements IFrontendController {
           final HttpServletResponse hsr,
           final UriComponentsBuilder ucb) {
 
-    LOG.trace("Performing findAllSchemasForTabulator().");
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    if (authorizationIdentities != null) {
-      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
-    } else {
-      LOG.trace("No permission information provided. Skip creating permission specification.");
+    LOG.trace("Performing findAllSchemasForTabulator( pgbl='{}').",pgbl);
+    Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
+    if (pgbl != null) {
+      pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+    LOG.trace("Pageable: '{}'", pageable);
 
     ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
     List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
@@ -83,16 +81,14 @@ public class FrontendControllerImpl implements IFrontendController {
           final WebRequest wr,
           final HttpServletResponse hsr,
           final UriComponentsBuilder ucb) {
-    LOG.trace("Performing findAllMetadataForTabulator().");
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    if (authorizationIdentities != null) {
-      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
-    } else {
-      LOG.trace("No permission information provided. Skip creating permission specification.");
+    LOG.trace("Performing findAllMetadataForTabulator( id='{}', pgbl='{}').", id, pgbl);
+    Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
+    if (pgbl != null) {
+      pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
-    List<String> schemaIds = id == null ? null : Arrays.asList(id);
-    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
+    LOG.trace("Pageable: '{}'", pageable);
+    List<String> metadataDocumentId = id == null ? null : Arrays.asList(id);
+    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, metadataDocumentId, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
     String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
@@ -105,16 +101,17 @@ public class FrontendControllerImpl implements IFrontendController {
   }
 
   @Override
-  public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
-    LOG.trace("Performing getSchemaRecordsForUi().");
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    if (authorizationIdentities != null) {
-      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
-    } else {
-      LOG.trace("No permission information provided. Skip creating permission specification.");
+  public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(
+          @Parameter(hidden = true) final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse hsr,
+          final UriComponentsBuilder ucb) {
+    LOG.trace("Performing getSchemaRecordsForUi( pgbl='{}').", pgbl);
+    Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
+    if (pgbl != null) {
+      pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-
-    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
+    LOG.trace("Pageable: '{}'", pageable);
 
     ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
     List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
@@ -131,16 +128,19 @@ public class FrontendControllerImpl implements IFrontendController {
   }
 
   @Override
-  public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id, Pageable pgbl, WebRequest wr, HttpServletResponse hsr, UriComponentsBuilder ucb) {
-    LOG.trace("Performing getMetadataRecordsForUi().");
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    if (authorizationIdentities != null) {
-      LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
-    } else {
-      LOG.trace("No permission information provided. Skip creating permission specification.");
+  public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(
+          @RequestParam(value = "id", required = false) String id,
+          @Parameter(hidden = true) final Pageable pgbl,
+          final WebRequest wr,
+          final HttpServletResponse hsr,
+          final UriComponentsBuilder ucb) {
+    LOG.trace("Performing getMetadataRecordsForUi( id='{}', pgbl='{}').", id, pgbl);
+    Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
+    if (pgbl != null) {
+      pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
+    LOG.trace("Pageable: '{}'", pageable);
 
-    Pageable pageable = PageRequest.of(pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     List<String> schemaIds = id == null ? null : Arrays.asList(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
