@@ -16,7 +16,7 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '1.6.15'
+    springDocVersion  = '1.7.0'
     javersVersion     = '6.14.0'
     keycloakVersion   = '19.0.0'
 
