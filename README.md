@@ -6,7 +6,7 @@
 [![CodeQL](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
 [![Docker Build Status](https://img.shields.io/docker/automated/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
-[![Docker Image Version](https://img.shields.io/docker/v/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
+[![Docker Image Version](https://img.shields.io/docker/v/kitdm/metastore2/latest)](https://hub.docker.com/r/kitdm/metastore2/tags)
 [![Docker Pulls](https://img.shields.io/docker/pulls/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
 
 General purpose metadata repository and schema registry service.
