@@ -63,10 +63,12 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:v1.2.2
+    image: kitdm/metastore2:v1.2.3
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
+      - REPO_SEARCH_ENABLED=true
+      - REPO_MESSAGING_ENABLED=true
     depends_on:
       rabbitmq:
         condition: service_started

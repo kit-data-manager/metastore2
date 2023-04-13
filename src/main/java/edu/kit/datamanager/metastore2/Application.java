@@ -209,13 +209,6 @@ public class Application {
   }
 
   @Bean
-  public IdBasedStorageService idBasedStorageService() {
-    IdBasedStorageService ibss = new IdBasedStorageService();
-    ibss.configure(storageServiceProperties());
-    return ibss;
-  }
-
-  @Bean
   @ConfigurationProperties("repo")
   public ApplicationProperties applicationProperties() {
     return new ApplicationProperties();
@@ -318,11 +311,16 @@ public class Application {
         break;
       }
     }
-    LOG.trace("Looking for storageServices....");
+    LOG.trace("Looking for storageService '{}'....", this.applicationProperties.getStoragePattern());
     for (IRepoStorageService storageService : this.storageServices) {
       LOG.trace(".... '{}'", storageService.getServiceName());
       if ("simple".equals(storageService.getServiceName())) {
-        rbc.setStorageService(storageService);
+        rbc.setStorageService(storageService); // Should be used as default
+      }
+      if (this.applicationProperties.getStoragePattern().equals(storageService.getServiceName())) {
+        LOG.trace("Configure '{}' with '{}'", storageService.getServiceName(), storageServiceProperties());
+        storageService.configure(storageServiceProperties());
+        rbc.setStorageService(storageService); 
         break;
       }
     }

@@ -53,6 +53,7 @@ import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -617,7 +618,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testGetSchemaDocumentWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
-    String contentUri = contentInformationDao.findAll().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -678,7 +679,7 @@ public class SchemaRegistryControllerTest {
   public void testValidateWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
     // Get location of schema file.
-    String contentUri = contentInformationDao.findAll().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -885,6 +886,49 @@ public class SchemaRegistryControllerTest {
     String content = result.getResponse().getContentAsString();
 
     Assert.assertEquals(KIT_SCHEMA_V2, content);
+  }
+
+  @Test
+  public void testUpdateRecordAndDocumentWithWrongVersion() throws Exception {
+    String schemaId = "updateRecordAndDocumentWithWrongVersion";
+    ingestSchemaRecord(schemaId);
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    record.setSchemaVersion(0l);
+    String mimeTypeBefore = record.getMimeType();
+    record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA_V2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).file(schemaFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+//    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
+    Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
+    Assert.assertEquals(2l, (long) record2.getSchemaVersion());//version is not changing for metadata update
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Test also document for update
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    Assert.assertEquals(KIT_SCHEMA_V2, content);
+    // Test also old document
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId+ "?version=1")).andDo(print()).andExpect(status().isOk()).andReturn();
+    content = result.getResponse().getContentAsString();
+    Assert.assertEquals(KIT_SCHEMA, content);
   }
 
   @Test

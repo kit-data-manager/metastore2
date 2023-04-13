@@ -13,6 +13,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [1.2.3] - 2023-04-13
+### Added
+- Add CITATION.cff
+- Allow cli arguments for start script.
+- Enable configuration to organize internal storage of metadata documents (https://github.com/kit-data-manager/metastore2/issues/241)
+
+### Changed
+- Update several badges
+- Bump com.networknt:json-schema-validator from 1.0.78 to 1.0.79
+- Bump edu.kit.datamanager:repo-core from 1.1.1 to 1.1.2
+- Bump edu.kit.datamanager:service-base from 1.1.0 to 1.1.1 
+- Bump gradle from 7.6 to 7.6.1.
+- Bump io.freefair.maven-publish-java from 6.6.3 to 8.0.1 
+- Bump io.freefair.lombok from 6.6.3 to 8.0.1 
+- Bump javersVersion from 6.11.0 to 6.14.0 
+- Bump org.mockito:mockito-core from 5.1.1 to 5.3.0 
+- Bump org.owasp.dependencycheck from 8.1.0 to 8.2.1
+- Bump org.postgresql:postgresql from 42.5.4 to 42.6.0 
+- Bump org.springframework.boot from 2.7.9 to 2.7.10
+- Bump org.springframework.cloud:spring-cloud-starter-config from 3.1.5 to 3.1.6.
+- Bump org.springframework.data:spring-data-elasticsearch from 4.4.8 to 4.4.10.
+- Bump org.springframework:spring-messaging from 5.3.25 to 5.3.26
+- Bump springDocVersion from 1.6.14 to 1.7.0
+
+### Fixed
+- Providing (invalid) version number while updating schema document may break old versions. (https://github.com/kit-data-manager/metastore2/issues/245)
+- Trace log may slow down service. (https://github.com/kit-data-manager/metastore2/issues/233)
+- Calling REST-Endpoint for UI fails if no page information is provided. (https://github.com/kit-data-manager/metastore2/issues/264)
+- Problem running MetaStore standalone in a docker container. (https://github.com/kit-data-manager/metastore2/issues/270)
+
 ## [1.2.2] - 2023-02-28
 ### Fixed
 - Add configuration to use the service behind a proxy. (https://github.com/kit-data-manager/metastore2/issues/218)
@@ -280,7 +310,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...HEAD
+[1.2.3]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/kit-data-manager/metastore2/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/kit-data-manager/metastore2/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...v1.2.0
