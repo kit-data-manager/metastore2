@@ -88,7 +88,7 @@ var buttons = {
  */
 function generateIcon(fontAwesome, tooltip) {
     return "<i class='" + fontAwesome + "' title='" + tooltip + "'>\n\</i>";
-};
+}
 
 /**
  * Default table layout
@@ -142,7 +142,7 @@ function modalTemplate(modalInput) {
             '</div>' +
             '</div>' +
             '</div>';
-};
+}
 
 /**
  * describes the internal representation of the Editor in case a form will be generated.
