@@ -41,7 +41,7 @@ testForCommands="dirname date docker git"
 
 for command in $testForCommands
 do 
-  if ! type $command >> /dev/null; then
+  if ! type "$command" >> /dev/null; then
     echo "Error: command '$command' is not installed!"
     exit 1
   fi
@@ -55,7 +55,7 @@ ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 ################################################################################
 # Determine repo name 
 ################################################################################
-REPO_NAME=$($ACTUAL_DIR/../gradlew -q printProjectName)
+REPO_NAME=$("$ACTUAL_DIR"/../gradlew -q printProjectName)
 # Use only last line
 REPO_NAME=${REPO_NAME##*$'\n'}
 
@@ -80,14 +80,14 @@ else
   TAG_NAME=$LAST_TAG-$(date -u +%Y-%m-%d)
 fi
 
-cd $ACTUAL_DIR/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; exit 1; }
+cd "$ACTUAL_DIR"/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; exit 1; }
 
 ################################################################################
 # Build local docker
 ################################################################################
-printInfo Build docker container kitdm/$REPO_NAME:$TAG_NAME 
+printInfo Build docker container kitdm/"$REPO_NAME":"$TAG_NAME" 
 
-if ! docker build -t kitdm/$REPO_NAME:$TAG_NAME .; then
+if ! docker build -t kitdm/"$REPO_NAME":"$TAG_NAME" .; then
   echo .
   printInfo "ERROR while building docker container!"
   usage
