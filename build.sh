@@ -87,7 +87,7 @@ testForCommands="chmod cp dirname find java javac mkdir git"
 
 for command in $testForCommands
 do 
-  if ! type $command >> /dev/null; then
+  if ! type "$command" >> /dev/null; then
     echo "Error: command '$command' is not installed!"
     exit 1
   fi
