@@ -52,14 +52,30 @@ public class ResourceIdentifier implements Serializable {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
-      return true;
+    boolean returnValue = true;
+    if (other != this) {
+      returnValue = false;
+      if (other != null) {
+        // check for instance
+        if ((other instanceof ResourceIdentifier) == true) {
+          ResourceIdentifier rhs = ((ResourceIdentifier) other);
+          // check for id
+          if (((this.getId() == null) && (rhs.getId() == null))
+                  || ((this.getId() != null) && this.getId().equals(rhs.getId()))) {
+            //check for identifier
+            if (((this.getIdentifier() == null) && (rhs.getIdentifier() == null))
+                    || ((this.getIdentifier() != null) && this.getIdentifier().equals(rhs.getIdentifier()))) {
+              // check for identifierType
+              if (((this.getIdentifierType() == null) && (rhs.getIdentifierType() == null))
+                      || ((this.getIdentifierType() != null) && this.getIdentifierType().equals(rhs.getIdentifierType()))) {
+                returnValue = true;
+              }
+            }
+          }
+        }
+      }
     }
-    if ((other instanceof ResourceIdentifier) == false) {
-      return false;
-    }
-    ResourceIdentifier rhs = ((ResourceIdentifier) other);
-    return ((((this.getIdentifier() == rhs.getIdentifier()) || ((this.getIdentifier() != null) && this.getIdentifier().equals(rhs.getIdentifier())))) && ((this.getIdentifierType() == rhs.getIdentifierType()) || ((this.getIdentifierType() != null) && this.getIdentifierType().equals(rhs.getIdentifierType()))));
+    return returnValue;
   }
 
   public enum IdentifierType {
@@ -123,10 +139,21 @@ public class ResourceIdentifier implements Serializable {
       return this.value;
     }
 
+    /**
+     * Return identifier value as string.
+     *
+     * @return identifier value as string.
+     */
     public String value() {
       return this.value;
     }
 
+    /**
+     * Get Identifier from value
+     *
+     * @param value Value as string.
+     * @return Identifier
+     */
     public static ResourceIdentifier.IdentifierType fromValue(String value) {
       ResourceIdentifier.IdentifierType constant = CONSTANTS.get(value);
       if (constant == null) {
@@ -139,6 +166,8 @@ public class ResourceIdentifier implements Serializable {
   }
 
   /**
+   * Get identifier.
+   *
    * @return the identifier
    */
   public String getIdentifier() {
@@ -146,6 +175,8 @@ public class ResourceIdentifier implements Serializable {
   }
 
   /**
+   * Set identifier.
+   *
    * @param identifier the identifier to set
    */
   public void setIdentifier(String identifier) {
@@ -153,6 +184,8 @@ public class ResourceIdentifier implements Serializable {
   }
 
   /**
+   * Get identifier type.
+   *
    * @return the identifierType
    */
   public IdentifierType getIdentifierType() {
@@ -160,6 +193,8 @@ public class ResourceIdentifier implements Serializable {
   }
 
   /**
+   * Set identifier type.
+   *
    * @param identifierType the identifierType to set
    */
   public void setIdentifierType(IdentifierType identifierType) {
@@ -169,14 +204,33 @@ public class ResourceIdentifier implements Serializable {
     this.identifierType = identifierType;
   }
 
+  /**
+   * Create ResourceIdentifier from URL.
+   *
+   * @param identifier Url as string.
+   * @return Resource identifier.
+   */
   public static ResourceIdentifier factoryUrlResourceIdentifier(String identifier) {
     return factoryResourceIdentifier(identifier, ResourceIdentifier.IdentifierType.URL);
   }
 
+  /**
+   * Create ResourceIdentifier from string.
+   *
+   * @param identifier Internal identifier as string.
+   * @return Resource identifier.
+   */
   public static ResourceIdentifier factoryInternalResourceIdentifier(String identifier) {
     return factoryResourceIdentifier(identifier, ResourceIdentifier.IdentifierType.INTERNAL);
   }
 
+  /**
+   * Create ResourceIdentifier from string and type.
+   *
+   * @param identifier Identifier as string.
+   * @param type Identifier type of the resource identifier.
+   * @return Resource identifier.
+   */
   public static ResourceIdentifier factoryResourceIdentifier(String identifier, ResourceIdentifier.IdentifierType type) {
     ResourceIdentifier resourceIdentifier = new ResourceIdentifier();
     resourceIdentifier.setIdentifier(identifier);
