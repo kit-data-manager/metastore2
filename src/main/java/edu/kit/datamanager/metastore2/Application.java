@@ -77,6 +77,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
+ * Main class starting spring boot service of MetaStore.
  */
 @SpringBootApplication
 @EnableScheduling
@@ -100,10 +101,10 @@ public class Application {
   private IRepoVersioningService[] versioningServices;
   @Autowired
   private IRepoStorageService[] storageServices;
-
-  private MetastoreConfiguration metastoreProperties;
-  @Autowired
-  private IDataResourceDao dataResourceDao;
+//
+//  private MetastoreConfiguration metastoreProperties;
+//  @Autowired
+//  private IDataResourceDao dataResourceDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
@@ -112,8 +113,8 @@ public class Application {
   private IUrl2PathDao url2PathDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
-  @Autowired
-  private OaiPmhConfiguration oaiPmhConfiguration;
+//  @Autowired
+//  private OaiPmhConfiguration oaiPmhConfiguration;
   @Autowired
   private IValidator[] validators;
 
@@ -320,7 +321,7 @@ public class Application {
       if (this.applicationProperties.getStoragePattern().equals(storageService.getServiceName())) {
         LOG.trace("Configure '{}' with '{}'", storageService.getServiceName(), storageServiceProperties());
         storageService.configure(storageServiceProperties());
-        rbc.setStorageService(storageService); 
+        rbc.setStorageService(storageService);
         break;
       }
     }
@@ -397,7 +398,7 @@ public class Application {
   }
 
   public static void main(String[] args) {
-    ApplicationContext ctx = SpringApplication.run(Application.class, args);
+    SpringApplication.run(Application.class, args);
     System.out.println("Spring is running!");
   }
 

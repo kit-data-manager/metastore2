@@ -82,7 +82,7 @@ public class XmlValidator implements IValidator {
             SchemaFactory schemaFactory = getSchemaFactory();
             
             LOG.trace("Creating schema instance.");
-            Schema schema = null;
+            Schema schema;
             schema = schemaFactory.newSchema(schemaFile);
             
             LOG.trace("Obtaining validator.");

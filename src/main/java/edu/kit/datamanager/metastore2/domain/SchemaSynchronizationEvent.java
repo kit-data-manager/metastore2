@@ -23,12 +23,13 @@ import javax.persistence.Id;
 import lombok.Data;
 
 /**
+ * Event for synchronization.
  *
  * @author jejkal
  */
 @Entity
 @Data
-public class SchemaSynchronizationEvent{
+public class SchemaSynchronizationEvent {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -10,6 +10,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
+ * Helper class for tabulator local pagination used by web frontend.
  *
  * @author jejkal
  */

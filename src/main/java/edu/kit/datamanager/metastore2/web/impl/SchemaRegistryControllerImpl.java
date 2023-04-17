@@ -73,8 +73,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- *
- * @author jejkal
+ * Controller for schema documents.
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
@@ -91,11 +90,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Autowired
   private final IUrl2PathDao url2PathDao;
 
-  /**
+    /**
+   * Constructor for schema documents controller.
    *
-   * @param schemaConfig
-   * @param dataResourceDao
-   * @param contentInformationDao
+   * @param schemaConfig Configuration for metadata documents repository.
+   * @param dataResourceDao DAO for data resources.
+   * @param url2PathDao DAO for storing url and linked path 
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao,

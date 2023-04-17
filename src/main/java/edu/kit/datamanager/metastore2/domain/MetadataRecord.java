@@ -38,6 +38,7 @@ import lombok.Data;
 import org.springframework.http.MediaType;
 
 /**
+ * Record for a metadata document.
  *
  * @author jejkal
  */

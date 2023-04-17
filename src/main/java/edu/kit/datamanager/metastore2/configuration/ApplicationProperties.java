@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
+ * Properties for configuration of MetaStore.
  *
  * @author jejkal
  */
@@ -36,7 +37,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RefreshScope
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericApplicationProperties{
+public class ApplicationProperties extends GenericApplicationProperties {
 
   @edu.kit.datamanager.annotations.LocalFolderURL
   @Value("${metastore.schema.schemaFolder}")

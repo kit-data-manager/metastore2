@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -51,7 +52,7 @@ public class ActuatorUtil {
       Path probe = Paths.get(path.toString(), "probe.txt");
       try {
         probe = Files.createFile(probe);
-        Files.write(probe, "Success".getBytes());
+        Files.write(probe, "Success".getBytes(StandardCharsets.UTF_8));
         File repoDir = path.toFile();
         double total = (double) repoDir.getTotalSpace();
         double free = (double) repoDir.getFreeSpace();
@@ -66,6 +67,7 @@ public class ActuatorUtil {
         try {
           Files.deleteIfExists(probe);
         } catch (IOException ignored) {
+          LOG.error("Can't delete file '{}'.", probe.toString());
         }
       }
     } catch (URISyntaxException ex) {

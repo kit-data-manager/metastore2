@@ -97,8 +97,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- *
- * @author jejkal
+ * Controller for metadata documents.
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
@@ -107,8 +106,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MetadataControllerImpl implements IMetadataController {
 
   public static final String POST_FILTER = "post_filter";
-  private static final String SID_READ = "read";
-  final JsonNodeFactory factory = JsonNodeFactory.instance;
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
 
@@ -130,11 +127,12 @@ public class MetadataControllerImpl implements IMetadataController {
   private final String guestToken;
 
   /**
+   * Constructor for metadata documents controller.
    *
-   * @param applicationProperties
-   * @param metadataConfig
-   * @param metadataRecordDao
-   * @param dataResourceDao
+   * @param applicationProperties Configuration for controller.
+   * @param metadataConfig Configuration for metadata documents repository.
+   * @param metadataRecordDao DAO for metadata records.
+   * @param dataResourceDao DAO for data resources.
    */
   public MetadataControllerImpl(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
@@ -484,7 +482,7 @@ public class MetadataControllerImpl implements IMetadataController {
       builder.withDetail("metadataRepo", details);
     }
   }
-  
+
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();

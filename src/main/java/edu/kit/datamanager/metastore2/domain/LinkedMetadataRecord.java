@@ -26,30 +26,29 @@ import javax.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- *
- * @author jejkal
+ * Simplified record for linked resources for metadata document.
  */
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"relatedResource", "schemaId"})})
+@Table(uniqueConstraints = {
+  @UniqueConstraint(columnNames = {"relatedResource", "schemaId"})})
 public class LinkedMetadataRecord implements Serializable {
-  
+
   public LinkedMetadataRecord() {
   }
-  
+
   public LinkedMetadataRecord(MetadataRecord record) {
     schemaId = record.getSchema().getIdentifier();
     relatedResource = record.getRelatedResource().getIdentifier();
   }
   @Id
-   @GeneratedValue
+  @GeneratedValue
   private Long id;
-  
+
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
   @NotBlank(message = "The unqiue identifier of the related source.")
   private String relatedResource;
-  
-  
+
 }

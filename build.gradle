@@ -141,13 +141,21 @@ dependencies {
 }
 
 compileJava {
+//    options.errorprone.disableAllWarnings = true
+    options.errorprone.disableWarningsInGeneratedCode = true
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xmaxwarns" << "200"
+}
+
+compileTestJava {
+    // disable errorprone for tests
+    options.errorprone.disableWarningsInGeneratedCode = true
+    options.errorprone.enabled = false // change it to true to enable
 }
 
 test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
-
+    
     maxHeapSize = "8192m"
     testLogging {
         outputs.upToDateWhen {false}

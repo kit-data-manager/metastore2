@@ -22,6 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 
 /**
+ * Configuration for spring REST.
  *
  * @author jejkal
  */

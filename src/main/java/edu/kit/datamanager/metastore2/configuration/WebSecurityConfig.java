@@ -44,6 +44,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 /**
+ * Configuration for web security.
  *
  * @author jejkal
  */
@@ -76,7 +77,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                     InfoEndpoint.class,
                     HealthEndpoint.class
             )).permitAll().
-            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR"). and().
+            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR").and().
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
@@ -101,7 +102,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     http.headers().cacheControl().disable();
   }
 
-
   @Override
   public void configure(WebSecurity web) throws Exception {
     web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
@@ -115,6 +115,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
   }
 
   @Bean
+  @SuppressWarnings("StringSplitter")
   public FilterRegistrationBean corsFilter() {
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
