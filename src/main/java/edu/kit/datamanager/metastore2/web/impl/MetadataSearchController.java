@@ -54,11 +54,9 @@ public class MetadataSearchController {
   private SearchConfiguration searchConfiguration;
 
   /**
+   * Constructor with configuration.
    *
-   * @param applicationProperties
-   * @param metadataConfig
-   * @param metadataRecordDao
-   * @param dataResourceDao
+   * @param searchConfiguration Configuration for search.
    */
   public MetadataSearchController(SearchConfiguration searchConfiguration) {
     this.searchConfiguration = searchConfiguration;
@@ -96,7 +94,7 @@ public class MetadataSearchController {
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
-    ObjectNode on = prepareQuery(body, pgbl);
+    prepareQuery(body, pgbl);
 
     return proxy.uri(searchConfiguration.getUrl() + "/" + schemaIds + "/_search").post();
   }
@@ -126,7 +124,7 @@ public class MetadataSearchController {
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
-    ObjectNode on = prepareQuery(body, pgbl);
+    prepareQuery(body, pgbl);
 
     return proxy.uri(searchConfiguration.getUrl() + "/_search").post();
   }

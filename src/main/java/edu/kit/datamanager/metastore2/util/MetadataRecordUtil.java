@@ -56,6 +56,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -94,17 +95,21 @@ public class MetadataRecordUtil {
   private static final Logger LOG = LoggerFactory.getLogger(MetadataRecordUtil.class);
 
   private static MetastoreConfiguration schemaConfig;
-  /**
-   * Encoding for strings/inputstreams.
-   */
-  private static final String ENCODING = "UTF-8";
+
   private static String guestToken = null;
 
   private static IDataRecordDao dataRecordDao;
 
+  /**
+   * Create a digital object from metadata record and metadata document.
+   *
+   * @param applicationProperties Configuration properties.
+   * @param recordDocument Metadata record.
+   * @param document Metadata document.
+   * @return Enriched metadata record.
+   */
   public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument, MultipartFile document) {
-    MetadataRecord result = null;
     MetadataRecord record;
     long nano1 = System.nanoTime() / 1000000;
     // Do some checks first.
@@ -195,6 +200,18 @@ public class MetadataRecordUtil {
     return migrateToMetadataRecord(applicationProperties, createResource, true);
   }
 
+  /**
+   * Update a digital object with given metadata record and/or metadata
+   * document.
+   *
+   * @param applicationProperties Configuration properties.
+   * @param resourceId Identifier of digital object.
+   * @param eTag ETag of the old digital object.
+   * @param recordDocument Metadata record.
+   * @param document Metadata document.
+   * @param supplier Function for updating record.
+   * @return Enriched metadata record.
+   */
   public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
           String resourceId,
           String eTag,
@@ -203,7 +220,6 @@ public class MetadataRecordUtil {
           Function<String, String> supplier) {
     MetadataRecord record = null;
     MetadataRecord existingRecord;
-    DataResource newResource;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (document == null || document.isEmpty())) {
@@ -302,6 +318,14 @@ public class MetadataRecordUtil {
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
+  /**
+   * Delete a digital object with given identifier.
+   *
+   * @param applicationProperties Configuration properties.
+   * @param id Identifier of digital object.
+   * @param eTag ETag of the old digital object.
+   * @param supplier Function for updating record.
+   */
   public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
           String id,
           String eTag,
@@ -358,12 +382,14 @@ public class MetadataRecordUtil {
       MetadataSchemaRecordUtil.checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
     } else {
       LOG.trace("Remove existing identifiers (others than URL)...");
+      Set<Identifier> removeItems = new HashSet<>();
       for (Identifier item : identifiers) {
         if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
-          identifiers.remove(item);
+          removeItems.add(item);
         }
       }
+      identifiers.removeAll(removeItems);
     }
     boolean relationFound = false;
     boolean schemaIdFound = false;
@@ -434,9 +460,7 @@ public class MetadataRecordUtil {
         metadataRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
-      Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
-      while (iterator.hasNext()) {
-        Identifier identifier = iterator.next();
+      for (Identifier identifier : dataResource.getAlternateIdentifiers()) {
         if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
             ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
@@ -460,8 +484,8 @@ public class MetadataRecordUtil {
         if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue());
           if (relatedIds.getIdentifierType() != null) {
-           resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
-          } 
+            resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
+          }
           LOG.trace("Set relation to '{}'", resourceIdentifier);
           metadataRecord.setRelatedResource(resourceIdentifier);
         }
@@ -669,7 +693,6 @@ public class MetadataRecordUtil {
    * @param metastoreProperties Configuration for accessing services
    * @param record metadata of the document.
    * @param document document
-   * @throws Exception In case of any error or invalid document.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MetadataRecord record,
@@ -852,6 +875,8 @@ public class MetadataRecordUtil {
   }
 
   /**
+   * Set schema config.
+   *
    * @param aSchemaConfig the schemaConfig to set
    */
   public static void setSchemaConfig(MetastoreConfiguration aSchemaConfig) {
@@ -859,6 +884,8 @@ public class MetadataRecordUtil {
   }
 
   /**
+   * Set DAO for data record.
+   *
    * @param aDataRecordDao the dataRecordDao to set
    */
   public static void setDataRecordDao(IDataRecordDao aDataRecordDao) {
@@ -866,7 +893,7 @@ public class MetadataRecordUtil {
   }
 
   private static void saveNewDataRecord(MetadataRecord result) {
-    DataRecord dataRecord = null;
+    DataRecord dataRecord;
 
     // Create shortcut for access.
     LOG.trace("Save new data record!");
@@ -902,6 +929,13 @@ public class MetadataRecordUtil {
     }
   }
 
+  /**
+   * Checks if current user is allowed to access with given AclEntries.
+   *
+   * @param aclEntries AclEntries of resource.
+   *
+   * @return Allowed (true) or not.
+   */
   public static boolean checkAccessRights(Set<AclEntry> aclEntries) {
     boolean isAllowed = false;
     Authentication authentication = AuthenticationHelper.getAuthentication();
@@ -919,7 +953,7 @@ public class MetadataRecordUtil {
     Iterator<AclEntry> iterator = aclEntries.iterator();
     while (iterator.hasNext()) {
       AclEntry aclEntry = iterator.next();
-          LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
+      LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
       if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)) {
         if (authorizationIdentities.contains(aclEntry.getSid())) {
           isAllowed = true;

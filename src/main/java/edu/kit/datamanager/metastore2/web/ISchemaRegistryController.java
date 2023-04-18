@@ -48,6 +48,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Interface for schema document controller.
  *
  * @author jejkal
  */
@@ -126,11 +127,11 @@ public interface ISchemaRegistryController extends InfoContributor {
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
-          @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false)  String schemaId,
+          @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false) String schemaId,
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          @Parameter(hidden = true)@PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC)Pageable pgbl,
+          @Parameter(hidden = true) @PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC) Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);

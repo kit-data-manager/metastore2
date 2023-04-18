@@ -29,6 +29,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
+ * Simplified record for a schema document.
  *
  * @author jejkal
  */

@@ -13,11 +13,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Interface for metadata editor controller.
  *
  * @author sabrinechelbi
  */
 public interface IMetadataEditorController {
-
 
   @RequestMapping("/schema-management")
   public ModelAndView schemaManagement();

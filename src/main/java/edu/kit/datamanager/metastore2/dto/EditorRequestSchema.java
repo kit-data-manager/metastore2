@@ -12,6 +12,7 @@ import lombok.Getter;
 import org.json.simple.JSONObject;
 
 /**
+ * Data transfer object for Web UI.
  *
  * @author sabrinechelbi
  */
@@ -19,25 +20,24 @@ import org.json.simple.JSONObject;
 @Getter
 public class EditorRequestSchema {
 
-    /**
-     * JSON schema, which describes the structure of the data model.
-     */
-    private JSONObject dataModel;
+  /**
+   * JSON schema, which describes the structure of the data model.
+   */
+  private JSONObject dataModel;
 
-    /**
-     * JSON user interface form, which describes the structure of the form
-     * layout.
-     */
-    private JSONObject uiForm;
+  /**
+   * JSON user interface form, which describes the structure of the form layout.
+   */
+  private JSONObject uiForm;
 
-    /**
-     * array of schema records.
-     */
-    private List<MetadataSchemaRecord> schemaRecords;
+  /**
+   * array of schema records.
+   */
+  private List<MetadataSchemaRecord> schemaRecords;
 
-    /**
-     * array, which includes the table’s column definitions.
-     */
-    private TabulatorItems[] items;
+  /**
+   * array, which includes the table’s column definitions.
+   */
+  private TabulatorItems[] items;
 
 }
