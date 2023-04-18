@@ -39,7 +39,7 @@ import org.springframework.validation.annotation.Validated;
 @EqualsAndHashCode(callSuper = true)
 public class ApplicationProperties extends GenericApplicationProperties {
 
-  @edu.kit.datamanager.annotations.LocalFolderURL
+  @LocalFolderURL
   @Value("${metastore.schema.schemaFolder}")
   private URL schemaFolder;
 
