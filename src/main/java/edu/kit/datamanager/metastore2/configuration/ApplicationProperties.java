@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
+import edu.kit.datamanager.annotations.LocalFolderURL;
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
 import java.util.List;
@@ -48,7 +49,7 @@ public class ApplicationProperties extends GenericApplicationProperties {
   // @Value("${metastore.schema.synchronization.schemaSources}")
   private List<SynchronizationSource> schemaSources;
 
-  @edu.kit.datamanager.annotations.LocalFolderURL
+  @LocalFolderURL
   @Value("${metastore.metadata.metadataFolder}")
   private URL metadataFolder;
 
