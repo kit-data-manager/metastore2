@@ -34,7 +34,6 @@ import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.StorageServiceProperties;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.service.IContentInformationService;
@@ -45,7 +44,6 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceService;
-import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
@@ -56,6 +54,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +66,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -85,6 +83,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableJpaRepositories("edu.kit.datamanager")
 @ComponentScan({"edu.kit.datamanager"})
 public class Application {
+
+  private static final String DEFAULT = "simple";
+  private static final String DEFAULT_VERSIONING = DEFAULT;
+  private static final String DEFAULT_STORAGE = DEFAULT;
 
   private static final Logger LOG = LoggerFactory.getLogger(Application.class);
   @Autowired
@@ -257,7 +259,7 @@ public class Application {
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
       LOG.trace(".... '{}'", versioningService.getServiceName());
-      if ("simple".equals(versioningService.getServiceName())) {
+      if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
       }
@@ -265,7 +267,7 @@ public class Application {
     LOG.trace("Looking for storageServices....");
     for (IRepoStorageService storageService : this.storageServices) {
       LOG.trace(".... '{}'", storageService.getServiceName());
-      if ("simple".equals(storageService.getServiceName())) {
+      if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService);
         break;
       }
@@ -307,7 +309,7 @@ public class Application {
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
       LOG.trace(".... '{}'", versioningService.getServiceName());
-      if ("simple".equals(versioningService.getServiceName())) {
+      if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
       }
@@ -315,7 +317,7 @@ public class Application {
     LOG.trace("Looking for storageService '{}'....", this.applicationProperties.getStoragePattern());
     for (IRepoStorageService storageService : this.storageServices) {
       LOG.trace(".... '{}'", storageService.getServiceName());
-      if ("simple".equals(storageService.getServiceName())) {
+      if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService); // Should be used as default
       }
       if (this.applicationProperties.getStoragePattern().equals(storageService.getServiceName())) {
@@ -374,8 +376,7 @@ public class Application {
         allRegistries.add(schemaRegistry);
       }
     }
-    String[] array = allRegistries.toArray(new String[0]);
-    return array;
+    return allRegistries.toArray(String[]::new);
   }
 
   /**
