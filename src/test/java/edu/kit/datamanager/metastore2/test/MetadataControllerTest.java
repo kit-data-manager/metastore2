@@ -74,6 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
+import org.springframework.http.MediaType;
 
 /**
  *
@@ -96,6 +97,7 @@ import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
 @TestPropertySource(properties = {"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"})
 @TestPropertySource(properties = {"spring.jpa.defer-datasource-initialization=true"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41401/api/v3/,http://localhost:41401/api/v1/"})
+@TestPropertySource(properties = {"repo.search.url=http://localhost:41401"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {
 
@@ -1486,6 +1488,28 @@ public class MetadataControllerTest {
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testSearchProxy() throws Exception {
+
+    // Test for swagger definition
+    this.mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/metadata/search?page=0&size=20")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void testSearchWithSchemaProxy() throws Exception {
+
+    // Test for swagger definition
+    this.mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/metadata/index/search?page=0&size=20")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
   }
 
   @Test
