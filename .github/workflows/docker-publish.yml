@@ -5,14 +5,16 @@ on:
   push:
     # Publish `master` as Docker `latest` image.
     branches:
-      - master, main
+      - main
 
     # Publish `v1.2.3` tags as releases.
     tags:
       - v*
 
-  # Run tests for any PRs.
+  # Run tests for PRs on main branch only.
   pull_request:
+    branches:
+      - main
 
 env:
   # TODO: Change variable to your image's name.
