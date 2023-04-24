@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
+import edu.kit.datamanager.annotations.LocalFolderURL;
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
 import java.net.URL;
 import java.util.List;
@@ -27,6 +28,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
+ * Properties for configuration of MetaStore.
  *
  * @author jejkal
  */
@@ -36,9 +38,9 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RefreshScope
 @EqualsAndHashCode(callSuper = true)
-public class ApplicationProperties extends GenericApplicationProperties{
+public class ApplicationProperties extends GenericApplicationProperties {
 
-  @edu.kit.datamanager.annotations.LocalFolderURL
+  @LocalFolderURL
   @Value("${metastore.schema.schemaFolder}")
   private URL schemaFolder;
 
@@ -47,7 +49,7 @@ public class ApplicationProperties extends GenericApplicationProperties{
   // @Value("${metastore.schema.synchronization.schemaSources}")
   private List<SynchronizationSource> schemaSources;
 
-  @edu.kit.datamanager.annotations.LocalFolderURL
+  @LocalFolderURL
   @Value("${metastore.metadata.metadataFolder}")
   private URL metadataFolder;
 

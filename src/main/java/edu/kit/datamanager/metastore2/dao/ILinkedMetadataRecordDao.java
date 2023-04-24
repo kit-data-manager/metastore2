@@ -11,10 +11,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
- *
- * @author Torridity
+ * DAO for linked metadata resources.
  */
-public interface ILinkedMetadataRecordDao extends JpaRepository<LinkedMetadataRecord, String>, JpaSpecificationExecutor<MetadataRecord>{
+public interface ILinkedMetadataRecordDao extends JpaRepository<LinkedMetadataRecord, String>, JpaSpecificationExecutor<MetadataRecord> {
+
   boolean existsMetadataRecordByRelatedResourceAndSchemaId(String relatedResource, String schemaId);
-  
+
 }

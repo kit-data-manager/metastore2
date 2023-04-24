@@ -76,6 +76,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private Optional<IMessagingService> messagingService;
 
   @Override
+  @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
@@ -164,6 +165,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
   /**
    * Transform DataRecord to MetadataRecord.
+   *
    * @param record DataRecord holding all information about metadata document.
    * @param baseUrl Base URL for accessing service.
    * @return MetadataRecord of metadata document.

@@ -49,8 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- *
- * @author jejkal
+ * Interface for metadata documents controller.
  */
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),

@@ -32,6 +32,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Controller used by web frontends.
  *
  * @author sabrinechelbi
  */
@@ -56,7 +57,7 @@ public class FrontendControllerImpl implements IFrontendController {
           final HttpServletResponse hsr,
           final UriComponentsBuilder ucb) {
 
-    LOG.trace("Performing findAllSchemasForTabulator( pgbl='{}').",pgbl);
+    LOG.trace("Performing findAllSchemasForTabulator( pgbl='{}').", pgbl);
     Pageable pageable = PageRequest.of(0, 10, Sort.by("id").ascending());
     if (pgbl != null) {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
@@ -163,6 +164,7 @@ public class FrontendControllerImpl implements IFrontendController {
    * @param pageable page object
    * @return the total number of the available pages
    */
+  @SuppressWarnings("StringSplitter")
   private int tabulatorLastPage(String pageSize, Pageable pageable) {
     if ((Integer.parseInt(pageSize.split("/")[1]) % pageable.getPageSize()) == 0) {
       return Integer.parseInt(pageSize.split("/")[1]) / pageable.getPageSize();

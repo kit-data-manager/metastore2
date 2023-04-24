@@ -26,6 +26,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
+ * Entity for holding internal path information for given URL.
  *
  * @author jejkal
  */

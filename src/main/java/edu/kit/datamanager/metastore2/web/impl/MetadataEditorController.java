@@ -28,8 +28,10 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 import edu.kit.datamanager.metastore2.web.IMetadataEditorController;
+import org.json.simple.parser.ParseException;
 
 /**
+ * Controller for the metadata editor web frontend.
  *
  * @author sabrinechelbi
  */
@@ -95,9 +97,9 @@ public class MetadataEditorController implements IMetadataEditorController {
     JSONObject obj = null;
     try {
       obj = (JSONObject) parser.parse(
-              new InputStreamReader(resource.getInputStream(), "UTF-8"));
-    } catch (Exception e) {
-      e.printStackTrace();
+              new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8));
+    } catch (IOException | ParseException e) {
+      LOG.error("Error parsing JSON object!", e);
     }
     return obj;
   }

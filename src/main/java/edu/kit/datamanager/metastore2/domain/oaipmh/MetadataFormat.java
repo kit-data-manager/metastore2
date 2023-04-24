@@ -23,6 +23,11 @@ import javax.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
+ * Record for OAI-PMH holding
+ * <ul>
+ * <li> prefix </li>
+ * <li> schema </li>
+ * <li> namespace </li> </ul>
  *
  * @author jejkal
  */

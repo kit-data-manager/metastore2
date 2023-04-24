@@ -43,6 +43,7 @@ import lombok.Data;
 import org.springframework.http.MediaType;
 
 /**
+ * Record for a metadata document.
  *
  * @author jejkal
  */
@@ -63,8 +64,8 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   @Id
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "identifier_id", referencedColumnName = "id")
+  @OneToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "identifier_id", referencedColumnName = "id")
   @NotBlank(message = "A globally unique identifier pointing to this record, e.g. DOI, Handle, PURL.")
   private ResourceIdentifier pid;
   @NotBlank(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
@@ -107,6 +108,7 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
 
   /**
    * Set new access control list.
+   *
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
@@ -115,25 +117,28 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
       acl.addAll(newAclList);
     }
   }
+
   /**
    * Set creation date (truncated to milliseconds).
+   *
    * @param instant creation date
    */
   public void setCreatedAt(Instant instant) {
     if (instant != null) {
-    createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
+      createdAt = instant.truncatedTo(ChronoUnit.MILLIS);
     } else {
       createdAt = null;
     }
   }
-  
+
   /**
    * Set update date (truncated to milliseconds).
+   *
    * @param instant update date
    */
   public void setLastUpdate(Instant instant) {
     if (instant != null) {
-    lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
+      lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
     } else {
       lastUpdate = null;
     }
