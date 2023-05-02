@@ -10,9 +10,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 /**
+ * DAO for metadata schema record.
  *
  * @author Torridity
  */
-public interface IMetadataSchemaDao extends JpaRepository<MetadataSchemaRecord, String>, JpaSpecificationExecutor<MetadataSchemaRecord>{
-  
+public interface IMetadataSchemaDao extends JpaRepository<MetadataSchemaRecord, String>, JpaSpecificationExecutor<MetadataSchemaRecord> {
+
 }

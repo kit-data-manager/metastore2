@@ -11,14 +11,16 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
+ * Helper class for tabulator remote pagination used by web frontend.
  *
  * @author sabrinechelbi
  */
 @Getter
 @Builder
 public class TabulatorRemotePagination {
-    @JsonProperty("last_page")
-    private int lastPage;
-    
-    private List<?> data;
+
+  @JsonProperty("last_page")
+  private int lastPage;
+
+  private List<?> data;
 }

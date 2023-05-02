@@ -225,9 +225,9 @@ public abstract class AbstractOAIPMHRepository {
             switch (getGranularity()) {
                 case YYYY_MM_DD:
                     df = new SimpleDateFormat("yyyy-MM-dd");
+                    break;
                 default:
                     df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-                    break;
             }
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
         }

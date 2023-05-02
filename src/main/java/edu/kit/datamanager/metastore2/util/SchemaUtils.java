@@ -18,6 +18,7 @@ package edu.kit.datamanager.metastore2.util;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
 
 /**
+ * Utility class for (XML) schema documents.
  *
  * @author jejkal
  */
@@ -54,7 +56,7 @@ public class SchemaUtils {
     // Cut schema to a maximum of MAX_LENGTH_OF_HEADER characters.
     if (schema != null) {
       int length = schema.length > MAX_LENGTH_OF_HEADER ? MAX_LENGTH_OF_HEADER : schema.length;
-      String schemaAsString = new String(schema, 0, length);
+      String schemaAsString = new String(schema, 0, length, StandardCharsets.UTF_8);
       LOG.trace("Guess type for '{}'", schemaAsString);
 
       Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);

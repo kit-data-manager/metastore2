@@ -28,6 +28,7 @@ import javax.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
+ * Simplified record for a metadata document.
  *
  * @author jejkal
  */

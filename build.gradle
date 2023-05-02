@@ -5,6 +5,7 @@ plugins {
     id 'io.freefair.maven-publish-java' version '8.0.1'
     id 'org.owasp.dependencycheck' version '8.2.1'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'net.ltgt.errorprone' version '3.0.1'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.1'
     id 'java'
@@ -19,7 +20,7 @@ ext {
     springDocVersion  = '1.7.0'
     javersVersion     = '6.14.0'
     keycloakVersion   = '19.0.0'
-
+    errorproneVersion = '2.18.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -33,8 +34,8 @@ repositories {
     mavenCentral()
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+sourceCompatibility = 1.11
+targetCompatibility = 1.11
  
 if (System.getProperty('profile') == 'minimal') {
     println 'Using minimal profile for building ' + project.getName()
@@ -134,16 +135,27 @@ dependencies {
     testImplementation "org.mockito:mockito-core:5.3.1"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
+
+    // errorprone
+    errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
 }
 
 compileJava {
-    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+//    options.errorprone.disableAllWarnings = true
+    options.errorprone.disableWarningsInGeneratedCode = true
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xmaxwarns" << "200"
+}
+
+compileTestJava {
+    // disable errorprone for tests
+    options.errorprone.disableWarningsInGeneratedCode = true
+    options.errorprone.enabled = false // change it to true to enable
 }
 
 test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
-
+    
     maxHeapSize = "8192m"
     testLogging {
         outputs.upToDateWhen {false}
