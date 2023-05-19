@@ -16,14 +16,14 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.Id;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotBlank;
 import lombok.Data;
+import org.hibernate.annotations.Table;
 
 /**
  * Simplified record for linked resources for metadata document.

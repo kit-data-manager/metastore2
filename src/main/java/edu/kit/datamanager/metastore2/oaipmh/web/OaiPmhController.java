@@ -15,16 +15,15 @@
  */
 package edu.kit.datamanager.metastore2.oaipmh.web;
 
-import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
 import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
 import org.apache.http.HttpStatus;
 import org.openarchives.oai._2.OAIPMHerrorcodeType;
 import org.openarchives.oai._2.OAIPMHtype;

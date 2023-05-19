@@ -18,12 +18,12 @@ package edu.kit.datamanager.metastore2.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import javax.persistence.OneToMany;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
