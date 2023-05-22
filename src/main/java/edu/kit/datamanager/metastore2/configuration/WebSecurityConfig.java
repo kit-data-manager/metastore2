@@ -18,7 +18,7 @@ package edu.kit.datamanager.metastore2.configuration;
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 import java.util.Optional;
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -51,7 +51,7 @@ import org.springframework.web.filter.CorsFilter;
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
   private static final Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
@@ -72,8 +72,8 @@ public class WebSecurityConfig {
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    HttpSecurity httpSecurity = http.authorizeRequests().
-            antMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+    HttpSecurity httpSecurity = http.authorizeHttpRequests().
+            requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
             requestMatchers(EndpointRequest.to(
                     InfoEndpoint.class,
                     HealthEndpoint.class
@@ -98,8 +98,8 @@ public class WebSecurityConfig {
     }
 
     httpSecurity.
-            authorizeRequests().
-            antMatchers("/api/v1").authenticated();
+            authorizeHttpRequests().
+            requestMatchers("/api/v1").authenticated();
 
     http.headers().cacheControl().disable();
     return http.build();
