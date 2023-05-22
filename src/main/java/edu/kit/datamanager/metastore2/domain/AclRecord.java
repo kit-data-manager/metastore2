@@ -39,7 +39,7 @@ public class AclRecord implements Serializable {
   public final static MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @NotNull(message = "A list of access control entries with at least access for READ.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<String> read;
   @NotBlank(message = "The metadata record.")
   private Object metadataRecord;

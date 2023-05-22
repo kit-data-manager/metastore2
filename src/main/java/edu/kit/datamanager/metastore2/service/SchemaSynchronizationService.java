@@ -122,7 +122,7 @@ public class SchemaSynchronizationService {
 
       //@TODO switch to service identity, add bearer token optionally
       ResponseEntity<MetadataSchemaRecord[]> response = restTemplate.exchange(uriBuilder.toUriString(), HttpMethod.GET, requestEntity, MetadataSchemaRecord[].class);
-      if (response.getStatusCodeValue() == 200) {
+      if (response.getStatusCode().value() == 200) {
         MetadataSchemaRecord[] receivedRecords = response.getBody();
         if (receivedRecords != null && receivedRecords.length > 0) {
           LOGGER.trace("Performing update for {} schema(s).", receivedRecords.length);
@@ -167,7 +167,7 @@ public class SchemaSynchronizationService {
         }
 
       } else {
-        LOGGER.error("Failed to obtain updates schemas from URL {}. Service returned status {}.", uriBuilder.toUriString(), response.getStatusCodeValue());
+        LOGGER.error("Failed to obtain updates schemas from URL {}. Service returned status {}.", uriBuilder.toUriString(), response.getStatusCode().value());
       }
     }
   }

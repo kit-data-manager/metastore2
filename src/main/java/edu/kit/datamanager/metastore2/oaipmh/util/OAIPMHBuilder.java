@@ -38,8 +38,8 @@ import org.openarchives.oai._2.RequestType;
 import org.openarchives.oai._2.SetType;
 import org.openarchives.oai._2.VerbType;
 import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
+import jakarta.xml.datatype.DatatypeConfigurationException;
+import jakarta.xml.datatype.DatatypeFactory;
 import org.openarchives.oai._2.ResumptionTokenType;
 import org.slf4j.LoggerFactory;
 

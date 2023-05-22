@@ -15,7 +15,7 @@ import jakarta.xml.bind.annotation.XmlSchemaType;
 import jakarta.xml.bind.annotation.XmlType;
 import jakarta.xml.bind.annotation.XmlValue;
 import java.math.BigInteger;
-import javax.xml.datatype.XMLGregorianCalendar;
+import jakarta.xml.datatype.XMLGregorianCalendar;
 
 
 /**

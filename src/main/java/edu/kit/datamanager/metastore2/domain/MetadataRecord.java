@@ -75,7 +75,7 @@ public class MetadataRecord implements EtagSupport, Serializable {
   private Long recordVersion;
 
   @NotNull(message = "A list of access control entries for resticting access.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
