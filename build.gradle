@@ -122,7 +122,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.2.0-SNAPSHOT"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:4.4.11"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.1.0"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
