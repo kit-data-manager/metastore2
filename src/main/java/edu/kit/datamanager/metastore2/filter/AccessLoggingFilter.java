@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.filter;
 
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
+import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletRequest;
@@ -23,7 +24,6 @@ import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.nio.file.DirectoryStream.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

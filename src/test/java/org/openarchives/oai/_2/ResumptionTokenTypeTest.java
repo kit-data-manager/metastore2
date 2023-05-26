@@ -6,9 +6,9 @@
 package org.openarchives.oai._2;
 
 import java.math.BigInteger;
-import jakarta.xml.datatype.DatatypeConfigurationException;
-import jakarta.xml.datatype.DatatypeFactory;
-import jakarta.xml.datatype.XMLGregorianCalendar;
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
+import javax.xml.datatype.XMLGregorianCalendar;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;

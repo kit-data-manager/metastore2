@@ -15,7 +15,7 @@ import jakarta.xml.bind.annotation.XmlType;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import jakarta.xml.datatype.XMLGregorianCalendar;
+import javax.xml.datatype.XMLGregorianCalendar;
 
 /**
  * <p>

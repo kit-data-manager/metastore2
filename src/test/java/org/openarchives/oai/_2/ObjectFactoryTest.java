@@ -5,9 +5,9 @@
  */
 package org.openarchives.oai._2;
 
-import jakarta.crypto.spec.OAEPParameterSpec;
 import jakarta.xml.bind.JAXBElement;
-import jakarta.xml.namespace.QName;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.xml.namespace.QName;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
