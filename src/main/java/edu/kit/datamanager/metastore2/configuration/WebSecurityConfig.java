@@ -84,7 +84,7 @@ public class WebSecurityConfig {
     if (!enableCsrf) {
       logger.info("CSRF disabled!");
       httpSecurity = httpSecurity.csrf().disable();
-    }
+  }
     if (keycloaktokenFilterBean.isPresent()) {
       logger.info("Add keycloak filter!");
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
@@ -101,8 +101,9 @@ public class WebSecurityConfig {
             authorizeHttpRequests().
             requestMatchers("/api/v1").authenticated();
 
-    http.headers().cacheControl().disable();
-    return http.build();
+    httpSecurity.headers().cacheControl().disable();
+
+    return httpSecurity.build();
   }
 
   @Bean
