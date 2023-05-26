@@ -146,8 +146,8 @@ public class SchemaRegistryControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
 
   @Autowired
   private IDataResourceDao dataResourceDao;
@@ -184,7 +184,7 @@ public class SchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }

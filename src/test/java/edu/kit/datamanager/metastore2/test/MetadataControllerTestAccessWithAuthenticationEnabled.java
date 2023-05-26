@@ -124,8 +124,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
   private ApplicationProperties applicationProperties;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   Javers javers = null;
   @Autowired
@@ -151,7 +151,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41412))
             .build();

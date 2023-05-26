@@ -102,8 +102,8 @@ public class FrontendControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
@@ -139,7 +139,7 @@ public class FrontendControllerTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+//              .addFilters(springSecurityFilterChain)
               .apply(documentationConfiguration(this.restDocumentation).uris()
                       .withPort(41418))
               .build();

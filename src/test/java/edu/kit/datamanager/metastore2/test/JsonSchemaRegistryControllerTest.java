@@ -191,8 +191,8 @@ public class JsonSchemaRegistryControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
@@ -226,7 +226,7 @@ public class JsonSchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }

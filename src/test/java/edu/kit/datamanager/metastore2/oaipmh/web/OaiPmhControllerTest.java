@@ -176,8 +176,8 @@ public class OaiPmhControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
@@ -219,7 +219,7 @@ public class OaiPmhControllerTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+//              .addFilters(springSecurityFilterChain)
               .apply(documentationConfiguration(this.restDocumentation))
               .build();
       // Create schema only once.

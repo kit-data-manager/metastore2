@@ -94,8 +94,8 @@ public class SchemaRegistryControllerDocumentationTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -203,7 +203,7 @@ public class SchemaRegistryControllerDocumentationTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation)
                     .uris().withPort(8040).and()
                     .operationPreprocessors()

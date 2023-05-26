@@ -115,8 +115,8 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
   private ApplicationProperties applicationProperties;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   Javers javers = null;
   @Autowired
@@ -142,7 +142,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41413))
             .build();

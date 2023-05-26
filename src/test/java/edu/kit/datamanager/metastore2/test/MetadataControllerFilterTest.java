@@ -141,8 +141,8 @@ public class MetadataControllerFilterTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
@@ -159,7 +159,7 @@ public class MetadataControllerFilterTest {
   @Before
   public void setUp() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+//            .addFilters(springSecurityFilterChain)
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
     // preparation will be done only once.

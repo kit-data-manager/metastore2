@@ -122,8 +122,8 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
+//  @Autowired
+//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   Javers javers = null;
   @Autowired
@@ -160,7 +160,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+//              .addFilters(springSecurityFilterChain)
               .apply(documentationConfiguration(this.restDocumentation).uris()
                       .withPort(41410))
               .build();
