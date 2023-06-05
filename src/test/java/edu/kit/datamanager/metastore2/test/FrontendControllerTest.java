@@ -42,7 +42,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -63,6 +62,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.hamcrest.core.IsNot;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 /**
  *
@@ -102,8 +102,6 @@ public class FrontendControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-//  @Autowired
-//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
@@ -139,12 +137,12 @@ public class FrontendControllerTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-//              .addFilters(springSecurityFilterChain)
+              .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
                       .withPort(41418))
               .build();
       // Create schema only once.
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -152,7 +150,7 @@ public class FrontendControllerTest {
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
       Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
       CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, SCHEMA_ID, schemaConfig.getJwtSecret());
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -172,9 +170,9 @@ public class FrontendControllerTest {
             andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasKey("last_page"))).
             andReturn();
     //String metadataRecordId = 
-            createDCMetadataRecord();
+    createDCMetadataRecord();
 
-     res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1")).
+    res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1")).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(1))).
@@ -192,9 +190,9 @@ public class FrontendControllerTest {
             andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasKey("last_page"))).
             andReturn();
     //String metadataRecordId = 
-            createDCMetadataRecord();
+    createDCMetadataRecord();
 
-     res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1").
+    res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1").
             accept("application/tabulator+json")).
             andDo(print()).
             andExpect(status().isOk()).

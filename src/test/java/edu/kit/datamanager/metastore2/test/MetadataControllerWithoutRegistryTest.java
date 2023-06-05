@@ -42,7 +42,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -94,15 +94,13 @@ public class MetadataControllerWithoutRegistryTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-//  @Autowired
-//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IDataResourceDao dataResourceDao;
- @Autowired
+  @Autowired
   private IDataRecordDao dataRecordDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
@@ -133,9 +131,9 @@ public class MetadataControllerWithoutRegistryTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-//              .addFilters(springSecurityFilterChain)
+              .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
-      				.withPort(41406))
+                      .withPort(41406))
               .build();
       // Create schema only once.
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
@@ -172,7 +170,6 @@ public class MetadataControllerWithoutRegistryTest {
             file(metadataFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
 
-  
   private void ingestSchemaRecord() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(SCHEMA_ID);

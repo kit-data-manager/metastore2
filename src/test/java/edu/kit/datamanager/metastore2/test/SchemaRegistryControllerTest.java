@@ -62,7 +62,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -146,8 +146,6 @@ public class SchemaRegistryControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-//  @Autowired
-//  private FilterChainProxy springSecurityFilterChain;
 
   @Autowired
   private IDataResourceDao dataResourceDao;
@@ -184,7 +182,7 @@ public class SchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-//            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }

@@ -51,7 +51,6 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -62,7 +61,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -79,6 +77,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.*;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 /**
  *
  * @author hartmann-v
@@ -112,8 +111,6 @@ public class ElasticIndexerRunnerTest {
   private ElasticIndexerRunner eir;
   @Autowired
   private WebApplicationContext context;
-//  @Autowired
-//  private FilterChainProxy springSecurityFilterChain;
   @Autowired
   Javers javers = null;
   @Autowired
@@ -186,7 +183,7 @@ public class ElasticIndexerRunnerTest {
   public void setUp() {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-//            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41417))
             .build();

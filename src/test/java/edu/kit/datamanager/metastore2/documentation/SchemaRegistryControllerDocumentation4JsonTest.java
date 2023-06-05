@@ -48,9 +48,8 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.restdocs.operation.preprocess.Preprocessors;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
-import org.springframework.restdocs.templates.TemplateFormats;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
@@ -94,8 +93,6 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-//  @Autowired
-//  private FilterChainProxy springSecurityFilterChain;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -241,7 +238,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-//            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation)
                     .uris().withPort(8040).and()
                     .operationPreprocessors()

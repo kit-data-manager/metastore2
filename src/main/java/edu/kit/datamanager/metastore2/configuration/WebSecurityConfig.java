@@ -99,7 +99,7 @@ public class WebSecurityConfig {
 
     httpSecurity.
             authorizeHttpRequests().
-            requestMatchers("/api/v1").authenticated();
+            requestMatchers("/api/v1/**").authenticated();
 
     httpSecurity.headers().cacheControl().disable();
 
