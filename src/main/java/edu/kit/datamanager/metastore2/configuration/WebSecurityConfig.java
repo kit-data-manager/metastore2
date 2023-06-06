@@ -17,6 +17,7 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
+import edu.kit.datamanager.security.filter.PublicAuthenticationFilter;
 import java.util.Optional;
 import jakarta.servlet.Filter;
 import org.slf4j.Logger;
@@ -103,9 +104,12 @@ public class WebSecurityConfig {
       logger.info("CSRF disabled!");
       httpSecurity = httpSecurity.csrf().disable();
   }
+      logger.info("Adding 'NoAuthenticationFilter' to authentication chain.");
     if (keycloaktokenFilterBean.isPresent()) {
       logger.info("Add keycloak filter!");
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
+      logger.info("Add public authentication filter!");
+      httpSecurity = httpSecurity.addFilterAfter(new PublicAuthenticationFilter(applicationProperties.getJwtSecret()), BasicAuthenticationFilter.class);
     }
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
