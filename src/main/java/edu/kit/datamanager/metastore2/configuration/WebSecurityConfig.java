@@ -74,11 +74,12 @@ public class WebSecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeHttpRequests().
             requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+            requestMatchers("/oaipmh").permitAll().
             requestMatchers(EndpointRequest.to(
                     InfoEndpoint.class,
                     HealthEndpoint.class
             )).permitAll().
-            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ADMIN", "ACTUATOR").and().
+            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").and().
             sessionManagement().
             sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
     if (!enableCsrf) {
