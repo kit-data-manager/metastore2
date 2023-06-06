@@ -1399,7 +1399,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
             header("If-Match", etag)).
             andDo(print()).
-            andExpect(status().isUnauthorized()).
+            andExpect(status().isForbidden()).
             andReturn();
   }
 
@@ -1468,7 +1468,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     String metadataRecordId = createDCMetadataRecord();
     // Get version of record as array
     // Read all versions (only 1 version available)
-    this.mockMvc.perform(get("/api/v1/metadata/").
+    this.mockMvc.perform(get("/api/v1/metadata").
             param("id", metadataRecordId).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header(HttpHeaders.ACCEPT, "application/json")).
