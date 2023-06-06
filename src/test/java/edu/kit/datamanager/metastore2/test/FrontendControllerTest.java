@@ -163,7 +163,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetMetadataRecords4Tabulator1() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/metadata/")).
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/metadata")).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$", IsNot.not(Matchers.hasKey("data")))).
@@ -172,7 +172,7 @@ public class FrontendControllerTest {
     //String metadataRecordId = 
     createDCMetadataRecord();
 
-    res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1")).
+    res = this.mockMvc.perform(get("/api/v1/ui/metadata?page=1")).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(1))).
@@ -182,7 +182,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetMetadataRecords4Tabulator2() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/metadata/").
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/metadata").
             accept("application/tabulator+json")).
             andDo(print()).
             andExpect(status().isOk()).
@@ -192,7 +192,7 @@ public class FrontendControllerTest {
     //String metadataRecordId = 
     createDCMetadataRecord();
 
-    res = this.mockMvc.perform(get("/api/v1/ui/metadata/?page=1").
+    res = this.mockMvc.perform(get("/api/v1/ui/metadata?page=1").
             accept("application/tabulator+json")).
             andDo(print()).
             andExpect(status().isOk()).
@@ -203,7 +203,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetSchemaRecords4Tabulator1() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas/")).
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas")).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(1))).
@@ -213,7 +213,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetSchemaRecords4Tabulator2() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas/").
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas").
             accept("application/tabulator+json")).
             andDo(print()).
             andExpect(status().isOk()).
@@ -224,7 +224,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetSchemaRecords4Tabulator3() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas/?page=1")).
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas?page=1")).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.hasSize(1))).
@@ -234,7 +234,7 @@ public class FrontendControllerTest {
 
   @Test
   public void testGetSchemaRecords4Tabulator4() throws Exception {
-    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas/?page=1").
+    MvcResult res = this.mockMvc.perform(get("/api/v1/ui/schemas?page=1").
             accept("application/tabulator+json")).
             andDo(print()).
             andExpect(status().isOk()).
