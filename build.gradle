@@ -17,7 +17,7 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '1.7.0'
+    springDocVersion  = '2.1.0'
     javersVersion     = '7.0.0'
     keycloakVersion   = '19.0.0'
     errorproneVersion = '2.18.0'
@@ -71,9 +71,9 @@ dependencies {
     implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.0.0"
 
     // springdoc
-    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-common:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
 
     // JAXB
 //    implementation "jakarta.xml.bind:jakarta.xml.bind-api:4.0.0"

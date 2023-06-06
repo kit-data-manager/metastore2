@@ -66,6 +66,21 @@ public class WebSecurityConfig {
   private boolean enableCsrf;
   @Value("${metastore.security.allowedOriginPattern:http*://localhost:*}")
   private String allowedOriginPattern;
+  
+  private static final String[] AUTH_WHITELIST_SWAGGER_UI = {
+            // -- Swagger UI v2
+            "/v2/api-docs",
+            "/swagger-resources",
+            "/swagger-resources/**",
+            "/configuration/ui",
+            "/configuration/security",
+            "/swagger-ui.html",
+            "/webjars/**",
+            // -- Swagger UI v3 (OpenAPI)
+            "/v3/api-docs/**",
+            "/swagger-ui/**"
+            // other public endpoints of your API may be appended to this array
+    };
 
   public WebSecurityConfig() {
   }
@@ -75,6 +90,8 @@ public class WebSecurityConfig {
     HttpSecurity httpSecurity = http.authorizeHttpRequests().
             requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
             requestMatchers("/oaipmh").permitAll().
+//            requestMatchers("/_search").permitAll().
+            requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
             requestMatchers(EndpointRequest.to(
                     InfoEndpoint.class,
                     HealthEndpoint.class
