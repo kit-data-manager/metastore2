@@ -67,44 +67,45 @@ public class WebSecurityConfig {
   private boolean enableCsrf;
   @Value("${metastore.security.allowedOriginPattern:http*://localhost:*}")
   private String allowedOriginPattern;
-  
+
   private static final String[] AUTH_WHITELIST_SWAGGER_UI = {
-            // -- Swagger UI v2
-            "/v2/api-docs",
-            "/swagger-resources",
-            "/swagger-resources/**",
-            "/configuration/ui",
-            "/configuration/security",
-            "/swagger-ui.html",
-            "/webjars/**",
-            // -- Swagger UI v3 (OpenAPI)
-            "/v3/api-docs/**",
-            "/swagger-ui/**"
-            // other public endpoints of your API may be appended to this array
-    };
+    // -- Swagger UI v2
+    "/v2/api-docs",
+    "/swagger-resources",
+    "/swagger-resources/**",
+    "/configuration/ui",
+    "/configuration/security",
+    "/swagger-ui.html",
+    "/webjars/**",
+    // -- Swagger UI v3 (OpenAPI)
+    "/v3/api-docs/**",
+    "/swagger-ui/**"
+  // other public endpoints of your API may be appended to this array
+  };
 
   public WebSecurityConfig() {
   }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    HttpSecurity httpSecurity = http.authorizeHttpRequests().
-            requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
-            requestMatchers("/oaipmh").permitAll().
-//            requestMatchers("/_search").permitAll().
-            requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
-            requestMatchers(EndpointRequest.to(
-                    InfoEndpoint.class,
-                    HealthEndpoint.class
-            )).permitAll().
-            requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").and().
-            sessionManagement().
-            sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+    HttpSecurity httpSecurity = http.authorizeHttpRequests(
+            authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+                    requestMatchers("/oaipmh").permitAll().
+                    //            requestMatchers("/_search").permitAll().
+                    requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
+                    requestMatchers(EndpointRequest.to(
+                            InfoEndpoint.class,
+                            HealthEndpoint.class
+                    )).permitAll().
+                    requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
+                    requestMatchers("/api/v1/**").authenticated()).
+            sessionManagement(
+                    session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     if (!enableCsrf) {
       logger.info("CSRF disabled!");
-      httpSecurity = httpSecurity.csrf().disable();
-  }
-      logger.info("Adding 'NoAuthenticationFilter' to authentication chain.");
+      httpSecurity = httpSecurity.csrf(csrf -> csrf.disable());
+    }
+    logger.info("Adding 'NoAuthenticationFilter' to authentication chain.");
     if (keycloaktokenFilterBean.isPresent()) {
       logger.info("Add keycloak filter!");
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
@@ -119,11 +120,7 @@ public class WebSecurityConfig {
       logger.info("Authentication is ENABLED.");
     }
 
-    httpSecurity.
-            authorizeHttpRequests().
-            requestMatchers("/api/v1/**").authenticated();
-
-    httpSecurity.headers().cacheControl().disable();
+    httpSecurity.headers(headers -> headers.cacheControl(cache -> cache.disable()));
 
     return httpSecurity.build();
   }
