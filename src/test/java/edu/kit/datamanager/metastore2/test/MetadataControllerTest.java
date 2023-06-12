@@ -1489,7 +1489,6 @@ public class MetadataControllerTest {
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
   }
   
-  @Ignore
   @Test
   public void testSearchProxy() throws Exception {
 
@@ -1498,10 +1497,9 @@ public class MetadataControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andDo(print())
-            .andExpect(status().isNotFound());
+            .andExpect(status().isForbidden());
   }
   
-  @Ignore
   @Test
   public void testSearchWithSchemaProxy() throws Exception {
 
@@ -1510,7 +1508,7 @@ public class MetadataControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andDo(print())
-            .andExpect(status().isNotFound());
+            .andExpect(status().isForbidden());
   }
 
   @Test
