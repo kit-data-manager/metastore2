@@ -27,6 +27,8 @@ import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -116,7 +118,6 @@ public class JsonUtils {
       // validate schema with meta schema.
       validateJson(jsonSchema, getSchema(version));
       JsonSchema schema = getJsonSchemaFromString(jsonSchema, version);
-      checkSchema(schema);
     } catch (Exception ex) {
       LOG.error("Unknown error", ex);
       String errorMessage = ex.getMessage();
@@ -183,7 +184,6 @@ public class JsonUtils {
     StringBuilder errorMessage = new StringBuilder(ERROR_VALIDATING_JSON_DOCUMENT);
     try {
       JsonSchema jsonSchemaFromString = getJsonSchemaFromString(jsonSchema, version);
-      checkSchema(jsonSchemaFromString);
       JsonNode jsonNode = getJsonNodeFromString(jsonDocument);
       Set<ValidationMessage> validate = jsonSchemaFromString.validate(jsonNode);
       for (ValidationMessage message : validate) {
@@ -235,7 +235,21 @@ public class JsonUtils {
    */
   protected static JsonSchema getJsonSchemaFromString(String schemaContent, VersionFlag version) throws Exception {
     JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
-    return factory.getSchema(schemaContent);
+    JsonSchema schema = factory.getSchema(schemaContent);
+    checkSchema(schema);
+    Optional<VersionFlag> optionalVersionFound = SpecVersionDetector.detectOptionalVersion(schema.getSchemaNode());
+    VersionFlag versionFound = version;
+    if (!optionalVersionFound.isEmpty()) {
+      versionFound = optionalVersionFound.get();
+    }
+    if (!Objects.equals(version, versionFound)) {
+      LOG.error("Unknown MetaSchema or not matching: Expected: '{}' <-> Found: '{}'", version, versionFound);
+      throw new JsonSchemaException("Unknown MetaSchema or not matching: Expected: '" + version + "' <-> Found: '" + versionFound + "'");
+    }
+    return schema;
+//    JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
+//    System.out.println("Hallo : " + factory.getSchema(schemaContent).getSchemaPath() + "Version: " + version);
+//    return factory.getSchema(schemaContent);
   }
 
   /**
