@@ -267,12 +267,12 @@ public class JsonUtils {
   }
 
   /**
-   * Test wether the schema has at least one validator.
+   * Test whether the schema has at least one validator.
    *
    * @param schema schema to check
    */
   protected static void checkSchema(JsonSchema schema) {
-    if (schema.getValidators().isEmpty()) {
+    if (schema.getSchemaNode().isEmpty()) {
       throw new JsonValidationException(EMPTY_SCHEMA_DETECTED);
     }
   }
