@@ -91,7 +91,7 @@ public class WebSecurityConfig {
     HttpSecurity httpSecurity = http.authorizeHttpRequests(
             authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
                     requestMatchers("/oaipmh").permitAll().
-                    //            requestMatchers("/_search").permitAll().
+                    requestMatchers("/static/**").permitAll().
                     requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
                     requestMatchers(EndpointRequest.to(
                             InfoEndpoint.class,
