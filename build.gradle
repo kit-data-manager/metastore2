@@ -5,7 +5,7 @@ plugins {
     id 'io.freefair.maven-publish-java' version '8.0.1'
     id 'org.owasp.dependencycheck' version '8.2.1'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
-    id 'net.ltgt.errorprone' version '3.0.1'
+    id 'net.ltgt.errorprone' version '3.1.0'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.1'
     id 'java'
@@ -20,7 +20,7 @@ ext {
     springDocVersion  = '2.1.0'
     javersVersion     = '7.0.0'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.18.0'
+    errorproneVersion = '2.19.1'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -97,11 +97,11 @@ dependencies {
     implementation "com.h2database:h2:2.1.214"
     
     // apache
-    implementation "commons-io:commons-io:2.11.0"
-    implementation "org.apache.tika:tika-core:2.7.0"
+    implementation "commons-io:commons-io:2.13.0"
+    implementation "org.apache.tika:tika-core:2.8.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.81"
+    implementation "com.networknt:json-schema-validator:1.0.84"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.2'
@@ -125,7 +125,7 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.3.1"
+    testImplementation "org.mockito:mockito-core:5.4.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
