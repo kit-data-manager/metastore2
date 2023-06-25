@@ -90,7 +90,7 @@ public class WebSecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeHttpRequests(
             authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
-                    requestMatchers("/oaipmh").permitAll().
+                    requestMatchers("/**").permitAll().
                     requestMatchers("/static/**").permitAll().
                     requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
                     requestMatchers(EndpointRequest.to(
@@ -98,7 +98,7 @@ public class WebSecurityConfig {
                             HealthEndpoint.class
                     )).permitAll().
                     requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
-                    requestMatchers("/api/v1/**").authenticated()).
+                    requestMatchers("/**").authenticated()).
             sessionManagement(
                     session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     if (!enableCsrf) {

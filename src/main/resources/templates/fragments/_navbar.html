@@ -16,13 +16,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbar">
                 <ul class="nav navbar-nav">
-                    <li th:class="${#httpServletRequest.requestURI.contains('dashboard')} ? 'nav-link active' : 'nav-link'"><a
+                    <li th:class="${#IWebRequest.requestURL.contains('dashboard')} ? 'nav-link active' : 'nav-link'"><a
                             href="/dashboard">Dashboard</a></li>	
 
-                    <li th:class="${#httpServletRequest.requestURI.contains('schema-management')} ? 'nav-link active' : 'nav-link'"><a
+                    <li th:class="${#IWebRequest.getRequestURL.contains('schema-management')} ? 'nav-link active' : 'nav-link'"><a
                             href="/schema-management">Schema Management</a></li>	
 
-                    <li th:class="${#httpServletRequest.requestURI.contains('metadata-management')} ? 'nav-link active' : 'nav-link'"><a                   
+                    <li th:class="${#IWebRequest.getRequestURL.contains('metadata-management')} ? 'nav-link active' : 'nav-link'"><a                   
                             href="/metadata-management">Metadata Management</a></li>	
                 </ul>
             </div>
