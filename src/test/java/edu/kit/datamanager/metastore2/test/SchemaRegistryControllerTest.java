@@ -313,6 +313,27 @@ public class SchemaRegistryControllerTest {
   }
 
   @Test
+  public void testCreateSchemaRecordWithEmptyAclSid() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("my_dc");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(null, PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+
+    Assert.assertTrue(res.getResponse().getContentAsString().contains("Subject ID of ACL entry must not be null."));
+  }
+
+  @Test
   public void testCreateInvalidMetadataSchemaRecord() throws Exception {
     String wrongTypeJson = "{\"schemaId\":\"dc\",\"type\":\"Something totally strange!\"}";
 
