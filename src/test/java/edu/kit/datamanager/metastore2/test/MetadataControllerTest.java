@@ -595,7 +595,7 @@ public class MetadataControllerTest {
   }
 
   @Test
-  public void testCreateRecordWithEmptySID() throws Exception {
+  public void testCreateRecordWithEmptyAclSiD() throws Exception {
     MetadataRecord record = new MetadataRecord();
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     record.setRelatedResource(RELATED_RESOURCE);
