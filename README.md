@@ -170,7 +170,7 @@ https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.ht
 
 If you want to use a script for doing so please refer to 
 
-http://metastore.docker:8040/swagger-ui.html
+http://metastore.docker:8040/metastore/swagger-ui.html
 
 in order to see available RESTful endpoints and their documentation. Furthermore, 
 you can use this Web interface to test single API calls in order to get familiar with the 
@@ -200,7 +200,7 @@ user@localhost:/home/user/metastore2$
 
 ## First steps using MetaStore standalone
 If you're using MetaStore without the whole framework the service is reachable via
-http://localhost:8040/....
+http://localhost:8040/metastore/....
 
 ## Setup for production mode
 :WARNING: If you want to use the service in production mode you have modify your configuration (application.properties).
