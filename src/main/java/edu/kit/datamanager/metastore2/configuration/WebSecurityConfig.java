@@ -90,7 +90,7 @@ public class WebSecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeHttpRequests(
             authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
-                    requestMatchers("/**").permitAll().
+                    requestMatchers("/oaipmh").permitAll().
                     requestMatchers("/static/**").permitAll().
                     requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
                     requestMatchers(EndpointRequest.to(
