@@ -117,6 +117,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   private final static String KIT_DOCUMENT_INVALID = CreateSchemaUtil.KIT_DOCUMENT_INVALID_1;
 
   private String adminToken;
+  private String curatorToken;
   private String userToken;
   private String otherUserToken;
   private String guestToken;
@@ -166,6 +167,14 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             addSimpleClaim("email", "thomas.jejkal@kit.edu").
             addSimpleClaim("orcid", "0000-0003-2804-688X").
             addSimpleClaim("groupid", "USERS").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).
+            getCompactToken(applicationProperties.getJwtSecret());
+    
+    curatorToken = edu.kit.datamanager.util.JwtBuilder.createUserToken("curator", RepoUserRole.ADMINISTRATOR).
+            addSimpleClaim("email", "thomas.jejkal@kit.edu").
+            addSimpleClaim("orcid", "0000-0003-2804-688X").
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).
@@ -1506,10 +1515,17 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andExpect(status().isOk()).
             andReturn();
     String etag = result.getResponse().getHeader("ETag");
+    // Delete record without appropriate access rights.
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).
+            andExpect(status().isForbidden()).
+            andReturn();
     // Delete record
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
             header("If-Match", etag).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + curatorToken)).
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
@@ -1524,9 +1540,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     etag = result.getResponse().getHeader("ETag");
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
             header("If-Match", etag).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + curatorToken)).
             andDo(print()).
-            andExpect(status().isPreconditionRequired()).
+            andExpect(status().isNoContent()).
             andReturn();
 //    Recreation should be no problem.
 //    //try to create after deletion (Should return HTTP GONE)
