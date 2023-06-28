@@ -100,7 +100,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
   private static final String SCHEMA_ID = "my_dc_access_aai";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private final static String JSON_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"

@@ -769,7 +769,7 @@ schema-record4json.json:
 ----
 schema.json:
 {
-  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
   "$id": "http://www.example.org/schema/json",
   "type": "object",
   "title": "Json schema for tests",
@@ -852,7 +852,7 @@ Just send an HTTP POST with the updated metadata schema document and/or metadata
 ----
 schema-v2.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "title": "Json schema for tests",
@@ -900,7 +900,7 @@ Just send an HTTP POST with the updated metadata schema document and/or metadata
 ----
 schema-v3.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "title": "Json schema for tests",
@@ -962,7 +962,7 @@ another-schema-record4json.json:
 ----
 another-schema.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2019-09/schema",
     "$id": "http://www.example.org/schema/json/example",
     "type": "object",
     "title": "Another Json schema for tests",
