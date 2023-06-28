@@ -10,7 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
-
+- Bump edu.kit.datamanager:repo-core from 1.1.2 to 1.2.0
+- Bump edu.kit.datamanager:service-base from 1.1.1 to 1.2.0 
+- Bump javersVersion from 6.14.0 to 7.0.0
+- Bump org.springframework.boot from 2.7.10 to 3.1.0
+- Bump org.springframework.cloud:spring-cloud-starter-config from 3.1.7 to 4.0.3
+- Bump org.springframework.cloud:spring-cloud-starter-netflix-eureka-client from 3.1.6 to 4.0.2 
+- Bump org.springframework.data:spring-data-elasticsearch from 4.4.13 to 5.1.0
+- Bump org.springframework.restdocs:spring-restdocs-mockmvc from 2.0.7.RELEASE to 3.0.0
+- Bump springDocVersion from 1.7.0 to 2.1.0
+ 
 ### Fixed
 
 ## [1.2.3] - 2023-04-13
@@ -27,7 +36,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump gradle from 7.6 to 7.6.1.
 - Bump io.freefair.maven-publish-java from 6.6.3 to 8.0.1 
 - Bump io.freefair.lombok from 6.6.3 to 8.0.1 
-- Bump javersVersion from 6.11.0 to 6.14.0 
 - Bump org.mockito:mockito-core from 5.1.1 to 5.3.0 
 - Bump org.owasp.dependencycheck from 8.1.0 to 8.2.1
 - Bump org.postgresql:postgresql from 42.5.4 to 42.6.0 

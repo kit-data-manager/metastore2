@@ -11,7 +11,7 @@ on:
 
 env:
     # JDK version used for building jar file
-    currentBuildVersion: 11
+    currentBuildVersion: 17
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
@@ -19,7 +19,7 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         # Use both LTS releases and latest one for tests
-        jdk: [ 11, 17 ]
+        jdk: [ 17, 19 ]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v3

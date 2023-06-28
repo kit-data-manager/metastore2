@@ -95,6 +95,7 @@ public class MetadataSearchController {
 
     // Prepare query with authorization
     prepareQuery(body, pgbl);
+    LOG.trace("Redirect post to " + searchConfiguration.getUrl() + "/" + schemaIds + "/_search");
 
     return proxy.uri(searchConfiguration.getUrl() + "/" + schemaIds + "/_search").post();
   }
@@ -125,6 +126,7 @@ public class MetadataSearchController {
 
     // Prepare query with authorization
     prepareQuery(body, pgbl);
+    LOG.trace("Redirect post to " + searchConfiguration.getUrl() + "/_search");
 
     return proxy.uri(searchConfiguration.getUrl() + "/_search").post();
   }
