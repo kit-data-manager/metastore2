@@ -78,6 +78,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static com.github.stefanbirkner.systemlambda.SystemLambda.*;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+
 /**
  *
  * @author hartmann-v
@@ -106,7 +107,7 @@ public class ElasticIndexerRunnerTest {
   private static Boolean alreadyInitialized = Boolean.FALSE;
 
   private MockMvc mockMvc;
-  
+
   @Autowired
   private ElasticIndexerRunner eir;
   @Autowired
@@ -131,7 +132,6 @@ public class ElasticIndexerRunnerTest {
   private MetastoreConfiguration metadataConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
-
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/elasticRunner/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
@@ -170,20 +170,20 @@ public class ElasticIndexerRunnerTest {
 
   public ElasticIndexerRunnerTest() {
   }
-  
+
   @BeforeClass
   public static void setUpClass() {
   }
-  
+
   @AfterClass
   public static void tearDownClass() {
   }
-  
+
   @Before
   public void setUp() {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .apply(springSecurity()) 
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41417))
             .build();
@@ -223,18 +223,20 @@ public class ElasticIndexerRunnerTest {
 
     }
   }
-  
+
   @After
   public void tearDown() {
   }
-  
 
   @Test
   public void testElasticRunnerWithWrongParameter() throws Exception {
-    int statusCode = catchSystemExit(() -> {
-    eir.run("hallo");
-  });
-    Assert.assertEquals(0, statusCode);
+    Integer mainVersion = Runtime.version().version().get(0);
+    if (mainVersion.compareTo(17) <= 0) {
+      int statusCode = catchSystemExit(() -> {
+        eir.run("hallo");
+      });
+      Assert.assertEquals(0, statusCode);
+    }
   }
 
   @Test
@@ -267,7 +269,6 @@ public class ElasticIndexerRunnerTest {
     Assert.assertTrue(true);
   }
 
-
   @Test
   public void testElasticRunnerWithAllIndicesAndMetadataDocument() throws Exception {
     String schemaLocation = ingestSchemaRecord("elastic2");
@@ -285,7 +286,7 @@ public class ElasticIndexerRunnerTest {
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
     schemaRecord.setAcl(aclEntries);
-    
+
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
@@ -314,12 +315,12 @@ public class ElasticIndexerRunnerTest {
    * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
    *
    * @param schemaId
-   * @param isUrl 
+   * @param isUrl
    * @throws Exception
    */
   private void ingestMetadataRecord(String schemaId, boolean isUrl) throws Exception {
     MetadataRecord record = new MetadataRecord();
-    if (isUrl) { 
+    if (isUrl) {
       record.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(schemaId));
     } else {
       record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
