@@ -1526,7 +1526,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             header("If-Match", etag).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
             andDo(print()).
-            andExpect(status().isPreconditionRequired()).
+            andExpect(status().isNoContent()).
             andReturn();
 //    Recreation should be no problem.
 //    //try to create after deletion (Should return HTTP GONE)
