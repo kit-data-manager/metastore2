@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -28,6 +27,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 import edu.kit.datamanager.metastore2.web.IMetadataEditorController;
+import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.parser.ParseException;
 
 /**

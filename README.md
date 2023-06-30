@@ -9,7 +9,9 @@
 [![Docker Image Version](https://img.shields.io/docker/v/kitdm/metastore2/latest)](https://hub.docker.com/r/kitdm/metastore2/tags)
 [![Docker Pulls](https://img.shields.io/docker/pulls/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
 
-General purpose metadata repository and schema registry service.
+MetaStore is a research data repository software for storing metadata documents and schemas.
+Quality and consistency are ensured by associating and validating each document against a schema.
+It supports JSON and XML.
 
 It allows you to 
 - register an (XML/JSON) schema
@@ -57,12 +59,12 @@ user@localhost:/home/user/metastore2$
 Now you'll have to create an image containing the microservice. This can be done via a script.
 On default the created images will be tagged as follows:
 
-*'latest tag'-'actual date(yyyy-mm-dd)'* (e.g.: 0.1.1-2020-10-05)
+*'latest tag'-'actual date(yyyy-mm-dd)'* (e.g.: 1.2.0-2023-06-27)
 
 ```
 user@localhost:/home/user/metastore2$ bash docker/buildDocker.sh
 ---------------------------------------------------------------------------
-Build docker container kitdm/metastore2:0.1.1-2020-10-05
+Build docker container kitdm/metastore2:1.2.0-2023-06-27
 ---------------------------------------------------------------------------
 [...]
 ---------------------------------------------------------------------------
@@ -76,8 +78,8 @@ After building image you have to create (and start) a container for executing mi
 ```
 # If you want to use a specific image you may list all possible tags first.
 user@localhost:/home/user/metastore2$ docker images kitdm/metastore2 --format {{.Tag}}
-0.1.1-2020-10-05
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
+1.2.0-2023-06-27
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:1.2.0-2023-06-27
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
@@ -92,7 +94,7 @@ Therefor you have to provide an additional flag to the command mentioned before:
 user@localhost:/home/user/metastore2$ mkdir config
 # Place your own 'application.properties' inside the config directory
 # Create/run container
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 -v `pwd`/config:/spring/metastore2/config --name metastore4docker kitdm/metastore2:0.1.1-2020-10-05
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 -v `pwd`/config:/spring/metastore2/config --name metastore4docker kitdm/metastore2:1.2.0-2023-06-27
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
@@ -113,7 +115,7 @@ user@localhost:/home/user/metastore2$ docker start metastore4docker
 ### Prerequisites
 In order to run this microservice via docker you'll need:
 
-* [Java SE Development Kit >=8 and <=17](https://openjdk.java.net/) 
+* [Java SE Development Kit >= 17](https://openjdk.java.net/) 
 * [git](https://git-scm.com/) 
 
 ### Installation

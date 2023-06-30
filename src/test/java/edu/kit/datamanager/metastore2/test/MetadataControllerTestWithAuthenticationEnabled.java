@@ -53,7 +53,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -130,8 +130,6 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
@@ -160,7 +158,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41408))
             .build();
@@ -1406,6 +1404,27 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   @Test
+  public void testDeleteRecordWithoutAuthenticationButAuthorization() throws Exception {
+    // anonymousUser is not allowed to delete an digital object even the
+    // access rights allow this. 
+    String metadataRecordId = createDCMetadataRecordWithAdminForAnonymous();
+
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isUnauthorized()).
+            andReturn();
+  }
+
+  @Test
   public void testDeleteRecord() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     String metadataRecordId = createDCMetadataRecord();
@@ -1470,7 +1489,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     String metadataRecordId = createDCMetadataRecord();
     // Get version of record as array
     // Read all versions (only 1 version available)
-    this.mockMvc.perform(get("/api/v1/metadata/").
+    this.mockMvc.perform(get("/api/v1/metadata").
             param("id", metadataRecordId).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header(HttpHeaders.ACCEPT, "application/json")).
@@ -1537,7 +1556,33 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(2)));
   }
+  private String createDCMetadataRecordWithAdminForAnonymous() throws Exception {
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
+    aclEntries.add(new AclEntry("anonymousUser", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
 
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+
+    MvcResult andReturn = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
+            andReturn();
+    MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
+
+    return result.getId();
+  }
+  
   private String createDCMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");

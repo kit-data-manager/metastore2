@@ -8,7 +8,7 @@ package edu.kit.datamanager.metastore2.web;
 import edu.kit.datamanager.metastore2.dto.TabulatorLocalPagination;
 import edu.kit.datamanager.metastore2.dto.TabulatorRemotePagination;
 import io.swagger.v3.oas.annotations.Parameter;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;

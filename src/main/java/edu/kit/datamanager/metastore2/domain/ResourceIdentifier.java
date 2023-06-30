@@ -4,11 +4,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.HashMap;
 import java.util.Map;
 import com.google.gson.annotations.SerializedName;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
 import java.io.Serializable;
 import java.util.Arrays;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Entity

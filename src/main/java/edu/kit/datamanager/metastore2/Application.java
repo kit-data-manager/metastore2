@@ -289,6 +289,7 @@ public class Application {
     fixBasePath(rbc);
 
     printSettings(rbc);
+    LOG.trace("Content audit service: '{}'", contentAuditService);
 
     return rbc;
   }
@@ -339,6 +340,7 @@ public class Application {
     fixBasePath(rbc);
 
     printSettings(rbc);
+    LOG.trace("Content audit service: '{}'", contentAuditService);
 
     return rbc;
   }

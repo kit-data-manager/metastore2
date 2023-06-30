@@ -50,7 +50,7 @@ import org.springframework.restdocs.operation.preprocess.Preprocessors;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import org.springframework.restdocs.templates.TemplateFormats;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
@@ -94,8 +94,6 @@ public class RestDocumentation4WebpageTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -225,13 +223,13 @@ public class RestDocumentation4WebpageTest {
   @Before
   public void setUp() throws JsonProcessingException {
     try {
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -241,7 +239,7 @@ public class RestDocumentation4WebpageTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation)
                     .snippets().withTemplateFormat(TemplateFormats.markdown())
                     .and()
