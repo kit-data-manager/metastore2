@@ -969,21 +969,6 @@ public class MetadataSchemaRecordUtil {
     return managed;
   }
 
-//  /**
-//   * Check for empty String. If String is empty return 'NULL'.
-//   *
-//   * @param string String to check.
-//   * @return String or 'NULL'
-//   */
-//  private static String checkForEmptyString(String string) {
-//    String returnValue = null;
-//    if (string != null) {
-//      if (!string.isEmpty()) {
-//        returnValue = string;
-//      }
-//    }
-//    return returnValue;
-//  }
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
     LOG.debug("Validate metadata schema document...");
     if (document == null || document.isEmpty()) {
