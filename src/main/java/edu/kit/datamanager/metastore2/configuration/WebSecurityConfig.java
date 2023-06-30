@@ -98,7 +98,7 @@ public class WebSecurityConfig {
                             HealthEndpoint.class
                     )).permitAll().
                     requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
-                    requestMatchers("/api/v1/**").authenticated()).
+                    requestMatchers("/**").authenticated()).
             sessionManagement(
                     session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     if (!enableCsrf) {
