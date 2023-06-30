@@ -1485,6 +1485,75 @@ public class MetadataControllerTestWithAuthenticationEnabled {
   }
 
   @Test
+  public void testDeleteRecordWithAdminRole() throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    String metadataRecordId = createDCMetadataRecord();
+
+    // Get a list of all records
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata").
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    
+    // Get ETag
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    // Delete record
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+    // Delete second time
+    // Get ETag
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+//    Recreation should be no problem.
+//    //try to create after deletion (Should return HTTP GONE)
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchemaId("dc");
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    ObjectMapper mapper = new ObjectMapper();
+//
+//    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+//    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+//
+//    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + METADATA_RECORD_ID).
+//            file(recordFile).
+//            file(metadataFile)).andDo(print()).andExpect(status().isGone()).andReturn();
+
+    // List of records should be smaller afterwards
+    result = this.mockMvc.perform(get("/api/v1/metadata").
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
+  }
+
+  @Test
   public void testGetAllVersionsOfRecord() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     // Get version of record as array
