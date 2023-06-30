@@ -563,8 +563,9 @@ public class MetadataSchemaRecordUtil {
           LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
       }
     }
-    if (LOG.isTraceEnabled()) 
-    LOG.trace("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1, provideETag);
+    if (LOG.isTraceEnabled()) {
+      LOG.trace("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1, provideETag);
+    }
     return metadataSchemaRecord;
   }
 
@@ -877,6 +878,13 @@ public class MetadataSchemaRecordUtil {
     return result;
   }
 
+  /**
+   * Merge setting from 'provided' to 'managed'.
+   *
+   * @param managed Record containing new settings.
+   * @param provided Record containing former settings.
+   * @return Record with new settings.
+   */
   public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
     if (provided != null) {
       // update pid
@@ -915,40 +923,41 @@ public class MetadataSchemaRecordUtil {
         }
       }
       //update label
-      if (provided.getLabel() != null) {
-        if (!provided.getLabel().equals(managed.getLabel())) {
-          LOG.trace("Updating record label from {} to {}.", managed.getLabel(), provided.getLabel());
-          managed.setLabel(checkForEmptyString(provided.getLabel()));
-        }
+      if ((provided.getLabel() == null) || (!provided.getLabel().equals(managed.getLabel()))) {
+        LOG.trace("Updating label from {} to {}.", managed.getLabel(), provided.getLabel());
+        managed.setLabel(provided.getLabel());
       }
+
       //update definition
-      if (provided.getDefinition() != null) {
-        if (!provided.getDefinition().equals(managed.getDefinition())) {
-          LOG.trace("Updating record definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
-          managed.setDefinition(checkForEmptyString(provided.getDefinition()));
-        }
+      if ((provided.getDefinition() == null) || (!provided.getDefinition().equals(managed.getDefinition()))) {
+        LOG.trace("Updating definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
+        managed.setDefinition(provided.getDefinition());
       }
       //update comment
-      if (provided.getComment() != null) {
-        if (!provided.getComment().equals(managed.getComment())) {
-          LOG.trace("Updating record comment from {} to {}.", managed.getComment(), provided.getComment());
-          managed.setComment(checkForEmptyString(provided.getComment()));
-        }
+      if ((provided.getComment() == null) || (!provided.getComment().equals(managed.getComment()))) {
+        LOG.trace("Updating comment from {} to {}.", managed.getComment(), provided.getComment());
+        managed.setComment(provided.getComment());
       }
+
       //update doNotSync
-      if (!provided.getDoNotSync().equals(managed.getDoNotSync())) {
+      if (!provided.getDoNotSync()
+              .equals(managed.getDoNotSync())) {
         LOG.trace("Updating record comment from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
         managed.setDoNotSync(provided.getDoNotSync());
       }
       //update schemaId
-      if (provided.getSchemaId() != null) {
+
+      if (provided.getSchemaId()
+              != null) {
         if (!provided.getSchemaId().equals(managed.getSchemaId())) {
           LOG.trace("Updating record comment from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
           managed.setSchemaId(provided.getSchemaId());
         }
       }
       //update schemaVersion
-      if (provided.getSchemaVersion() != null) {
+
+      if (provided.getSchemaVersion()
+              != null) {
         if (!provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
           LOG.trace("Updating record comment from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
           managed.setSchemaVersion(provided.getSchemaVersion());
@@ -960,20 +969,21 @@ public class MetadataSchemaRecordUtil {
     return managed;
   }
 
-  /**
-   * Check for empty String. If String is empty return 'NULL'.
-   *
-   * @param string String to check.
-   * @return String or 'NULL'
-   */
-  private static String checkForEmptyString(String string) {
-    String returnValue = null;
-    if (!string.isEmpty()) {
-      returnValue = string;
-    }
-    return returnValue;
-  }
-
+//  /**
+//   * Check for empty String. If String is empty return 'NULL'.
+//   *
+//   * @param string String to check.
+//   * @return String or 'NULL'
+//   */
+//  private static String checkForEmptyString(String string) {
+//    String returnValue = null;
+//    if (string != null) {
+//      if (!string.isEmpty()) {
+//        returnValue = string;
+//      }
+//    }
+//    return returnValue;
+//  }
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
     LOG.debug("Validate metadata schema document...");
     if (document == null || document.isEmpty()) {
