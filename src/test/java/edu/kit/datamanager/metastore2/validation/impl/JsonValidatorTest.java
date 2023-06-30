@@ -25,7 +25,7 @@ import static org.junit.Assert.*;
 public class JsonValidatorTest {
   private final String jsonSchemaFile = "/tmp/JsonValidatorSchema.json";
   
-  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"https://json-schema.org/draft/2019-09/schema\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
 
   private final String validDocument = "{\"id\": 1}";
 

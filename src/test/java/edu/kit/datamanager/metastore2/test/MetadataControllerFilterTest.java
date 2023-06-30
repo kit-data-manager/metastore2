@@ -84,7 +84,7 @@ public class MetadataControllerFilterTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String JSON_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"

@@ -144,7 +144,7 @@ public class OaiPmhControllerTest {
           + "  <example:date>2018-07-02</example:date>\n"
           + "</example:metadata>";
   private final static String JSON_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
