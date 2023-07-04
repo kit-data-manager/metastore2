@@ -43,8 +43,12 @@ public class SchemaUtils {
 
   private static final int MAX_LENGTH_OF_HEADER = 100;
 
-  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//^\\s{\\s*\".*");
+  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"\\$(.|\\s)*");//
   private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w{2,3}:)?schema(.|\\s)*", Pattern.MULTILINE);
+
+  SchemaUtils() {
+    //Utility class
+  }
 
   /**
    * Guess type of schema document.
@@ -76,7 +80,12 @@ public class SchemaUtils {
     return null;
   }
 
-  public static String getTargetNamespaceFromSchema(byte[] schema) {
+  /**
+   * Determine target namespace from schema.
+   * @param schema Schema document.
+   * @return Namespace.
+   */    
+   public static String getTargetNamespaceFromSchema(byte[] schema) {
     String namespace = null;
     try {
       DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();

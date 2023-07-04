@@ -143,11 +143,11 @@ public class OAIPMHtype{
    * Objects of the following type(s) are allowed in the list
      * {@link OAIPMHerrorType }
    *
-   *
+   * @return List containing all detected errors.
    */
   public List<OAIPMHerrorType> getError(){
     if(error == null){
-      error = new ArrayList<OAIPMHerrorType>();
+      error = new ArrayList<>();
     }
     return this.error;
   }

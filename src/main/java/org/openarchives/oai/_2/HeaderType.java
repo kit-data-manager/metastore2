@@ -136,7 +136,7 @@ public class HeaderType {
      */
     public List<String> getSetSpec() {
         if (setSpec == null) {
-            setSpec = new ArrayList<String>();
+            setSpec = new ArrayList<>();
         }
         return this.setSpec;
     }

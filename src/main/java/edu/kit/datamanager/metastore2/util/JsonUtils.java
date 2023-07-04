@@ -62,6 +62,10 @@ public class JsonUtils {
    * Mapper for parsing json.
    */
   private static final ObjectMapper mapper = new ObjectMapper();
+  
+  JsonUtils() {
+    //Utility class
+  }
 
   /**
    * Validate JSON schema document based on detected JSON schema or version
@@ -250,9 +254,6 @@ public class JsonUtils {
       throw new JsonSchemaException("Unknown MetaSchema or not matching: Expected: '" + version + "' <-> Found: '" + versionFound + "'");
     }
     return schema;
-//    JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
-//    System.out.println("Hallo : " + factory.getSchema(schemaContent).getSchemaPath() + "Version: " + version);
-//    return factory.getSchema(schemaContent);
   }
 
   /**

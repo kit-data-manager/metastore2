@@ -34,9 +34,9 @@ import org.springframework.http.MediaType;
 @Data
 public class AclRecord implements Serializable {
 
-  public final static String RESOURCE_TYPE = "application/vnd.datamanager.acl+json";
+  public static final String RESOURCE_TYPE = "application/vnd.datamanager.acl+json";
 
-  public final static MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
+  public static final MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @NotNull(message = "A list of access control entries with at least access for READ.")
   @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)

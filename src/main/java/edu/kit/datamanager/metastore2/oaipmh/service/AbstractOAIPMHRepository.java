@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 public abstract class AbstractOAIPMHRepository {
 
     private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(AbstractOAIPMHRepository.class);
+    
+    private static final String VERSION = "2.0";
 
     private String name = null;
     private DateFormat df = null;
@@ -49,7 +51,7 @@ public abstract class AbstractOAIPMHRepository {
      *
      * @param repositoryName The repository name.
      */
-    public AbstractOAIPMHRepository(String repositoryName) {
+    protected AbstractOAIPMHRepository(String repositoryName) {
         name = repositoryName;
     }
 
@@ -212,7 +214,7 @@ public abstract class AbstractOAIPMHRepository {
      * @return The supported OAI-PMH protocol version.
      */
     public String getProtocolVersion() {
-        return "2.0";
+        return VERSION;
     }
 
     /**

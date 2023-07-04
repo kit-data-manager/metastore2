@@ -71,7 +71,7 @@ public class ListIdentifiersType {
      */
     public List<HeaderType> getHeader() {
         if (header == null) {
-            header = new ArrayList<HeaderType>();
+            header = new ArrayList<>();
         }
         return this.header;
     }

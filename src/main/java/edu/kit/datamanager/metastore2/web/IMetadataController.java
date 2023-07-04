@@ -68,7 +68,7 @@ public interface IMetadataController extends InfoContributor {
   @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
+          @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile metadataRecord,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -149,7 +149,7 @@ public interface IMetadataController extends InfoContributor {
   })
   ResponseEntity updateRecord(
           @Parameter(description = "The resource identifier.", required = true) @PathVariable("id") String id,
-          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
+          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile metadataRecord,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema defined in the record.", required = false) @RequestPart(name = "document", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response,

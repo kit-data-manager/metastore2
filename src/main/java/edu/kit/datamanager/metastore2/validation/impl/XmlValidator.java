@@ -59,7 +59,6 @@ public class XmlValidator implements IValidator {
         boolean result = false;
         LOG.trace("Checking schema for validity.");
         try {
-//            SchemaFactory schemaFactory = getSchemaFactory();
             SAXParser saxParser = getSaxParser();
             DefaultHandler errorHandler = new DefaultHandler();
             saxParser.parse(schemaStream, errorHandler);
@@ -68,7 +67,7 @@ public class XmlValidator implements IValidator {
             result = true;
         } catch (SAXException | IOException e) {
             LOG.error("Failed to validate schema.", e);
-            errorMessage = new String("Validation error: " + e.getMessage());
+            errorMessage = "Validation error: " + e.getMessage();
         }
         return result;
     }
@@ -96,7 +95,7 @@ public class XmlValidator implements IValidator {
             valid = true;
         } catch (SAXException | IOException e) {
             LOG.error("Failed to validate metadata document.", e);
-            errorMessage = new String("Validation error: " + e.getMessage());
+            errorMessage = "Validation error: " + e.getMessage();
         }
         return valid;
     }
@@ -111,7 +110,7 @@ public class XmlValidator implements IValidator {
      *
      * @return schema factory
      */
-    private SchemaFactory getSchemaFactory() throws SAXNotRecognizedException, SAXNotSupportedException {
+    private SchemaFactory getSchemaFactory() {
         SchemaFactory schemaFactory;
         schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 //        schemaFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);

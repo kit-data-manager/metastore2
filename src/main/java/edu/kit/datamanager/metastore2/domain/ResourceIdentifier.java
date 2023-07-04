@@ -55,23 +55,18 @@ public class ResourceIdentifier implements Serializable {
     boolean returnValue = true;
     if (other != this) {
       returnValue = false;
-      if (other != null) {
-        // check for instance
-        if ((other instanceof ResourceIdentifier) == true) {
-          ResourceIdentifier rhs = ((ResourceIdentifier) other);
-          // check for id
-          if (((this.getId() == null) && (rhs.getId() == null))
-                  || ((this.getId() != null) && this.getId().equals(rhs.getId()))) {
-            //check for identifier
-            if (((this.getIdentifier() == null) && (rhs.getIdentifier() == null))
-                    || ((this.getIdentifier() != null) && this.getIdentifier().equals(rhs.getIdentifier()))) {
-              // check for identifierType
-              if (((this.getIdentifierType() == null) && (rhs.getIdentifierType() == null))
-                      || ((this.getIdentifierType() != null) && this.getIdentifierType().equals(rhs.getIdentifierType()))) {
-                returnValue = true;
-              }
-            }
-          }
+      if (other instanceof ResourceIdentifier) {
+        ResourceIdentifier rhs = ((ResourceIdentifier) other);
+        // check for id
+        if ((((this.getId() == null) && (rhs.getId() == null))
+                || ((this.getId() != null) && this.getId().equals(rhs.getId())))
+                //check for identifier
+                && (((this.getIdentifier() == null) && (rhs.getIdentifier() == null))
+                || ((this.getIdentifier() != null) && this.getIdentifier().equals(rhs.getIdentifier())))
+                // check for identifierType
+                && (((this.getIdentifierType() == null) && (rhs.getIdentifierType() == null))
+                || ((this.getIdentifierType() != null) && this.getIdentifierType().equals(rhs.getIdentifierType())))) {
+          returnValue = true;
         }
       }
     }
@@ -122,7 +117,7 @@ public class ResourceIdentifier implements Serializable {
     @SerializedName("INTERNAL")
     INTERNAL("INTERNAL");
     private final String value;
-    private final static Map<String, ResourceIdentifier.IdentifierType> CONSTANTS = new HashMap<String, ResourceIdentifier.IdentifierType>();
+    private static final Map<String, ResourceIdentifier.IdentifierType> CONSTANTS = new HashMap<>();
 
     static {
       for (ResourceIdentifier.IdentifierType c : values()) {

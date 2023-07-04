@@ -240,7 +240,7 @@ public class OAIPMHBuilder {
     switch (verb) {
       case GET_RECORD:
       case LIST_RECORDS: {
-        RecordType record = new RecordType();
+        RecordType recordType = new RecordType();
         HeaderType header = new HeaderType();
         if (identifier == null || recordDatestamp == null) {
           throw new IllegalArgumentException("Arguments identifier and recordDatestamp must not be null.");
@@ -250,24 +250,24 @@ public class OAIPMHBuilder {
         if (setSpecs != null) {
           header.getSetSpec().addAll(setSpecs);
         }
-        record.setHeader(header);
+        recordType.setHeader(header);
         if (metadata != null) {
           //record metadata
           MetadataType md = new MetadataType();
           md.setAny(metadata);
-          record.setMetadata(md);
+          recordType.setMetadata(md);
         }
         if (about != null) {
           //about info defined by community
           AboutType aboutType = new AboutType();
           aboutType.setAny(about);
-          record.getAbout().add(aboutType);
+          recordType.getAbout().add(aboutType);
         }
 
         if (VerbType.GET_RECORD.equals(verb)) {
-          getRecordType.setRecord(record);
+          getRecordType.setRecord(recordType);
         } else {
-          listRecordsType.getRecord().add(record);
+          listRecordsType.getRecord().add(recordType);
         }
 
         break;
@@ -365,11 +365,5 @@ public class OAIPMHBuilder {
 
     return response;
   }
-//
-//  public static void main(String[] args) throws Exception{
-//    AbstractOAIPMHRepository repo = new SimpleOAIPMHRepository("MyName");
-//    OAIPMHtype type = OAIPMHBuilder.init(repo, VerbType.IDENTIFY, "dc", "12345-43546", new Date(), new Date(), null).build();
-//
-//  }
 
 }

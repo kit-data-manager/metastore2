@@ -22,6 +22,7 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import java.time.Instant;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.javers.core.Javers;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -495,7 +496,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MultipartFile recordDocument = null;
     MultipartFile document = null;
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);
@@ -514,7 +515,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", (byte[]) null);
     MultipartFile document = null;
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);
@@ -537,7 +538,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", new String().getBytes());
     MultipartFile document = null;
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);
@@ -560,7 +561,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MockMultipartFile recordDocument = null;
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", (byte[]) null);
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);
@@ -583,7 +584,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MockMultipartFile recordDocument = null;
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", new String().getBytes());
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);
@@ -606,7 +607,7 @@ public class MetadataRecordUtilTest {
     String eTag = "";
     MockMultipartFile recordDocument = new MockMultipartFile("record", "metadata-record.json", "application/json", SCHEMA_ID.getBytes());
     MultipartFile document = new MockMultipartFile("document", "metadata.xml", "application/xml", mapper.writeValueAsString(record).getBytes());
-    Function<String, String> supplier = null;
+    UnaryOperator<String> supplier = null;
     MetadataRecord expResult = null;
     MetadataRecord result = MetadataRecordUtil.updateMetadataRecord(applicationProperties, resourceId, eTag, recordDocument, document, supplier);
     assertEquals(expResult, result);

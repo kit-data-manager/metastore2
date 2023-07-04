@@ -125,7 +125,7 @@ public class RecordType {
      */
     public List<AboutType> getAbout() {
         if (about == null) {
-            about = new ArrayList<AboutType>();
+            about = new ArrayList<>();
         }
         return this.about;
     }

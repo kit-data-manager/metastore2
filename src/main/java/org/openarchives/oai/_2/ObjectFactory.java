@@ -31,13 +31,14 @@ import javax.xml.namespace.QName;
 @XmlRegistry
 public class ObjectFactory {
 
-    private final static QName _OAIPMH_QNAME = new QName("http://www.openarchives.org/OAI/2.0/", "OAI-PMH");
+    private static final QName _OAIPMH_QNAME = new QName("http://www.openarchives.org/OAI/2.0/", "OAI-PMH");
 
     /**
      * Create a new ObjectFactory that can be used to create new instances of schema derived classes for package: org.openarchives.oai._2
      * 
      */
     public ObjectFactory() {
+      // Generated constructor.
     }
 
     /**
@@ -198,7 +199,7 @@ public class ObjectFactory {
      */
     @XmlElementDecl(namespace = "http://www.openarchives.org/OAI/2.0/", name = "OAI-PMH")
     public JAXBElement<OAIPMHtype> createOAIPMH(OAIPMHtype value) {
-        return new JAXBElement<OAIPMHtype>(_OAIPMH_QNAME, OAIPMHtype.class, null, value);
+        return new JAXBElement<>(_OAIPMH_QNAME, OAIPMHtype.class, null, value);
     }
 
 }

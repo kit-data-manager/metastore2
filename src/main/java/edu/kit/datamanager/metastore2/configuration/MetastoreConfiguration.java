@@ -17,22 +17,23 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
+import java.util.List;
 
 /**
  * Holds all properties needed to manage data resources.
  */
 public class MetastoreConfiguration extends RepoBaseConfiguration {
 
-  private String[] schemaRegistries;
+  private List<String> schemaRegistries;
 
-  private IValidator[] validators;
+  private List<IValidator>validators;
 
   /**
    * Get schema registries.
    *
    * @return the schemaRegistries
    */
-  public String[] getSchemaRegistries() {
+  public List<String> getSchemaRegistries() {
     return schemaRegistries;
   }
 
@@ -41,7 +42,7 @@ public class MetastoreConfiguration extends RepoBaseConfiguration {
    *
    * @param schemaRegistries the schemaRegistries to set
    */
-  public void setSchemaRegistries(String[] schemaRegistries) {
+  public void setSchemaRegistries(List<String> schemaRegistries) {
     this.schemaRegistries = schemaRegistries;
   }
 
@@ -50,7 +51,7 @@ public class MetastoreConfiguration extends RepoBaseConfiguration {
    *
    * @return the validators
    */
-  public IValidator[] getValidators() {
+  public List<IValidator> getValidators() {
     return validators;
   }
 
@@ -59,7 +60,7 @@ public class MetastoreConfiguration extends RepoBaseConfiguration {
    *
    * @param validators the validators to set
    */
-  public void setValidators(IValidator[] validators) {
+  public void setValidators(List<IValidator> validators) {
     this.validators = validators;
   }
 

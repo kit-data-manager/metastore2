@@ -53,8 +53,12 @@ public class DownloadUtil {
 
   private static final int MAX_LENGTH_OF_HEADER = 100;
 
-  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"(.|\\s)*", Pattern.MULTILINE);//^\\s{\\s*\".*");
+  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"(.|\\s)*", Pattern.MULTILINE);
   private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w+:)?\\w+(.|\\s)*", Pattern.MULTILINE);
+
+  DownloadUtil() {
+    // Utility class
+  }
 
   /**
    * Downloads or copy the file behind the given URI and returns its path on
@@ -108,12 +112,10 @@ public class DownloadUtil {
       if ((pathToFile != null) && pathToFile.toFile().exists()) {
         String contentOfFile = FileUtils.readFileToString(pathToFile.toFile(), StandardCharsets.UTF_8);
         String newExtension = guessFileExtension(contentOfFile.getBytes(StandardCharsets.UTF_8));
-        if (newExtension != null) {
-          if (!pathToFile.toString().endsWith(newExtension)) {
-            renamedFile = Paths.get(pathToFile.toString() + newExtension);
-            FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
-            returnFile = renamedFile;
-          }
+        if ((newExtension != null) && !pathToFile.toString().endsWith(newExtension)) {
+          renamedFile = Paths.get(pathToFile.toString() + newExtension);
+          FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
+          returnFile = renamedFile;
         }
       }
     } catch (IOException ex) {
@@ -155,7 +157,6 @@ public class DownloadUtil {
     } catch (IOException ioe) {
       throw new CustomInternalServerError("Error removing file '" + tempFile.toString() + "'!");
     }
-    return;
   }
 
   private static String guessFileExtension(byte[] schema) {

@@ -71,7 +71,7 @@ public class ListSetsType {
      */
     public List<SetType> getSet() {
         if (set == null) {
-            set = new ArrayList<SetType>();
+            set = new ArrayList<>();
         }
         return this.set;
     }
