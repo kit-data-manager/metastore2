@@ -38,9 +38,9 @@ public class LinkedMetadataRecord implements Serializable {
   public LinkedMetadataRecord() {
   }
 
-  public LinkedMetadataRecord(MetadataRecord record) {
-    schemaId = record.getSchema().getIdentifier();
-    relatedResource = record.getRelatedResource().getIdentifier();
+  public LinkedMetadataRecord(MetadataRecord metadataRecord) {
+    schemaId = metadataRecord.getSchema().getIdentifier();
+    relatedResource = metadataRecord.getRelatedResource().getIdentifier();
   }
   @Id
   @GeneratedValue

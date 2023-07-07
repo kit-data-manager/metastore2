@@ -42,7 +42,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class FrontendControllerImpl implements IFrontendController {
 
   private static final Logger LOG = LoggerFactory.getLogger(FrontendControllerImpl.class);
-
+  
+  private static final String SHOW_PAGE = "Pageable: '{}'";
+  private static final String CONTENT_RANGE = "Content-Range";
+  
   @Autowired
   private MetadataControllerImpl metadtaControllerImpl;
 
@@ -61,11 +64,11 @@ public class FrontendControllerImpl implements IFrontendController {
     if (pgbl != null) {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    LOG.trace("Pageable: '{}'", pageable);
+    LOG.trace(SHOW_PAGE, pageable);
 
     ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
     List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
-    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst(CONTENT_RANGE);
 
     TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
             .lastPage(tabulatorLastPage(pageSize, pageable))
@@ -86,12 +89,12 @@ public class FrontendControllerImpl implements IFrontendController {
     if (pgbl != null) {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    LOG.trace("Pageable: '{}'", pageable);
+    LOG.trace(SHOW_PAGE, pageable);
     List<String> metadataDocumentId = id == null ? null : Arrays.asList(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, metadataDocumentId, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
-    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst(CONTENT_RANGE);
 
     TabulatorLocalPagination tabulatorLocalPagination = TabulatorLocalPagination.builder()
             .lastPage(tabulatorLastPage(pageSize, pageable))
@@ -111,12 +114,12 @@ public class FrontendControllerImpl implements IFrontendController {
     if (pgbl != null) {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    LOG.trace("Pageable: '{}'", pageable);
+    LOG.trace(SHOW_PAGE, pageable);
 
     ResponseEntity<List<MetadataSchemaRecord>> responseEntity4schemaRecords = schemaControllerImpl.getRecords(null, null, null, null, pageable, wr, hsr, ucb);
     List<MetadataSchemaRecord> schemaRecords = responseEntity4schemaRecords.getBody();
 
-    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst("Content-Range");
+    String pageSize = responseEntity4schemaRecords.getHeaders().getFirst(CONTENT_RANGE);
 
     TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
             .lastPage(tabulatorLastPage(pageSize, pageable))
@@ -139,13 +142,13 @@ public class FrontendControllerImpl implements IFrontendController {
     if (pgbl != null) {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
-    LOG.trace("Pageable: '{}'", pageable);
+    LOG.trace(SHOW_PAGE, pageable);
 
     List<String> schemaIds = id == null ? null : Arrays.asList(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
-    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst("Content-Range");
+    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst(CONTENT_RANGE);
 
     TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
             .lastPage(tabulatorLastPage(pageSize, pageable))

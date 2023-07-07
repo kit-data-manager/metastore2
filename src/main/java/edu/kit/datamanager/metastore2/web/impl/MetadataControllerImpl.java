@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -154,14 +155,14 @@ public class MetadataControllerImpl implements IMetadataController {
 
     long nano1 = System.nanoTime() / 1000000;
     LOG.trace("Performing createRecord({},...).", recordDocument);
-    MetadataRecord record;
+    MetadataRecord metadataRecord;
     if (recordDocument == null || recordDocument.isEmpty()) {
       String message = "No metadata record provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
     try {
-      record = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+      metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
     } catch (IOException ex) {
       String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
       if (ex instanceof JsonParseException) {
@@ -172,7 +173,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     long nano2 = System.nanoTime() / 1000000;
 
-    if (record.getRelatedResource() == null || record.getRelatedResource().getIdentifier() == null || record.getSchema() == null || record.getSchema().getIdentifier() == null) {
+    if (metadataRecord.getRelatedResource() == null || metadataRecord.getRelatedResource().getIdentifier() == null || metadataRecord.getSchema() == null || metadataRecord.getSchema().getIdentifier() == null) {
       LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
     }
@@ -180,12 +181,12 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.debug("Test for existing metadata record for given schema and resource");
     ResourceIdentifier schemaIdentifier;
     try {
-      schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, record);
+      schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, metadataRecord);
     } catch (ResourceNotFoundException rnfe) {
       LOG.debug("Error checking for existing relations.", rnfe);
       throw new UnprocessableEntityException("Schema ID seems to be invalid");
     }
-    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(record.getRelatedResource().getIdentifier(), schemaIdentifier.getIdentifier());
+    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(metadataRecord.getRelatedResource().getIdentifier(), schemaIdentifier.getIdentifier());
     long nano3 = System.nanoTime() / 1000000;
 
     if (recordAlreadyExists) {
@@ -223,14 +224,14 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    MetadataRecord metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of MetadataRecord.");
-    String etag = record.getEtag();
-    fixMetadataDocumentUri(record);
+    String etag = metadataRecord.getEtag();
+    fixMetadataDocumentUri(metadataRecord);
 
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(record);
+    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
   }
 
   @Override
@@ -245,11 +246,11 @@ public class MetadataControllerImpl implements IMetadataController {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    MetadataRecord record = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
-    fixMetadataDocumentUri(record);
+    MetadataRecord metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    fixMetadataDocumentUri(metadataRecord);
     AclRecord aclRecord = new AclRecord();
-    aclRecord.setAcl(record.getAcl());
-    aclRecord.setMetadataRecord(record);
+    aclRecord.setAcl(metadataRecord.getAcl());
+    aclRecord.setMetadataRecord(metadataRecord);
 
     return ResponseEntity.ok().body(aclRecord);
   }
@@ -289,9 +290,9 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
     List<MetadataRecord> metadataList = new ArrayList<>();
-    recordList.forEach((record) -> {
-      fixMetadataDocumentUri(record);
-      metadataList.add(record);
+    recordList.forEach(metadataRecord -> {
+      fixMetadataDocumentUri(metadataRecord);
+      metadataList.add(metadataRecord);
     });
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
@@ -342,7 +343,7 @@ public class MetadataControllerImpl implements IMetadataController {
           currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
           // Test for internal URI -> Transform to global URI.
           if (currentSchemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, currentSchemaRecord);
+            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(currentSchemaRecord);
             currentSchemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
           }
           allRelatedIdentifiers.add(currentSchemaRecord.getSchemaDocumentUri());
@@ -356,7 +357,7 @@ public class MetadataControllerImpl implements IMetadataController {
           MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
           // Test for internal URI -> Transform to global URI.
           if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, schemaRecord);
+            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaRecord);
             schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
           }
           allRelatedIdentifiers.add(schemaRecord.getSchemaDocumentUri());
@@ -402,8 +403,8 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Transforming Dataresource to MetadataRecord");
     List<DataResource> recordList = records.getContent();
     List<MetadataRecord> metadataList = new ArrayList<>();
-    recordList.forEach((record) -> {
-      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, record, false);
+    recordList.forEach(metadataRecord -> {
+      MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, metadataRecord, false);
       fixMetadataDocumentUri(item);
       metadataList.add(item);
     });
@@ -416,19 +417,17 @@ public class MetadataControllerImpl implements IMetadataController {
   @Override
   public ResponseEntity updateRecord(
           @PathVariable("id") String id,
-          @RequestPart(name = "record", required = false) MultipartFile record,
+          @RequestPart(name = "record", required = false) MultipartFile metadataRecord,
           @RequestPart(name = "document", required = false) final MultipartFile document,
           WebRequest request,
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder
   ) {
-    LOG.trace("Performing updateRecord({}, {}, {}).", id, record, "#document");
-    Function<String, String> getById;
-    getById = (t) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
-    };
+    LOG.trace("Performing updateRecord({}, {}, {}).", id, metadataRecord, "#document");
+    UnaryOperator<String> getById;
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metadataConfig, id, eTag, record, document, getById);
+    MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metadataConfig, id, eTag, metadataRecord, document, getById);
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateMetadataRecord.getEtag();
@@ -451,10 +450,9 @@ public class MetadataControllerImpl implements IMetadataController {
           HttpServletResponse hsr
   ) {
     LOG.trace("Performing deleteRecord({}).", id);
-    Function<String, String> getById;
-    getById = (t) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
-    };
+    UnaryOperator<String> getById;
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
+    
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     MetadataRecordUtil.deleteMetadataRecord(metadataConfig, id, eTag, getById);
 
@@ -479,9 +477,9 @@ public class MetadataControllerImpl implements IMetadataController {
     return new RestTemplate();
   }
 
-  private void fixMetadataDocumentUri(MetadataRecord record) {
-    String metadataDocumentUri = record.getMetadataDocumentUri();
-    record.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(record.getId(), record.getRecordVersion(), null, null)).toUri().toString());
-    LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, record.getMetadataDocumentUri());
+  private void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
+    String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
+    metadataRecord.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
+    LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }
 }

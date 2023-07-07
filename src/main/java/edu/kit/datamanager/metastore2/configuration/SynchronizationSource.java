@@ -23,6 +23,7 @@ import lombok.Data;
  * @author jejkal
  */
 @Data
+@SuppressWarnings("java:S1068")
 public class SynchronizationSource {
 
   private String id;

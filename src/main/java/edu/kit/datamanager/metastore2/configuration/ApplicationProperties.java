@@ -46,7 +46,8 @@ public class ApplicationProperties extends GenericApplicationProperties {
 
   @Value("${metastore.schema.synchronization.enabled:FALSE}")
   private boolean synchronizationEnabled;
-  // @Value("${metastore.schema.synchronization.schemaSources}")
+  
+  //@Value("${metastore.schema.synchronization.schemaSources}")
   private List<SynchronizationSource> schemaSources;
 
   @LocalFolderURL
@@ -57,7 +58,7 @@ public class ApplicationProperties extends GenericApplicationProperties {
   private String storagePattern;
 
   @Value("${metastore.metadata.schemaRegistries: }")
-  private String[] schemaRegistries;
+  private List<String> schemaRegistries;
 
   @Value("${metastore.javers.scope:20}")
   private int maxJaversScope;

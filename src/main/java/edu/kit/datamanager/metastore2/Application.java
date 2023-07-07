@@ -87,26 +87,19 @@ public class Application {
   private static final String DEFAULT = "simple";
   private static final String DEFAULT_VERSIONING = DEFAULT;
   private static final String DEFAULT_STORAGE = DEFAULT;
+  private static final String LIST_ITEM = ".... '{}'";
 
   private static final Logger LOG = LoggerFactory.getLogger(Application.class);
   @Autowired
   private Javers javers;
-  /*@Autowired
-  private IDataResourceService schemaResourceService;
-  @Autowired
-  private IContentInformationService schemaInformationService;*/
   @Autowired
   private ApplicationEventPublisher eventPublisher;
   @Autowired
   private ApplicationProperties applicationProperties;
   @Autowired
-  private IRepoVersioningService[] versioningServices;
+  private List<IRepoVersioningService> versioningServices;
   @Autowired
-  private IRepoStorageService[] storageServices;
-//
-//  private MetastoreConfiguration metastoreProperties;
-//  @Autowired
-//  private IDataResourceDao dataResourceDao;
+  private List<IRepoStorageService>storageServices;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
@@ -115,15 +108,9 @@ public class Application {
   private IUrl2PathDao url2PathDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
-//  @Autowired
-//  private OaiPmhConfiguration oaiPmhConfiguration;
   @Autowired
-  private IValidator[] validators;
+  private List<IValidator> validators;
 
-  /*@Autowired
-  private IDataResourceService dataResourceService;
-  @Autowired
-  private IContentInformationService contentInformationService;*/
   @Bean
   @Scope("prototype")
   public Logger logger(InjectionPoint injectionPoint) {
@@ -258,7 +245,7 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
-      LOG.trace(".... '{}'", versioningService.getServiceName());
+      LOG.trace(LIST_ITEM, versioningService.getServiceName());
       if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
@@ -266,7 +253,7 @@ public class Application {
     }
     LOG.trace("Looking for storageServices....");
     for (IRepoStorageService storageService : this.storageServices) {
-      LOG.trace(".... '{}'", storageService.getServiceName());
+      LOG.trace(LIST_ITEM, storageService.getServiceName());
       if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService);
         break;
@@ -309,7 +296,7 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
-      LOG.trace(".... '{}'", versioningService.getServiceName());
+      LOG.trace(LIST_ITEM, versioningService.getServiceName());
       if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
@@ -317,7 +304,7 @@ public class Application {
     }
     LOG.trace("Looking for storageService '{}'....", this.applicationProperties.getStoragePattern());
     for (IRepoStorageService storageService : this.storageServices) {
-      LOG.trace(".... '{}'", storageService.getServiceName());
+      LOG.trace(LIST_ITEM, storageService.getServiceName());
       if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService); // Should be used as default
       }
@@ -357,10 +344,10 @@ public class Application {
     LOG.info("Versioning service: {}", config.getVersioningService().getServiceName());
     LOG.info("Storage service: {}", config.getStorageService().getServiceName());
     LOG.info("Basepath metadata repository: {}", config.getBasepath().toString());
-    int noOfSchemaRegistries = config.getSchemaRegistries().length;
+    int noOfSchemaRegistries = config.getSchemaRegistries().size();
     LOG.info("Number of registered external schema registries: {}", noOfSchemaRegistries);
     for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
-      LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
+      LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries().get(index1));
     }
 
   }
@@ -371,14 +358,14 @@ public class Application {
    * @param currentRegistries Current list of schema registries.
    * @return Fitered list of schema registries.
    */
-  public String[] checkRegistries(String[] currentRegistries) {
+  public List<String> checkRegistries(List<String> currentRegistries) {
     List<String> allRegistries = new ArrayList<>();
     for (String schemaRegistry : currentRegistries) {
       if (!schemaRegistry.trim().isEmpty()) {
         allRegistries.add(schemaRegistry);
       }
     }
-    return allRegistries.toArray(String[]::new);
+    return allRegistries;
   }
 
   /**

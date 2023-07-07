@@ -46,9 +46,9 @@ import org.springframework.http.MediaType;
 @Data
 public class MetadataRecord implements EtagSupport, Serializable {
 
-  public final static String RESOURCE_TYPE = "application/vnd.datamanager.metadata-record+json";
+  public static final String RESOURCE_TYPE = "application/vnd.datamanager.metadata-record+json";
 
-  public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
+  public static final MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @Id
   @NotBlank(message = "The unique identify of the record.")

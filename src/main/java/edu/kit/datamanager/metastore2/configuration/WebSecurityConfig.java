@@ -84,6 +84,7 @@ public class WebSecurityConfig {
   };
 
   public WebSecurityConfig() {
+    // Not used
   }
 
   @Bean
@@ -127,7 +128,7 @@ public class WebSecurityConfig {
 
   @Bean
   public WebSecurityCustomizer webSecurityCustomizer() {
-    return (web) -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
+    return web -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean

@@ -73,28 +73,30 @@ public class OaiPmhController {
       LOGGER.warn("Verb '" + verb + "' is invalid. OAI-PMH error will be returned.", ex);
     }
 
+    Date fromDate = null;
+    Date untilDate = null;
+    boolean wrongDateFormat = false;
     try {
-      Date fromDate = null;
-      Date untilDate = null;
-      boolean wrongDateFormat = false;
-      try {
-        LOGGER.trace("Checking 'from' and 'until' dates.");
-        if (from != null) {
-          LOGGER.trace("Checking 'from' date {}.", from);
-          fromDate = repository.getDateFormat().parse(from);
-          LOGGER.trace("Successfully parsed 'from' date.");
-        }
-        if (until != null) {
-          LOGGER.trace("Checking 'until' date {}.", until);
-          untilDate = repository.getDateFormat().parse(until);
-          LOGGER.trace("Successfully parsed 'until' date.");
-
-        }
-      } catch (ParseException ex) {
-        LOGGER.warn("'from' and/or 'until' date are in an invalid format.  OAI-PMH error will be returned.", ex);
-        wrongDateFormat = true;
+      LOGGER.trace("Checking 'from' and 'until' dates.");
+      if (from != null) {
+        from = from.replaceAll("[\r\n]","");
+        LOGGER.trace("Checking 'from' date {}.", from);
+        fromDate = repository.getDateFormat().parse(from);
+        LOGGER.trace("Successfully parsed 'from' date.");
       }
+      if (until != null) {
+        until = until.replaceAll("[\r\n]","");
+        LOGGER.trace("Checking 'until' date {}.", until);
+        untilDate = repository.getDateFormat().parse(until);
+        LOGGER.trace("Successfully parsed 'until' date.");
 
+      }
+    } catch (ParseException ex) {
+      LOGGER.warn("'from' and/or 'until' date are in an invalid format.  OAI-PMH error will be returned.", ex);
+      wrongDateFormat = true;
+    }
+
+    try {
       OAIPMHBuilder builder = OAIPMHBuilder.init(repository, verbType, metadataPrefix, identifier, fromDate, untilDate, resumptionToken);
       if (set != null) {
         LOGGER.trace("'Set' request param provided, but sets are not supported. Returning OAI-PMH error.");

@@ -16,6 +16,7 @@ import lombok.Getter;
  */
 @Getter
 @Builder
+@SuppressWarnings("java:S1068")
 public class TabulatorLocalPagination {
     @JsonProperty("last_page")
     private int lastPage;

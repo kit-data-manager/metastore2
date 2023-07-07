@@ -68,7 +68,7 @@ public class ListMetadataFormatsType {
      */
     public List<MetadataFormatType> getMetadataFormat() {
         if (metadataFormat == null) {
-            metadataFormat = new ArrayList<MetadataFormatType>();
+            metadataFormat = new ArrayList<>();
         }
         return this.metadataFormat;
     }

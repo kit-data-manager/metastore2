@@ -175,7 +175,7 @@ public class IdentifyType {
      */
     public List<String> getAdminEmail() {
         if (adminEmail == null) {
-            adminEmail = new ArrayList<String>();
+            adminEmail = new ArrayList<>();
         }
         return this.adminEmail;
     }
@@ -276,7 +276,7 @@ public class IdentifyType {
      */
     public List<String> getCompression() {
         if (compression == null) {
-            compression = new ArrayList<String>();
+            compression = new ArrayList<>();
         }
         return this.compression;
     }
@@ -305,7 +305,7 @@ public class IdentifyType {
      */
     public List<DescriptionType> getDescription() {
         if (description == null) {
-            description = new ArrayList<DescriptionType>();
+            description = new ArrayList<>();
         }
         return this.description;
     }

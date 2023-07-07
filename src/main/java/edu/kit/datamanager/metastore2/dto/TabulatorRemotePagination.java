@@ -17,6 +17,7 @@ import lombok.Getter;
  */
 @Getter
 @Builder
+@SuppressWarnings("java:S1068")
 public class TabulatorRemotePagination {
 
   @JsonProperty("last_page")

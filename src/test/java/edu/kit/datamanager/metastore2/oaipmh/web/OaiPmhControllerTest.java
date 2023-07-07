@@ -114,6 +114,7 @@ import org.xml.sax.SAXException;
 //@TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/oaipmh/metadata"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_oaipmh;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
+@SuppressWarnings("java:S2925")
 public class OaiPmhControllerTest {
 
   private final static String TEMP_DIR_4_ALL = "/tmp/oaipmh/";

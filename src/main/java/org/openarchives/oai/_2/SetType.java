@@ -127,7 +127,7 @@ public class SetType {
      */
     public List<DescriptionType> getSetDescription() {
         if (setDescription == null) {
-            setDescription = new ArrayList<DescriptionType>();
+            setDescription = new ArrayList<>();
         }
         return this.setDescription;
     }

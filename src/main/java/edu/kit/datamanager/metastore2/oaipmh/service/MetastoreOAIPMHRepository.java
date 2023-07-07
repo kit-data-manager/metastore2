@@ -49,6 +49,7 @@ import java.util.function.Function;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
+import java.util.function.UnaryOperator;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -246,7 +247,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     }
 
     LOGGER.trace("Adding {} records to result.", results.size());
-    results.stream().forEach((result) -> {
+    results.stream().forEach(result -> {
       //TODO get proper date
       Date changeDate = new Date(0l);
       if (result.getLastUpdate() != null) {
@@ -285,9 +286,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       return;
     }
     LOGGER.trace("Adding {} records to result.", results.size());
-    results.stream().forEach((result) -> {
-      addRecordEntry(result, builder);
-    });
+    results.stream().forEach(result -> addRecordEntry(result, builder));
   }
 
   /**
@@ -315,10 +314,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       LOGGER.info("Creating Dublin Core document on the fly.", object.getId());
       //create DC metadata
       try {
-        Function<String, String> dummy;
-        dummy = (t) -> {
-          return "dummy" + t;
-        };
+        UnaryOperator<String> dummy;
+        dummy = t -> "dummy" + t;
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
         ElementContainer container = DublinCoreMapper.dataResourceToDublinCoreContainer(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(ElementContainer.class);
@@ -332,10 +329,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     } else if (DATACITE_SCHEMA.getMetadataPrefix().equals(schemaId)) {
       LOGGER.info("Creating Datacite document on the fly.", object.getId());
       try {
-        Function<String, String> dummy;
-        dummy = (t) -> {
-          return "dummy" + t;
-        };
+        UnaryOperator<String> dummy;
+        dummy = t -> "dummy" + t;
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
         // Todo check for internal related schema identifier switch to URL
         Resource resource = DataCiteMapper.dataResourceToDataciteResource(DataResourceUtils.migrateToDataResource(dr));

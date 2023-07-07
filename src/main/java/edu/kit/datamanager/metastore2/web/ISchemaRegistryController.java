@@ -66,7 +66,7 @@ public interface ISchemaRegistryController extends InfoContributor {
   @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
+          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -151,7 +151,7 @@ public interface ISchemaRegistryController extends InfoContributor {
   })
   ResponseEntity updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("schemaId") final String schemaId,
-          @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
+          @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = false) @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response

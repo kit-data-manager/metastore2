@@ -13,7 +13,7 @@ import lombok.Getter;
  * @author sabrinechelbi
  */
 @Getter
-
+@SuppressWarnings("java:S1068")
 public class TabulatorItems {
 
   /**

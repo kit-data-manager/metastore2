@@ -18,6 +18,7 @@ import org.json.simple.JSONObject;
  */
 @Builder
 @Getter
+@SuppressWarnings("java:S1068")
 public class EditorRequestMetadata {
 
   /**

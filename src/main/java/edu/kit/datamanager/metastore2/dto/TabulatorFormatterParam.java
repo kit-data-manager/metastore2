@@ -13,6 +13,7 @@ import lombok.Getter;
  * @author sabrinechelbi
  */
 @Getter
+@SuppressWarnings("java:S1068")
 public class TabulatorFormatterParam {
 
   private String outputFormat;
