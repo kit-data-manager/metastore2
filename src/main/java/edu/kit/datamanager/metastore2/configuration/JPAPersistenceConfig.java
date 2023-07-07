@@ -21,6 +21,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
+ * Configuration for JPA persistence.
  *
  * @author jejkal
  */
@@ -28,6 +29,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @EnableTransactionManagement
 @EnableJpaRepositories(basePackages = "edu.kit.datamanager.metastore2")
 @EntityScan(basePackages = {"edu.kit.datamanager.metastore2.domain"})
-public class JPAPersistenceConfig{
+public class JPAPersistenceConfig {
 
 }

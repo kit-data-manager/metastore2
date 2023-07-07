@@ -62,7 +62,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -115,6 +115,8 @@ public class SchemaRegistryControllerTest {
   private static final ResourceIdentifier.IdentifierType PID_TYPE = ResourceIdentifier.IdentifierType.HANDLE;
   private static final String SCHEMA_ID = "dc";
   private static final String INVALID_SCHEMA_ID = "invalid/my_dc";
+  private static final String LABEL = "any unique label for test";
+  private static final String DEFINITION = "any unique definition for test";
   private static final String COMMENT = "any unique comment for test";
   private final static String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
 
@@ -146,8 +148,6 @@ public class SchemaRegistryControllerTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
 
   @Autowired
   private IDataResourceDao dataResourceDao;
@@ -184,7 +184,7 @@ public class SchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }
@@ -312,6 +312,27 @@ public class SchemaRegistryControllerTest {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+  }
+
+  @Test
+  public void testCreateSchemaRecordWithEmptyAclSid() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId("my_dc");
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(null, PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+
+    Assert.assertTrue(res.getResponse().getContentAsString().contains("Subject ID of ACL entry must not be null."));
   }
 
   @Test
@@ -691,6 +712,8 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testUpdateRecord() throws Exception {
     String schemaId = "updateRecord";
+    String newComment = "new comment";
+    String newLabel = "label changed!";
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -699,12 +722,12 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     String mimeTypeBefore = record.getMimeType();
-    String definitionBefore = record.getDefinition();
-    String labelBefore = record.getLabel();
-    String commentBefore = record.getComment();
-    record.setDefinition("");
-    record.setComment("new comment");
-    record.setLabel("label changed");
+    Assert.assertEquals(DEFINITION, record.getDefinition());
+    Assert.assertEquals(LABEL, record.getLabel());
+    Assert.assertEquals(COMMENT, record.getComment());
+    record.setDefinition(null);
+    record.setComment(newComment);
+    record.setLabel(newLabel);
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
@@ -725,8 +748,55 @@ public class SchemaRegistryControllerTest {
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     Assert.assertEquals("Check label: ", record.getLabel(), record2.getLabel());
     Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());
-    Assert.assertNotEquals("Check label: ", labelBefore, record2.getLabel());
-    Assert.assertNotEquals("Check comment: ", commentBefore, record2.getComment());
+    Assert.assertEquals("Check definition: ", record.getDefinition(), record2.getDefinition());
+    Assert.assertEquals("Check label: ", newLabel, record2.getLabel());
+    Assert.assertEquals("Check comment: ", newComment, record2.getComment());
+    Assert.assertNull("Check definition for 'null'", record2.getDefinition());
+  }
+
+  // Update only record
+  @Test
+  public void testUpdateRecordRemovingLabel() throws Exception {
+    String schemaId = "updateRecord";
+    String newComment = "new comment";
+    String newLabel = "label changed!";
+    ingestSchemaRecord(schemaId);
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record.getMimeType();
+    Assert.assertEquals(DEFINITION, record.getDefinition());
+    Assert.assertEquals(LABEL, record.getLabel());
+    Assert.assertEquals(COMMENT, record.getComment());
+    record.setDefinition(null);
+    record.setComment(null);
+    record.setLabel(null);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type is not allowed to be changed.
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    // Version shouldn't be updated
+    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record.getSchemaHash(), record2.getSchemaHash());
+    Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
+    Assert.assertEquals((long) record.getSchemaVersion(), (long) record2.getSchemaVersion());//version is not changing for metadata update
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    Assert.assertEquals("Check label: ", record.getLabel(), record2.getLabel());
+    Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());
+    Assert.assertEquals("Check definition: ", record.getDefinition(), record2.getComment());
+    Assert.assertNull("Check label: ", record2.getLabel());
+    Assert.assertNull("Check comment: ", record2.getComment());
     Assert.assertNull("Check definition for 'null'", record2.getDefinition());
   }
 
@@ -1340,9 +1410,12 @@ public class SchemaRegistryControllerTest {
   }
 
   private void ingestSchemaRecord(String schemaId) throws Exception {
-    SchemaRecord schemaRecord = new SchemaRecord();
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setLabel(LABEL);
+    schemaRecord.setDefinition(DEFINITION);
+    schemaRecord.setComment(COMMENT);
+    schemaRecord.setSchemaVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     ObjectMapper mapper = new ObjectMapper();
 

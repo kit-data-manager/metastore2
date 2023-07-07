@@ -5,7 +5,7 @@
  */
 package edu.kit.datamanager.metastore2.web;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.WebRequest;
@@ -13,11 +13,11 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Interface for metadata editor controller.
  *
  * @author sabrinechelbi
  */
 public interface IMetadataEditorController {
-
 
   @RequestMapping("/schema-management")
   public ModelAndView schemaManagement();

@@ -8,10 +8,13 @@ package edu.kit.datamanager.metastore2.dto;
 import lombok.Getter;
 
 /**
+ * Helper class for tabulators.
  *
  * @author sabrinechelbi
  */
 @Getter
+@SuppressWarnings("java:S1068")
 public class TabulatorFormatterParam {
-    private String outputFormat;
+
+  private String outputFormat;
 }

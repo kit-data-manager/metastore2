@@ -34,7 +34,6 @@ import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.StorageServiceProperties;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.service.IContentInformationService;
@@ -45,7 +44,6 @@ import edu.kit.datamanager.repo.service.impl.ContentInformationAuditService;
 import edu.kit.datamanager.repo.service.impl.ContentInformationService;
 import edu.kit.datamanager.repo.service.impl.DataResourceAuditService;
 import edu.kit.datamanager.repo.service.impl.DataResourceService;
-import edu.kit.datamanager.repo.service.impl.IdBasedStorageService;
 import edu.kit.datamanager.security.filter.KeycloakJwtProperties;
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
@@ -56,6 +54,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +66,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -77,6 +75,7 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
+ * Main class starting spring boot service of MetaStore.
  */
 @SpringBootApplication
 @EnableScheduling
@@ -85,25 +84,22 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @ComponentScan({"edu.kit.datamanager"})
 public class Application {
 
+  private static final String DEFAULT = "simple";
+  private static final String DEFAULT_VERSIONING = DEFAULT;
+  private static final String DEFAULT_STORAGE = DEFAULT;
+  private static final String LIST_ITEM = ".... '{}'";
+
   private static final Logger LOG = LoggerFactory.getLogger(Application.class);
   @Autowired
   private Javers javers;
-  /*@Autowired
-  private IDataResourceService schemaResourceService;
-  @Autowired
-  private IContentInformationService schemaInformationService;*/
   @Autowired
   private ApplicationEventPublisher eventPublisher;
   @Autowired
   private ApplicationProperties applicationProperties;
   @Autowired
-  private IRepoVersioningService[] versioningServices;
+  private List<IRepoVersioningService> versioningServices;
   @Autowired
-  private IRepoStorageService[] storageServices;
-
-  private MetastoreConfiguration metastoreProperties;
-  @Autowired
-  private IDataResourceDao dataResourceDao;
+  private List<IRepoStorageService>storageServices;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
@@ -113,14 +109,8 @@ public class Application {
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
-  private OaiPmhConfiguration oaiPmhConfiguration;
-  @Autowired
-  private IValidator[] validators;
+  private List<IValidator> validators;
 
-  /*@Autowired
-  private IDataResourceService dataResourceService;
-  @Autowired
-  private IContentInformationService contentInformationService;*/
   @Bean
   @Scope("prototype")
   public Logger logger(InjectionPoint injectionPoint) {
@@ -255,16 +245,16 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
-      LOG.trace(".... '{}'", versioningService.getServiceName());
-      if ("simple".equals(versioningService.getServiceName())) {
+      LOG.trace(LIST_ITEM, versioningService.getServiceName());
+      if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
       }
     }
     LOG.trace("Looking for storageServices....");
     for (IRepoStorageService storageService : this.storageServices) {
-      LOG.trace(".... '{}'", storageService.getServiceName());
-      if ("simple".equals(storageService.getServiceName())) {
+      LOG.trace(LIST_ITEM, storageService.getServiceName());
+      if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService);
         break;
       }
@@ -286,6 +276,7 @@ public class Application {
     fixBasePath(rbc);
 
     printSettings(rbc);
+    LOG.trace("Content audit service: '{}'", contentAuditService);
 
     return rbc;
   }
@@ -305,22 +296,22 @@ public class Application {
     rbc.setEventPublisher(eventPublisher);
     LOG.trace("Looking for versioningServices....");
     for (IRepoVersioningService versioningService : this.versioningServices) {
-      LOG.trace(".... '{}'", versioningService.getServiceName());
-      if ("simple".equals(versioningService.getServiceName())) {
+      LOG.trace(LIST_ITEM, versioningService.getServiceName());
+      if (Objects.equals(versioningService.getServiceName(), DEFAULT_VERSIONING)) {
         rbc.setVersioningService(versioningService);
         break;
       }
     }
     LOG.trace("Looking for storageService '{}'....", this.applicationProperties.getStoragePattern());
     for (IRepoStorageService storageService : this.storageServices) {
-      LOG.trace(".... '{}'", storageService.getServiceName());
-      if ("simple".equals(storageService.getServiceName())) {
+      LOG.trace(LIST_ITEM, storageService.getServiceName());
+      if (Objects.equals(storageService.getServiceName(), DEFAULT_STORAGE)) {
         rbc.setStorageService(storageService); // Should be used as default
       }
       if (this.applicationProperties.getStoragePattern().equals(storageService.getServiceName())) {
         LOG.trace("Configure '{}' with '{}'", storageService.getServiceName(), storageServiceProperties());
         storageService.configure(storageServiceProperties());
-        rbc.setStorageService(storageService); 
+        rbc.setStorageService(storageService);
         break;
       }
     }
@@ -336,6 +327,7 @@ public class Application {
     fixBasePath(rbc);
 
     printSettings(rbc);
+    LOG.trace("Content audit service: '{}'", contentAuditService);
 
     return rbc;
   }
@@ -352,10 +344,10 @@ public class Application {
     LOG.info("Versioning service: {}", config.getVersioningService().getServiceName());
     LOG.info("Storage service: {}", config.getStorageService().getServiceName());
     LOG.info("Basepath metadata repository: {}", config.getBasepath().toString());
-    int noOfSchemaRegistries = config.getSchemaRegistries().length;
+    int noOfSchemaRegistries = config.getSchemaRegistries().size();
     LOG.info("Number of registered external schema registries: {}", noOfSchemaRegistries);
     for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
-      LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries()[index1]);
+      LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries().get(index1));
     }
 
   }
@@ -366,15 +358,14 @@ public class Application {
    * @param currentRegistries Current list of schema registries.
    * @return Fitered list of schema registries.
    */
-  public String[] checkRegistries(String[] currentRegistries) {
+  public List<String> checkRegistries(List<String> currentRegistries) {
     List<String> allRegistries = new ArrayList<>();
     for (String schemaRegistry : currentRegistries) {
       if (!schemaRegistry.trim().isEmpty()) {
         allRegistries.add(schemaRegistry);
       }
     }
-    String[] array = allRegistries.toArray(new String[0]);
-    return array;
+    return allRegistries;
   }
 
   /**
@@ -397,7 +388,7 @@ public class Application {
   }
 
   public static void main(String[] args) {
-    ApplicationContext ctx = SpringApplication.run(Application.class, args);
+    SpringApplication.run(Application.class, args);
     System.out.println("Spring is running!");
   }
 

@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import javax.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -28,8 +27,11 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 import edu.kit.datamanager.metastore2.web.IMetadataEditorController;
+import jakarta.servlet.http.HttpServletResponse;
+import org.json.simple.parser.ParseException;
 
 /**
+ * Controller for the metadata editor web frontend.
  *
  * @author sabrinechelbi
  */
@@ -41,13 +43,13 @@ public class MetadataEditorController implements IMetadataEditorController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataEditorController.class);
 
-  private final static String DATAMODELSCHEMA = "/static/jsonSchemas/schemaRecord.json";
-  private final static String UIFORMSCHEMA = "/static/jsonSchemas/uiFormSchemaRecord.json";
-  private final static String ITEMSSCHEMA = "/static/jsonSchemas/itemsSchemaRecord.json";
-
-  private final static String DATAMODELMETADATA = "/static/jsonSchemas/metadataRecord.json";
-  private final static String UIFORMMETADATA = "/static/jsonSchemas/uiFormMetadataRecord.json";
-  private final static String ITEMSMETADATA = "/static/jsonSchemas/itemsMetadataRecord.json";
+  private static final String DATAMODELSCHEMA = "/static/jsonSchemas/schemaRecord.json";
+  private static final String UIFORMSCHEMA = "/static/jsonSchemas/uiFormSchemaRecord.json";
+  private static final String ITEMSSCHEMA = "/static/jsonSchemas/itemsSchemaRecord.json";
+ 
+  private static final String DATAMODELMETADATA = "/static/jsonSchemas/metadataRecord.json";
+  private static final String UIFORMMETADATA = "/static/jsonSchemas/uiFormMetadataRecord.json";
+  private static final String ITEMSMETADATA = "/static/jsonSchemas/itemsMetadataRecord.json";
 
   @Override
   public ModelAndView schemaManagement() {
@@ -95,9 +97,9 @@ public class MetadataEditorController implements IMetadataEditorController {
     JSONObject obj = null;
     try {
       obj = (JSONObject) parser.parse(
-              new InputStreamReader(resource.getInputStream(), "UTF-8"));
-    } catch (Exception e) {
-      e.printStackTrace();
+              new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8));
+    } catch (IOException | ParseException e) {
+      LOG.error("Error parsing JSON object!", e);
     }
     return obj;
   }

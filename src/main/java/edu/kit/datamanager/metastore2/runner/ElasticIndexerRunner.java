@@ -76,6 +76,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private Optional<IMessagingService> messagingService;
 
   @Override
+  @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
@@ -164,18 +165,19 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
   /**
    * Transform DataRecord to MetadataRecord.
-   * @param record DataRecord holding all information about metadata document.
+   *
+   * @param dataRecord DataRecord holding all information about metadata document.
    * @param baseUrl Base URL for accessing service.
    * @return MetadataRecord of metadata document.
    */
-  private MetadataRecord toMetadataRecord(DataRecord record, String baseUrl) {
-    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(record.getMetadataId(), record.getVersion(), null, null)).toUri().toString();
+  private MetadataRecord toMetadataRecord(DataRecord dataRecord, String baseUrl) {
+    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri().toString();
     MetadataRecord returnValue = new MetadataRecord();
-    returnValue.setId(record.getMetadataId());
-    returnValue.setSchemaVersion(record.getSchemaVersion());
-    returnValue.setRecordVersion(record.getVersion());
+    returnValue.setId(dataRecord.getMetadataId());
+    returnValue.setSchemaVersion(dataRecord.getSchemaVersion());
+    returnValue.setRecordVersion(dataRecord.getVersion());
     returnValue.setMetadataDocumentUri(metadataIdWithVersion);
-    returnValue.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(toSchemaUrl(record, baseUrl)));
+    returnValue.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(toSchemaUrl(dataRecord, baseUrl)));
 
     return returnValue;
   }

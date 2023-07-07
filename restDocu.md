@@ -1703,7 +1703,7 @@ providing mandatory fields mentioned above:
 
     schema.json:
     {
-      "$schema": "http://json-schema.org/draft/2019-09/schema#",
+      "$schema": "https://json-schema.org/draft/2019-09/schema",
       "$id": "http://www.example.org/schema/json",
       "type": "object",
       "title": "Json schema for tests",
@@ -1740,7 +1740,7 @@ looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -1870,7 +1870,7 @@ As a result, you receive the XSD schema send before.
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2019-09/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
@@ -1902,7 +1902,7 @@ updated metadata schema document and/or metadata schema record.
 
     schema-v2.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -1946,7 +1946,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -2008,7 +2008,7 @@ document and/or metadata schema record.
 
     schema-v3.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -2058,7 +2058,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -2135,7 +2135,7 @@ providing mandatory fields mentioned above:
 
     another-schema.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json/example",
         "type": "object",
         "title": "Another Json schema for tests",
@@ -2170,7 +2170,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/xml
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
         "$id": "http://www.example.org/schema/json/example",
         "type": "object",
         "title": "Another Json schema for tests",
@@ -2383,7 +2383,7 @@ As a result, you receive the XSD schema document sent before.
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2019-09/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
@@ -2434,7 +2434,7 @@ As a result, you receive the initial XSD schema document (version 1).
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2019-09/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
