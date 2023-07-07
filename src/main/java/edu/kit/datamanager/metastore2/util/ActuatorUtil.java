@@ -75,8 +75,8 @@ public class ActuatorUtil {
       probe = Files.createFile(probe);
       Files.write(probe, "Success".getBytes(StandardCharsets.UTF_8));
       File repoDir = path.toFile();
-      double total = (double) repoDir.getTotalSpace();
-      double free = (double) repoDir.getFreeSpace();
+      double total = repoDir.getTotalSpace();
+      double free = repoDir.getFreeSpace();
       totalSpace = String.format("%.2f GB", total / 1073741824);
       freeSpace = String.format("%.2f GB (%.0f%%)", (double) repoDir.getFreeSpace() / 1073741824, free * 100.0 / total);
       properties.put("Total space", totalSpace);

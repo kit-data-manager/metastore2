@@ -425,9 +425,7 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing updateRecord({}, {}, {}).", id, metadataRecord, "#document");
     UnaryOperator<String> getById;
-    getById = t -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
-    };
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
     MetadataRecord updateMetadataRecord = MetadataRecordUtil.updateMetadataRecord(metadataConfig, id, eTag, metadataRecord, document, getById);
 
@@ -453,9 +451,8 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing deleteRecord({}).", id);
     UnaryOperator<String> getById;
-    getById = t -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
-    };
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
+    
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     MetadataRecordUtil.deleteMetadataRecord(metadataConfig, id, eTag, getById);
 

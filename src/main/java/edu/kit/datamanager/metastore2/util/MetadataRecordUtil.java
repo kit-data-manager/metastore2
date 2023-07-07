@@ -190,9 +190,7 @@ public class MetadataRecordUtil {
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     long nano5 = System.nanoTime() / 1000000;
     // store document
-    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> {
-      return "somethingStupid";
-    });
+    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
     long nano6 = System.nanoTime() / 1000000;
     // Create additional metadata record for faster access
     DataRecord dataRecord = new DataRecord();
@@ -510,7 +508,7 @@ public class MetadataRecordUtil {
           metadataRecord.setSchema(resourceIdentifier);
           if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
             //Try to fetch version from URL (only works with URLs including the version as query parameter.
-            Matcher matcher = Pattern.compile(".*[&?]version=([0-9]*).*").matcher(resourceIdentifier.getIdentifier());
+            Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
             while (matcher.find()) {
               metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
             }
