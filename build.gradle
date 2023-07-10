@@ -94,7 +94,7 @@ dependencies {
     // driver for postgres
     implementation "org.postgresql:postgresql:42.6.0"
     //driver for h2
-    implementation "com.h2database:h2:2.1.214"
+    implementation "com.h2database:h2:2.2.220"
     
     // apache
     implementation "commons-io:commons-io:2.13.0"
