@@ -121,9 +121,9 @@ public class OaiPmhControllerTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static Boolean alreadyInitialized = Boolean.FALSE;
-  private static final String SCHEMA_ID_1 = "schemaV1";
-  private static final String SCHEMA_ID_2 = "schemaV2";
-  private static final String SCHEMA_ID_3 = "schemaV3";
+  private static final String SCHEMA_ID_1 = "schema_v1";
+  private static final String SCHEMA_ID_2 = "schema_v2";
+  private static final String SCHEMA_ID_3 = "schema_v3";
   private final static String SCHEMA = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/%s\"\n"
           + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"

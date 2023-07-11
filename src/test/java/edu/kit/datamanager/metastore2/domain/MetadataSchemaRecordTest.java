@@ -11,6 +11,7 @@ import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -67,6 +68,20 @@ public class MetadataSchemaRecordTest {
     MetadataSchemaRecord instance = new MetadataSchemaRecord();
     String expResult = "schema";
     instance.setSchemaId(expResult);
+    String result = instance.getSchemaId();
+    assertEquals(expResult, result);
+  }
+
+   /**
+   * Test of getSchemaId method, of class MetadataSchemaRecord.
+   */
+  @Test
+  public void testSetAndGetSchemaIdWithCapitalLetters() {
+    System.out.println("getSchemaId");
+    String schemaIdWithCapitalLetter = "schemaWithCaptialLetter";
+    MetadataSchemaRecord instance = new MetadataSchemaRecord();
+    String expResult = schemaIdWithCapitalLetter.toLowerCase(Locale.getDefault());
+    instance.setSchemaId(schemaIdWithCapitalLetter);
     String result = instance.getSchemaId();
     assertEquals(expResult, result);
   }
