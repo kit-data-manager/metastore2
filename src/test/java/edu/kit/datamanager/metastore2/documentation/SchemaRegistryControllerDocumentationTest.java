@@ -227,6 +227,9 @@ public class SchemaRegistryControllerDocumentationTest {
   @Test
   public void documentSchemaRegistry() throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
+    String contextPath = "/metastore";
+    String endpointSchema = contextPath + "/api/v1/schemas";
+    String endpointMetadata = contextPath + "/api/v1/metadata";
     //  1. Registering metadata schema
     //**************************************************************************
     schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
@@ -238,9 +241,10 @@ public class SchemaRegistryControllerDocumentationTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "schema-record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
 
     //create resource and obtain location from response header
-    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema).
             file(schemaFile).
-            file(recordFile)).
+            file(recordFile).
+            contextPath(contextPath)).
             andDo(document("register-schema")).
             andExpect(status().isCreated()).
             andReturn().getResponse().getHeader("Location");
@@ -249,7 +253,9 @@ public class SchemaRegistryControllerDocumentationTest {
     //  2. Getting metadata Schema Record
     //**************************************************************************
     // Get single metadata schema record
-    String etag = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).accept("application/vnd.datamanager.schema-record+json")).
+    String etag = this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath).
+            accept("application/vnd.datamanager.schema-record+json")).
             andDo(document("get-schema-record")).
             andExpect(status().isOk()).
             andReturn().getResponse().getHeader("ETag");
@@ -257,7 +263,8 @@ public class SchemaRegistryControllerDocumentationTest {
     //  3. Getting metadata Schema document
     //**************************************************************************
     // Get metadata schema
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).
+    this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath)).
             andDo(document("get-schema-document")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -265,8 +272,9 @@ public class SchemaRegistryControllerDocumentationTest {
     //**************************************************************************
     //update schema document and create new version
     schemaFile = new MockMultipartFile("schema", "schema-v2.xsd", "application/xml", SCHEMA_V2.getBytes());
-    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
             file(schemaFile).
+            contextPath(contextPath).
             header("If-Match", etag).with(putMultipart())).
             andDo(document("update-schema-v2")).
             andExpect(status().isOk()).
@@ -274,8 +282,9 @@ public class SchemaRegistryControllerDocumentationTest {
     //  5. Update to third version of schema
     //**************************************************************************
     schemaFile = new MockMultipartFile("schema", "schema-v3.xsd", "application/xml", SCHEMA_V3.getBytes());
-    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+    etag = this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
             file(schemaFile).
+            contextPath(contextPath).
             header("If-Match", etag).with(putMultipart())).
             andDo(document("update-schema-v3")).
             andExpect(status().isOk()).
@@ -287,9 +296,10 @@ public class SchemaRegistryControllerDocumentationTest {
     schemaFile = new MockMultipartFile("schema", "another-schema.xsd", "application/xml", ANOTHER_SCHEMA.getBytes());
     recordFile = new MockMultipartFile("record", "another-schema-record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
 
-    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema).
             file(schemaFile).
-            file(recordFile)).
+            file(recordFile).
+            contextPath(contextPath)).
             andDo(document("register-another-schema")).
             andExpect(status().isCreated()).
             andReturn().getResponse().getHeader("Location");
@@ -297,33 +307,42 @@ public class SchemaRegistryControllerDocumentationTest {
     Assert.assertNotNull(location);
     //  7. List all schema records (only current schemas)
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas")).
+    this.mockMvc.perform(get(endpointSchema).
+            contextPath(contextPath)).
             andDo(document("get-all-schemas")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
-    this.mockMvc.perform(get("/api/v1/schemas").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
+    this.mockMvc.perform(get(endpointSchema).
+            contextPath(contextPath).
+            param("page", Integer.toString(0)).
+            param("size", Integer.toString(20))).
             andDo(document("get-all-schemas-pagination")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     //  8. List all versions of a schema
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
+    this.mockMvc.perform(get(endpointSchema).
+            contextPath(contextPath).
+            param("schemaId", EXAMPLE_SCHEMA_ID)).
             andDo(document("get-all-versions-of-a-schema")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     //  9. Getting current schema
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID)).
+    this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath)).
             andDo(document("get-schema-v3")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     // 10. Getting specific version of a schema
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).param("version", "1")).
+    this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath).
+            param("version", "1")).
             andDo(document("get-schema-v1")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -333,22 +352,26 @@ public class SchemaRegistryControllerDocumentationTest {
     MockMultipartFile metadataFile_v3 = new MockMultipartFile("document", "metadata-v3.xml", "application/xml", DOCUMENT_V3.getBytes());
     // 11 a) Validate with version=1 --> invalid
     //**************************************************************************
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").
-            file(metadataFile_v3).queryParam("version", "1")).
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema + "/" + EXAMPLE_SCHEMA_ID + "/validate").
+            file(metadataFile_v3).
+            contextPath(contextPath).
+            queryParam("version", "1")).
             andDo(document("validate-document-v1")).
             andExpect(status().isUnprocessableEntity()).
             andReturn().getResponse();
     // 11 b) Validate without version --> version 3 (should be valid)
     //**************************************************************************
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID + "/validate").
-            file(metadataFile_v3)).
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema + "/" + EXAMPLE_SCHEMA_ID + "/validate").
+            file(metadataFile_v3).
+            contextPath(contextPath)).
             andDo(document("validate-document-v3")).
             andExpect(status().isNoContent()).
             andReturn().getResponse();
     // 12. Update metadata Schema Record
     //**************************************************************************
     // Update metadata record to allow admin to edit schema as well.
-    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+    MvcResult result = this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath).
             header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
@@ -361,8 +384,9 @@ public class SchemaRegistryControllerDocumentationTest {
     schemaRecord.getAcl().add(new AclEntry("admin", PERMISSION.ADMINISTRATE));
 
     recordFile = new MockMultipartFile("record", "schema-record-v4.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + EXAMPLE_SCHEMA_ID).
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
             file(recordFile).
+            contextPath(contextPath).
             header("If-Match", etag).with(putMultipart())).
             andDo(document("update-schema-record")).
             andExpect(status().isOk()).
@@ -383,9 +407,10 @@ public class SchemaRegistryControllerDocumentationTest {
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DOCUMENT_V1.getBytes());
 
-    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart(endpointMetadata).
             file(recordFile).
-            file(metadataFile)).
+            file(metadataFile).
+            contextPath(contextPath)).
             andDo(document("ingest-metadata-document")).
             andExpect(status().isCreated()).
             andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
@@ -395,21 +420,26 @@ public class SchemaRegistryControllerDocumentationTest {
 
     // 2. Accessing metadata document
     //**************************************************************************
-    this.mockMvc.perform(get(location).accept("application/xml")).
+    this.mockMvc.perform(get(location).accept("application/xml").
+            contextPath(contextPath)).
             andDo(document("get-metadata-document")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     // 3. Accessing metadata record
     //**************************************************************************
-    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+    this.mockMvc.perform(get(location).
+            contextPath(contextPath).
+            accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(document("get-metadata-record")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     // 4. Update metadata record & document
     //**************************************************************************
-    result = this.mockMvc.perform(get(location).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+    result = this.mockMvc.perform(get(location).
+            contextPath(contextPath).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -426,6 +456,7 @@ public class SchemaRegistryControllerDocumentationTest {
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(newLocation).
             file(recordFile).
             file(metadataFile).
+            contextPath(contextPath).
             header("If-Match", etag).with(putMultipart())).
             andDo(print()).
             andDo(document("update-metadata-record-v2")).
@@ -437,7 +468,9 @@ public class SchemaRegistryControllerDocumentationTest {
     //**************************************************************************
     // update once more to newest version of schema
     // Get Etag
-    this.mockMvc.perform(get(location).accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+    this.mockMvc.perform(get(location).
+            contextPath(contextPath).
+            accept(MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(document("get-metadata-record-v2")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -449,20 +482,24 @@ public class SchemaRegistryControllerDocumentationTest {
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(newLocation).
             file(recordFile).
             file(metadataFile).
+            contextPath(contextPath).
             header("If-Match", etag).with(putMultipart())).
             andDo(print()).
             andDo(document("update-metadata-record-v3")).
             andExpect(status().isOk()).
             andReturn();
     location = result.getResponse().getHeader("Location");
-    this.mockMvc.perform(get(location)).
+    this.mockMvc.perform(get(location).
+            contextPath(contextPath)).
             andDo(document("get-metadata-document-v3")).
             andExpect(status().isOk()).
             andReturn().getResponse();
     // 6. List all versions of a record
     //**************************************************************************
     String resourceId = record.getId();
-    this.mockMvc.perform(get("/api/v1/metadata").param("id", resourceId)).
+    this.mockMvc.perform(get(endpointMetadata).
+            contextPath(contextPath).
+            param("id", resourceId)).
             andDo(print()).
             andDo(document("list-all-versions-of-metadata-document")).
             andExpect(status().isOk()).
@@ -473,19 +510,26 @@ public class SchemaRegistryControllerDocumentationTest {
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
-    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier())).
+    this.mockMvc.perform(get(endpointMetadata).
+            contextPath(contextPath).
+            param("resoureId", RELATED_RESOURCE.getIdentifier())).
             andDo(print()).
             andDo(document("find-metadata-record-resource")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString())).
+    this.mockMvc.perform(get(endpointMetadata).
+            contextPath(contextPath).
+            param("from", twoHoursBefore.toString())).
             andDo(print()).
             andDo(document("find-metadata-record-from")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).
+    this.mockMvc.perform(get(endpointMetadata).
+            contextPath(contextPath).
+            param("from", twoHoursBefore.toString()).
+            param("until", oneHourBefore.toString())).
             andDo(print()).
             andDo(document("find-metadata-record-from-to")).
             andExpect(status().isOk()).
