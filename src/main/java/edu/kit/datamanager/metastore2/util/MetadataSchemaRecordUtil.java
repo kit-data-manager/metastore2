@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
@@ -66,7 +65,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
