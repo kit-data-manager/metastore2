@@ -34,8 +34,10 @@ repositories {
     mavenCentral()
 }
 
-sourceCompatibility = 1.17
-targetCompatibility = 1.17
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
  
 if (System.getProperty('profile') == 'minimal') {
     println 'Using minimal profile for building ' + project.getName()
