@@ -19,8 +19,11 @@ import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.dto.LandingPageModel;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ILandingPageController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.service.IMessagingService;
@@ -42,74 +45,67 @@ import org.springframework.web.servlet.ModelAndView;
  * Controller for metadata documents.
  */
 @Controller
-@RequestMapping(value = "/landingpage")
+@RequestMapping(value = "/api/v1/landingpage")
 @Tag(name = "Landing Page")
 @Schema(description = "Landing page for all digital objects stored in this repo.")
 public class LandingPageControllerImpl implements ILandingPageController {
 
   private static final Logger LOG = LoggerFactory.getLogger(LandingPageControllerImpl.class);
 
-  @Autowired
-  private final ILinkedMetadataRecordDao metadataRecordDao;
-
   private final MetastoreConfiguration metadataConfig;
-  @Autowired
-  private final IDataResourceDao dataResourceDao;
 
-  /**
-   * Optional messagingService bean may or may not be available, depending on a
-   * service's configuration. If messaging capabilities are disabled, this bean
-   * should be not available. In that case, messages are only logged.
-   */
-  @Autowired
-  private Optional<IMessagingService> messagingService;
-
-  private final String guestToken;
+  private final MetastoreConfiguration schemaConfig;
+  
+  private static final String PLACEHOLDER_ID = "$(id)";
+  private static final String PLACEHOLDER_VERSION = "$(version)";
 
   /**
    * Constructor for metadata documents controller.
    *
    * @param applicationProperties Configuration for controller.
    * @param metadataConfig Configuration for metadata documents repository.
+   * @param schemaConfig Configuration for schema documents repository.
    * @param metadataRecordDao DAO for metadata records.
    * @param dataResourceDao DAO for data resources.
    */
   public LandingPageControllerImpl(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
-          ILinkedMetadataRecordDao metadataRecordDao,
-          IDataResourceDao dataResourceDao) {
+          MetastoreConfiguration schemaConfig) {
     this.metadataConfig = metadataConfig;
-    this.metadataRecordDao = metadataRecordDao;
-    this.dataResourceDao = dataResourceDao;
+    this.schemaConfig = schemaConfig;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", this.metadataConfig);
     LOG.info("------------------------------------------------------");
-    LOG.trace("Create guest token");
-    guestToken = edu.kit.datamanager.util.JwtBuilder.createUserToken("guest", RepoUserRole.GUEST).
-            addSimpleClaim("email", "metastore@localhost").
-            addSimpleClaim("loginFailures", 0).
-            addSimpleClaim("active", true).
-            addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
-    MetadataRecordUtil.setToken(guestToken);
   }
 
   @Override
   public ModelAndView getLandingPageOfId(
-          @PathVariable(value = "id") String id,
+          @RequestParam(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr
   ) {
     LOG.trace("Performing Landing page for repo.... with ({}, {}).", id, version);
-
-    LandingPageModel request = LandingPageModel.builder()
-            .information("Information about '" + id + "' and version '" + version + "'.")
-            .build();
-   LOG.trace("Model: '{}'", request);
-
-    ModelAndView model = new ModelAndView("landingpage");
-    model.addObject("request", request);
-    return model;
+    String redirectUrl = null;
+    try {
+      MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    id = recordByIdAndVersion.getId();
+    version = recordByIdAndVersion.getRecordVersion();
+    redirectUrl = metadataConfig.getLandingPage();
+    } catch (Throwable tw) {
+      // No metadata document found? 
+      // Search for a appropriate schema...
+      MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+     id = recordByIdAndVersion.getSchemaId();
+     version = recordByIdAndVersion.getSchemaVersion();
+    redirectUrl = schemaConfig.getLandingPage();
+    }
+    redirectUrl = redirectUrl.replace(PLACEHOLDER_ID, id);
+    redirectUrl = "redirect:" + redirectUrl.replace(PLACEHOLDER_VERSION, version.toString());
+    
+    LOG.trace("Redirect to '{}'", redirectUrl);
+    
+    return new ModelAndView(redirectUrl);
   }
 
 }

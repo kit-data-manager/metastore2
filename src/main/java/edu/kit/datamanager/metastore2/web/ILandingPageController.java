@@ -43,8 +43,9 @@ public interface ILandingPageController {
             @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
-  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
-  public ModelAndView getLandingPageOfId(@Parameter(description = "The identifier of the schema or metadata document.", required = true) @PathVariable(value = "id") String id,
+  @RequestMapping(value = {""}, method = {RequestMethod.GET})
+  public ModelAndView getLandingPageOfId(
+          @Parameter(description = "The identifier of the schema or metadata document.", required = true) @RequestParam(value = "id") String id,
           @Parameter(description = "The version of the digital object. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);
