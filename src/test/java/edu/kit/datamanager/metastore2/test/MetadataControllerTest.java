@@ -68,6 +68,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -1540,6 +1541,27 @@ public class MetadataControllerTest {
             .andDo(print())
             .andExpect(status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$.info.title", Matchers.startsWith("MetaStore")));
+  }
+
+  @Test
+  public void testLandingPage4Metadata() throws Exception {
+    String documentId = createDCMetadataRecord();
+    // Test for swagger definition
+    this.mockMvc.perform(get("/api/v1/landingpage?id=anything"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/landingpage?id=" + documentId))
+            .andDo(print())
+            .andExpect(redirectedUrl("/metadata-management?id=" + documentId));
+  }
+
+  @Test
+  public void testLandingPage4Schema() throws Exception {
+
+    // Test for swagger definition
+    this.mockMvc.perform(get("/api/v1/landingpage?id=" + SCHEMA_ID))
+            .andDo(print())
+            .andExpect(redirectedUrl("/schema-management?id=" + SCHEMA_ID));
   }
 
   private String createJsonMetadataRecord() throws Exception {
