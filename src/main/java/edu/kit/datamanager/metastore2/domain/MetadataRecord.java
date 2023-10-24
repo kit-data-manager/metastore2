@@ -25,19 +25,20 @@ import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
-import javax.persistence.Id;
-import javax.persistence.OneToMany;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
 /**
+ * Record for a metadata document.
  *
  * @author jejkal
  */
@@ -45,9 +46,9 @@ import org.springframework.http.MediaType;
 @Data
 public class MetadataRecord implements EtagSupport, Serializable {
 
-  public final static String RESOURCE_TYPE = "application/vnd.datamanager.metadata-record+json";
+  public static final String RESOURCE_TYPE = "application/vnd.datamanager.metadata-record+json";
 
-  public final static MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
+  public static final MediaType METADATA_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @Id
   @NotBlank(message = "The unique identify of the record.")
@@ -74,7 +75,7 @@ public class MetadataRecord implements EtagSupport, Serializable {
   private Long recordVersion;
 
   @NotNull(message = "A list of access control entries for resticting access.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
+  @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<AclEntry> acl = new HashSet<>();
   @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;

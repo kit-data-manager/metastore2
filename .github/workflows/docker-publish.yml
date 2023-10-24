@@ -25,8 +25,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
+      - name: Set up OpenJDK version ...
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu' 
+          java-version: 17
       - name: Run tests
         run: |
             ./gradlew jacocoTestReport
@@ -41,7 +46,7 @@ jobs:
     if: github.event_name == 'push'
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Build image
         run: |
@@ -66,7 +71,7 @@ jobs:
           docker push $IMAGE_ID:$VERSION
       - name: Docker meta
         id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+        uses: crazy-max/ghaction-docker-meta@v5
         with:
           # list of Docker images to use as base name for tags
           images: |
@@ -74,19 +79,19 @@ jobs:
           # add git short SHA as Docker tag
           tag-sha: true    
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v3
         
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
         
       - name: Login to DockerHub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}  
           
       - name: Push to Docker Hub
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true

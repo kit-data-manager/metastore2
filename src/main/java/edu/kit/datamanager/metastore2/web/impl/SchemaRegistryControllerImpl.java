@@ -21,9 +21,9 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
-import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
@@ -36,7 +36,10 @@ import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,13 +47,14 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.actuate.info.Info;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -70,8 +74,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- *
- * @author jejkal
+ * Controller for schema documents.
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
@@ -86,23 +89,20 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Autowired
   private final IDataResourceDao dataResourceDao;
   @Autowired
-  private final IContentInformationDao contentInformationDao;
-  @Autowired
   private final IUrl2PathDao url2PathDao;
 
-  /**
+    /**
+   * Constructor for schema documents controller.
    *
-   * @param schemaConfig
-   * @param dataResourceDao
-   * @param contentInformationDao
+   * @param schemaConfig Configuration for metadata documents repository.
+   * @param dataResourceDao DAO for data resources.
+   * @param url2PathDao DAO for storing url and linked path 
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao,
-          IContentInformationDao contentInformationDao,
           IUrl2PathDao url2PathDao) {
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
-    this.contentInformationDao = contentInformationDao;
     this.url2PathDao = url2PathDao;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
@@ -118,19 +118,18 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({},....", recordDocument);
     BiFunction<String, Long, String> getSchemaDocumentById;
-    getSchemaDocumentById = (schema, version) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
-    };
-    MetadataSchemaRecord record = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
+    getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
+
+    MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
     LOG.trace("Schema record successfully persisted. Returning result.");
-    String etag = record.getEtag();
+    String etag = schemaRecord.getEtag();
 
     LOG.trace("Schema record successfully persisted. Updating document URI.");
-    fixSchemaDocumentUri(record, true);
+    fixSchemaDocumentUri(schemaRecord, true);
     URI locationUri;
-    locationUri = getSchemaDocumentUri(record);
+    locationUri = getSchemaDocumentUri(schemaRecord);
     LOG.warn("location uri              " + locationUri);
-    return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(record);
+    return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(schemaRecord);
   }
 
   @Override
@@ -142,12 +141,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
-    MetadataSchemaRecord record = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version, true);
-    String etag = record.getEtag();
+    MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version, true);
+    String etag = schemaRecord.getEtag();
 
-    fixSchemaDocumentUri(record);
+    fixSchemaDocumentUri(schemaRecord);
     LOG.trace("Document URI successfully updated. Returning result.");
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(record);
+    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(schemaRecord);
   }
 
   @Override
@@ -159,10 +158,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
-    MetadataSchemaRecord record = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
-    URI schemaDocumentUri = URI.create(record.getSchemaDocumentUri());
+    MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
+    URI schemaDocumentUri = URI.create(schemaRecord.getSchemaDocumentUri());
 
-    MediaType contentType = MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(record.getType()) ? MediaType.APPLICATION_XML : MediaType.APPLICATION_JSON;
+    MediaType contentType = MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType()) ? MediaType.APPLICATION_XML : MediaType.APPLICATION_JSON;
     Path schemaDocumentPath = Paths.get(schemaDocumentUri);
     if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
       LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
@@ -194,9 +193,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
     List<MetadataSchemaRecord> metadataList = new ArrayList<>();
-    recordList.forEach((record) -> {
-      fixSchemaDocumentUri(record);
-      metadataList.add(record);
+    recordList.forEach(schemaRecord -> {
+      fixSchemaDocumentUri(schemaRecord);
+      metadataList.add(schemaRecord);
     });
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
@@ -276,8 +275,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       }
     }
     List<MetadataSchemaRecord> schemaList = new ArrayList<>();
-    recordList.forEach((record) -> {
-      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, record, false);
+    recordList.forEach(schemaRecord -> {
+      MetadataSchemaRecord item = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(schemaConfig, schemaRecord, false);
       fixSchemaDocumentUri(item);
       schemaList.add(item);
       if (LOG.isTraceEnabled()) {
@@ -292,16 +291,14 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity updateRecord(@PathVariable("schemaId") final String schemaId,
-          @RequestPart(name = "record", required = false) MultipartFile record,
+          @RequestPart(name = "record", required = false) MultipartFile schemaRecord,
           @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
-    LOG.trace("Performing updateRecord({}, {}).", schemaId, record);
-    Function<String, String> getById;
-    getById = (t) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
-    };
+    LOG.trace("Performing updateRecord({}, {}).", schemaId, schemaRecord);
+    UnaryOperator<String> getById;
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    MetadataSchemaRecord updatedSchemaRecord = MetadataSchemaRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, record, document, getById);
+    MetadataSchemaRecord updatedSchemaRecord = MetadataSchemaRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
@@ -320,42 +317,54 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           WebRequest request, 
           HttpServletResponse hsr) {
     LOG.trace("Performing deleteRecord({}).", schemaId);
-    Function<String, String> getById;
-    getById = (t) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, hsr)).toString();
-    };
+    UnaryOperator<String> getById;
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, hsr)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
+
     MetadataSchemaRecordUtil.deleteMetadataSchemaRecord(schemaConfig, schemaId, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
-  /**
-   * Fix local document URI to URL.
-   *
-   * @param record record holding schemaId and version of local document.
-   */
-  private void fixSchemaDocumentUri(MetadataSchemaRecord record) {
-    fixSchemaDocumentUri(record, false);
+  @Override
+  public void contribute(Info.Builder builder) {
+    LOG.trace("Check for SchemaRepo actuator information...");
+
+    URL basePath = schemaConfig.getBasepath();
+    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
+
+    if (!details.isEmpty()) {
+      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
+      builder.withDetail("schemaRepo", details);
+    }
   }
 
   /**
    * Fix local document URI to URL.
    *
-   * @param record record holding schemaId and version of local document.
+   * @param schemaRecord record holding schemaId and version of local document.
+   */
+  private void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    fixSchemaDocumentUri(schemaRecord, false);
+  }
+
+  /**
+   * Fix local document URI to URL.
+   *
+   * @param schemaRecord record holding schemaId and version of local document.
    * @param saveUrl save path to file for URL.
    */
-  private void fixSchemaDocumentUri(MetadataSchemaRecord record, boolean saveUrl) {
-    String schemaDocumentUri = record.getSchemaDocumentUri();
-    record.setSchemaDocumentUri(getSchemaDocumentUri(record).toString());
-    LOG.trace("Fix schema document Uri '{}' -> '{}'", schemaDocumentUri, record.getSchemaDocumentUri());
+  private void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord, boolean saveUrl) {
+    String schemaDocumentUri = schemaRecord.getSchemaDocumentUri();
+    schemaRecord.setSchemaDocumentUri(getSchemaDocumentUri(schemaRecord).toString());
+    LOG.trace("Fix schema document Uri '{}' -> '{}'", schemaDocumentUri, schemaRecord.getSchemaDocumentUri());
     if (saveUrl) {
       LOG.trace("Store path for URI!");
       Url2Path url2Path = new Url2Path();
       url2Path.setPath(schemaDocumentUri);
-      url2Path.setUrl(record.getSchemaDocumentUri());
-      url2Path.setType(record.getType());
-      url2Path.setVersion(record.getSchemaVersion());
+      url2Path.setUrl(schemaRecord.getSchemaDocumentUri());
+      url2Path.setType(schemaRecord.getType());
+      url2Path.setVersion(schemaRecord.getSchemaVersion());
       url2PathDao.save(url2Path);
     }
   }
@@ -363,10 +372,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   /**
    * Get URI for accessing schema document via schemaId and version.
    *
-   * @param record Record holding schemaId and version.
+   * @param schemaRecord Record holding schemaId and version.
    * @return URI for accessing schema document.
    */
-  public URI getSchemaDocumentUri(MetadataSchemaRecord record) {
-    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(record.getSchemaId(), record.getSchemaVersion(), null, null)).toUri();
+  public URI getSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), null, null)).toUri();
   }
 }

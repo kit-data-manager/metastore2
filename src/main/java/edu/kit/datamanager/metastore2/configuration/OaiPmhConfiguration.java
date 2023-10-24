@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 /**
+ * Configuration for OAI-PMH.
  *
  * @author jejkal
  */
@@ -34,7 +35,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @RefreshScope
 @EqualsAndHashCode(callSuper = true)
-public class OaiPmhConfiguration extends GenericPluginProperties{
+public class OaiPmhConfiguration extends GenericPluginProperties {
 
   @Value("${repo.plugin.oaipmh.adminEmail:none}")
   private String adminEmail;

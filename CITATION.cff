@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Hartmann"
+  given-names: "Volker"
+  affiliation: Karlsruhe Institute of Technology
+  email: volker.hartmann@kit.edu
+  orcid: "https://orcid.org/0000-0001-6383-5214"
+- family-names: "Jejkal"
+  given-names: "Thomas"
+  affiliation: Karlsruhe Institute of Technology
+  email: thomas.jejkal@kit.edu
+  orcid: "https://orcid.org/0000-0003-2804-688X"
+- family-names: "Chelbi"
+  given-names: "Sabrine"
+  affiliation: Karlsruhe Institute of Technology
+  email: sabrine.chelbi@kit.edu
+  orcid: "https://orcid.org/0000-0002-4480-6116"
+title: "MetaStore"
+type: software
+abstract: MetaStore is a research data repository software for storing metadata documents and schemas. Quality and consistency are ensured by associating and validating each document against a schema. It supports JSON and XML.
+version: 1.2.2
+date-released: 2023-02-28
+doi: 10.5281/zenodo.7685007
+url: "https://github.com/kit-data-manager/metastore2"
+repository-code:  "https://github.com/kit-data-manager/metastore2"
+license: Apache-2.0

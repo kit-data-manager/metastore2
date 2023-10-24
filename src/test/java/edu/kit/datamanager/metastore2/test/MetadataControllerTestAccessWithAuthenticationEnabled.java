@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
+import static org.hamcrest.Matchers.greaterThan;
 import org.javers.core.Javers;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,7 +54,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -124,8 +125,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
@@ -150,7 +149,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41412))
             .build();
@@ -375,12 +374,13 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled {
             header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)).
             andDo(print()).
             andExpect(status().isOk()).
+            andExpect(MockMvcResultMatchers.jsonPath("$.read.length()", greaterThan(1))).
             andReturn();
     ObjectMapper map = new ObjectMapper();
     AclRecord result = map.readValue(mvcResult.getResponse().getContentAsString(), AclRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertTrue(result.getReadSids().contains(otherUserPrincipal));
-    Assert.assertTrue(result.getReadSids().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
+    Assert.assertTrue(result.getRead().contains(otherUserPrincipal));
+    Assert.assertTrue(result.getRead().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
   }
 
   /**

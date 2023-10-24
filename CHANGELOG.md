@@ -10,8 +10,138 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
+ 
+### Fixed
+
+## [1.3.0] - 2023-07-07
+### Security
+
+### Added
+- Add context path 'metastore' as default. 
+- Add support for JSON schema 2020-12.
+
+### Changed
+- Bump JDK from 8 to 17.
+- Bump actions/setup-java from 2 to 3
+- Bump com.networknt:json-schema-validator from 1.0.84 to 1.0.85 
+- Bump crazy-max/ghaction-docker-meta from 1 to 4 
+- Bump docker/build-push-action from 2 to 4 
+- Bump docker/setup-buildx-action from 1 to 2
+- Bump edu.kit.datamanager:repo-core from 1.1.2 to 1.2.1
+- Bump edu.kit.datamanager:service-base from 1.1.1 to 1.2.0 
+- Bump io.freefair.lombok from 8.0.1 to 8.1.0 
+- Bump javersVersion from 6.14.0 to 7.0.0
+- Bump org.springframework:spring-messaging from 5.3.26 to 5.3.27
+- Bump org.springframework.boot from 2.7.10 to 3.1.0
+- Bump org.springframework.cloud:spring-cloud-starter-config from 3.1.7 to 4.0.3
+- Bump org.springframework.cloud:spring-cloud-starter-netflix-eureka-client from 3.1.6 to 4.0.2 
+- Bump org.springframework.data:spring-data-elasticsearch from 4.4.13 to 5.1.0
+- Bump org.springframework.restdocs:spring-restdocs-mockmvc from 2.0.7.RELEASE to 3.0.0
+- Bump springDocVersion from 1.7.0 to 2.1.0
+ 
+### Fixed
+- Fixed: allowing empty SID in ACLs.
+
+## [1.2.3] - 2023-04-13
+### Added
+- Add CITATION.cff
+- Allow cli arguments for start script.
+- Enable configuration to organize internal storage of metadata documents (https://github.com/kit-data-manager/metastore2/issues/241)
+
+### Changed
+- Update several badges
+- Bump com.networknt:json-schema-validator from 1.0.78 to 1.0.79
+- Bump edu.kit.datamanager:repo-core from 1.1.1 to 1.1.2
+- Bump edu.kit.datamanager:service-base from 1.1.0 to 1.1.1 
+- Bump gradle from 7.6 to 7.6.1.
+- Bump io.freefair.maven-publish-java from 6.6.3 to 8.0.1 
+- Bump io.freefair.lombok from 6.6.3 to 8.0.1 
+- Bump org.mockito:mockito-core from 5.1.1 to 5.3.0 
+- Bump org.owasp.dependencycheck from 8.1.0 to 8.2.1
+- Bump org.postgresql:postgresql from 42.5.4 to 42.6.0 
+- Bump org.springframework.boot from 2.7.9 to 2.7.10
+- Bump org.springframework.cloud:spring-cloud-starter-config from 3.1.5 to 3.1.6.
+- Bump org.springframework.data:spring-data-elasticsearch from 4.4.8 to 4.4.10.
+- Bump org.springframework:spring-messaging from 5.3.25 to 5.3.26
+- Bump springDocVersion from 1.6.14 to 1.7.0
 
 ### Fixed
+- Providing (invalid) version number while updating schema document may break old versions. (https://github.com/kit-data-manager/metastore2/issues/245)
+- Trace log may slow down service. (https://github.com/kit-data-manager/metastore2/issues/233)
+- Calling REST-Endpoint for UI fails if no page information is provided. (https://github.com/kit-data-manager/metastore2/issues/264)
+- Problem running MetaStore standalone in a docker container. (https://github.com/kit-data-manager/metastore2/issues/270)
+
+## [1.2.2] - 2023-02-28
+### Fixed
+- Add configuration to use the service behind a proxy. (https://github.com/kit-data-manager/metastore2/issues/218)
+- Typos in README
+
+### Changed
+- Improve documentation on setting up the MetaStore framework using Docker.
+- Document directories are now set up as subfolders of the installation directory by default.
+- Bump io.freefair.lombok from 6.6.1 to 6.6.3
+- Bump io.freefair.maven-publish-java from 6.6.1 to 6.6.3
+- Bump javersVersion from 6.9.1 to 6.11.0
+- Bump json-schema-validator from 1.0.76 to 1.0.77
+- Bump org.postgresql:postgresql from 42.5.3 to 42.5.4
+- Bump org.springframework.boot from 2.7.8 to 2.7.9
+- Bump spring-cloud-gateway-mvc from 3.1.5 to 3.1.6
+- Bump spring-cloud-starter-netflix-eureka-client from 3.1.4 to 3.1.5
+- Bump spring-data-elasticsearch from 4.4.7 to 4.4.8
+
+## [1.2.1] - 2023-02-13
+### Added
+- Add docker compose file for building whole framework (MetaStore, elasticsearch and UI)
+
+### Fixed
+- Fix wrong document format for indexing metadata documents. (https://github.com/kit-data-manager/metastore2/issues/208)
+
+### Changed
+- Bump javersVersion from 6.8.2 to 6.9.1
+- Bump org.apache.tika:tika-core from 2.6.0 to 2.7.0 
+- Bump org.mockito:mockito-core from 5.1.0 to 5.1.1 
+- Bump org.owasp.dependencycheck from 8.0.2 to 8.1.0
+- Bump org.postgresql:postgresql from 42.5.1 to 42.5.3
+
+## [1.2.0] - 2023-02-03
+### Security
+
+### Added
+- Add proxy for authenticated search via elasticsearch
+- Add commandline parser for reindexing elasticsearch
+- Add actuator endpoints for info and health (https://github.com/kit-data-manager/metastore2/issues/184)
+- Add spring-data-elasticsearch 4.4.7
+
+### Changed
+- Bump commons-text from 1.9 to 1.10.0
+- Bump gradle from 7.5.1 to 7.6
+- Bump httpclient from 4.5.13 to 4.5.14 
+- Bump io.freefair.lombok from 6.5.1 to 6.6.1
+- Bump io.freefair.maven-publish-java from 6.5.1 to 6.6.1 
+- Bump io.spring.dependency-management from 1.0.14.RELEASE to 1.1.0 
+- Bump javersVersion from 6.6.5 to 6.8.2 
+- Bump json-schema-validator from 1.0.73 to 1.0.76 
+- Bump mockito-core from 4.8.0 to 5.1.0 
+- Bump org.owasp.dependencycheck from 7.2.1 to 8.0.2 
+- Bump org.springframework.boot from 2.7.4 to 2.7.8
+- Bump postgresql from 42.5.0 to 42.5.1
+- Bump repo-core from 1.0.4 to 1.1.1 
+- Bump service-base from 1.0.7 to 1.1.0 
+- Bump springDocVersion from 1.6.11 to 1.6.14
+- Bump spring-boot from 2.7.4 to 2.7.6
+- Bump spring-cloud-starter-config from 3.1.4 to 3.1.5
+- Bump spring-cloud-gateway-mvc from 3.1.4 to 3.1.5
+- Bump spring-messaging from 5.3.23 to 5.3.25 
+- Bump spring-restdocs-mockmvc:from 2.0.6.RELEASE to 2.0.7.RELEASE
+- Bump spring-security-config from 5.5.2 to 5.7.5
+- Bump spring-security-web from 5.7.2 to 5.7.5
+- Bump tika-core from 1.2.7 to 2.6.0 
+- Bump xercesImpl from 2.12.1 to 2.12.2 
+
+### Fixed
+- Invalid input for resource identifier causes NPE (https://github.com/kit-data-manager/metastore2/issues/198)
+- Hibernate validation was not enabled by default. (https://github.com/kit-data-manager/metastore2/issues/191)
+- Check metadata directory for valid entry during startup (https://github.com/kit-data-manager/metastore2/issues/185)
 
 ## [1.1.0] - 2022-10-17
 ### Security
@@ -52,9 +182,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed some labels in GUI
 
 ### Fixed
-- Docker: Add support for M1 chip architecture (issue #107)
-- Access public documents of other users is broken.(issue #100)
-- Fix bug ignoring type of related resource. (issue #105)
+- Docker: Add support for M1 chip architecture (https://github.com/kit-data-manager/metastore2/issues/107)
+- Access public documents of other users is broken.(https://github.com/kit-data-manager/metastore2/issues/100)
+- Fix bug ignoring type of related resource. (https://github.com/kit-data-manager/metastore2/issues/105)
 - Fix bug not hiding revoked resources in listings.
 - Fix bugs using Swagger UI for REST calls.
 - Fix typos in documentation.
@@ -62,8 +192,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.0] - 2022-03-29
 ### Added
 - Finalized version of MetaStoreGui
-  - Fix issue #69
-- Allow also IDs for metadata documents (issue #76)
+  - Fix https://github.com/kit-data-manager/metastore2/issues/69
+- Allow also IDs for metadata documents (https://github.com/kit-data-manager/metastore2/issues/76)
 - Access filter for monitoring.
 
 ### Changed
@@ -71,15 +201,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update to service-base 1.0.1
 - Update to postgresql 42.2.25
 - Downgrade library due to some issues regarding validation
-  - json-schema-validator 1.0.64. -> 1.0.59 (issue #77)
+  - json-schema-validator 1.0.64. -> 1.0.59 (https://github.com/kit-data-manager/metastore2/issues/77)
 
 ### Fixed
-- Fix bug listing resources without proper authorization (issue #71)
+- Fix bug listing resources without proper authorization (https://github.com/kit-data-manager/metastore2/issues/71)
 - Fix bug listing all metadata documents related to a specific schema
-- Fix a bug that can cause the metadata document/schema to become invalid due to an update. (issue #78)
-- Fix bug with path in Windows. (issue #88)
-- CSRF is now disabled by default. (issue #70) 
-- Check ACLs while creating/updating records (issue #39)
+- Fix a bug that can cause the metadata document/schema to become invalid due to an update. (https://github.com/kit-data-manager/metastore2/issues/78)
+- Fix bug with path in Windows. (https://github.com/kit-data-manager/metastore2/issues/88)
+- CSRF is now disabled by default. (https://github.com/kit-data-manager/metastore2/issues/70) 
+- Check ACLs while creating/updating records (https://github.com/kit-data-manager/metastore2/issues/39)
 - Added missing spaces to swagger-ui.
 
 ## [0.3.7] - 2022-01-11
@@ -110,16 +240,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix for CVE-2021-44228
 
 ### Fixed
-- OAS 3.0 is not available (issue #58)
-- Incorrect schema version in the metadata record (issue #59) 
-- XML validation is not threadsafe. (issue #60)
+- OAS 3.0 is not available (https://github.com/kit-data-manager/metastore2/issues/58)
+- Incorrect schema version in the metadata record (https://github.com/kit-data-manager/metastore2/issues/59) 
+- XML validation is not threadsafe. (https://github.com/kit-data-manager/metastore2/issues/60)
 
 ### Changed
 - Update to service-base version 0.3.1
 
 ## [0.3.4] - 2021-11-17
 ### Fixed
-- Error handling versions for metadata documents (issue #55)
+- Error handling versions for metadata documents (https://github.com/kit-data-manager/metastore2/issues/55)
 ### Changed
 - Building service all tests now enabled by default (use -Dprofile=minimal to execute only mandatory tests)
 - Update to repo-core version 0.9.1
@@ -139,13 +269,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.0] - 2021-10-16
 - The code is now completely relying on the library of the kit-data-manager.
 ### Added
-- Authentication based on JWT powered by KIT Data Manager. (issue #4)
+- Authentication based on JWT powered by KIT Data Manager. (https://github.com/kit-data-manager/metastore2/issues/4)
 - Metadata (schema) records now also versioned.
-- OAI PMH protocol added (issue #6)
-- Customization is enabled even if framework will be started via docker (issue #41)
+- OAI PMH protocol added (https://github.com/kit-data-manager/metastore2/issues/6)
+- Customization is enabled even if framework will be started via docker (https://github.com/kit-data-manager/metastore2/issues/41)
 ### Changed
-- Metadata are now linked to specific version of a schema. (issue #30)
-- Attribute 'locked' from MetadataSchemaRecord changed to 'doNotSync' (issue #37)
+- Metadata are now linked to specific version of a schema. (https://github.com/kit-data-manager/metastore2/issues/30)
+- Attribute 'locked' from MetadataSchemaRecord changed to 'doNotSync' (https://github.com/kit-data-manager/metastore2/issues/37)
 - Change in related schema and data (add identifier type to identifier)
 - Store all identifiers as global identifiers (type INTERNAL -> type URL)
 - For registering a schema mimetype is no longer mandatory.
@@ -157,9 +287,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filtering schema documents by mimetype
 - Error while updating json schema documents without schema
 - Speedup guessing type for schema. 
-- Updating document without changes will no longer create new version (issue #27)
-- Update schema via POST (issue #28)
-- Add hash of schema documents to record. (issue #38)
+- Updating document without changes will no longer create new version (https://github.com/kit-data-manager/metastore2/issues/27)
+- Update schema via POST (https://github.com/kit-data-manager/metastore2/issues/28)
+- Add hash of schema documents to record. (https://github.com/kit-data-manager/metastore2/issues/38)
 - Drop tables at startup (default).
 
 ## [0.2.4] - date 2020-12-16
@@ -208,7 +338,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...v1.3.0
+[1.2.3]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/kit-data-manager/metastore2/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/kit-data-manager/metastore2/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/kit-data-manager/metastore2/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/kit-data-manager/metastore2/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/kit-data-manager/metastore2/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/kit-data-manager/metastore2/compare/v0.3.7...v1.0.0

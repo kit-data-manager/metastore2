@@ -18,11 +18,13 @@ package edu.kit.datamanager.metastore2.configuration;
 import lombok.Data;
 
 /**
+ * Helper class for synchronizing repositories.
  *
  * @author jejkal
  */
 @Data
-public class SynchronizationSource{
+@SuppressWarnings("java:S1068")
+public class SynchronizationSource {
 
   private String id;
   private String baseUrl;

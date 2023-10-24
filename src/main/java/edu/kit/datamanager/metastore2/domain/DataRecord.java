@@ -15,18 +15,20 @@
  */
 package edu.kit.datamanager.metastore2.domain;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.Instant;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
-import javax.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
+ * Simplified record for a metadata document.
  *
  * @author jejkal
  */
@@ -41,13 +43,13 @@ public class DataRecord implements Serializable {
   Long id;
   @NotBlank(message = "The unqiue identifier of the metadata.")
   private String metadataId;
-  @NotBlank(message = "The version number of the metadata document.")
+  @NotNull(message = "The version number of the metadata document.")
   private Long version;
   @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
-  @NotBlank(message = "The version of the schema.")
+  @NotNull(message = "The version of the schema.")
   private Long schemaVersion;
-  @NotBlank(message = "The timestamp of the last update on this resource.")
+  @NotNull(message = "The timestamp of the last update on this resource.")
   private Instant lastUpdate;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;

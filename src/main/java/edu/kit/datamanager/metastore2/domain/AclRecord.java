@@ -18,12 +18,12 @@ package edu.kit.datamanager.metastore2.domain;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import jakarta.persistence.OneToMany;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import javax.persistence.OneToMany;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.http.MediaType;
 
@@ -34,13 +34,13 @@ import org.springframework.http.MediaType;
 @Data
 public class AclRecord implements Serializable {
 
-  public final static String RESOURCE_TYPE = "application/vnd.datamanager.acl+json";
+  public static final String RESOURCE_TYPE = "application/vnd.datamanager.acl+json";
 
-  public final static MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
+  public static final MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @NotNull(message = "A list of access control entries with at least access for READ.")
-  @OneToMany(cascade = javax.persistence.CascadeType.ALL, orphanRemoval = true)
-  private final Set<String> readSids;
+  @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
+  private final Set<String> read;
   @NotBlank(message = "The metadata record.")
   private Object metadataRecord;
   @NotBlank(message = "The metadata document.")
@@ -48,7 +48,7 @@ public class AclRecord implements Serializable {
 
   @java.lang.SuppressWarnings(value = "all")
   public AclRecord() {
-    this.readSids = new HashSet<>();
+    this.read = new HashSet<>();
   }
 
   /**
@@ -57,11 +57,11 @@ public class AclRecord implements Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    readSids.clear();
+    read.clear();
     if (newAclList != null) {
       for (AclEntry item : newAclList) {
         if (item.getPermission().atLeast(PERMISSION.READ)) {
-          readSids.add(item.getSid());
+          read.add(item.getSid());
         }
       }
     }

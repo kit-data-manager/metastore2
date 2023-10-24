@@ -83,22 +83,66 @@ public class ResourceIdentifierTest {
    * Test of equals method, of class ResourceIdentifier.
    */
   @Test
-  public void testEquals() {
-    System.out.println("equals");
+  public void testEqualsTrue() {
+    System.out.println("equals(true)");
+    Object other = null;
+    boolean expResult = true;
+    ResourceIdentifier instance1 = new ResourceIdentifier();
+    ResourceIdentifier instance2 = new ResourceIdentifier();
+    boolean result = instance1.equals(instance1);
+    assertEquals(expResult, result);
+    result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+    Long anyId = Long.valueOf(1);
+    instance1.setId(anyId);
+    instance2.setId(anyId);
+    result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+    String anyIdentifier = "anyIdentifier";
+    instance1.setIdentifier(anyIdentifier);
+    instance2.setIdentifier(anyIdentifier);
+    result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+    ResourceIdentifier.IdentifierType anyIdentifierType = ResourceIdentifier.IdentifierType.LISSN;
+    instance1.setIdentifierType(anyIdentifierType);
+    instance2.setIdentifierType(anyIdentifierType);
+    result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+  }
+
+  /**
+   * Test of equals method, of class ResourceIdentifier.
+   */
+  @Test
+  public void testEqualsFalse() {
+    System.out.println("equals(false)");
+    boolean expResult = false;
+    Long anyId = Long.valueOf(1);
+    String anyIdentifier = "anyIdentifier";
+    ResourceIdentifier.IdentifierType anyIdentifierType = ResourceIdentifier.IdentifierType.AR_XIV;
     Object other = null;
     ResourceIdentifier instance1 = new ResourceIdentifier();
     ResourceIdentifier instance2 = new ResourceIdentifier();
-    boolean expResult = false;
     boolean result = instance1.equals(other);
     assertEquals(expResult, result);
-    expResult = true;
-    result = instance1.equals(instance1);
+    result = instance1.equals(anyId);
     assertEquals(expResult, result);
+    instance1.setId(anyId);
     result = instance1.equals(instance2);
     assertEquals(expResult, result);
-    instance1 = ResourceIdentifier.factoryInternalResourceIdentifier("hallo");
-    instance2 = ResourceIdentifier.factoryInternalResourceIdentifier("hallo");
+    result = instance2.equals(instance1);
+    assertEquals(expResult, result);
+    instance2.setId(anyId);
+    instance1.setIdentifier(anyIdentifier);
     result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+    result = instance2.equals(instance1);
+    assertEquals(expResult, result);
+    instance2.setIdentifier(anyIdentifier);
+    instance1.setIdentifierType(anyIdentifierType);
+    result = instance1.equals(instance2);
+    assertEquals(expResult, result);
+    result = instance2.equals(instance1);
     assertEquals(expResult, result);
   }
 

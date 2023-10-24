@@ -17,19 +17,22 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
+import edu.kit.datamanager.security.filter.PublicAuthenticationFilter;
 import java.util.Optional;
-import javax.servlet.Filter;
+import jakarta.servlet.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
+import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.info.InfoEndpoint;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
-import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -43,12 +46,13 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 /**
+ * Configuration for web security.
  *
  * @author jejkal
  */
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfig {
 
   private static final Logger logger = LoggerFactory.getLogger(WebSecurityConfig.class);
@@ -64,45 +68,67 @@ public class WebSecurityConfig {
   @Value("${metastore.security.allowedOriginPattern:http*://localhost:*}")
   private String allowedOriginPattern;
 
-  public WebSecurityConfig() {
-  }
+  private static final String[] AUTH_WHITELIST_SWAGGER_UI = {
+    // -- Swagger UI v2
+    "/v2/api-docs",
+    "/swagger-resources",
+    "/swagger-resources/**",
+    "/configuration/ui",
+    "/configuration/security",
+    "/swagger-ui.html",
+    "/webjars/**",
+    // -- Swagger UI v3 (OpenAPI)
+    "/v3/api-docs/**",
+    "/swagger-ui/**"
+  // other public endpoints of your API may be appended to this array
+  };
 
-  @Bean
-  public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-    return authenticationConfiguration.getAuthenticationManager();
+  public WebSecurityConfig() {
+    // Not used
   }
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    AuthenticationManager authenticationManager = authenticationManager(http.getSharedObject(AuthenticationConfiguration.class));
-    HttpSecurity httpSecurity = http.authorizeRequests()
-            .antMatchers(HttpMethod.OPTIONS, "/**").
-            permitAll().
-            and().
-            sessionManagement().
-            sessionCreationPolicy(SessionCreationPolicy.STATELESS).and();
+    HttpSecurity httpSecurity = http.authorizeHttpRequests(
+            authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+                    requestMatchers("/oaipmh").permitAll().
+                    requestMatchers("/static/**").permitAll().
+                    requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
+                    requestMatchers(EndpointRequest.to(
+                            InfoEndpoint.class,
+                            HealthEndpoint.class
+                    )).permitAll().
+                    requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
+                    requestMatchers("/**").authenticated()).
+            sessionManagement(
+                    session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     if (!enableCsrf) {
       logger.info("CSRF disabled!");
-      httpSecurity = httpSecurity.csrf().disable();
+      httpSecurity = httpSecurity.csrf(csrf -> csrf.disable());
     }
+    logger.info("Adding 'NoAuthenticationFilter' to authentication chain.");
     if (keycloaktokenFilterBean.isPresent()) {
       logger.info("Add keycloak filter!");
       httpSecurity.addFilterAfter(keycloaktokenFilterBean.get(), BasicAuthenticationFilter.class);
+      logger.info("Add public authentication filter!");
+      httpSecurity = httpSecurity.addFilterAfter(new PublicAuthenticationFilter(applicationProperties.getJwtSecret()), BasicAuthenticationFilter.class);
     }
     if (!applicationProperties.isAuthEnabled()) {
       logger.info("Authentication is DISABLED. Adding 'NoAuthenticationFilter' to authentication chain.");
-      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), authenticationManager), BasicAuthenticationFilter.class);
+      AuthenticationManager defaultAuthenticationManager = http.getSharedObject(AuthenticationManager.class);
+      httpSecurity = httpSecurity.addFilterAfter(new NoAuthenticationFilter(applicationProperties.getJwtSecret(), defaultAuthenticationManager), BasicAuthenticationFilter.class);
     } else {
       logger.info("Authentication is ENABLED.");
     }
 
-    httpSecurity.
-            authorizeRequests().
-            antMatchers("/api/v1").authenticated();
+    httpSecurity.headers(headers -> headers.cacheControl(cache -> cache.disable()));
 
-    http.headers().cacheControl().disable();
+    return httpSecurity.build();
+  }
 
-    return http.build();
+  @Bean
+  public WebSecurityCustomizer webSecurityCustomizer() {
+    return web -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
   }
 
   @Bean
@@ -113,11 +139,7 @@ public class WebSecurityConfig {
   }
 
   @Bean
-  public WebSecurityCustomizer webSecurityCustomizer() {
-    return (web) -> web.httpFirewall(allowUrlEncodedSlashHttpFirewall());
-  }
-
-  @Bean
+  @SuppressWarnings("StringSplitter")
   public FilterRegistrationBean corsFilter() {
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();

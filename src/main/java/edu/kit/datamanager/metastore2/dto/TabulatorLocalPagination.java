@@ -10,11 +10,13 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
+ * Helper class for tabulator local pagination used by web frontend.
  *
  * @author jejkal
  */
 @Getter
 @Builder
+@SuppressWarnings("java:S1068")
 public class TabulatorLocalPagination {
     @JsonProperty("last_page")
     private int lastPage;

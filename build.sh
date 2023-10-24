@@ -87,7 +87,7 @@ testForCommands="chmod cp dirname find java javac mkdir git"
 
 for command in $testForCommands
 do 
-  if ! type $command >> /dev/null; then
+  if ! type "$command" >> /dev/null; then
     echo "Error: command '$command' is not installed!"
     exit 1
   fi
@@ -120,10 +120,18 @@ echo Build service...
 
 
 echo "Copy configuration to '$INSTALLATION_DIRECTORY'..."
-find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties \;
+find ./settings -name application-default.properties -exec cp '{}' "$INSTALLATION_DIRECTORY"/application.properties.temp \;
+
+################################################################################
+# Replace constants
+################################################################################
+while IFS='' read -r line; do
+    echo "${line//INSTALLATION_DIR/$INSTALLATION_DIRECTORY}"
+done < "$INSTALLATION_DIRECTORY"/application.properties.temp > "$INSTALLATION_DIRECTORY"/application.properties
+rm "$INSTALLATION_DIRECTORY"/application.properties.temp
 
 echo "Copy jar file to '$INSTALLATION_DIRECTORY'..."
-find . -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
+find build/libs -name "$REPO_NAME*.jar" -exec cp '{}' "$INSTALLATION_DIRECTORY" \;
 
 echo "Create config directory"
 mkdir "$INSTALLATION_DIRECTORY"/config
@@ -170,7 +178,7 @@ jarFile=($(ls $REPO_NAME*.jar))
   echo "################################################################################"        
   echo "# Start micro service"                                                                   
   echo "################################################################################"        
-  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile"
+  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile \$*"
 } > run.sh
 # make script executable
 chmod 755 run.sh

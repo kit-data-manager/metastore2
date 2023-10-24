@@ -25,11 +25,12 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.time.Instant;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
+import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -47,13 +48,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
+ * Interface for schema document controller.
  *
  * @author jejkal
  */
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface ISchemaRegistryController {
+public interface ISchemaRegistryController extends InfoContributor {
 
   @Operation(summary = "Register a schema document and its record.", description = "This endpoint allows to register a schema document and its record. "
           + "The record must contain at least an unique identifier (schemaId) and the type of the schema (type).",
@@ -64,7 +66,7 @@ public interface ISchemaRegistryController {
   @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
+          @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -125,11 +127,11 @@ public interface ISchemaRegistryController {
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(
-          @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false)  String schemaId,
+          @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false) String schemaId,
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          @Parameter(hidden = true)@PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC)Pageable pgbl,
+          @Parameter(hidden = true) @PageableDefault(sort = {"id"}, direction = Sort.Direction.ASC) Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
@@ -149,7 +151,7 @@ public interface ISchemaRegistryController {
   })
   ResponseEntity updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("schemaId") final String schemaId,
-          @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
+          @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = false) @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response

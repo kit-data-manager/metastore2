@@ -16,15 +16,17 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
-import javax.persistence.Entity;
-import javax.persistence.EnumType;
-import javax.persistence.Enumerated;
-import javax.persistence.Id;
-import javax.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
+ * Entity for holding internal path information for given URL.
  *
  * @author jejkal
  */
@@ -37,9 +39,9 @@ public class Url2Path implements Serializable {
   private String url;
   @NotBlank(message = "Path of schema document linked to identifier.")
   private String path;
-  @NotBlank(message = "Version of the schema document.")
+  @NotNull(message = "Version of the schema document.")
   private Long version;
   @Enumerated(EnumType.STRING)
-  @NotBlank(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
+  @NotNull(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
   private SCHEMA_TYPE type;
 }

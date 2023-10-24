@@ -15,20 +15,21 @@
  */
 package edu.kit.datamanager.metastore2.oaipmh.web;
 
-import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
 import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import io.swagger.v3.oas.annotations.Parameter;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Marshaller;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Date;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
 import org.apache.http.HttpStatus;
 import org.openarchives.oai._2.OAIPMHerrorcodeType;
 import org.openarchives.oai._2.OAIPMHtype;
 import org.openarchives.oai._2.VerbType;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -38,18 +39,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
+ * Controller for OAI-PMH protocol.
  *
  * @author jejkal
  */
 @Controller
 @RequestMapping(value = "/oaipmh")
-public class OaiPmhController{
+public class OaiPmhController {
 
-  @Autowired
-  private Logger LOGGER;
-
-  @Autowired
-  private OaiPmhConfiguration pluginConfiguration;
+  private static final Logger LOGGER = LoggerFactory.getLogger(OaiPmhController.class);
 
   @Autowired
   private AbstractOAIPMHRepository repository;
@@ -63,74 +61,76 @@ public class OaiPmhController{
           @Parameter(description = "OAI-PMH document set to harvest. Only available if sets are supported.") @RequestParam(value = "set", required = false) String set,
           @Parameter(description = "OAI-PMH metadata document identifier.") @RequestParam(value = "identifier", required = false) String identifier,
           @Parameter(description = "OAI-PMH metadata format prefix.") @RequestParam(value = "metadataPrefix", required = false) String metadataPrefix,
-          @Parameter(description = "OAI-PMH resumption token for pagination.") @RequestParam(value = "resumptionToken", required = false) String resumptionToken){
+          @Parameter(description = "OAI-PMH resumption token for pagination.") @RequestParam(value = "resumptionToken", required = false) String resumptionToken) {
     VerbType verbType = null;
 
-    try{
+    try {
       LOGGER.trace("Checking provided OAI-PMH verb {}", verb);
       verbType = VerbType.fromValue(verb);
       LOGGER.trace("Verb {} is valid.", verb);
-    } catch(IllegalArgumentException ex){
+    } catch (IllegalArgumentException ex) {
       //wrong verb...OAIPMHBuilder will handle this
       LOGGER.warn("Verb '" + verb + "' is invalid. OAI-PMH error will be returned.", ex);
     }
 
-    try{
     Date fromDate = null;
     Date untilDate = null;
     boolean wrongDateFormat = false;
-    try{
+    try {
       LOGGER.trace("Checking 'from' and 'until' dates.");
-      if(from != null){
+      if (from != null) {
+        from = from.replaceAll("[\r\n]","");
         LOGGER.trace("Checking 'from' date {}.", from);
         fromDate = repository.getDateFormat().parse(from);
         LOGGER.trace("Successfully parsed 'from' date.");
       }
-      if(until != null){
+      if (until != null) {
+        until = until.replaceAll("[\r\n]","");
         LOGGER.trace("Checking 'until' date {}.", until);
         untilDate = repository.getDateFormat().parse(until);
         LOGGER.trace("Successfully parsed 'until' date.");
 
       }
-    } catch(ParseException ex){
+    } catch (ParseException ex) {
       LOGGER.warn("'from' and/or 'until' date are in an invalid format.  OAI-PMH error will be returned.", ex);
       wrongDateFormat = true;
     }
 
-    OAIPMHBuilder builder = OAIPMHBuilder.init(repository, verbType, metadataPrefix, identifier, fromDate, untilDate, resumptionToken);
-    if(set != null){
-      LOGGER.trace("'Set' request param provided, but sets are not supported. Returning OAI-PMH error.");
-      builder.addError(OAIPMHerrorcodeType.NO_SET_HIERARCHY, "Sets are currently not supported.");
-    }
-
-    if(!builder.isError()){
-      if(wrongDateFormat){
-        LOGGER.debug("Returning BAD_ARGUMENT error due to wrong date format.");
-        //date format is wrong
-        builder.addError(OAIPMHerrorcodeType.BAD_ARGUMENT, "Either from and/or until date are in the wrong format.");
-      } else if(!(metadataPrefix == null || repository.isPrefixSupported(metadataPrefix))){
-        //prefix is not null and not supported
-        LOGGER.debug("Returning CANNOT_DISSEMINATE_FORMAT error due to unsupported metadata prefix '{}'.", metadataPrefix);
-        builder.addError(OAIPMHerrorcodeType.CANNOT_DISSEMINATE_FORMAT, "Metadata prefix " + metadataPrefix + " not supported by repository.");
-      } else{
-        LOGGER.trace("Handling request by repository implementation.");
-        //if request is wrong, error is set already at this point...if no error, continue
-        repository.handleRequest(builder);
+    try {
+      OAIPMHBuilder builder = OAIPMHBuilder.init(repository, verbType, metadataPrefix, identifier, fromDate, untilDate, resumptionToken);
+      if (set != null) {
+        LOGGER.trace("'Set' request param provided, but sets are not supported. Returning OAI-PMH error.");
+        builder.addError(OAIPMHerrorcodeType.NO_SET_HIERARCHY, "Sets are currently not supported.");
       }
-    }
 
-    //build the result and return it.
-    LOGGER.trace("Building and returning OAI-PMH response.");
-     JAXBContext jaxbContext = JAXBContext.newInstance(OAIPMHtype.class);
+      if (!builder.isError()) {
+        if (wrongDateFormat) {
+          LOGGER.debug("Returning BAD_ARGUMENT error due to wrong date format.");
+          //date format is wrong
+          builder.addError(OAIPMHerrorcodeType.BAD_ARGUMENT, "Either from and/or until date are in the wrong format.");
+        } else if (!(metadataPrefix == null || repository.isPrefixSupported(metadataPrefix))) {
+          //prefix is not null and not supported
+          LOGGER.debug("Returning CANNOT_DISSEMINATE_FORMAT error due to unsupported metadata prefix '{}'.", metadataPrefix);
+          builder.addError(OAIPMHerrorcodeType.CANNOT_DISSEMINATE_FORMAT, "Metadata prefix " + metadataPrefix + " not supported by repository.");
+        } else {
+          LOGGER.trace("Handling request by repository implementation.");
+          //if request is wrong, error is set already at this point...if no error, continue
+          repository.handleRequest(builder);
+        }
+      }
+
+      //build the result and return it.
+      LOGGER.trace("Building and returning OAI-PMH response.");
+      JAXBContext jaxbContext = JAXBContext.newInstance(OAIPMHtype.class);
       Marshaller marshaller = jaxbContext.createMarshaller();
       marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
       ByteArrayOutputStream bout = new ByteArrayOutputStream();
       marshaller.marshal(builder.build(), bout);
 
-      return ResponseEntity.ok(bout.toString());
-    } catch(Exception e){
+      return ResponseEntity.ok(bout.toString(StandardCharsets.UTF_8));
+    } catch (Exception e) {
       LOGGER.error("Failed to serialize OAIPMHtype.", e);
       return ResponseEntity.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).body("Unable to serialize XML response.");
-   }
+    }
   }
 }
