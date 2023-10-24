@@ -100,7 +100,7 @@ dependencies {
     
     // apache
     implementation "commons-io:commons-io:2.14.0"
-    implementation "org.apache.tika:tika-core:2.9.0"
+    implementation "org.apache.tika:tika-core:2.9.1"
 
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.0.87"
