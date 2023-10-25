@@ -20,10 +20,11 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
+ * DAO for synchronization events.
  *
  * @author jejkal
  */
-public interface ISchemaSynchronizationEventDao extends JpaRepository<SchemaSynchronizationEvent, Long>{
+public interface ISchemaSynchronizationEventDao extends JpaRepository<SchemaSynchronizationEvent, Long> {
 
   public Optional<SchemaSynchronizationEvent> findBySourceName(String sourceName);
 }

@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.junit.Assert;
@@ -50,7 +51,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -95,7 +96,7 @@ public class JsonSchemaRegistryControllerTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private static final String INVALID_SCHEMA_ID = "invalid/json";
   private final static String JSON_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -106,13 +107,11 @@ public class JsonSchemaRegistryControllerTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
@@ -122,7 +121,7 @@ public class JsonSchemaRegistryControllerTest {
           + "    \"additionalProperties\": false\n"
           + "}";
   private final static String JSON_SCHEMA_V2 = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -133,20 +132,17 @@ public class JsonSchemaRegistryControllerTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
           + "            \"description\": \"Date of object\"\n"
           + "        },\n"
           + "        \"note\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Note\",\n"
           + "            \"description\": \"Additonal information about object.\"\n"
@@ -192,8 +188,6 @@ public class JsonSchemaRegistryControllerTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
@@ -226,7 +220,8 @@ public class JsonSchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity()) 
+
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }
@@ -707,7 +702,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testUpdateRecord() throws Exception {
-     String schemaId = "updateRecord4Json";
+     String schemaId = "updateRecord4Json".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -750,7 +745,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testUpdateRecordWithoutChanges() throws Exception {
-     String schemaId = "updateRecordWithoutChanges4Json";
+     String schemaId = "updateRecordWithoutChanges4Json".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -780,7 +775,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testUpdateRecordAndDocument() throws Exception {
-    String schemaId = "updateRecordAndDocument4Json";
+    String schemaId = "updateRecordAndDocument4Json".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
      String etag = result.getResponse().getHeader("ETag");
@@ -817,7 +812,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testUpdateOnlyDocument() throws Exception {
-    String schemaId = "updateRecordDocumentOnly4Json";
+    String schemaId = "updateRecordDocumentOnly4Json".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
      String etag = result.getResponse().getHeader("ETag");
@@ -850,7 +845,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
-    String schemaId = "updateWithoutGet4Json";
+    String schemaId = "updateWithoutGet4Json".toLowerCase(Locale.getDefault());
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(schemaId);
      record.setMimeType(MediaType.APPLICATION_JSON.toString());
@@ -954,7 +949,7 @@ public class JsonSchemaRegistryControllerTest {
      String body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record1 = mapper.readValue(body, MetadataSchemaRecord.class);
-   result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/updateWithoutChanges_json").
+   result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + record.getSchemaId()).
             file(schemaFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
     body = result.getResponse().getContentAsString();
 
@@ -974,7 +969,7 @@ public class JsonSchemaRegistryControllerTest {
   
   @Test
   public void testDeleteSchemaRecord() throws Exception {
-     String schemaId = "testDeleteJson";
+     String schemaId = "testDeleteJson".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
 
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();

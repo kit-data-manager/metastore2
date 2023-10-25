@@ -51,7 +51,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -74,6 +73,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
+import java.util.Locale;
+import org.junit.Ignore;
+import org.springframework.http.MediaType;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 /**
  *
@@ -96,6 +99,7 @@ import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
 @TestPropertySource(properties = {"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"})
 @TestPropertySource(properties = {"spring.jpa.defer-datasource-initialization=true"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries=http://localhost:41401/api/v3/,http://localhost:41401/api/v1/"})
+@TestPropertySource(properties = {"repo.search.url=http://localhost:41401"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTest {
 
@@ -150,8 +154,6 @@ public class MetadataControllerTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
@@ -188,12 +190,12 @@ public class MetadataControllerTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+              .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
                       .withPort(41401))
               .build();
       // Create schema only once.
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -201,7 +203,7 @@ public class MetadataControllerTest {
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
       Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
       CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, SCHEMA_ID, schemaConfig.getJwtSecret());
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -254,7 +256,7 @@ public class MetadataControllerTest {
             andExpect(status().isCreated()).
             andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
             andReturn();
-    
+
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
     Assert.assertEquals("Type of related resource should be unchanged!", record.getRelatedResource().getIdentifierType(), result.getRelatedResource().getIdentifierType());
   }
@@ -594,6 +596,27 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testCreateRecordWithEmptyAclSid() throws Exception {
+    MetadataRecord record = new MetadataRecord();
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(null, PERMISSION.READ));
+    record.setAcl(aclEntries);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    MvcResult res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+
+    Assert.assertTrue(res.getResponse().getContentAsString().contains("Subject ID of ACL entry must not be null."));
+  }
+
+  @Test
   public void testCreateRecordWithInvalidMetadataNamespace() throws Exception {
     MetadataRecord record = new MetadataRecord();
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
@@ -806,10 +829,10 @@ public class MetadataControllerTest {
 
   @Test
   public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
-    String schemaId = "multipleSchemas";
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1,  metadataConfig.getJwtSecret(), false, status().isCreated());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2,  metadataConfig.getJwtSecret(), true, status().isOk());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3,  metadataConfig.getJwtSecret(), true, status().isOk());
+    String schemaId = "multipleSchemas".toLowerCase(Locale.getDefault());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2, metadataConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3, metadataConfig.getJwtSecret(), true, status().isOk());
     ObjectMapper map = new ObjectMapper();
     String[] multipleVersions = {"1", "2", "3"};
     // Ingest 1st version of document.
@@ -1000,7 +1023,7 @@ public class MetadataControllerTest {
     MetadataRecord oldRecord = mapper.readValue(body, MetadataRecord.class);
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
     // Set all ACL to WRITE
-    for (AclEntry entry: record.getAcl()) {
+    for (AclEntry entry : record.getAcl()) {
       entry.setPermission(PERMISSION.WRITE);
     }
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -1020,7 +1043,7 @@ public class MetadataControllerTest {
     if (record.getAcl() != null) {
       Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
       Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-  }
+    }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
     result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -1105,7 +1128,7 @@ public class MetadataControllerTest {
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     Assert.assertNotEquals("Version should change!", record1.getRecordVersion(), record2.getRecordVersion());
-    Assert.assertEquals("Version should incremented!", (long)record1.getRecordVersion(), (long)(record2.getRecordVersion() - 1l));
+    Assert.assertEquals("Version should incremented!", (long) record1.getRecordVersion(), (long) (record2.getRecordVersion() - 1l));
   }
 
   @Test
@@ -1243,7 +1266,7 @@ public class MetadataControllerTest {
   @Test
   public void testUpdateRecordWithoutDocumentChangingRelatedResource() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    String expectedRelatedResource; 
+    String expectedRelatedResource;
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
@@ -1273,11 +1296,11 @@ public class MetadataControllerTest {
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     Assert.assertNotEquals("Related resource should be updated!", record.getRelatedResource().getIdentifier(), record2.getRelatedResource().getIdentifier());
     Assert.assertEquals("Related resource should be updated!", expectedRelatedResource, record2.getRelatedResource().getIdentifier());
-    
+
     // Test also updating related type only...
     IdentifierType expectedIdentifierType = IdentifierType.ISBN;
     record2.getRelatedResource().setIdentifierType(expectedIdentifierType);
-    
+
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataRecordId).
@@ -1302,13 +1325,14 @@ public class MetadataControllerTest {
 
   @Test
   public void testUpdateRecordWithInvalidSetting4Json() throws Exception {
-    CreateSchemaUtil.ingestXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V1, schemaConfig.getJwtSecret());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, "testUpdate", CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, "testUpdate", 2l, "document", CreateSchemaUtil.XML_DOCUMENT_V2, schemaConfig.getJwtSecret());
+    String alternativeSchemaId = "testupdate";
+    CreateSchemaUtil.ingestXmlSchemaRecord(mockMvc, alternativeSchemaId, CreateSchemaUtil.XML_SCHEMA_V1, schemaConfig.getJwtSecret());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, alternativeSchemaId, CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, alternativeSchemaId, 2l, "document", CreateSchemaUtil.XML_DOCUMENT_V2, schemaConfig.getJwtSecret());
     // Change only version of schema to a version which is not valid.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, "testUpdate", 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
     // Change to a nonexistent version of schema.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, "testUpdate", Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isBadRequest());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isBadRequest());
     // Change to another schema
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
   }
@@ -1329,21 +1353,21 @@ public class MetadataControllerTest {
   public void testDeleteRecord() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     String metadataRecordId = createDCMetadataRecord();
-    
+
     // Get a list of all records
     MvcResult result = this.mockMvc.perform(get("/api/v1/metadata").
             header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    int  noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
-    
+    int noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+
     // Get Etag
     result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     // Delete record
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
-    
+
     // Delete second time
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isPreconditionRequired()).andReturn();
 //    Recreation should be no problem.
@@ -1366,7 +1390,7 @@ public class MetadataControllerTest {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    int  noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
     Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
 
@@ -1486,6 +1510,28 @@ public class MetadataControllerTest {
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+  }
+  
+  @Test
+  public void testSearchProxy() throws Exception {
+
+    // Skip test due to Spring Security 6
+    this.mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/metadata/search?page=0&size=20")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+            .andDo(print())
+            .andExpect(status().isForbidden());
+  }
+  
+  @Test
+  public void testSearchWithSchemaProxy() throws Exception {
+
+    // Test for swagger definition
+    this.mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/metadata/index/search?page=0&size=20")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{}"))
+            .andDo(print())
+            .andExpect(status().isForbidden());
   }
 
   @Test

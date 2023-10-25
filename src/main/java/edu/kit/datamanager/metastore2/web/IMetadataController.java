@@ -29,8 +29,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springdoc.core.converters.models.PageableAsQueryParam;
 import org.springframework.boot.actuate.info.InfoContributor;
 import org.springframework.data.domain.Pageable;
@@ -49,8 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
- *
- * @author jejkal
+ * Interface for metadata documents controller.
  */
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
@@ -69,7 +68,7 @@ public interface IMetadataController extends InfoContributor {
   @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
-          @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile record,
+          @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile metadataRecord,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
@@ -150,7 +149,7 @@ public interface IMetadataController extends InfoContributor {
   })
   ResponseEntity updateRecord(
           @Parameter(description = "The resource identifier.", required = true) @PathVariable("id") String id,
-          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile record,
+          @Parameter(description = "JSON representation of the metadata record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile metadataRecord,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema defined in the record.", required = false) @RequestPart(name = "document", required = false) final MultipartFile document,
           final WebRequest request,
           final HttpServletResponse response,
