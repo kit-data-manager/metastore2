@@ -17,13 +17,13 @@
             </button>
             <div class="collapse navbar-collapse" id="navbar">
                 <ul class="nav navbar-nav">
-                    <li th:class="${#ctx.springRequestContext.requestUri.contains('dashboard')} ? 'nav-link active' : 'nav-link'"><a
+                    <li class="nav-link"><a
                             th:href="@{/dashboard}">Dashboard</a></li>	
 
-                    <li th:class="${#ctx.springRequestContext.requestUri.contains('schema-management')} ? 'nav-link active' : 'nav-link'"><a
+                    <li class="nav-link"><a
                             th:href="@{/schema-management}">Schema Management</a></li>	
 
-                    <li th:class="${#ctx.springRequestContext.requestUri.contains('metadata-management')} ? 'nav-link active' : 'nav-link'"><a                   
+                    <li class="nav-link"><a
                             th:href="@{/metadata-management}">Metadata Management</a></li>	
                 </ul>
             </div>
