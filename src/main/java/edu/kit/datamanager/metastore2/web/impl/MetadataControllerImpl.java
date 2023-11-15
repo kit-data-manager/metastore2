@@ -31,6 +31,7 @@ import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
@@ -60,10 +61,10 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -270,6 +272,47 @@ public class MetadataControllerImpl implements IMetadataController {
             ok().
             header(HttpHeaders.CONTENT_LENGTH, String.valueOf(metadataDocumentPath.toFile().length())).
             body(new FileSystemResource(metadataDocumentPath.toFile()));
+  }
+
+  @Override
+  public String getLandingpageById(
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          Model model
+  ) {
+    LOG.trace("Performing getLandingpageById({}, {}).", id, version);
+
+    //if security is enabled, include principal in query
+    LOG.debug("Performing  a query for records.");
+    MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    List<MetadataRecord> recordList = new ArrayList<>();
+    recordList.add(recordByIdAndVersion);
+    if (version == null) {
+      long totalNoOfElements = recordByIdAndVersion.getRecordVersion();
+      for (long size = totalNoOfElements - 1; size > 0; size--) {
+        recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, size));
+      }
+    }
+
+    LOG.trace("Fix URL for all metadata records");
+    List<MetadataRecord> metadataList = new ArrayList<>();
+    recordList.forEach(metadataRecord -> {
+      fixMetadataDocumentUri(metadataRecord);
+      metadataList.add(metadataRecord);
+    });
+    if (LOG.isTraceEnabled()) {
+      for (MetadataRecord item : metadataList) {
+        LOG.trace("Record: {}", item);
+      }
+    }
+    SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataList.get(0).getSchema(), metadataList.get(0).getSchemaVersion());
+    LOG.trace("Schema Record: {}", schemaRecord);
+    model.addAttribute("type", schemaRecord.getType());
+    model.addAttribute("records", metadataList);
+    model.addAttribute("date", new Date());
+    return "metadata-landing-page.html";
   }
 
   public ResponseEntity<List<MetadataRecord>> getAllVersions(
