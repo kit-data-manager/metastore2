@@ -50,15 +50,6 @@
 
 
       //attach handlers
-      function downloadMetadata(e, url, type) {
-        console.log("start downloading metadata")
-        let fileExtension = "json"
-           if (type !== "JSON") {
-                fileExtension = "xml"
-            }
-        downloadDocument(url, "metadataDocument." + fileExtension);
-      }
-      ;
       function downloadSchema(e, url, type) {
         let fileExtension = "json"
         if (type !== "JSON") {
@@ -66,7 +57,6 @@
         }
         downloadDocument(url, "schemaDocument." + fileExtension);
       }
-      ;
 
       function downloadDocument(id, filename) {
         console.log("Download " + filename + " from " + id)
@@ -96,7 +86,7 @@
       <!-- breadcrumb -->
       <section class="breadcrumb-container">
         <div class="breadcrumb-title">
-          Landingpage for Metadata Document(s)
+          Landingpage for Schema Document(s)
         </div>
       </section>
 
@@ -108,28 +98,21 @@
           </div>
           <div class="box-body">
             <table class="center">
-              <th>ID </th><th>Version</th><th>Type</th><th>Last Update</th> <th>Related Resource</th><th>Metadata</th><th>Schema</th>
+              <th>ID </th><th>Version</th><th>Type</th><th>Last Update</th> <th>Label</th><th>Definition</th><th>Comment</th><th>Schema</th>
               <tbody th:each="record : ${records}">
                 <tr>
-                  <td th:text="${record.id}">...</td>
-                  <td th:text="${record.recordVersion}">...</td>
-                  <td th:text="${type}">...</td>
+                  <td th:text="${record.schemaId}">...</td>
+                  <td th:text="${record.schemaVersion}">...</td>
+                  <td th:text="${record.type}">...</td>
                   <td th:text="${record.lastUpdate}">...</td>
-                  <td> <a th:href="${record.relatedResource.identifier}" th:text="${record.relatedResource.identifier}"></a></td>
+                  <td th:text="${record.label}">...</td>
+                  <td th:text="${record.definition}">...</td>
+                  <td th:text="${record.comment}">...</td>
                   <td> 
                     <button 
                       type="button" 
-                      th:data-url="${record.metadataDocumentUri}"
-                      th:data-type="${type}"
-                      onclick="downloadMetadata(event, this.getAttribute('data-url'), this.getAttribute('data-type'))" class="btn label download">
-                      <i class="fa fa-download"></i> Metadata Document 
-                    </button>
-                  </td>
-                  <td> 
-                    <button 
-                      type="button" 
-                      th:data-url="${record.schema.identifier}"
-                      th:data-type="${type}"
+                      th:data-url="${record.schemaDocumentUri}"
+                      th:data-type="${record.type}"
                       onclick="downloadSchema(event, this.getAttribute('data-url'), this.getAttribute('data-type'))" class="btn label download">
                       <i class="fa fa-download"></i> Schema Document 
                     </button>

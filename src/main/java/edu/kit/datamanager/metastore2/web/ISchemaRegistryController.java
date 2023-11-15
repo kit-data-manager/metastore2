@@ -37,6 +37,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -84,6 +85,19 @@ public interface ISchemaRegistryController extends InfoContributor {
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);
+
+  @Operation(summary = "Get landing page of schema by schema id (and version).", description = "Show landing page by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
+          + "Furthermore, a specific version of the schema can be returned by providing a version number as request parameter. If no version is specified, all versions will be returned.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the landingpage is returned if the id exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"text/html"})
+  public String getLandingPageById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          Model model);
 
   @Operation(summary = "Validate a metadata document.", description = "Validate the provided metadata document using the addressed schema. If all parameters"
           + " are provided, the schema is identified uniquely by schemaId and version. If the version is omitted, the most recent version of the "

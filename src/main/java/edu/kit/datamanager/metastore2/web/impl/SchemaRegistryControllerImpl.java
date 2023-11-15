@@ -49,7 +49,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +64,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -91,12 +91,12 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   @Autowired
   private final IUrl2PathDao url2PathDao;
 
-    /**
+  /**
    * Constructor for schema documents controller.
    *
    * @param schemaConfig Configuration for metadata documents repository.
    * @param dataResourceDao DAO for data resources.
-   * @param url2PathDao DAO for storing url and linked path 
+   * @param url2PathDao DAO for storing url and linked path
    */
   public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao,
@@ -151,6 +151,42 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
+  public String getLandingPageById(@PathVariable(value = "schemaId") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr,
+          Model model) {
+    LOG.trace("Performing getLandingpageById({}, {}).", id, version);
+
+    //if security is enabled, include principal in query
+    LOG.debug("Performing  a query for records.");
+    MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+    List<MetadataSchemaRecord> recordList = new ArrayList<>();
+    recordList.add(recordByIdAndVersion);
+    if (version == null) {
+      long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
+      for (long size = totalNoOfElements - 1; size > 0; size--) {
+        recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, size));
+      }
+    }
+
+    LOG.trace("Fix URL for all metadata records");
+    List<MetadataSchemaRecord> metadataList = new ArrayList<>();
+    recordList.forEach(metadataRecord -> {
+      fixSchemaDocumentUri(metadataRecord);
+      metadataList.add(metadataRecord);
+    });
+    if (LOG.isTraceEnabled()) {
+      for (MetadataSchemaRecord item : metadataList) {
+        LOG.trace("Record: {}", item);
+      }
+    }
+    model.addAttribute("records", metadataList);
+
+    return "schema-landing-page.html";
+  }
+
+  @Override
   public ResponseEntity getSchemaDocumentById(
           @PathVariable(value = "schemaId") String schemaId,
           @RequestParam(value = "version", required = false) Long version,
@@ -185,7 +221,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-  MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordById(schemaConfig, id);
+    MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordById(schemaConfig, id);
     List<MetadataSchemaRecord> recordList = new ArrayList<>();
     long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
     for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
@@ -206,9 +242,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity validate(@PathVariable(value = "schemaId") String schemaId,
-          @RequestParam(value = "version", required = false) Long version, 
-          MultipartFile document, 
-          WebRequest wr, 
+          @RequestParam(value = "version", required = false) Long version,
+          MultipartFile document,
+          WebRequest wr,
           HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
     MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
@@ -217,13 +253,13 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(@RequestParam(value = "schemaId", required = false)  String schemaId,
+  public ResponseEntity<List<MetadataSchemaRecord>> getRecords(@RequestParam(value = "schemaId", required = false) String schemaId,
           @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @RequestParam(name = "from", required = false) Instant updateFrom,
           @RequestParam(name = "until", required = false) Instant updateUntil,
-          Pageable pgbl, 
-          WebRequest wr, 
-          HttpServletResponse hsr, 
+          Pageable pgbl,
+          WebRequest wr,
+          HttpServletResponse hsr,
           UriComponentsBuilder ucb) {
     LOG.trace("Performing getRecords({}, {}, {}, {}).", schemaId, mimeTypes, updateFrom, updateUntil);
     // if schemaId is given return all versions 
@@ -240,7 +276,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       if (!isAdmin) {
         List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
         if (authorizationIdentities != null) {
-        LOG.trace("Creating (READ) permission specification.");
+          LOG.trace("Creating (READ) permission specification.");
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
           spec = spec.and(permissionSpec);
         } else {
@@ -317,7 +353,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public ResponseEntity deleteRecord(@PathVariable("schemaId") final String schemaId,
-          WebRequest request, 
+          WebRequest request,
           HttpServletResponse hsr) {
     LOG.trace("Performing deleteRecord({}).", schemaId);
     UnaryOperator<String> getById;

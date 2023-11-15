@@ -311,7 +311,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Schema Record: {}", schemaRecord);
     model.addAttribute("type", schemaRecord.getType());
     model.addAttribute("records", metadataList);
-    model.addAttribute("date", new Date());
+
     return "metadata-landing-page.html";
   }
 
