@@ -272,7 +272,6 @@ public class Application {
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
-    rbc.setLandingPage(this.applicationProperties.getSchemaLandingPage());
 
     fixBasePath(rbc);
 
@@ -324,7 +323,6 @@ public class Application {
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    rbc.setLandingPage(this.applicationProperties.getMetadataLandingPage());
     
     fixBasePath(rbc);
 
@@ -351,7 +349,6 @@ public class Application {
     for (int index1 = 0; index1 < noOfSchemaRegistries; index1++) {
       LOG.info("Schema registry '{}': {}", index1 + 1, config.getSchemaRegistries().get(index1));
     }
-    LOG.info("Landing page: {}", config.getLandingPage());
 
   }
 
