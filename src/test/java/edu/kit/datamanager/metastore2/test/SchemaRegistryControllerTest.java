@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
@@ -83,6 +84,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -145,6 +147,8 @@ public class SchemaRegistryControllerTest {
   private final static String XML_DOCUMENT_V2 = CreateSchemaUtil.XML_DOCUMENT_V2;
   private final static String XML_DOCUMENT_V3 = CreateSchemaUtil.XML_DOCUMENT_V3;
   private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
+  private static final String RELATED_RESOURCE_STRING = "anyResourceId";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE_STRING);
 
   private MockMvc mockMvc;
   @Autowired
@@ -1470,6 +1474,111 @@ public class SchemaRegistryControllerTest {
     this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
   }
 
+  @Test
+  public void testLandingPage4SchemaUnknownID() throws Exception {
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/anything")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("/schema-landing-page?schemaId=anything&version="))
+           .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+  }
+  
+  @Test
+  public void testLandingPage4SchemaWithMetadataDocumentId() throws Exception {
+    String schemaId = "metadata_document_id";
+    ingestSchemaRecord(schemaId);
+    String documentId = createKitMetadataRecord(schemaId);
+
+     MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + documentId)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + documentId + "&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isBadRequest());
+  }
+  
+  @Test
+  public void testLandingPage4SchemaWrongVersion() throws Exception {
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + SCHEMA_ID)
+            .queryParam("version", "2")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + SCHEMA_ID + "&version=2"))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+}
+  
+  @Test
+  public void testLandingPage4Schema() throws Exception {
+    String schemaId = "landingpage";
+    ingestSchemaWithVersion(schemaId, 1);
+
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
+            .queryParam("version", "1")
+            .accept("text/html"))
+            .andDo(print())
+             .andExpect(status().is3xxRedirection())
+           .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version=1"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+      // Ingest a second version...
+      ingestSchemaWithVersion(schemaId, 2);
+    andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
+            .queryParam("version", "2")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version=2"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
+            .accept("text/html"))
+            .andDo(print())
+             .andExpect(status().is3xxRedirection())
+           .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version="))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+}
+
   private void ingestSchemaRecord(String schemaId) throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(schemaId);
@@ -1608,6 +1717,29 @@ public class SchemaRegistryControllerTest {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
+  }
+
+  
+  private String createKitMetadataRecord(String schemaId) throws Exception {
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+
+    MvcResult andReturn = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
+    MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
+
+    return result.getId();
   }
 
   private static RequestPostProcessor remoteAddr(final String remoteAddr) { // it's nice to extract into a helper

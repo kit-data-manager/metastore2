@@ -113,7 +113,7 @@ public class XmlValidator implements IValidator {
   private SchemaFactory getSchemaFactory() {
     SchemaFactory schemaFactory;
     schemaFactory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-//        schemaFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
     return schemaFactory;
   }
 

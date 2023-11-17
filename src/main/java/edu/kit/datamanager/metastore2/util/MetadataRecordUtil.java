@@ -847,12 +847,10 @@ public class MetadataRecordUtil {
       }
       //update getRelatedResource
 
-      if ((provided.getRelatedResource() != null)) {
-
-        if (!provided.getRelatedResource().equals(managed.getRelatedResource())) {
-          LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-          managed.setRelatedResource(provided.getRelatedResource());
-        }
+      if (provided.getRelatedResource() != null
+              && !provided.getRelatedResource().equals(managed.getRelatedResource())) {
+        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+        managed.setRelatedResource(provided.getRelatedResource());
       }
       //update schemaId
       if ((provided.getSchema() != null)

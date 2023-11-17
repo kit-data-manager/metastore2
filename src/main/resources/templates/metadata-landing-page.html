@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
   <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
@@ -38,7 +38,7 @@
     <script th:src="@{/editor/dependencies/jsonform/deps/ajv/ajv2020.js}"></script>  
     <script th:src="@{/editor/dependencies/jsonform/deps/ajv/ajv2019.js}"></script>  
     <script type="text/javascript" th:src="@{/editor/dependencies/jsonform/lib/jsonform.js}"></script>
-    <script type="text/javascript" th:src="@{/editor/dependencies/tabulator/dep/moment.js}"></script>}
+    <script type="text/javascript" th:src="@{/editor/dependencies/tabulator/dep/moment.js}"></script>
     <script type="text/javascript" th:src="@{/editor/dependencies/tabulator/js/tabulator.min.js}"></script>
     <script type="text/javascript" th:src="@{/editor/lib/js/metadataeditor.js}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/8.11.0/ajv7.min.js" 
@@ -53,12 +53,12 @@
       function downloadMetadata(e, url, type) {
         console.log("start downloading metadata")
         let fileExtension = "json"
-           if (type !== "JSON") {
-                fileExtension = "xml"
-            }
+        if (type !== "JSON") {
+          fileExtension = "xml"
+        }
         downloadDocument(url, "metadataDocument." + fileExtension);
       }
-      ;
+
       function downloadSchema(e, url, type) {
         let fileExtension = "json"
         if (type !== "JSON") {
@@ -66,7 +66,6 @@
         }
         downloadDocument(url, "schemaDocument." + fileExtension);
       }
-      ;
 
       function downloadDocument(id, filename) {
         console.log("Download " + filename + " from " + id)
@@ -85,7 +84,7 @@
         console.log("Send...")
         x.send();
       }
- <!-- add the event to the button identified #my_button -->
+<!-- add the event to the button identified #my_button -->
     </script>
     <div class="container">
       <!-- navbar -->
@@ -138,11 +137,8 @@
               </tbody>
             </table>
           </div>
-
         </div>
       </div>
     </div>
-
-
   </body>
 </html>

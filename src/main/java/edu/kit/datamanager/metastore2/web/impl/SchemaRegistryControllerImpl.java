@@ -17,10 +17,9 @@ package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
@@ -52,7 +51,6 @@ import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.info.Info;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.domain.Page;
@@ -64,13 +62,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -84,26 +82,25 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl.class);
 
-  @Autowired
+  private final ApplicationProperties applicationProperties;
+
   private final MetastoreConfiguration schemaConfig;
-  @Autowired
+
   private final IDataResourceDao dataResourceDao;
-  @Autowired
-  private final IUrl2PathDao url2PathDao;
 
   /**
    * Constructor for schema documents controller.
    *
+   * @param applicationProperties Configuration for controller.
    * @param schemaConfig Configuration for metadata documents repository.
    * @param dataResourceDao DAO for data resources.
-   * @param url2PathDao DAO for storing url and linked path
    */
-  public SchemaRegistryControllerImpl(MetastoreConfiguration schemaConfig,
-          IDataResourceDao dataResourceDao,
-          IUrl2PathDao url2PathDao) {
+  public SchemaRegistryControllerImpl(ApplicationProperties applicationProperties,
+          MetastoreConfiguration schemaConfig,
+          IDataResourceDao dataResourceDao) {
+    this.applicationProperties = applicationProperties;
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
-    this.url2PathDao = url2PathDao;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
     LOG.info("------------------------------------------------------");
@@ -150,39 +147,22 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   }
 
   @Override
-  public String getLandingPageById(@PathVariable(value = "schemaId") String id,
+  public ModelAndView getLandingPageById(@PathVariable(value = "schemaId") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
-          HttpServletResponse hsr,
-          Model model) {
-    LOG.trace("Performing getLandingpageById({}, {}).", id, version);
-
-    //if security is enabled, include principal in query
-    LOG.debug("Performing  a query for records.");
-    MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-    List<MetadataSchemaRecord> recordList = new ArrayList<>();
-    recordList.add(recordByIdAndVersion);
-    if (version == null) {
-      long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
-      for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, size));
-      }
+          HttpServletResponse hsr) {
+    LOG.trace("Performing Landing page for schema document with ({}, {}).", id, version);
+    String redirectUrl = applicationProperties.getSchemaLandingPage();
+    redirectUrl = redirectUrl.replace(MetadataControllerImpl.PLACEHOLDER_ID, id);
+    String versionString = "";
+    if (version != null) {
+      versionString = version.toString();
     }
+    redirectUrl = "redirect:" + redirectUrl.replace(MetadataControllerImpl.PLACEHOLDER_VERSION, versionString);
 
-    LOG.trace("Fix URL for all metadata records");
-    List<MetadataSchemaRecord> metadataList = new ArrayList<>();
-    recordList.forEach(metadataRecord -> {
-      MetadataSchemaRecordUtil.fixSchemaDocumentUri(metadataRecord);
-      metadataList.add(metadataRecord);
-    });
-    if (LOG.isTraceEnabled()) {
-      for (MetadataSchemaRecord item : metadataList) {
-        LOG.trace("Record: {}", item);
-      }
-    }
-    model.addAttribute("records", metadataList);
+    LOG.trace("Redirect to '{}'", redirectUrl);
 
-    return "schema-landing-page.html";
+    return new ModelAndView(redirectUrl);
   }
 
   @Override

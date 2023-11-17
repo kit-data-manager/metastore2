@@ -54,7 +54,9 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -77,6 +79,8 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/withoutRegistry/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
+@TestPropertySource(properties = {"metastore.metadata.landingpage=http://www.example.org/metadata?id=$(id)&version=$(version)"})
+@TestPropertySource(properties = {"metastore.schema.landingpage=http://www.example.org/schema/$(id)?version=$(version)"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithoutRegistryTest {
 
@@ -168,6 +172,34 @@ public class MetadataControllerWithoutRegistryTest {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
+  }
+
+  @Test
+  public void testLandingpageMetadata() throws Exception {
+    this.mockMvc.perform(get("/api/v1/metadata/anything")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/metadata?id=anything&version="))
+           .andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/anything")
+            .queryParam("version", "3")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/metadata?id=anything&version=3"))
+           .andReturn();
+  }
+
+  @Test
+  public void testLandingpageSchema() throws Exception {
+    this.mockMvc.perform(get("/api/v1/schemas/anything")
+            .queryParam("version", "5")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/schema/anything?version=5"))
+           .andReturn();
   }
 
   private void ingestSchemaRecord() throws Exception {

@@ -31,7 +31,6 @@ import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
-import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
@@ -61,7 +60,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,7 +78,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -88,6 +85,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -100,14 +98,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MetadataControllerImpl implements IMetadataController {
 
   public static final String POST_FILTER = "post_filter";
+  /**
+   * Placeholder string for id of resource. (landingpage)
+   */
+  public static final String PLACEHOLDER_ID = "$(id)";
+  /**
+   * Placeholder string for version of resource. (landingpage)
+   */
+  public static final String PLACEHOLDER_VERSION = "$(version)";
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
 
-  @Autowired
+  private final ApplicationProperties applicationProperties;
+
   private final ILinkedMetadataRecordDao metadataRecordDao;
 
   private final MetastoreConfiguration metadataConfig;
-  @Autowired
+
   private final IDataResourceDao dataResourceDao;
 
   /**
@@ -132,6 +139,7 @@ public class MetadataControllerImpl implements IMetadataController {
           MetastoreConfiguration metadataConfig,
           ILinkedMetadataRecordDao metadataRecordDao,
           IDataResourceDao dataResourceDao) {
+    this.applicationProperties = applicationProperties;
     this.metadataConfig = metadataConfig;
     this.metadataRecordDao = metadataRecordDao;
     this.dataResourceDao = dataResourceDao;
@@ -275,44 +283,23 @@ public class MetadataControllerImpl implements IMetadataController {
   }
 
   @Override
-  public String getLandingpageById(
+  public ModelAndView getLandingpageById(
           @PathVariable(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
-          HttpServletResponse hsr,
-          Model model
-  ) {
-    LOG.trace("Performing getLandingpageById({}, {}).", id, version);
-
-    //if security is enabled, include principal in query
-    LOG.debug("Performing  a query for records.");
-    MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-    List<MetadataRecord> recordList = new ArrayList<>();
-    recordList.add(recordByIdAndVersion);
-    if (version == null) {
-      long totalNoOfElements = recordByIdAndVersion.getRecordVersion();
-      for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, size));
-      }
+          HttpServletResponse hsr) {
+    LOG.trace("Performing Landing page for metadata document with ({}, {}).", id, version);
+    String redirectUrl = applicationProperties.getMetadataLandingPage();
+    redirectUrl = redirectUrl.replace(PLACEHOLDER_ID, id);
+    String versionString = "";
+    if (version != null) {
+      versionString = version.toString();
     }
+    redirectUrl = "redirect:" + redirectUrl.replace(PLACEHOLDER_VERSION, versionString);
+ 
+    LOG.trace("Redirect to '{}'", redirectUrl);
 
-    LOG.trace("Fix URL for all metadata records");
-    List<MetadataRecord> metadataList = new ArrayList<>();
-    recordList.forEach(metadataRecord -> {
-      MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
-      metadataList.add(metadataRecord);
-    });
-    if (LOG.isTraceEnabled()) {
-      for (MetadataRecord item : metadataList) {
-        LOG.trace("Record: {}", item);
-      }
-    }
-    SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataList.get(0).getSchema(), metadataList.get(0).getSchemaVersion());
-    LOG.trace("Schema Record: {}", schemaRecord);
-    model.addAttribute("type", schemaRecord.getType());
-    model.addAttribute("records", metadataList);
-
-    return "metadata-landing-page.html";
+    return new ModelAndView(redirectUrl);
   }
 
   public ResponseEntity<List<MetadataRecord>> getAllVersions(
@@ -495,7 +482,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing deleteRecord({}).", id);
     UnaryOperator<String> getById;
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
-    
+
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     MetadataRecordUtil.deleteMetadataRecord(metadataConfig, id, eTag, getById);
 

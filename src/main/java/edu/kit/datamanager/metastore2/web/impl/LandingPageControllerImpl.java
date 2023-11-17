@@ -54,17 +54,12 @@ public class LandingPageControllerImpl implements ILandingPageController {
 
   private final MetastoreConfiguration schemaConfig;
 
-  private static final String PLACEHOLDER_ID = "$(id)";
-  private static final String PLACEHOLDER_VERSION = "$(version)";
-
   /**
    * Constructor for metadata documents controller.
    *
    * @param applicationProperties Configuration for controller.
    * @param metadataConfig Configuration for metadata documents repository.
    * @param schemaConfig Configuration for schema documents repository.
-   * @param metadataRecordDao DAO for metadata records.
-   * @param dataResourceDao DAO for data resources.
    */
   public LandingPageControllerImpl(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
@@ -74,35 +69,6 @@ public class LandingPageControllerImpl implements ILandingPageController {
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", this.metadataConfig);
     LOG.info("------------------------------------------------------");
-  }
-
-  public ModelAndView getLandingPageOfId(
-          @RequestParam(value = "id") String id,
-          @RequestParam(value = "version", required = false) Long version,
-          WebRequest wr,
-          HttpServletResponse hsr
-  ) {
-    LOG.trace("Performing Landing page for repo.... with ({}, {}).", id, version);
-    String redirectUrl = null;
-    try {
-      MetadataRecord recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-      id = recordByIdAndVersion.getId();
-      version = recordByIdAndVersion.getRecordVersion();
-      redirectUrl = metadataConfig.getLandingPage();
-    } catch (Throwable tw) {
-      // No metadata document found? 
-      // Search for a appropriate schema...
-      MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-      id = recordByIdAndVersion.getSchemaId();
-      version = recordByIdAndVersion.getSchemaVersion();
-      redirectUrl = schemaConfig.getLandingPage();
-    }
-    redirectUrl = redirectUrl.replace(PLACEHOLDER_ID, id);
-    redirectUrl = "redirect:" + redirectUrl.replace(PLACEHOLDER_VERSION, version.toString());
-
-    LOG.trace("Redirect to '{}'", redirectUrl);
-
-    return new ModelAndView(redirectUrl);
   }
 
   @Override
