@@ -94,7 +94,7 @@ public class SchemaUtils {
       documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
       DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
       Document document = documentBuilder.parse(new ByteArrayInputStream(schema));
-      NamedNodeMap map = ((Element) document.getDocumentElement()).getAttributes();
+      NamedNodeMap map = document.getDocumentElement().getAttributes();
       namespace = map.getNamedItem("targetNamespace").getNodeValue();
     } catch (ParserConfigurationException | SAXException | IOException ex) {
       java.util.logging.Logger.getLogger(SchemaUtils.class.getName()).log(Level.SEVERE, null, ex);

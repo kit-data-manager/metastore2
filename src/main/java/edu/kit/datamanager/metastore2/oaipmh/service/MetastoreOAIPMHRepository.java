@@ -286,9 +286,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       return;
     }
     LOGGER.trace("Adding {} records to result.", results.size());
-    results.stream().forEach(result -> {
-      addRecordEntry(result, builder);
-    });
+    results.stream().forEach(result -> addRecordEntry(result, builder));
   }
 
   /**
@@ -317,9 +315,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       //create DC metadata
       try {
         UnaryOperator<String> dummy;
-        dummy = t -> {
-          return "dummy" + t;
-        };
+        dummy = t -> "dummy" + t;
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
         ElementContainer container = DublinCoreMapper.dataResourceToDublinCoreContainer(DataResourceUtils.migrateToDataResource(dr));
         JAXBContext jaxbContext = JAXBContext.newInstance(ElementContainer.class);
@@ -334,9 +330,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
       LOGGER.info("Creating Datacite document on the fly.", object.getId());
       try {
         UnaryOperator<String> dummy;
-        dummy = t -> {
-          return "dummy" + t;
-        };
+        dummy = t -> "dummy" + t;
         edu.kit.datamanager.repo.domain.DataResource dr = DataResourceUtils.getResourceByIdentifierOrRedirect(metadataConfig, object.getMetadataId(), null, dummy);
         // Todo check for internal related schema identifier switch to URL
         Resource resource = DataCiteMapper.dataResourceToDataciteResource(DataResourceUtils.migrateToDataResource(dr));

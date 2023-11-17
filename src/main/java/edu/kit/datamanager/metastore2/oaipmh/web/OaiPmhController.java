@@ -79,11 +79,13 @@ public class OaiPmhController {
     try {
       LOGGER.trace("Checking 'from' and 'until' dates.");
       if (from != null) {
+        from = from.replaceAll("[\r\n]","");
         LOGGER.trace("Checking 'from' date {}.", from);
         fromDate = repository.getDateFormat().parse(from);
         LOGGER.trace("Successfully parsed 'from' date.");
       }
       if (until != null) {
+        until = until.replaceAll("[\r\n]","");
         LOGGER.trace("Checking 'until' date {}.", until);
         untilDate = repository.getDateFormat().parse(until);
         LOGGER.trace("Successfully parsed 'until' date.");

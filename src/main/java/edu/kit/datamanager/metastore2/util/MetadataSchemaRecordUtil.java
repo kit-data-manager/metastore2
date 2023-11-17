@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
@@ -66,7 +65,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -184,9 +182,7 @@ public class MetadataSchemaRecordUtil {
     DataResource dataResource = migrateToDataResource(applicationProperties, metadataRecord);
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
-    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> {
-      return "somethingStupid";
-    });
+    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
@@ -651,8 +647,6 @@ public class MetadataSchemaRecordUtil {
     SchemaRecord schemaRecord = getSchemaRecord(identifier, version);
     try {
       validateMetadataDocument(metastoreProperties, document, schemaRecord);
-    } catch (Throwable tw) {
-      throw tw;
     } finally {
       cleanUp(schemaRecord);
     }
@@ -756,9 +750,7 @@ public class MetadataSchemaRecordUtil {
           Page<Url2Path> page = url2PathDao.findAll(PageRequest.of(0, 100));
           LOG.trace("List '{}' of '{}'", page.getSize(), page.getTotalElements());
           LOG.trace(LOG_SEPARATOR);
-          page.getContent().forEach(item -> {
-            LOG.trace("- {}", item);
-          });
+          page.getContent().forEach(item -> LOG.trace("- {}", item));
           LOG.trace(LOG_SEPARATOR);
         }
         // Remove downloaded file
@@ -1165,9 +1157,7 @@ public class MetadataSchemaRecordUtil {
       Page<Url2Path> page = url2PathDao.findAll(PageRequest.of(0, 100));
       LOG.trace("List '{}' of '{}'", page.getSize(), page.getTotalElements());
       LOG.trace(LOG_SEPARATOR);
-      page.getContent().forEach(item -> {
-        LOG.trace("- {}", item);
-      });
+      page.getContent().forEach(item -> LOG.trace("- {}", item));
       LOG.trace(LOG_SEPARATOR);
     }
     List<Url2Path> findByPath = url2PathDao.findByPath(metadataSchemaRecord.getSchemaDocumentUri());

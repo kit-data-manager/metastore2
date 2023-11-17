@@ -39,6 +39,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
@@ -210,6 +211,66 @@ public class SchemaRegistryControllerTest {
   }
 
   @Test
+  public void testCreateSchemaRecordWithCapitalLetter() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    String schemaIDWithCapitalLetters = "myFirstTest";
+    record.setSchemaId(schemaIDWithCapitalLetters);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertEquals(record.getType(), ms_record.getType());
+    Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
+    Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
+    Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
+  }
+
+  @Test
+  public void testCreateRegisterSchemaRecordWithSameIdButCapitalLetter() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    String schemaIDWithCapitalLetters = "myFirstTest";
+    record.setSchemaId(schemaIDWithCapitalLetters);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    record.setMimeType(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertEquals(record.getType(), ms_record.getType());
+    Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
+    Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
+    Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
+    
+    record.setSchemaId("MyFirstTest");
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
+  }
+
+  @Test
   public void testCreateSchemaRecordWithIdentifierWithoutType() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId("my_dc_without_type");
@@ -368,8 +429,8 @@ public class SchemaRegistryControllerTest {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
-  // @Test 
 
+  // @Test 
   public void testCreateSchemaRecordFromExternal() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId("my_dc");
@@ -711,7 +772,7 @@ public class SchemaRegistryControllerTest {
   // Update only record
   @Test
   public void testUpdateRecord() throws Exception {
-    String schemaId = "updateRecord";
+    String schemaId = "updateRecord".toLowerCase(Locale.getDefault());
     String newComment = "new comment";
     String newLabel = "label changed!";
     ingestSchemaRecord(schemaId);
@@ -757,7 +818,7 @@ public class SchemaRegistryControllerTest {
   // Update only record
   @Test
   public void testUpdateRecordRemovingLabel() throws Exception {
-    String schemaId = "updateRecord";
+    String schemaId = "updateRecord".toLowerCase(Locale.getDefault());
     String newComment = "new comment";
     String newLabel = "label changed!";
     ingestSchemaRecord(schemaId);
@@ -802,7 +863,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordIgnoreACL() throws Exception {
-    String schemaId = "updateRecord";
+    String schemaId = "updateRecord".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -850,7 +911,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordWithIgnoringInvalidSetting4Xml() throws Exception {
-    String schemaId = "updateMimetypeOfRecord";
+    String schemaId = "updateMimetypeOfRecord".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -871,7 +932,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordWithInvalidSetting4Xml() throws Exception {
-    String schemaId = "updateTypeOfRecord";
+    String schemaId = "updateTypeOfRecord".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -892,7 +953,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordWithoutChanges() throws Exception {
-    String schemaId = "updateRecordWithoutChanges";
+    String schemaId = "updateRecordWithoutChanges".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -922,7 +983,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordAndDocument() throws Exception {
-    String schemaId = "updateRecordAndDocument";
+    String schemaId = "updateRecordAndDocument".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -960,7 +1021,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordAndDocumentWithWrongVersion() throws Exception {
-    String schemaId = "updateRecordAndDocumentWithWrongVersion";
+    String schemaId = "updateRecordAndDocumentWithWrongVersion".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -1003,7 +1064,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateOnlyDocument() throws Exception {
-    String schemaId = "updateRecordDocumentOnly";
+    String schemaId = "updateRecordDocumentOnly".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
@@ -1043,7 +1104,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordWithSmallChangesInDocument() throws Exception {
-    String schemaId = "updateRecordWithSmallChanges";
+    String schemaId = "updateRecordWithSmallChanges".toLowerCase(Locale.getDefault());
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(schemaId);
     schemaRecord.setVersion(1l);
@@ -1071,7 +1132,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
-    String schemaId = "updateWithoutGet";
+    String schemaId = "updateWithoutGet".toLowerCase(Locale.getDefault());
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(schemaId);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
@@ -1155,7 +1216,7 @@ public class SchemaRegistryControllerTest {
   public void testCreateSchemaRecordWithUpdateWithoutChanges() throws Exception {
     // Test with a schema missing schema property.
     MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("updateWithoutChanges_xsd");
+    record.setSchemaId("updateWithoutChanges_xsd".toLowerCase(Locale.getDefault()));
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -1174,7 +1235,7 @@ public class SchemaRegistryControllerTest {
     String body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record1 = mapper.readValue(body, MetadataSchemaRecord.class);
-    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/updateWithoutChanges_xsd").
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + record.getSchemaId()).
             file(schemaFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
     body = result.getResponse().getContentAsString();
 
@@ -1195,7 +1256,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testDeleteSchemaRecord() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
-    String schemaId = "testDelete";
+    String schemaId = "testDelete".toLowerCase(Locale.getDefault());
     ingestSchemaRecord(schemaId);
 
     // Get a list of all records
@@ -1243,7 +1304,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testGetAllVersionsOfRecord() throws Exception {
-    String schemaId = "testWithVersion";
+    String schemaId = "testWithVersion".toLowerCase(Locale.getDefault());
     for (long version = 1; version <= 3; version++) {
       // Create a new version
       ingestSchemaWithVersion(schemaId, version);
@@ -1346,7 +1407,7 @@ public class SchemaRegistryControllerTest {
 
   @Test
   public void testIssue52() throws Exception {
-    String schemaId = "test4Issue52";
+    String schemaId = "test4Issue52".toLowerCase(Locale.getDefault());
     int version = 1;
     ingestSchemaWithVersion(schemaId, version);
     // Test get record with one version

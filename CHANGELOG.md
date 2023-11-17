@@ -11,9 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add landing page redirecting to configurable site.
 
 ### Changed
-- Bump edu.kit.datamanager:repo-core from 1.1.2 to 1.2.0
+ 
+### Fixed
+
+## [1.3.0] - 2023-07-07
+### Security
+
+### Added
+- Add context path 'metastore' as default. 
+- Add support for JSON schema 2020-12.
+
+### Changed
+- Bump JDK from 8 to 17.
+- Bump actions/setup-java from 2 to 3
+- Bump com.networknt:json-schema-validator from 1.0.84 to 1.0.85 
+- Bump crazy-max/ghaction-docker-meta from 1 to 4 
+- Bump docker/build-push-action from 2 to 4 
+- Bump docker/setup-buildx-action from 1 to 2
+- Bump edu.kit.datamanager:repo-core from 1.1.2 to 1.2.1
 - Bump edu.kit.datamanager:service-base from 1.1.1 to 1.2.0 
+- Bump io.freefair.lombok from 8.0.1 to 8.1.0 
 - Bump javersVersion from 6.14.0 to 7.0.0
+- Bump org.springframework:spring-messaging from 5.3.26 to 5.3.27
 - Bump org.springframework.boot from 2.7.10 to 3.1.0
 - Bump org.springframework.cloud:spring-cloud-starter-config from 3.1.7 to 4.0.3
 - Bump org.springframework.cloud:spring-cloud-starter-netflix-eureka-client from 3.1.6 to 4.0.2 
@@ -22,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump springDocVersion from 1.7.0 to 2.1.0
  
 ### Fixed
+- Fixed: allowing empty SID in ACLs.
 
 ## [1.2.3] - 2023-04-13
 ### Added
@@ -319,7 +339,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...v1.3.0
 [1.2.3]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/kit-data-manager/metastore2/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/kit-data-manager/metastore2/compare/v1.2.0...v1.2.1

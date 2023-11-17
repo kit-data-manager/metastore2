@@ -118,9 +118,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({},....", recordDocument);
     BiFunction<String, Long, String> getSchemaDocumentById;
-    getSchemaDocumentById = (schema, version) -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
-    };
+    getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
+
     MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = schemaRecord.getEtag();
@@ -333,9 +332,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           final WebRequest request, final HttpServletResponse response) {
     LOG.trace("Performing updateRecord({}, {}).", schemaId, schemaRecord);
     UnaryOperator<String> getById;
-    getById = t -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
-    };
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
     MetadataSchemaRecord updatedSchemaRecord = MetadataSchemaRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
 
@@ -357,10 +354,9 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           HttpServletResponse hsr) {
     LOG.trace("Performing deleteRecord({}).", schemaId);
     UnaryOperator<String> getById;
-    getById = t -> {
-      return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, hsr)).toString();
-    };
+    getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, hsr)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
+
     MetadataSchemaRecordUtil.deleteMetadataSchemaRecord(schemaConfig, schemaId, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
