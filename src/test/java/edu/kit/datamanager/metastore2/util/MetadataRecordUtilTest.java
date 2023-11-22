@@ -20,8 +20,8 @@ import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import java.time.Instant;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import org.javers.core.Javers;
 import org.junit.After;
@@ -129,7 +129,7 @@ public class MetadataRecordUtilTest {
 
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .apply(springSecurity()) 
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }
@@ -663,6 +663,7 @@ public class MetadataRecordUtilTest {
     assertEquals(expResult, result);
     dataResource = DataResource.factoryNewDataResource();
     dataResource.getAlternateIdentifiers().clear();
+    setSchema(dataResource);
     // Test with id &  PrimaryIdentifier
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
     assertNotNull(result.getId());
@@ -674,6 +675,7 @@ public class MetadataRecordUtilTest {
     assertNull("Last update date should be empty!", result.getLastUpdate());
     // Test with one (internal) alternate identifier.
     dataResource = DataResource.factoryNewDataResource();
+    setSchema(dataResource);
     dataResource.getDates().add(Date.factoryDate(Instant.now(), Date.DATE_TYPE.ISSUED));
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
     assertNotNull(result.getId());
@@ -683,8 +685,7 @@ public class MetadataRecordUtilTest {
     assertNull("PID should be empty", result.getPid());
     assertNull("Create date should be empty!", result.getCreatedAt());
     assertNull("Last update date should be empty!", result.getLastUpdate());
-    
-    
+
     // Test migration of PID with two alternate identifiers (internal & UPC)
     dataResource.getAlternateIdentifiers().add(Identifier.factoryIdentifier(PID, Identifier.IDENTIFIER_TYPE.UPC));
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
@@ -760,7 +761,7 @@ public class MetadataRecordUtilTest {
     result = MetadataRecordUtil.mergeRecords(managed, provided);
     assertNotNull(result);
     assertEquals(provided, result);
-    
+
     // Cannot test merging ACL list due to missing access rights
     managed = new MetadataRecord();
     provided = new MetadataRecord();
@@ -770,7 +771,7 @@ public class MetadataRecordUtilTest {
     assertNotEquals(provided, result);
     provided.getAcl().clear();
     assertEquals(provided, result);
-    
+
     managed = new MetadataRecord();
     provided = new MetadataRecord();
     provided.setRelatedResource(RELATED_RESOURCE);
@@ -788,6 +789,12 @@ public class MetadataRecordUtilTest {
     System.out.println("setToken");
     String bearerToken = "";
     MetadataRecordUtil.setToken(bearerToken);
+  }
+
+  private void setSchema(DataResource dataResource) {
+    RelatedIdentifier factoryRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, "anySchema", null, null);
+    factoryRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    dataResource.getRelatedIdentifiers().add(factoryRelatedIdentifier);
   }
 
 }

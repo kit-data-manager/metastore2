@@ -68,6 +68,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -77,6 +78,7 @@ import java.util.Locale;
 import org.junit.Ignore;
 import org.springframework.http.MediaType;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import org.springframework.test.web.servlet.ResultActions;
 
 /**
  *
@@ -1511,7 +1513,7 @@ public class MetadataControllerTest {
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
   }
-  
+
   @Test
   public void testSearchProxy() throws Exception {
 
@@ -1522,7 +1524,7 @@ public class MetadataControllerTest {
             .andDo(print())
             .andExpect(status().isForbidden());
   }
-  
+
   @Test
   public void testSearchWithSchemaProxy() throws Exception {
 
@@ -1542,6 +1544,120 @@ public class MetadataControllerTest {
             .andDo(print())
             .andExpect(status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$.info.title", Matchers.startsWith("MetaStore")));
+  }
+
+  @Test
+  public void testLandingPage4MetadataUnknownID() throws Exception {
+    String documentId = createDCMetadataRecord();
+
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/metadata/anything")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=anything&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+  }
+
+  @Test
+  public void testLandingPage4MetadataWithSchemaId() throws Exception {
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + SCHEMA_ID)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + SCHEMA_ID + "&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testLandingPage4MetadataWrongVersion() throws Exception {
+    String documentId = createDCMetadataRecord();
+
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + documentId)
+            .queryParam("version", "2")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=2"))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  public void testLandingPage4Metadata() throws Exception {
+    String documentId = createDCMetadataRecord();
+
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + documentId)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + documentId)
+            .queryParam("version", "1")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=1"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    // Ingest a second version...
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + documentId).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+    andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + documentId)
+            .queryParam("version", "2")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=2"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get("/api/v1/metadata/" + documentId)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version="))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
   }
 
   private String createJsonMetadataRecord() throws Exception {

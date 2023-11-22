@@ -32,6 +32,7 @@ import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -72,6 +73,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
@@ -518,6 +520,11 @@ public class MetadataRecordUtil {
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
       }
+      if (metadataRecord.getSchema() == null) {
+        String message = "Missing schema identifier for metadata document. Not a valid metadata document ID. Returning HTTP BAD_REQUEST.";
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
       DataRecord dataRecord = null;
       long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), recordVersion);
@@ -840,12 +847,10 @@ public class MetadataRecordUtil {
       }
       //update getRelatedResource
 
-      if ((provided.getRelatedResource() != null)) {
-
-        if (!provided.getRelatedResource().equals(managed.getRelatedResource())) {
-          LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-          managed.setRelatedResource(provided.getRelatedResource());
-        }
+      if (provided.getRelatedResource() != null
+              && !provided.getRelatedResource().equals(managed.getRelatedResource())) {
+        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
+        managed.setRelatedResource(provided.getRelatedResource());
       }
       //update schemaId
       if ((provided.getSchema() != null)
@@ -975,5 +980,11 @@ public class MetadataRecordUtil {
       }
     }
     return isAllowed;
+  }
+
+  public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
+    String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
+    metadataRecord.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
+    LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }
 }

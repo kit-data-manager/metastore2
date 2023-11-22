@@ -1,14 +1,15 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
    <div th:fragment="navbar">
         <nav class="navbar navbar-expand-lg">
             <!-- navbar brand -->
             <a href="https://www.kit.edu" class="navbar-brand"
                target="_blank"> <img th:src="@{/images/Logo_KIT.png}"
-                                  class="logo"> </a>
+                                  class="logo"
+                                  alt="KIT logo"> </a>
             <a href="https://www.scc.kit.edu" class="navbar-brand"
                target="_blank"> <img th:src="@{/images/Logo_SCC.png}"
-                     class="logo"></a>
+                     class="logo" alt="SCC logo"></a>
 
             <button class="navbar-toggler navbar-toggler-right" type="button"
                     data-toggle="collapse" data-target="#navbar" aria-controls="navbar"

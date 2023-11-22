@@ -45,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -81,6 +82,18 @@ public interface ISchemaRegistryController extends InfoContributor {
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ResponseBody
   public ResponseEntity getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr);
+
+  @Operation(summary = "Get landing page of schema by schema id (and version).", description = "Show landing page by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
+          + "Furthermore, a specific version of the schema can be returned by providing a version number as request parameter. If no version is specified, all versions will be returned.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the landingpage is returned if the id exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"text/html"})
+  public ModelAndView getLandingPageById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);

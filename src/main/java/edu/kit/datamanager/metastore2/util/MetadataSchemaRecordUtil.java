@@ -34,6 +34,7 @@ import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -72,6 +73,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -522,8 +524,14 @@ public class MetadataSchemaRecordUtil {
       }
       metadataSchemaRecord.setSchemaId(dataResource.getId());
       nano2 = System.nanoTime() / 1000000;
-      MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
-      metadataSchemaRecord.setType(schemaType);
+      try {
+        MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
+        metadataSchemaRecord.setType(schemaType);
+      } catch (Exception ex) {
+        String message = "Not a schema resource id. Returning HTTP BAD_REQUEST.";
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
       nano3 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setMimeType(dataResource.getTitles().iterator().next().getValue());
       nano4 = System.nanoTime() / 1000000;
@@ -1249,6 +1257,46 @@ public class MetadataSchemaRecordUtil {
     }
     LOG.trace("Fix URI '{}' -> '{}'", uri, returnValue);
     return returnValue;
+  }
+
+  /**
+   * Fix local document URI to URL.
+   *
+   * @param schemaRecord record holding schemaId and version of local document.
+   */
+  public static final void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    fixSchemaDocumentUri(schemaRecord, false);
+  }
+
+  /**
+   * Fix local document URI to URL.
+   *
+   * @param schemaRecord record holding schemaId and version of local document.
+   * @param saveUrl save path to file for URL.
+   */
+  public static final void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord, boolean saveUrl) {
+    String schemaDocumentUri = schemaRecord.getSchemaDocumentUri();
+    schemaRecord.setSchemaDocumentUri(getSchemaDocumentUri(schemaRecord).toString());
+    LOG.trace("Fix schema document Uri '{}' -> '{}'", schemaDocumentUri, schemaRecord.getSchemaDocumentUri());
+    if (saveUrl) {
+      LOG.trace("Store path for URI!");
+      Url2Path url2Path = new Url2Path();
+      url2Path.setPath(schemaDocumentUri);
+      url2Path.setUrl(schemaRecord.getSchemaDocumentUri());
+      url2Path.setType(schemaRecord.getType());
+      url2Path.setVersion(schemaRecord.getSchemaVersion());
+      url2PathDao.save(url2Path);
+    }
+  }
+
+  /**
+   * Get URI for accessing schema document via schemaId and version.
+   *
+   * @param schemaRecord Record holding schemaId and version.
+   * @return URI for accessing schema document.
+   */
+  public static final URI getSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), null, null)).toUri();
   }
 
 }

@@ -63,7 +63,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,6 +85,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -98,14 +98,23 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class MetadataControllerImpl implements IMetadataController {
 
   public static final String POST_FILTER = "post_filter";
+  /**
+   * Placeholder string for id of resource. (landingpage)
+   */
+  public static final String PLACEHOLDER_ID = "$(id)";
+  /**
+   * Placeholder string for version of resource. (landingpage)
+   */
+  public static final String PLACEHOLDER_VERSION = "$(version)";
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataControllerImpl.class);
 
-  @Autowired
+  private final ApplicationProperties applicationProperties;
+
   private final ILinkedMetadataRecordDao metadataRecordDao;
 
   private final MetastoreConfiguration metadataConfig;
-  @Autowired
+
   private final IDataResourceDao dataResourceDao;
 
   /**
@@ -130,6 +139,7 @@ public class MetadataControllerImpl implements IMetadataController {
           MetastoreConfiguration metadataConfig,
           ILinkedMetadataRecordDao metadataRecordDao,
           IDataResourceDao dataResourceDao) {
+    this.applicationProperties = applicationProperties;
     this.metadataConfig = metadataConfig;
     this.metadataRecordDao = metadataRecordDao;
     this.dataResourceDao = dataResourceDao;
@@ -197,7 +207,7 @@ public class MetadataControllerImpl implements IMetadataController {
     // Successfully created metadata record.
     long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
-    fixMetadataDocumentUri(result);
+    MetadataRecordUtil.fixMetadataDocumentUri(result);
     long nano5 = System.nanoTime() / 1000000;
     metadataRecordDao.save(new LinkedMetadataRecord(result));
     long nano6 = System.nanoTime() / 1000000;
@@ -229,7 +239,7 @@ public class MetadataControllerImpl implements IMetadataController {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of MetadataRecord.");
     String etag = metadataRecord.getEtag();
-    fixMetadataDocumentUri(metadataRecord);
+    MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
   }
@@ -247,7 +257,7 @@ public class MetadataControllerImpl implements IMetadataController {
     }
 
     MetadataRecord metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
-    fixMetadataDocumentUri(metadataRecord);
+    MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(metadataRecord.getAcl());
     aclRecord.setMetadataRecord(metadataRecord);
@@ -272,6 +282,26 @@ public class MetadataControllerImpl implements IMetadataController {
             body(new FileSystemResource(metadataDocumentPath.toFile()));
   }
 
+  @Override
+  public ModelAndView getLandingpageById(
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr) {
+    LOG.trace("Performing Landing page for metadata document with ({}, {}).", id, version);
+    String redirectUrl = applicationProperties.getMetadataLandingPage();
+    redirectUrl = redirectUrl.replace(PLACEHOLDER_ID, id);
+    String versionString = "";
+    if (version != null) {
+      versionString = version.toString();
+    }
+    redirectUrl = "redirect:" + redirectUrl.replace(PLACEHOLDER_VERSION, versionString);
+ 
+    LOG.trace("Redirect to '{}'", redirectUrl);
+
+    return new ModelAndView(redirectUrl);
+  }
+
   public ResponseEntity<List<MetadataRecord>> getAllVersions(
           @PathVariable(value = "id") String id,
           Pageable pgbl
@@ -291,7 +321,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Transforming Dataresource to MetadataRecord");
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
-      fixMetadataDocumentUri(metadataRecord);
+      MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
       metadataList.add(metadataRecord);
     });
 
@@ -405,7 +435,7 @@ public class MetadataControllerImpl implements IMetadataController {
     List<MetadataRecord> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
       MetadataRecord item = MetadataRecordUtil.migrateToMetadataRecord(metadataConfig, metadataRecord, false);
-      fixMetadataDocumentUri(item);
+      MetadataRecordUtil.fixMetadataDocumentUri(item);
       metadataList.add(item);
     });
 
@@ -431,7 +461,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateMetadataRecord.getEtag();
-    fixMetadataDocumentUri(updateMetadataRecord);
+    MetadataRecordUtil.fixMetadataDocumentUri(updateMetadataRecord);
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateMetadataRecord.getId(), updateMetadataRecord.getRecordVersion(), null, null)).toUri();
@@ -452,7 +482,7 @@ public class MetadataControllerImpl implements IMetadataController {
     LOG.trace("Performing deleteRecord({}).", id);
     UnaryOperator<String> getById;
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
-    
+
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     MetadataRecordUtil.deleteMetadataRecord(metadataConfig, id, eTag, getById);
 
@@ -475,11 +505,5 @@ public class MetadataControllerImpl implements IMetadataController {
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();
-  }
-
-  private void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
-    String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
-    metadataRecord.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
-    LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }
 }

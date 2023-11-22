@@ -42,10 +42,10 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class FrontendControllerImpl implements IFrontendController {
 
   private static final Logger LOG = LoggerFactory.getLogger(FrontendControllerImpl.class);
-  
+
   private static final String SHOW_PAGE = "Pageable: '{}'";
   private static final String CONTENT_RANGE = "Content-Range";
-  
+
   @Autowired
   private MetadataControllerImpl metadtaControllerImpl;
 
@@ -145,10 +145,21 @@ public class FrontendControllerImpl implements IFrontendController {
     LOG.trace(SHOW_PAGE, pageable);
 
     List<String> schemaIds = id == null ? null : Arrays.asList(id);
-    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
-    List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
-
-    String pageSize = responseEntity4metadataRecords.getHeaders().getFirst(CONTENT_RANGE);
+    ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords;
+    List<MetadataRecord> metadataRecords = null;
+    String pageSize = null;
+    try {
+      responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, schemaIds, null, null, pageable, wr, hsr, ucb);
+      metadataRecords = responseEntity4metadataRecords.getBody();
+      pageSize = responseEntity4metadataRecords.getHeaders().getFirst(CONTENT_RANGE);
+    } catch (Exception ex) {
+      // Test for document id instead of schema id.
+      if (schemaIds != null) {
+        responseEntity4metadataRecords = metadtaControllerImpl.getRecords(schemaIds.get(0), null, null, null, null, pageable, wr, hsr, ucb);
+        metadataRecords = responseEntity4metadataRecords.getBody();
+        pageSize = responseEntity4metadataRecords.getHeaders().getFirst(CONTENT_RANGE);
+      }
+    }
 
     TabulatorRemotePagination tabulatorRemotePagination = TabulatorRemotePagination.builder()
             .lastPage(tabulatorLastPage(pageSize, pageable))
