@@ -94,7 +94,7 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.6.0"
+    implementation "org.postgresql:postgresql:42.7.0"
     //driver for h2
     implementation "com.h2database:h2:2.2.224"
     
