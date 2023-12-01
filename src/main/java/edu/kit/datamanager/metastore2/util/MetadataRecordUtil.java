@@ -63,7 +63,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -347,10 +346,14 @@ public class MetadataRecordUtil {
           String eTag,
           UnaryOperator<String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
-    while (dataRecord.isPresent()) {
-      dataRecordDao.delete(dataRecord.get());
-      dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+    try {
+      DataResourceUtils.getResourceByIdentifierOrRedirect(applicationProperties, id, null, supplier);
+    } catch (ResourceNotFoundException rnfe) {
+      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+      while (dataRecord.isPresent()) {
+        dataRecordDao.delete(dataRecord.get());
+        dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+      }
     }
   }
 
