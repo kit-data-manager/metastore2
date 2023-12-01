@@ -75,10 +75,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
 import java.util.Locale;
-import org.junit.Ignore;
 import org.springframework.http.MediaType;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import org.springframework.test.web.servlet.ResultActions;
 
 /**
  *
@@ -1720,13 +1718,25 @@ public class MetadataControllerTest {
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
+    // But it's still available
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     etagSchema = result.getResponse().getHeader("ETag");
+    // Remove it ones more
     this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
             header("If-Match", etagSchema)).
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
-
+    // Now it' gone
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
   }
 
   private String createJsonMetadataRecord() throws Exception {
