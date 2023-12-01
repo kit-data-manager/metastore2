@@ -200,8 +200,12 @@ public class MetadataControllerImpl implements IMetadataController {
     long nano3 = System.nanoTime() / 1000000;
 
     if (recordAlreadyExists) {
-      LOG.error("Conflict with existing metadata record!");
-      return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
+      String message = String.format("Conflict! There is already a metadata document with "
+              + "the same schema ('%s') and the same related resource ('%s')",
+              metadataRecord.getSchemaId(), 
+              metadataRecord.getRelatedResource().getIdentifier());
+      LOG.error(message);
+      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
     }
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
