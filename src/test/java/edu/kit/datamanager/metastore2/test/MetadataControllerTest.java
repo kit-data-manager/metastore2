@@ -1660,6 +1660,75 @@ public class MetadataControllerTest {
             .andExpect(status().isOk());
   }
 
+  @Test
+  public void testDeleteSchemaWithLinkedDocument() throws Exception {
+    String schemaId = "deleteschema";
+    String metadataRecordId = "deletedocument";
+    String jwtSecret = schemaConfig.getJwtSecret();
+    ingestKitSchemaRecord(this.mockMvc, schemaId, jwtSecret);
+    ingestXmlMetadataDocument(this.mockMvc, schemaId, null, metadataRecordId, DC_DOCUMENT, jwtSecret);
+    // Deletion of schema shouldn't work
+    // Get ETag.
+    MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etagSchema = result.getResponse().getHeader("ETag");
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isConflict()).
+            andReturn();
+    // Get Etag
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    // Delete record
+    result = this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+
+    // Try deleting schema once more should also fail
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isConflict()).
+            andReturn();
+
+    // Delete second time
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    result = this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+
+    // Now it should be possible to delete schema
+    result = this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+    etagSchema = result.getResponse().getHeader("ETag");
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+
+  }
+
   private String createJsonMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
