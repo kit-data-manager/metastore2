@@ -938,11 +938,13 @@ public class MetadataSchemaRecordUtil {
             && !provided.getAcl().equals(managed.getAcl())
             // check for special access rights 
             // - only administrators are allowed to change ACL
-            && MetadataRecordUtil.checkAccessRights(managed.getAcl())
+            && MetadataRecordUtil.checkAccessRights(managed.getAcl(), true)
             // - at least principal has to remain as ADMIN 
-            && MetadataRecordUtil.checkAccessRights(provided.getAcl())) {
+            && MetadataRecordUtil.checkAccessRights(provided.getAcl(), false)) {
       LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
       managed.setAcl(provided.getAcl());
+    } else {
+      LOG.trace("No new ACL provided. Keep ACL as it is. ('{}'}", managed.getAcl());
     }
 
     //update mimetype

@@ -1194,7 +1194,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             header("If-Match", etag).
             with(putMultipart())).
             andDo(print()).
-            andExpect(status().isForbidden());
+            andExpect(status().isBadRequest());
   }
 
   @Test

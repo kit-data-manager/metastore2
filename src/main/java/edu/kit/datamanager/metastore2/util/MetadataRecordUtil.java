@@ -834,14 +834,15 @@ public class MetadataRecordUtil {
         LOG.trace("Updating record pid from {} to {}.", managed.getPid(), provided.getPid());
         managed.setPid(provided.getPid());
       }
+
       //update acl
       if (!provided.getAcl().isEmpty()
               && !provided.getAcl().equals(managed.getAcl())
               // check for special access rights 
               // - only administrators are allowed to change ACL
-              && checkAccessRights(managed.getAcl())
+              && checkAccessRights(managed.getAcl(), true)
               // - at least principal has to remain as ADMIN 
-              && checkAccessRights(provided.getAcl())) {
+              && checkAccessRights(provided.getAcl(), false)) {
         LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
         managed.setAcl(provided.getAcl());
       }
@@ -945,11 +946,14 @@ public class MetadataRecordUtil {
    * Checks if current user is allowed to access with given AclEntries.
    *
    * @param aclEntries AclEntries of resource.
+   * @param currentAcl Check current ACL (true) or new one (false).
    *
    * @return Allowed (true) or not.
    */
-  public static boolean checkAccessRights(Set<AclEntry> aclEntries) {
+  public static boolean checkAccessRights(Set<AclEntry> aclEntries, boolean currentAcl) {
     boolean isAllowed = false;
+    String errorMessage1 = "Error invalid ACL! Reason: Only ADMINISTRATORS are allowed to change ACL entries.";
+    String errorMessage2 = "Error invalid ACL! Reason: You are not allowed to revoke your own administrator rights.";
     Authentication authentication = AuthenticationHelper.getAuthentication();
     List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
     for (GrantedAuthority authority : authentication.getAuthorities()) {
@@ -974,9 +978,14 @@ public class MetadataRecordUtil {
       }
     }
     if (!isAllowed) {
-      LOG.warn("Only ADMINISTRATORS are allowed to change ACL entries");
+      String errorMessage = currentAcl ? errorMessage1: errorMessage2;
+      LOG.warn(errorMessage);
       if (schemaConfig.isAuthEnabled()) {
-        throw new AccessForbiddenException("Error wrong ACL!");
+        if (currentAcl) {
+          throw new AccessForbiddenException(errorMessage1);
+        } else {
+          throw new BadArgumentException(errorMessage2);
+        }
       }
     }
     return isAllowed;
