@@ -874,6 +874,33 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testFindRecordsBySchemaIdANDResourceId() throws Exception {
+    String relatedResource = "testFindRecordsBySchemaIdANDResourceId";
+    String relatedResource2 = "anotherTestFindRecordsBySchemaIdANDResourceId";
+    String metadataRecordId = createDCMetadataRecordWithRelatedResource(relatedResource);
+    String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2);
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(2, result.length);
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    map = new ObjectMapper();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(1, result.length);
+  }
+
+  @Test
   public void testFindRecordsByInvalidResourceId() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").param("resourceId", UNKNOWN_RELATED_RESOURCE)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -1764,10 +1791,15 @@ public class MetadataControllerTest {
   }
 
   private String createDCMetadataRecord() throws Exception {
+    return createDCMetadataRecordWithRelatedResource(RELATED_RESOURCE_STRING);
+  }
+
+  private String createDCMetadataRecordWithRelatedResource(String myRelatedResource) throws Exception {
+    ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(myRelatedResource);
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    record.setRelatedResource(relatedResource);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
     aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
