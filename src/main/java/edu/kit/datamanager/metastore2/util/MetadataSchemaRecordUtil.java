@@ -33,6 +33,8 @@ import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
+import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
+import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
@@ -925,79 +927,30 @@ public class MetadataSchemaRecordUtil {
    * @return Record with new settings.
    */
   public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
-    if ((provided != null)
-            // update pid
-            && !Objects.isNull(provided.getPid())
-            && !provided.getPid().equals(managed.getPid())) {
-      LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-      managed.setPid(provided.getPid());
+    if (provided != null && managed != null) {
+      //update pid
+      managed.setPid(mergeEntry("Update record->pid", managed.getPid(), provided.getPid()));
+      //update acl
+      managed.setAcl(mergeAcl(managed.getAcl(), provided.getAcl()));
+      // update mimetype
+      managed.setMimeType(mergeEntry("Updating record->mimetype", managed.getMimeType(), provided.getMimeType()));
+      // update type
+      managed.setType(mergeEntry("Updating record->type", managed.getType(), provided.getType()));
+      // update label
+      managed.setLabel(mergeEntry("Updating record->label", managed.getLabel(), provided.getLabel(), true));
+      // update definition
+      managed.setDefinition(mergeEntry("Updating record->definition", managed.getDefinition(), provided.getDefinition(), true));
+      // update comment
+      managed.setComment(mergeEntry("Updating record->comment", managed.getComment(), provided.getComment(), true));
+      // update doNotSync
+      managed.setDoNotSync(mergeEntry("Updating record->doNotSync", managed.getDoNotSync(), provided.getDoNotSync()));
+      //update schemaId
+      managed.setSchemaId(mergeEntry("Updating record->schema", managed.getSchemaId(), provided.getSchemaId()));
+      //update schemaVersion
+      managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
+    } else {
+      managed = (managed != null) ? managed : provided;
     }
-
-    //update acl
-    if (!provided.getAcl().isEmpty()
-            && !provided.getAcl().equals(managed.getAcl())
-            // check for special access rights 
-            // - only administrators are allowed to change ACL
-            && MetadataRecordUtil.checkAccessRights(managed.getAcl())
-            // - at least principal has to remain as ADMIN 
-            && MetadataRecordUtil.checkAccessRights(provided.getAcl())) {
-      LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-      managed.setAcl(provided.getAcl());
-    }
-
-    //update mimetype
-    if ((provided.getMimeType() != null)
-            && !provided.getMimeType().equals(managed.getMimeType())) {
-      LOG.trace("Updating record mimetype from {} to {}.", managed.getMimeType(), provided.getMimeType());
-      managed.setMimeType(provided.getMimeType());
-    }
-
-    //update type
-    if ((provided.getType() != null)
-            && !provided.getType().equals(managed.getType())) {
-      LOG.trace("Updating record type from {} to {}.", managed.getType(), provided.getType());
-      managed.setType(provided.getType());
-    }
-
-    //update label
-    if ((provided.getLabel() == null) || !provided.getLabel().equals(managed.getLabel())) {
-      LOG.trace("Updating label from {} to {}.", managed.getLabel(), provided.getLabel());
-      managed.setLabel(provided.getLabel());
-    }
-
-    //update definition
-    if ((provided.getDefinition() == null) || !provided.getDefinition().equals(managed.getDefinition())) {
-      LOG.trace("Updating definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
-      managed.setDefinition(provided.getDefinition());
-    }
-
-    //update comment
-    if ((provided.getComment() == null) || !provided.getComment().equals(managed.getComment())) {
-      LOG.trace("Updating comment from {} to {}.", managed.getComment(), provided.getComment());
-      managed.setComment(provided.getComment());
-    }
-
-    //update doNotSync
-    if (!provided.getDoNotSync()
-            .equals(managed.getDoNotSync())) {
-      LOG.trace("Updating do not sync from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
-      managed.setDoNotSync(provided.getDoNotSync());
-    }
-
-    //update schemaId
-    if ((provided.getSchemaId() != null)
-            && !provided.getSchemaId().equals(managed.getSchemaId())) {
-      LOG.trace("Updating schema ID comment from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-      managed.setSchemaId(provided.getSchemaId());
-    }
-
-    //update schemaVersion
-    if ((provided.getSchemaVersion() != null)
-            && !provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
-      LOG.trace("Updating schema version from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
-      managed.setSchemaVersion(provided.getSchemaVersion());
-    }
-
     return managed;
   }
 
