@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
@@ -63,7 +64,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -827,49 +827,89 @@ public class MetadataRecordUtil {
     return metadataDocumentPath;
   }
 
+  /**
+   * Merge new metadata record in the existing one.
+   *
+   * @param managed Existing metadata record.
+   * @param provided New metadata record.
+   * @return Merged record
+   */
   public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
     if (provided != null && managed != null) {
       //update pid
-      if ((provided.getPid() != null) && !provided.getPid().equals(managed.getPid())) {
-        LOG.trace("Updating record pid from {} to {}.", managed.getPid(), provided.getPid());
-        managed.setPid(provided.getPid());
-      }
+      managed.setPid(mergeEntry("Update record->pid", managed.getPid(), provided.getPid()));
 
       //update acl
-      if (!provided.getAcl().isEmpty()
-              && !provided.getAcl().equals(managed.getAcl())
-              // check for special access rights 
-              // - only administrators are allowed to change ACL
-              && checkAccessRights(managed.getAcl(), true)
-              // - at least principal has to remain as ADMIN 
-              && checkAccessRights(provided.getAcl(), false)) {
-        LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-        managed.setAcl(provided.getAcl());
-      }
+      managed.setAcl(mergeAcl(managed.getAcl(), provided.getAcl()));
       //update getRelatedResource
-
-      if (provided.getRelatedResource() != null
-              && !provided.getRelatedResource().equals(managed.getRelatedResource())) {
-        LOG.trace("Updating related resource from {} to {}.", managed.getRelatedResource(), provided.getRelatedResource());
-        managed.setRelatedResource(provided.getRelatedResource());
-      }
+      managed.setRelatedResource(mergeEntry("Updating record->relatedResource", managed.getRelatedResource(), provided.getRelatedResource()));
       //update schemaId
-      if ((provided.getSchema() != null)
-              && !provided.getSchema().equals(managed.getSchema())) {
-        LOG.trace("Updating record schema from {} to {}.", managed.getSchema(), provided.getSchema());
-        managed.setSchema(provided.getSchema());
-      }
-      //update schemaVersion
+      managed.setSchema(mergeEntry("Updating record->schema", managed.getSchema(), provided.getSchema()));
 
-      if ((provided.getSchemaVersion() != null)
-              && !provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
-        LOG.trace("Updating record schemaVersion from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
-        managed.setSchemaVersion(provided.getSchemaVersion());
-      }
+      //update schemaVersion
+      managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
     } else {
       managed = (managed != null) ? managed : provided;
     }
+    return managed;
+  }
 
+  /**
+   * Check validity of acl list and then merge new acl list in the existing one.
+   *
+   * @param managed Existing metadata record.
+   * @param provided New metadata record.
+   * @return Merged list
+   */
+  public static Set<AclEntry> mergeAcl(Set<AclEntry> managed, Set<AclEntry> provided) {
+    // Check for null parameters (which shouldn't happen)
+    managed = (managed == null) ? new HashSet<>() : managed;
+    provided = (provided == null) ? new HashSet<>() : provided;
+    if (!provided.isEmpty()) {
+      if (!provided.equals(managed)) {
+        // check for special access rights 
+        // - only administrators are allowed to change ACL
+        checkAccessRights(managed, true);
+        // - at least principal has to remain as ADMIN 
+        checkAccessRights(provided, false);
+        LOG.trace("Updating record acl from {} to {}.", managed, provided);
+        managed = provided;
+      } else {
+       LOG.trace("Provided ACL is still the same -> Continue using old one.");
+      }
+    } else {
+      LOG.trace("Provided ACL is empty -> Continue using old one.");
+    }
+    return managed;
+  }
+
+  /**
+   * Set new value for existing one.
+   *
+   * @param description For logging purposes only
+   * @param managed Existing value.
+   * @param provided New value.
+   * @return Merged record
+   */
+  public static <T> T mergeEntry(String description, T managed, T provided) {
+    return mergeEntry(description, managed, provided, false);
+  }
+
+  /**
+   * Set new value for existing one.
+   *
+   * @param description For logging purposes only
+   * @param managed Existing value.
+   * @param provided New value.
+   * @param overwriteWithNull Allows also deletion of a value.
+   * @return Merged record
+   */
+  public static <T> T mergeEntry(String description, T managed, T provided, boolean overwriteWithNull) {
+    if ((provided != null && !provided.equals(managed)) ||
+            overwriteWithNull) {
+      LOG.trace(description + " from '{}' to '{}'", managed, provided);
+      managed = provided;
+    }
     return managed;
   }
 
@@ -959,6 +999,10 @@ public class MetadataRecordUtil {
     for (GrantedAuthority authority : authentication.getAuthorities()) {
       authorizationIdentities.add(authority.getAuthority());
     }
+    if (authorizationIdentities.contains(RepoUserRole.ADMINISTRATOR.getValue())) {
+      //ROLE_ADMINISTRATOR detected -> no further permission check necessary.
+      return true;
+    }
     if (LOG.isTraceEnabled()) {
       LOG.trace("Check access rights for changing ACL list!");
       for (String authority : authorizationIdentities) {
@@ -973,12 +1017,12 @@ public class MetadataRecordUtil {
       if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)
               && authorizationIdentities.contains(aclEntry.getSid())) {
         isAllowed = true;
-        LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
+        LOG.trace("Confirm permission for updating ACL: '{}' has ’{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
         break;
       }
     }
     if (!isAllowed) {
-      String errorMessage = currentAcl ? errorMessage1: errorMessage2;
+      String errorMessage = currentAcl ? errorMessage1 : errorMessage2;
       LOG.warn(errorMessage);
       if (schemaConfig.isAuthEnabled()) {
         if (currentAcl) {
