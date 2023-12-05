@@ -1043,8 +1043,8 @@ public class MetadataControllerTest {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
     if (record.getAcl() != null) {
-      Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
-      Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(SchemaRegistryControllerTest.checkAclIfEqual(record.getAcl(), record2.getAcl()));
+      Assert.assertFalse(SchemaRegistryControllerTest.checkAclIfEqual(oldRecord.getAcl(), record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.

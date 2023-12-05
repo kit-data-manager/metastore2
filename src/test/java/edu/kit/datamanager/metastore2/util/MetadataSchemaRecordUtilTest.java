@@ -33,22 +33,22 @@ import org.springframework.web.multipart.MultipartFile;
  * @author hartmann-v
  */
 public class MetadataSchemaRecordUtilTest {
-  
+
   public MetadataSchemaRecordUtilTest() {
   }
-  
+
   @BeforeClass
   public static void setUpClass() {
   }
-  
+
   @AfterClass
   public static void tearDownClass() {
   }
-  
+
   @Before
   public void setUp() {
   }
-  
+
   @After
   public void tearDown() {
   }
@@ -88,21 +88,42 @@ public class MetadataSchemaRecordUtilTest {
   @Test
   public void testMergeRecords() {
     System.out.println("mergeRecords");
-    MetadataSchemaRecord managed = new MetadataSchemaRecord();
-    MetadataSchemaRecord provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
-    MetadataSchemaRecord expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
+
+    MetadataSchemaRecord managed = null;
+    MetadataSchemaRecord provided = null;
+    MetadataSchemaRecord expResult = null;
     MetadataSchemaRecord result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
+
+    managed = null;
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
+    assertEquals(expResult, result);
+
+    managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    provided = null;
+    result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
+    assertEquals(expResult, result);
+
+    managed = new MetadataSchemaRecord();
+    provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
+    result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
+    assertEquals(expResult, result);
+
     managed = new MetadataSchemaRecord();
     provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     expResult = createSchemaRecord(1, 2, 3, 4, 5, 6, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(provided, managed);
     assertEquals(expResult, result);
+
     managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
     provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     expResult = createSchemaRecord(1, 3, 5, 7, 11, 12);
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
+
     managed = createSchemaRecord(1, 3, 5, 7, 11, 12);
     provided = createSchemaRecord(1, 3, 5, 7, 11, 12);
     provided.setDoNotSync(Boolean.FALSE);
@@ -110,7 +131,7 @@ public class MetadataSchemaRecordUtilTest {
     result = MetadataSchemaRecordUtil.mergeRecords(managed, provided);
     assertEquals(expResult, result);
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testtestCreateMetadataSchemaRecordNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -121,7 +142,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.createMetadataSchemaRecord(conf, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataSchemaRecordEmpty() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -132,7 +153,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.createMetadataSchemaRecord(conf, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testCreateMetadataSchemaRecordInvalid() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -143,7 +164,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.createMetadataSchemaRecord(conf, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testtestUpdateMetadataSchemaRecordNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -154,7 +175,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.updateMetadataSchemaRecord(conf, resourceId, eTag, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataSchemaRecordEmpty() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -165,7 +186,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.updateMetadataSchemaRecord(conf, resourceId, eTag, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testUpdateMetadataSchemaRecordInvalid() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -176,21 +197,21 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.updateMetadataSchemaRecord(conf, resourceId, eTag, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (ResourceIdentifier) null, 1l);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNull_2() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String) null, 1l);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNoValue() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -199,14 +220,14 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, identifier, 1l);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = NullPointerException.class)
   public void testValidateResourceIdentifierNoType() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     ResourceIdentifier identifier = ResourceIdentifier.factoryResourceIdentifier("any", null);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -215,7 +236,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, (MultipartFile) null, schemaRecord);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentEmpty() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -225,7 +246,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentSchemaRecordNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -234,7 +255,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentSchemaRecordUriNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -243,7 +264,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
-  
+
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateMetadataDocumentSchemaRecordUriEmpty() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
@@ -253,7 +274,7 @@ public class MetadataSchemaRecordUtilTest {
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
-  
+
   @Test
   public void testIdentifierTypes() {
     MetadataSchemaRecord mr = new MetadataSchemaRecord();
@@ -261,9 +282,9 @@ public class MetadataSchemaRecordUtilTest {
     for (ResourceIdentifier.IdentifierType item : values) {
       assertNotNull(item.value() + " is not defined in DataResource!", Identifier.IDENTIFIER_TYPE.valueOf(item.name()));
     }
-    
+
   }
-  
+
   private MetadataSchemaRecord buildMSR(Set<AclEntry> aclEntry, String comment, Instant creationDate, String definition,
           String eTag, String label, Instant update, boolean doNotSync, String mimetype, String pid, String schemaDocument,
           String schemaHash, String schemaId, Long version, SCHEMA_TYPE type) {
@@ -283,11 +304,11 @@ public class MetadataSchemaRecordUtilTest {
     msr.setSchemaId(schemaId);
     msr.setSchemaVersion(version);
     msr.setType(type);
-    
+
     return msr;
-    
+
   }
-  
+
   public MetadataSchemaRecord createSchemaRecord(int... skipped) {
     Set<AclEntry> aclEntries = new HashSet<>();
     AclEntry entry = new AclEntry();
@@ -348,13 +369,13 @@ public class MetadataSchemaRecordUtilTest {
     }
     return msr;
   }
-  
+
   private AclEntry createEntry(Long id, PERMISSION permission, String sid) {
     AclEntry entry = new AclEntry();
     entry.setId(id);
     entry.setPermission(permission);
     entry.setSid(sid);
     return entry;
-    
+
   }
 }
