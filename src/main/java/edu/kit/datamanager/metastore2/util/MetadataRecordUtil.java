@@ -347,10 +347,14 @@ public class MetadataRecordUtil {
           String eTag,
           UnaryOperator<String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
-    while (dataRecord.isPresent()) {
-      dataRecordDao.delete(dataRecord.get());
-      dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+    try {
+      DataResourceUtils.getResourceByIdentifierOrRedirect(applicationProperties, id, null, supplier);
+    } catch (ResourceNotFoundException rnfe) {
+      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+      while (dataRecord.isPresent()) {
+        dataRecordDao.delete(dataRecord.get());
+        dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(id);
+      }
     }
   }
 

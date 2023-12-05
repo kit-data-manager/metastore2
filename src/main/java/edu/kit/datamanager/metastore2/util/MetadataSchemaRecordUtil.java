@@ -22,9 +22,11 @@ import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
+import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
@@ -76,8 +78,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Utility class for handling json documents
@@ -96,6 +100,8 @@ public class MetadataSchemaRecordUtil {
   private static IMetadataFormatDao metadataFormatDao;
 
   private static IUrl2PathDao url2PathDao;
+
+  private static IDataRecordDao dataRecordDao;
 
   MetadataSchemaRecordUtil() {
     //Utility class
@@ -344,8 +350,16 @@ public class MetadataSchemaRecordUtil {
           String id,
           String eTag,
           UnaryOperator<String> supplier) {
-    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
     List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    // Test for linked metadata documents
+    for (SchemaRecord item : listOfSchemaIds) {
+      List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(item.getSchemaId());
+      if (!findBySchemaId.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Conflict with existing metadata documents.");
+      }
+    }
+    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
+    listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
     for (SchemaRecord item : listOfSchemaIds) {
       LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
       List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
@@ -1188,6 +1202,15 @@ public class MetadataSchemaRecordUtil {
    */
   public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
     url2PathDao = aUrl2PathDao;
+  }
+
+  /**
+   * Set DAO for data record.
+   *
+   * @param aDataRecordDao the dataRecordDao to set
+   */
+  public static void setDataRecordDao(IDataRecordDao aDataRecordDao) {
+    dataRecordDao = aDataRecordDao;
   }
 
   /**
