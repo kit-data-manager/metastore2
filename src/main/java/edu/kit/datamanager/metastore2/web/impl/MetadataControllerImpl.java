@@ -200,8 +200,12 @@ public class MetadataControllerImpl implements IMetadataController {
     long nano3 = System.nanoTime() / 1000000;
 
     if (recordAlreadyExists) {
-      LOG.error("Conflict with existing metadata record!");
-      return ResponseEntity.status(HttpStatus.CONFLICT).body("Metadata record already exists! Please update existing record instead!");
+      String message = String.format("Conflict! There is already a metadata document with "
+              + "the same schema ('%s') and the same related resource ('%s')",
+              metadataRecord.getSchemaId(),
+              metadataRecord.getRelatedResource().getIdentifier());
+      LOG.error(message);
+      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
     }
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
@@ -296,7 +300,7 @@ public class MetadataControllerImpl implements IMetadataController {
       versionString = version.toString();
     }
     redirectUrl = "redirect:" + redirectUrl.replace(PLACEHOLDER_VERSION, versionString);
- 
+
     LOG.trace("Redirect to '{}'", redirectUrl);
 
     return new ModelAndView(redirectUrl);
@@ -364,7 +368,9 @@ public class MetadataControllerImpl implements IMetadataController {
         }
       }
     }
-    List<String> allRelatedIdentifiers = new ArrayList<>();
+    List<String> allRelatedIdentifiersSchema = new ArrayList<>();
+    List<String> allRelatedIdentifiersResource = new ArrayList<>();
+
 //    File file = new File(new URIoa)
     if (schemaIds != null) {
       for (String schemaId : schemaIds) {
@@ -376,12 +382,12 @@ public class MetadataControllerImpl implements IMetadataController {
             ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(currentSchemaRecord);
             currentSchemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
           }
-          allRelatedIdentifiers.add(currentSchemaRecord.getSchemaDocumentUri());
+          allRelatedIdentifiersSchema.add(currentSchemaRecord.getSchemaDocumentUri());
         } catch (ResourceNotFoundException rnfe) {
           //  schemaID not found set version to 1
           currentSchemaRecord = new MetadataSchemaRecord();
           currentSchemaRecord.setSchemaVersion(1l);
-          allRelatedIdentifiers.add("UNKNOWN_SCHEMA_ID");
+          allRelatedIdentifiersSchema.add("UNKNOWN_SCHEMA_ID");
         }
         for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
           MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
@@ -390,23 +396,16 @@ public class MetadataControllerImpl implements IMetadataController {
             ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaRecord);
             schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
           }
-          allRelatedIdentifiers.add(schemaRecord.getSchemaDocumentUri());
+          allRelatedIdentifiersSchema.add(schemaRecord.getSchemaDocumentUri());
         }
       }
+      Specification<DataResource> schemaSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersSchema.toArray(new String[allRelatedIdentifiersSchema.size()]));
+      spec = spec.and(schemaSpecification);
     }
     if (relatedIds != null) {
-      allRelatedIdentifiers.addAll(relatedIds);
-    }
-    if (!allRelatedIdentifiers.isEmpty()) {
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("---------------------------------------------------------");
-        for (String relatedId : allRelatedIdentifiers) {
-          LOG.trace("Look for related Identifier: '{}'", relatedId);
-        }
-        LOG.trace("---------------------------------------------------------");
-      }
-      Specification<DataResource> toSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiers.toArray(new String[allRelatedIdentifiers.size()]));
-      spec = spec.and(toSpecification);
+      allRelatedIdentifiersResource.addAll(relatedIds);
+      Specification<DataResource> relResourceSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersResource.toArray(new String[allRelatedIdentifiersResource.size()]));
+      spec = spec.and(relResourceSpecification);
     }
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));

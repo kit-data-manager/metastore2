@@ -768,8 +768,6 @@ public class MetadataRecordUtilTest {
     provided.getAcl().add(new edu.kit.datamanager.repo.domain.acl.AclEntry(SCHEMA_ID, PERMISSION.WRITE));
     result = MetadataRecordUtil.mergeRecords(managed, provided);
     assertNotNull(result);
-    assertNotEquals(provided, result);
-    provided.getAcl().clear();
     assertEquals(provided, result);
 
     managed = new MetadataRecord();
@@ -777,10 +775,13 @@ public class MetadataRecordUtilTest {
     provided.setRelatedResource(RELATED_RESOURCE);
     result = MetadataRecordUtil.mergeRecords(managed, provided);
     assertNotNull(result);
-    provided.setPid(result.getPid());
     assertEquals(provided, result);
   }
 
+  @Test
+  public void testMergeAclWithNullParameter() {
+    assertNotNull(MetadataRecordUtil.mergeAcl(null, null));
+  }
   /**
    * Test of setToken method, of class MetadataRecordUtil.
    */

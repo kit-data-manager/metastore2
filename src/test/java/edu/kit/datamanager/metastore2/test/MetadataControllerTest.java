@@ -75,10 +75,8 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
 import java.util.Locale;
-import org.junit.Ignore;
 import org.springframework.http.MediaType;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
-import org.springframework.test.web.servlet.ResultActions;
 
 /**
  *
@@ -742,7 +740,9 @@ public class MetadataControllerTest {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
 
-    Assert.assertTrue(res.getResponse().getContentAsString().contains("Metadata record already exists"));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains(SCHEMA_ID));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }
 
   @Test
@@ -830,6 +830,16 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testFindRecordsByInvalidSchemaId() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", "anyinvalidschemaid")).
+            andDo(print()).
+            andExpect(status().is4xxClientError()).
+            andReturn();
+  }
+
+  @Test
   public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
     String schemaId = "multipleSchemas".toLowerCase(Locale.getDefault());
     CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
@@ -870,6 +880,100 @@ public class MetadataControllerTest {
     map = new ObjectMapper();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
+    Assert.assertEquals(1, result.length);
+  }
+
+  @Test
+  public void testFindRecordsBySchemaIdANDResourceId() throws Exception {
+    String relatedResource = "testFindRecordsBySchemaIdANDResourceId";
+    String relatedResource2 = "anotherTestFindRecordsBySchemaIdANDResourceId";
+    String secondSchemaId = "schema_for_find_records_by_schema_and_resource_id";
+    CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, secondSchemaId, schemaConfig.getJwtSecret());
+    String metadataRecordId = createDCMetadataRecordWithRelatedResource(relatedResource, SCHEMA_ID);
+    String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2, SCHEMA_ID);
+    String metadataRecordIdv2 = createDCMetadataRecordWithRelatedResource(relatedResource, secondSchemaId);
+    String metadataRecordId2v2 = createDCMetadataRecordWithRelatedResource(relatedResource2, secondSchemaId);
+    
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(2, result.length);
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("schemaId", secondSchemaId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(4, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
     Assert.assertEquals(1, result.length);
   }
 
@@ -1043,8 +1147,8 @@ public class MetadataControllerTest {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
     if (record.getAcl() != null) {
-      Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
-      Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(SchemaRegistryControllerTest.checkAclIfEqual(record.getAcl(), record2.getAcl()));
+      Assert.assertFalse(SchemaRegistryControllerTest.checkAclIfEqual(oldRecord.getAcl(), record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
@@ -1660,6 +1764,87 @@ public class MetadataControllerTest {
             .andExpect(status().isOk());
   }
 
+  @Test
+  public void testDeleteSchemaWithLinkedDocument() throws Exception {
+    String schemaId = "deleteschema";
+    String metadataRecordId = "deletedocument";
+    String jwtSecret = schemaConfig.getJwtSecret();
+    ingestKitSchemaRecord(this.mockMvc, schemaId, jwtSecret);
+    ingestXmlMetadataDocument(this.mockMvc, schemaId, null, metadataRecordId, DC_DOCUMENT, jwtSecret);
+    // Deletion of schema shouldn't work
+    // Get ETag.
+    MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etagSchema = result.getResponse().getHeader("ETag");
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isConflict()).
+            andReturn();
+    // Get Etag
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    // Delete record
+    result = this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+
+    // Try deleting schema once more should also fail
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isConflict()).
+            andReturn();
+
+    // Delete second time
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    result = this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+
+    // Now it should be possible to delete schema
+    result = this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+    // But it's still available
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etagSchema = result.getResponse().getHeader("ETag");
+    // Remove it ones more
+    this.mockMvc.perform(delete("/api/v1/schemas/" + schemaId).
+            header("If-Match", etagSchema)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
+    // Now it' gone
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+  }
+
   private String createJsonMetadataRecord() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
@@ -1683,10 +1868,15 @@ public class MetadataControllerTest {
   }
 
   private String createDCMetadataRecord() throws Exception {
+    return createDCMetadataRecordWithRelatedResource(RELATED_RESOURCE_STRING, SCHEMA_ID);
+  }
+
+  private String createDCMetadataRecordWithRelatedResource(String myRelatedResource, String schemaId) throws Exception {
+    ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(myRelatedResource);
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
+    record.setRelatedResource(relatedResource);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
     aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
