@@ -17,6 +17,7 @@ package edu.kit.datamanager.metastore2.web.impl;
 
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
+import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
@@ -200,11 +201,17 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordById(schemaConfig, id);
+    MetadataSchemaRecord recordByIdAndVersion = null;
     List<MetadataSchemaRecord> recordList = new ArrayList<>();
-    long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
-    for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
-      recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version));
+    long totalNoOfElements = 5;
+    try {
+      recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordById(schemaConfig, id);
+      totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
+      for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
+        recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version));
+      }
+    } catch (ResourceNotFoundException rnfe) {
+      LOG.info("Schema ID '{}' is unkown. Return empty list...", id);
     }
 
     LOG.trace("Transforming Dataresource to MetadataRecord");
@@ -248,21 +255,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
     // Add authentication if enabled
-    if (schemaConfig.isAuthEnabled()) {
-      boolean isAdmin;
-      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
-      // Add authorization for non administrators
-      if (!isAdmin) {
-        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-        if (authorizationIdentities != null) {
-          LOG.trace("Creating (READ) permission specification.");
-          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
-        } else {
-          LOG.trace("No permission information provided. Skip creating permission specification.");
-        }
-      }
-    }
+    spec = addAuthenticationSpecification(spec);
     //one of given mimetypes.
     if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
       spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
@@ -353,5 +346,24 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
       builder.withDetail("schemaRepo", details);
     }
+  }
+
+  private Specification<DataResource> addAuthenticationSpecification(Specification<DataResource> spec) {
+    if (schemaConfig.isAuthEnabled()) {
+      boolean isAdmin;
+      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
+      // Add authorization for non administrators
+      if (!isAdmin) {
+        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+        if (authorizationIdentities != null) {
+          LOG.trace("Creating (READ) permission specification.");
+          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
+          spec = spec.and(permissionSpec);
+        } else {
+          LOG.trace("No permission information provided. Skip creating permission specification.");
+        }
+      }
+    }
+    return spec;
   }
 }
