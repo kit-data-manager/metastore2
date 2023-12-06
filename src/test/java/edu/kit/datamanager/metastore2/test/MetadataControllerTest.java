@@ -830,6 +830,16 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testFindRecordsByInvalidSchemaId() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", "anyinvalidschemaid")).
+            andDo(print()).
+            andExpect(status().is4xxClientError()).
+            andReturn();
+  }
+
+  @Test
   public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
     String schemaId = "multipleSchemas".toLowerCase(Locale.getDefault());
     CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
@@ -870,6 +880,100 @@ public class MetadataControllerTest {
     map = new ObjectMapper();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
+    Assert.assertEquals(1, result.length);
+  }
+
+  @Test
+  public void testFindRecordsBySchemaIdANDResourceId() throws Exception {
+    String relatedResource = "testFindRecordsBySchemaIdANDResourceId";
+    String relatedResource2 = "anotherTestFindRecordsBySchemaIdANDResourceId";
+    String secondSchemaId = "schema_for_find_records_by_schema_and_resource_id";
+    CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, secondSchemaId, schemaConfig.getJwtSecret());
+    String metadataRecordId = createDCMetadataRecordWithRelatedResource(relatedResource, SCHEMA_ID);
+    String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2, SCHEMA_ID);
+    String metadataRecordIdv2 = createDCMetadataRecordWithRelatedResource(relatedResource, secondSchemaId);
+    String metadataRecordId2v2 = createDCMetadataRecordWithRelatedResource(relatedResource2, secondSchemaId);
+    
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(2, result.length);
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("schemaId", secondSchemaId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(4, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(2, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(1, result.length);
+
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", secondSchemaId).
+            param("resourceId", relatedResource2)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
     Assert.assertEquals(1, result.length);
   }
 
@@ -1764,10 +1868,15 @@ public class MetadataControllerTest {
   }
 
   private String createDCMetadataRecord() throws Exception {
+    return createDCMetadataRecordWithRelatedResource(RELATED_RESOURCE_STRING, SCHEMA_ID);
+  }
+
+  private String createDCMetadataRecordWithRelatedResource(String myRelatedResource, String schemaId) throws Exception {
+    ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(myRelatedResource);
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
+    record.setRelatedResource(relatedResource);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
     aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
