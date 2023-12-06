@@ -107,7 +107,8 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
-  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryUrlResourceIdentifier("anyResourceId");
+  private static final String RELATED_RESOURCE_STRING = "anyResourceId";
+  private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE_STRING);
   private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryUrlResourceIdentifier("anyOtherResourceId");
   private final static String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
 
@@ -643,7 +644,9 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
 
-    Assert.assertTrue(res.getResponse().getContentAsString().contains("Metadata record already exists"));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains(SCHEMA_ID));
+    Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }
 
   @Test
