@@ -127,7 +127,7 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.7.0"
+    testImplementation "org.mockito:mockito-core:5.8.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
