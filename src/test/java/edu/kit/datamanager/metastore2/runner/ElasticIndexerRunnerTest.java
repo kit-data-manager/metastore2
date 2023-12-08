@@ -290,7 +290,7 @@ public class ElasticIndexerRunnerTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
 
-    String schemaLocation = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    String schemaLocation = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).
             andDo(print()).

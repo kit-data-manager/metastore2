@@ -262,7 +262,7 @@ public class CreateSchemaUtil {
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
-      result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+      result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
               file(schemaFile).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).

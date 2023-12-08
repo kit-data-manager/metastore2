@@ -167,7 +167,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       String schemaId = JSON_SCHEMA_ID + i;
-      MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
               .param("schemaId", schemaId)
               .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
               .andDo(print())
@@ -256,7 +256,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByInvalidMimeType() throws Exception {
     String mimeType = INVALID_MIMETYPE;
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -270,7 +270,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByMimeType() throws Exception {
     String mimeType = MediaType.APPLICATION_JSON.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -283,7 +283,7 @@ public class MetadataControllerFilterTest {
       Assert.assertEquals(mimeType, item.getMimeType());
     }
     mimeType = MediaType.APPLICATION_XML.toString();
-    res = this.mockMvc.perform(get("/api/v1/schemas")
+    res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -300,7 +300,7 @@ public class MetadataControllerFilterTest {
   public void testFindSchemaRecordsByMultipleMimeTypes() throws Exception {
     String mimeType1 = MediaType.APPLICATION_JSON.toString();
     String mimeType2 = MediaType.APPLICATION_XML.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType1)
             .param("mimeType", mimeType2))
             .andDo(print())
@@ -315,7 +315,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByMultipleMimeTypesIncludingInvalidMimeType() throws Exception {
     String mimeType1 = MediaType.APPLICATION_JSON.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType1)
             .param("mimeType", INVALID_MIMETYPE))
             .andDo(print())
@@ -444,7 +444,7 @@ public class MetadataControllerFilterTest {
         throw new Exception("Unknown schema type!");
     }
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }

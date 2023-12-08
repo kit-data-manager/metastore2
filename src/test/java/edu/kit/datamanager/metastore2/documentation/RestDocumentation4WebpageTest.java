@@ -257,7 +257,7 @@ public class RestDocumentation4WebpageTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "schema-record4json.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
 
     //create resource and obtain location from response header
-    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(schemaFile).
             file(recordFile)).
             andDo(document("webpage/register-json-schema")).
@@ -299,19 +299,19 @@ public class RestDocumentation4WebpageTest {
     // SKIPPED
     //  7. List all schema records (only current schemas)
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas")).
+    this.mockMvc.perform(get("/api/v1/schemas/")).
             andDo(document("webpage/get-all-json-schemas")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
-    this.mockMvc.perform(get("/api/v1/schemas").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
+    this.mockMvc.perform(get("/api/v1/schemas/").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
             andDo(document("webpage/get-all-json-schemas-pagination")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     //  8. List all versions of a schema
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
+    this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", EXAMPLE_SCHEMA_ID)).
             andDo(document("webpage/get-all-versions-of-a-json-schema")).
             andExpect(status().isOk()).
             andReturn().getResponse();
