@@ -914,7 +914,13 @@ public class MetadataSchemaRecordUtil {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
     MetadataSchemaRecord result = null;
-    Page<DataResource> dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+    Page<DataResource> dataResource;
+    try {
+    dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+    } catch (ResourceNotFoundException rnfe) {
+       rnfe.setDetail("Schema document with ID '" + recordId + "' doesn't exist!");
+      throw rnfe;
+    }
     long nano2 = System.nanoTime() / 1000000;
     Stream<DataResource> stream = dataResource.get();
     if (version != null) {
@@ -924,9 +930,9 @@ public class MetadataSchemaRecordUtil {
     if (findFirst.isPresent()) {
       result = migrateToMetadataSchemaRecord(metastoreProperties, findFirst.get(), supportEtag);
     } else {
-      String message = String.format("ID '%s' or version '%d' doesn't exist!", recordId, version);
+      String message = String.format("Version '%d' of ID '%s' doesn't exist!",version, recordId);
       LOG.error(message);
-      throw new BadArgumentException(message);
+      throw new ResourceNotFoundException(message);
     }
     long nano3 = System.nanoTime() / 1000000;
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));

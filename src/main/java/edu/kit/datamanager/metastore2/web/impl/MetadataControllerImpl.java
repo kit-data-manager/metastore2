@@ -383,7 +383,7 @@ public class MetadataControllerImpl implements IMetadataController {
             currentSchemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
           }
           allRelatedIdentifiersSchema.add(currentSchemaRecord.getSchemaDocumentUri());
-        } catch (ResourceNotFoundException rnfe) {
+        } catch (Exception rnfe) {
           //  schemaID not found set version to 1
           currentSchemaRecord = new MetadataSchemaRecord();
           currentSchemaRecord.setSchemaVersion(1l);

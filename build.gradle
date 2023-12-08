@@ -3,7 +3,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.4'
     id 'io.freefair.lombok' version '8.4'
     id 'io.freefair.maven-publish-java' version '8.4'
-    id 'org.owasp.dependencycheck' version '9.0.1'
+    id 'org.owasp.dependencycheck' version '9.0.2'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
     id 'net.ltgt.errorprone' version '3.1.0'
     id 'net.researchgate.release' version '3.0.2'
@@ -17,7 +17,7 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '2.2.0'
+    springDocVersion  = '2.3.0'
     javersVersion     = '7.0.0'
     keycloakVersion   = '19.0.0'
     errorproneVersion = '2.23.0'
@@ -99,7 +99,7 @@ dependencies {
     implementation "com.h2database:h2:2.2.224"
     
     // apache
-    implementation "commons-io:commons-io:2.15.0"
+    implementation "commons-io:commons-io:2.15.1"
     implementation "org.apache.tika:tika-core:2.9.1"
 
     // JSON validator
@@ -127,7 +127,7 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.7.0"
+    testImplementation "org.mockito:mockito-core:5.8.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
