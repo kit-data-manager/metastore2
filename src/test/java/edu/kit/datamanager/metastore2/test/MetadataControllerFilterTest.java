@@ -185,7 +185,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       String schemaId = JSON_SCHEMA_ID + i;
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("schemaId", schemaId)
               .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
               .andDo(print())
@@ -209,7 +209,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += j;
@@ -233,7 +233,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += j;
@@ -331,7 +331,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("resourceId", relatedResource.getIdentifier()))
               .andDo(print())
               .andExpect(status().isOk())
@@ -351,7 +351,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += (MAX_NO_OF_SCHEMAS - j + 1) * 2;
@@ -374,7 +374,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindRecordsByInvalidResourceId() throws Exception {
 
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
             .param("resourceId", "invalid"))
             .andDo(print())
             .andExpect(status().isOk())
@@ -389,7 +389,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByMultipleResourceIdsIncludingInvalidResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("resourceId", relatedResource.getIdentifier())
               .param("resourceId", INVALID_MIMETYPE))
               .andDo(print())
@@ -409,7 +409,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByUnknownSchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     String schemaId = "UnknownSchemaId";
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
             .param("schemaId", schemaId)
             .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
             .andDo(print())
@@ -474,7 +474,7 @@ public class MetadataControllerFilterTest {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", XML_DOCUMENT.getBytes());
     }
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
   }

@@ -386,7 +386,7 @@ public class RestDocumentation4WebpageTest {
     recordFile = new MockMultipartFile("record", "metadata-record4json.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.json", "application/json", DOCUMENT_V1.getBytes());
 
-    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).
             andDo(document("webpage/ingest-json-metadata-document")).
@@ -444,14 +444,14 @@ public class RestDocumentation4WebpageTest {
     // 5. List all (recent) metadata document records
     //**************************************************************************
     String resourceId = record.getId();
-    this.mockMvc.perform(get("/api/v1/metadata")).
+    this.mockMvc.perform(get("/api/v1/metadata/")).
             andDo(print()).
             andDo(document("webpage/list-all-metadata-records")).
             andExpect(status().isOk()).
             andReturn();
     // 6. List all versions of a record
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/metadata").param("id", resourceId)).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("id", resourceId)).
             andDo(print()).
             andDo(document("webpage/list-all-versions-of-json-metadata-document")).
             andExpect(status().isOk()).
@@ -462,19 +462,19 @@ public class RestDocumentation4WebpageTest {
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
-    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier())).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE.getIdentifier())).
             andDo(print()).
             andDo(document("webpage/find-json-metadata-record-resource")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString())).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).
             andDo(print()).
             andDo(document("webpage/find-json-metadata-record-from")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).
             andDo(document("webpage/find-json-metadata-record-from-to")).
             andExpect(status().isOk()).
             andReturn();

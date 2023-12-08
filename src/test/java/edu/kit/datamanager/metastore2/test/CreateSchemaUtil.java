@@ -334,7 +334,7 @@ public class CreateSchemaUtil {
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
       // Create metadata document
-      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata").file(recordFile);
+      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/").file(recordFile);
       if (metadataFile != null) {
         file = file.file(metadataFile);
       }

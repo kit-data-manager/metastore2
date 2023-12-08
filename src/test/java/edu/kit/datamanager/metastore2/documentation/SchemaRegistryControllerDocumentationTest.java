@@ -229,7 +229,7 @@ public class SchemaRegistryControllerDocumentationTest {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     String contextPath = "/metastore";
     String endpointSchema = contextPath + "/api/v1/schemas";
-    String endpointMetadata = contextPath + "/api/v1/metadata";
+    String endpointMetadata = contextPath + "/api/v1/metadata/";
     //  1. Registering metadata schema
     //**************************************************************************
     schemaRecord.setSchemaId(EXAMPLE_SCHEMA_ID);
