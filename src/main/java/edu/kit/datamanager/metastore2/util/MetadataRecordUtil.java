@@ -791,9 +791,16 @@ public class MetadataRecordUtil {
           String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
+    long nano2;
     MetadataRecord result = null;
-    Page<DataResource> dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
-    long nano2 = System.nanoTime() / 1000000;
+    Page<DataResource> dataResource;
+    try {
+      dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+    } catch (ResourceNotFoundException ex) {
+      ex.setDetail("Metadata document with ID '" + recordId + "' doesn't exist!");
+      throw ex;
+    }
+    nano2 = System.nanoTime() / 1000000;
     Stream<DataResource> stream = dataResource.get();
     if (version != null) {
       stream = stream.filter(resource -> Long.parseLong(resource.getVersion()) == version);
@@ -802,9 +809,9 @@ public class MetadataRecordUtil {
     if (findFirst.isPresent()) {
       result = migrateToMetadataRecord(metastoreProperties, findFirst.get(), supportEtag);
     } else {
-      String message = String.format("ID '%s' or version '%d' doesn't exist!", recordId, version);
+      String message = String.format("Version '%d' of ID '%s' doesn't exist!", version, recordId);
       LOG.error(message);
-      throw new BadArgumentException(message);
+      throw new ResourceNotFoundException(message);
     }
     long nano3 = System.nanoTime() / 1000000;
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
@@ -879,7 +886,7 @@ public class MetadataRecordUtil {
         LOG.trace("Updating record acl from {} to {}.", managed, provided);
         managed = provided;
       } else {
-       LOG.trace("Provided ACL is still the same -> Continue using old one.");
+        LOG.trace("Provided ACL is still the same -> Continue using old one.");
       }
     } else {
       LOG.trace("Provided ACL is empty -> Continue using old one.");
@@ -909,8 +916,8 @@ public class MetadataRecordUtil {
    * @return Merged record
    */
   public static <T> T mergeEntry(String description, T managed, T provided, boolean overwriteWithNull) {
-    if ((provided != null && !provided.equals(managed)) ||
-            overwriteWithNull) {
+    if ((provided != null && !provided.equals(managed))
+            || overwriteWithNull) {
       LOG.trace(description + " from '{}' to '{}'", managed, provided);
       managed = provided;
     }

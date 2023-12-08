@@ -622,7 +622,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertEquals(SCHEMA_ID, result.getSchemaId());
     //Schema URI must not be the actual file URI but the link to the REST endpoint for downloading the schema
     Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
   }
@@ -635,26 +635,38 @@ public class SchemaRegistryControllerTest {
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertEquals(SCHEMA_ID, result.getSchemaId());
     Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
   }
 
   @Test
   public void testGetSchemaRecordByIdWithInvalidId() throws Exception {
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/cd").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/cd").
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid schema ID!", result.getResponse().getContentAsString().contains("Schema document with ID 'cd' doesn't exist!"));
   }
 
   @Test
   public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception {
+    String schemaId = SCHEMA_ID;
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            param("version", "13").
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid version!", result.getResponse().getContentAsString().contains("Version '13' of ID '" + schemaId + "' doesn't exist!"));
   }
 
   @Test
   public void testFindRecordsBySchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", "dc").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", SCHEMA_ID).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
 
@@ -684,11 +696,15 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testFindRecordsByUnknownSchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound()).andReturn();
-//    ObjectMapper map = new ObjectMapper();
-//    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-//
-//    Assert.assertEquals(0, result.length);
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").
+            param("schemaId", "schema_id_which_is_not_known")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+
+    Assert.assertEquals(0, result.length);
   }
 
   @Test
@@ -1424,9 +1440,9 @@ public class SchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
     Assert.assertTrue("Reference to '" + COMMENT + version + "' is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1434,9 +1450,9 @@ public class SchemaRegistryControllerTest {
     result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1444,9 +1460,9 @@ public class SchemaRegistryControllerTest {
     result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     ingestSchemaWithVersion(schemaId, 2);
     // Read all versions (should be still one version)
@@ -1454,8 +1470,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isOk());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1475,8 +1491,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(dcSchema, content);
     Assert.assertEquals("Length must differ!", SCHEMA_V2.length(), content.length());
     // check for higher versions which should be not available (if version > 2)
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
   }
 
   @Test

@@ -810,13 +810,24 @@ public class MetadataControllerTest {
   @Test
   public void testGetRecordByIdWithInvalidId() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    this.mockMvc.perform(get("/api/v1/metadata/cd").header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/cd").
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid id!", result.getResponse().getContentAsString().contains("Metadata document with ID 'cd' doesn't exist!"));
   }
 
   @Test
   public void testGetRecordByIdWithInvalidVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "13").header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            param("version", "13").
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid version!", result.getResponse().getContentAsString().contains("Version '13' of ID '" + metadataRecordId + "' doesn't exist!"));
   }
 
   @Test
@@ -835,8 +846,12 @@ public class MetadataControllerTest {
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
             param("schemaId", "anyinvalidschemaid")).
             andDo(print()).
-            andExpect(status().is4xxClientError()).
+            andExpect(status().isOk()).
             andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(0, result.length);
   }
 
   @Test
@@ -893,7 +908,7 @@ public class MetadataControllerTest {
     String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2, SCHEMA_ID);
     String metadataRecordIdv2 = createDCMetadataRecordWithRelatedResource(relatedResource, secondSchemaId);
     String metadataRecordId2v2 = createDCMetadataRecordWithRelatedResource(relatedResource2, secondSchemaId);
-    
+    // Looking for first schema
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
             param("schemaId", SCHEMA_ID)).
             andDo(print()).
@@ -901,7 +916,7 @@ public class MetadataControllerTest {
             andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
-
+    // Looking for second schema
     Assert.assertEquals(2, result.length);
     res = this.mockMvc.perform(get("/api/v1/metadata").
             param("schemaId", secondSchemaId)).
@@ -910,10 +925,32 @@ public class MetadataControllerTest {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
     Assert.assertEquals(2, result.length);
-
+    // Looking for first AND second schema
     res = this.mockMvc.perform(get("/api/v1/metadata").
             param("schemaId", SCHEMA_ID).
             param("schemaId", secondSchemaId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(4, result.length);
+    // Looking for first, second AND invalid schema
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("schemaId", secondSchemaId).
+            param("schemaId", "invalidschemaid")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+    Assert.assertEquals(4, result.length);
+    // Looking for first, second AND invalid schema AND resource1 and resource2
+    res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", SCHEMA_ID).
+            param("schemaId", secondSchemaId).
+            param("schemaId", "invalidschemaid").
+            param("resourceId", relatedResource).
+            param("resourceId", relatedResource2)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -1009,7 +1046,15 @@ public class MetadataControllerTest {
   @Test
   public void testFindRecordsByUnknownParameter() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    this.mockMvc.perform(get("/api/v1/metadata").param("schemaId", "cd")).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata").
+            param("schemaId", "cd")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+    Assert.assertEquals(0, result.length);
   }
 
   @Test
@@ -1438,7 +1483,7 @@ public class MetadataControllerTest {
     // Change only version of schema to a version which is not valid.
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
     // Change to a nonexistent version of schema.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isBadRequest());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isNotFound());
     // Change to another schema
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
   }
@@ -1563,9 +1608,9 @@ public class MetadataControllerTest {
             .andReturn();
     Assert.assertTrue("Reference to " + RELATED_RESOURCE_STRING + " is not available", result.getResponse().getContentAsString().contains("\"" + RELATED_RESOURCE_STRING + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     metadataRecordId = ingestNewMetadataRecord(metadataRecordId, version);
@@ -1573,9 +1618,9 @@ public class MetadataControllerTest {
     result = this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + RELATED_RESOURCE_STRING + version + " is not available", result.getResponse().getContentAsString().contains("\"" + RELATED_RESOURCE_STRING + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     metadataRecordId = ingestNewMetadataRecord(metadataRecordId, version);
@@ -1583,9 +1628,9 @@ public class MetadataControllerTest {
     result = this.mockMvc.perform(get("/api/v1/metadata").param("id", metadataRecordId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + RELATED_RESOURCE_STRING + version + " is not available", result.getResponse().getContentAsString().contains("\"" + RELATED_RESOURCE_STRING + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     metadataRecordId = ingestMetadataRecordWithVersion(metadataRecordId, version);
     // Read all versions (should be still one version)
@@ -1593,8 +1638,8 @@ public class MetadataControllerTest {
     Assert.assertTrue("Reference to " + RELATED_RESOURCE_STRING + version + " is not available", result.getResponse().getContentAsString().contains("\"" + RELATED_RESOURCE_STRING + version + "\""));
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "2")).andDo(print()).andExpect(status().isOk());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     metadataRecordId = ingestNewMetadataRecord(metadataRecordId, version);
@@ -1614,8 +1659,8 @@ public class MetadataControllerTest {
     Assert.assertNotEquals(dcMetadata, content);
     Assert.assertEquals("Length must differ!", dcMetadata.length() + 3, content.length());
     // check for higher versions which should be not available (if version > 2)
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
   }
 
   @Test
@@ -1697,7 +1742,7 @@ public class MetadataControllerTest {
     this.mockMvc.perform(get(redirectedUrl)
             .accept("text/html"))
             .andDo(print())
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isNotFound());
   }
 
   @Test
