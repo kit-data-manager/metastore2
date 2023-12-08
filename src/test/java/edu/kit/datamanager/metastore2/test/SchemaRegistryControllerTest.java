@@ -923,8 +923,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion(), (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
-      Assert.assertTrue(checkAclIfEqual(record.getAcl(), record2.getAcl()));
-      Assert.assertFalse(checkAclIfEqual(oldRecord.getAcl(), record.getAcl()));
+      Assert.assertTrue(isSameSetOfAclEntries(record.getAcl(), record2.getAcl()));
+      Assert.assertFalse(isSameSetOfAclEntries(oldRecord.getAcl(), record.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     Assert.assertEquals("Check label: ", record.getLabel(), record2.getLabel());
@@ -1784,24 +1784,28 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(first.substring(0, index), second.substring(0, index));
   }
 
-  public static boolean checkAclIfEqual(Set<AclEntry> first, Set<AclEntry> second) {
-    boolean similar = false;
-    if (first != null && second != null) {
-      if (first.size() == second.size()) {
-        for (AclEntry item : first) {
-          similar = false;
-          for (AclEntry secondItem : second) {
-            if (item.equals(secondItem)) {
-              similar = true;
-              break;
-            }
-          }
-          if (similar == false) {
-            break;
-          }
+  public static boolean isSameSetOfAclEntries(Set<AclEntry> firstSet, Set<AclEntry> secondSet) {
+    boolean isSameSet = false;
+    if (firstSet.size() == secondSet.size()) {
+      isSameSet = true;
+      for (AclEntry item : firstSet) {
+        if (!isPartOfAclEntries(item, secondSet)) {
+          isSameSet = false;
+          break;
         }
       }
     }
-    return similar;
+    return isSameSet;
+  }
+
+  public static boolean isPartOfAclEntries(AclEntry entry, Set<AclEntry> allEntries) {
+    boolean isPart = false;
+    for (AclEntry item : allEntries) {
+      if (item.getSid().equals(entry.getSid()) && item.getPermission().equals(entry.getPermission())) {
+        isPart = true;
+        break;
+      }
+    }
+    return isPart;
   }
 }
