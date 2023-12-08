@@ -113,9 +113,11 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    acl.clear();
-    if (newAclList != null) {
-      acl.addAll(newAclList);
+    if (acl != newAclList) {
+      acl.clear();
+      if (newAclList != null) {
+        acl.addAll(newAclList);
+      }
     }
   }
 

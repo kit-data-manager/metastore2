@@ -612,11 +612,15 @@ public class JsonSchemaRegistryControllerTest {
   @Test
   public void testFindRecordsByUnknownSchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound()).andReturn();
-//    ObjectMapper map = new ObjectMapper();
-//    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-//
-//    Assert.assertEquals(0, result.length);
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").
+            param("schemaId", "cd")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+
+    Assert.assertEquals(0, result.length);
   }
   
   @Test

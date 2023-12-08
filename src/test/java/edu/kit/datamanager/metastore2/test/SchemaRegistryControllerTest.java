@@ -179,7 +179,7 @@ public class SchemaRegistryControllerTest {
     schemaRecordDao.deleteAll();
     allIdentifiersDao.deleteAll();
     try {
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -189,7 +189,7 @@ public class SchemaRegistryControllerTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .apply(springSecurity()) 
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
   }
@@ -264,7 +264,7 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
     Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
     Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
-    
+
     record.setSchemaId("MyFirstTest");
     recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
@@ -296,7 +296,6 @@ public class SchemaRegistryControllerTest {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
-
 
   @Test
   public void testCreateSchemaRecordWithoutMimeType() throws Exception {
@@ -623,7 +622,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertEquals(SCHEMA_ID, result.getSchemaId());
     //Schema URI must not be the actual file URI but the link to the REST endpoint for downloading the schema
     Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
   }
@@ -636,26 +635,38 @@ public class SchemaRegistryControllerTest {
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertNotNull(result);
-    Assert.assertEquals("dc", result.getSchemaId());
+    Assert.assertEquals(SCHEMA_ID, result.getSchemaId());
     Assert.assertNotEquals("file:///tmp/dc.xsd", result.getSchemaDocumentUri());
   }
 
   @Test
   public void testGetSchemaRecordByIdWithInvalidId() throws Exception {
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/cd").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/cd").
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid schema ID!", result.getResponse().getContentAsString().contains("Schema document with ID 'cd' doesn't exist!"));
   }
 
   @Test
   public void testGetSchemaRecordByIdWithInvalidVersion() throws Exception {
+    String schemaId = SCHEMA_ID;
     ingestSchemaRecord();
-    this.mockMvc.perform(get("/api/v1/schemas/dc").param("version", "13").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().is4xxClientError()).andReturn();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
+            param("version", "13").
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    Assert.assertTrue("Try to access invalid version!", result.getResponse().getContentAsString().contains("Version '13' of ID '" + schemaId + "' doesn't exist!"));
   }
 
   @Test
   public void testFindRecordsBySchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", "dc").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", SCHEMA_ID).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
 
@@ -685,11 +696,15 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testFindRecordsByUnknownSchemaId() throws Exception {
     ingestSchemaRecord();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", "cd")).andDo(print()).andExpect(status().isNotFound()).andReturn();
-//    ObjectMapper map = new ObjectMapper();
-//    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
-//
-//    Assert.assertEquals(0, result.length);
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas").
+            param("schemaId", "schema_id_which_is_not_known")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ObjectMapper map = new ObjectMapper();
+    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+
+    Assert.assertEquals(0, result.length);
   }
 
   @Test
@@ -704,7 +719,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testGetSchemaDocumentWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
-    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0, 2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -765,7 +780,7 @@ public class SchemaRegistryControllerTest {
   public void testValidateWithMissingSchemaFile() throws Exception {
     ingestSchemaRecord();
     // Get location of schema file.
-    String contentUri = contentInformationDao.findAll(PageRequest.of(0,2)).getContent().get(0).getContentUri();
+    String contentUri = contentInformationDao.findAll(PageRequest.of(0, 2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -877,7 +892,7 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord oldRecord = mapper.readValue(body, MetadataSchemaRecord.class);
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     // Set all ACL to WRITE
-    for (AclEntry entry: record.getAcl()) {
+    for (AclEntry entry : record.getAcl()) {
       entry.setPermission(PERMISSION.WRITE);
     }
     String mimeTypeBefore = record.getMimeType();
@@ -890,7 +905,13 @@ public class SchemaRegistryControllerTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
-            file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).andReturn();
+            file(recordFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).
+            andReturn();
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
@@ -902,9 +923,9 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
     Assert.assertEquals((long) record.getSchemaVersion(), (long) record2.getSchemaVersion());//version is not changing for metadata update
     if (record.getAcl() != null) {
-      Assert.assertFalse(record.getAcl().containsAll(record2.getAcl()));
-      Assert.assertTrue(oldRecord.getAcl().containsAll(record2.getAcl()));
-  }
+      Assert.assertTrue(checkAclIfEqual(record.getAcl(), record2.getAcl()));
+      Assert.assertFalse(checkAclIfEqual(oldRecord.getAcl(), record.getAcl()));
+    }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     Assert.assertEquals("Check label: ", record.getLabel(), record2.getLabel());
     Assert.assertEquals("Check comment: ", record.getComment(), record2.getComment());
@@ -1061,7 +1082,7 @@ public class SchemaRegistryControllerTest {
 
     Assert.assertEquals(KIT_SCHEMA_V2, content);
     // Test also old document
-    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId+ "?version=1")).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId + "?version=1")).andDo(print()).andExpect(status().isOk()).andReturn();
     content = result.getResponse().getContentAsString();
     Assert.assertEquals(KIT_SCHEMA, content);
   }
@@ -1269,7 +1290,7 @@ public class SchemaRegistryControllerTest {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    int  noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
+    int noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
 
     result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).
             header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
@@ -1302,7 +1323,7 @@ public class SchemaRegistryControllerTest {
 
     // List of records should be smaller afterwards
     result = this.mockMvc.perform(get("/api/v1/schemas").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    int  noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
+    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
     Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
 
@@ -1419,9 +1440,9 @@ public class SchemaRegistryControllerTest {
     MvcResult result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version))).andReturn();
     Assert.assertTrue("Reference to '" + COMMENT + version + "' is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1429,9 +1450,9 @@ public class SchemaRegistryControllerTest {
     result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1439,9 +1460,9 @@ public class SchemaRegistryControllerTest {
     result = this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", schemaId).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) 1))).andReturn();
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     ingestSchemaWithVersion(schemaId, 2);
     // Read all versions (should be still one version)
@@ -1449,8 +1470,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertTrue("Reference to " + COMMENT + version + " is not available", result.getResponse().getContentAsString().contains("\"" + COMMENT + version + "\""));
     // check for higher versions which should be not available (if version > 2)
     this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "2")).andDo(print()).andExpect(status().isOk());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
 
     version++;
     ingestNewSchemaRecord(schemaId, version);
@@ -1470,8 +1491,8 @@ public class SchemaRegistryControllerTest {
     Assert.assertNotEquals(dcSchema, content);
     Assert.assertEquals("Length must differ!", SCHEMA_V2.length(), content.length());
     // check for higher versions which should be not available (if version > 2)
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isBadRequest());
-    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isBadRequest());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "3")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).param("version", "4")).andDo(print()).andExpect(status().isNotFound());
   }
 
   @Test
@@ -1480,22 +1501,22 @@ public class SchemaRegistryControllerTest {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-             .andExpect(redirectedUrl("/schema-landing-page?schemaId=anything&version="))
-           .andReturn();
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=anything&version="))
+            .andReturn();
     String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().isNotFound());
   }
-  
+
   @Test
   public void testLandingPage4SchemaWithMetadataDocumentId() throws Exception {
     String schemaId = "metadata_document_id";
     ingestSchemaRecord(schemaId);
     String documentId = createKitMetadataRecord(schemaId);
 
-     MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + documentId)
+    MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + documentId)
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
@@ -1507,7 +1528,7 @@ public class SchemaRegistryControllerTest {
             .andDo(print())
             .andExpect(status().isBadRequest());
   }
-  
+
   @Test
   public void testLandingPage4SchemaWrongVersion() throws Exception {
     MvcResult andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + SCHEMA_ID)
@@ -1522,8 +1543,8 @@ public class SchemaRegistryControllerTest {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().isNotFound());
-}
-  
+  }
+
   @Test
   public void testLandingPage4Schema() throws Exception {
     String schemaId = "landingpage";
@@ -1544,16 +1565,16 @@ public class SchemaRegistryControllerTest {
             .queryParam("version", "1")
             .accept("text/html"))
             .andDo(print())
-             .andExpect(status().is3xxRedirection())
-           .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version=1"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version=1"))
             .andReturn();
     redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().isOk());
-      // Ingest a second version...
-      ingestSchemaWithVersion(schemaId, 2);
+    // Ingest a second version...
+    ingestSchemaWithVersion(schemaId, 2);
     andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
             .queryParam("version", "2")
             .accept("text/html"))
@@ -1569,15 +1590,15 @@ public class SchemaRegistryControllerTest {
     andReturn = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)
             .accept("text/html"))
             .andDo(print())
-             .andExpect(status().is3xxRedirection())
-           .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version="))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page?schemaId=" + schemaId + "&version="))
             .andReturn();
     redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().isOk());
-}
+  }
 
   private void ingestSchemaRecord(String schemaId) throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
@@ -1644,7 +1665,7 @@ public class SchemaRegistryControllerTest {
 
     File dcFile = new File("/tmp/schema_dc.xsd");
     if (!dcFile.exists()) {
-      try ( FileOutputStream fout = new FileOutputStream(dcFile)) {
+      try (FileOutputStream fout = new FileOutputStream(dcFile)) {
         fout.write(KIT_SCHEMA.getBytes());
         fout.flush();
       }
@@ -1719,7 +1740,6 @@ public class SchemaRegistryControllerTest {
             andReturn();
   }
 
-  
   private String createKitMetadataRecord(String schemaId) throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
@@ -1762,5 +1782,26 @@ public class SchemaRegistryControllerTest {
     int secondVersion = Integer.parseInt(second.substring(index + 1));
     Assert.assertEquals(firstVersion + 1, secondVersion);
     Assert.assertEquals(first.substring(0, index), second.substring(0, index));
+  }
+
+  public static boolean checkAclIfEqual(Set<AclEntry> first, Set<AclEntry> second) {
+    boolean similar = false;
+    if (first != null && second != null) {
+      if (first.size() == second.size()) {
+        for (AclEntry item : first) {
+          similar = false;
+          for (AclEntry secondItem : second) {
+            if (item.equals(secondItem)) {
+              similar = true;
+              break;
+            }
+          }
+          if (similar == false) {
+            break;
+          }
+        }
+      }
+    }
+    return similar;
   }
 }
