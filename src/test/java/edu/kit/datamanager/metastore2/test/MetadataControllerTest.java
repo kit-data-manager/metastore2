@@ -1701,7 +1701,7 @@ public class MetadataControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andDo(print())
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
   }
 
   @Test
@@ -1712,7 +1712,7 @@ public class MetadataControllerTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content("{}"))
             .andDo(print())
-            .andExpect(status().isForbidden());
+            .andExpect(status().isNotFound());
   }
 
   @Test

@@ -92,7 +92,7 @@ public class MetadataSearchController {
                   + "to which the records refer as comma-separated values. "
                   + "Regular expressions are also allowed. "
                   + "See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/multi-index.html", required = true) @PathVariable(value = "schemaId") String schemaIds,
-          ProxyExchange<byte[]> proxy,
+          ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
@@ -123,7 +123,7 @@ public class MetadataSearchController {
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
-          ProxyExchange<byte[]> proxy,
+          ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
