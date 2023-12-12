@@ -109,6 +109,8 @@ public class MetadataControllerTest {
   private static final String METADATA_RECORD_ID = "test_id";
   private static final String SCHEMA_ID = "my_dc";
   private static final String JSON_SCHEMA_ID = "my_json";
+  private static final String JSON_HTTP_SCHEMA_ID = "my_json_with_http";
+  private static final String JSON_HTTP_SCHEMA_ID_WITH_HASH = "my_json_with_hash";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final String UNKNOWN_RELATED_RESOURCE = "unknownHResourceId";
   private static final String RELATED_RESOURCE_STRING = "anyResourceId";
@@ -140,6 +142,43 @@ public class MetadataControllerTest {
           + "  \"additionalProperties\": false\n"
           + "}\n";
 
+  private final static String JSON_HTTP_SCHEMA = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
+
+  private final static String JSON_HTTP_SCHEMA_WITH_HASH = "{\n"
+          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$id\": \"http://www.example.org/schema/json\",\n"
+          + "    \"type\": \"object\",\n"
+          + "    \"title\": \"Json schema for tests\",\n"
+          + "    \"default\": {},\n"
+          + "    \"required\": [\n"
+          + "        \"title\"\n"
+          + "    ],\n"
+          + "    \"properties\": {\n"
+          + "        \"title\": {\n"
+          + "            \"type\": \"string\",\n"
+          + "            \"title\": \"Title\",\n"
+          + "            \"description\": \"Title of object.\"\n"
+          + "        }\n"
+          + "    },\n"
+          + "    \"additionalProperties\": false\n"
+          + "}";
   private static final String JSON_DOCUMENT_VERSION_1 = "{\n"
           + "  \"title\": \"My first JSON document\" \n"
           + "}\n";
@@ -228,6 +267,48 @@ public class MetadataControllerTest {
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
+  }
+
+  @Test
+  public void testCreateRecordWithHttpSchema() throws Exception {
+    ingestHttpJsonSchemaRecord();
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(JSON_HTTP_SCHEMA_ID));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+//    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT_VERSION_1.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
+  }
+
+  @Test
+  public void testCreateRecordWithHttpSchemaAndHash() throws Exception {
+    ingestHttpJsonSchemaRecordWithHash();
+    MetadataRecord record = new MetadataRecord();
+//    record.setId("my_id");
+    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(JSON_HTTP_SCHEMA_ID_WITH_HASH));
+    record.setRelatedResource(RELATED_RESOURCE);
+    Set<AclEntry> aclEntries = new HashSet<>();
+//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+//    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT_VERSION_1.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -2056,6 +2137,42 @@ public class MetadataControllerTest {
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
+  private void ingestHttpJsonSchemaRecord() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(JSON_HTTP_SCHEMA_ID);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_HTTP_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
+  private void ingestHttpJsonSchemaRecordWithHash() throws Exception {
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(JSON_HTTP_SCHEMA_ID_WITH_HASH);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcl(aclEntries);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_HTTP_SCHEMA_WITH_HASH.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
