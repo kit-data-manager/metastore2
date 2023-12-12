@@ -272,6 +272,7 @@ public class Application {
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
+    MetadataSchemaRecordUtil.setDataRecordDao(dataRecordDao);
 
     fixBasePath(rbc);
 
