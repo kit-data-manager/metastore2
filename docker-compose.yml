@@ -91,4 +91,4 @@ networks:
   dps:
     ipam:
       config:
-        - subnet: 172.0.0.0/24    environment:
+        - subnet: 172.0.0.0/24
