@@ -51,7 +51,7 @@ services:
     networks:
       - dps
   indexing-service:
-    image: kitdm/indexing-service:v0.1.3
+    image: kitdm/indexing-service:v1.0.0
     container_name: indexing4metastore
     environment:
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
