@@ -19,10 +19,11 @@ services:
     networks:
       - dps
   elasticsearch:
-    image: elasticsearch:7.9.3
+    image: elasticsearch:8.11.1
     container_name: elastic4indexing
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
 #      - logger.org.elasticsearch=ERROR
       - HOSTNAMES=elastic.docker
     healthcheck:
