@@ -69,7 +69,7 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:v1.3.0
+    image: kitdm/metastore2:v1.4.0
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
