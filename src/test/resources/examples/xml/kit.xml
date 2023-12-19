@@ -2,7 +2,7 @@
 <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
   <name>John Doe</name>
   <department>
-    <departmentname>Steinbuch Centre for Computing</departmentname>
+    <departmentname>Scientific Computing Center</departmentname>
     <shortname>SCC</shortname>
   </department>
 </employee>
