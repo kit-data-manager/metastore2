@@ -272,6 +272,7 @@ public class Application {
     MetadataSchemaRecordUtil.setSchemaRecordDao(schemaRecordDao);
     MetadataSchemaRecordUtil.setMetadataFormatDao(metadataFormatDao);
     MetadataSchemaRecordUtil.setUrl2PathDao(url2PathDao);
+    MetadataSchemaRecordUtil.setDataRecordDao(dataRecordDao);
 
     fixBasePath(rbc);
 
@@ -323,7 +324,7 @@ public class Application {
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-
+    
     fixBasePath(rbc);
 
     printSettings(rbc);
@@ -389,7 +390,7 @@ public class Application {
 
   public static void main(String[] args) {
     SpringApplication.run(Application.class, args);
-    System.out.println("Spring is running!");
+    LOG.info("Spring is running!");
   }
 
 }

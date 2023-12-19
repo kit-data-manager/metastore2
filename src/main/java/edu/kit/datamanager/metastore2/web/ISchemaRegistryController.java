@@ -45,6 +45,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -63,7 +64,7 @@ public interface ISchemaRegistryController extends InfoContributor {
             @ApiResponse(responseCode = "201", description = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "400", description = "Bad Request is returned if the provided metadata record is invalid or if the validation of the provided schema failed."),
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the provided schema id.")})
-  @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
+  @RequestMapping(value = {"", "/"}, method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile schemaRecord,
@@ -81,6 +82,18 @@ public interface ISchemaRegistryController extends InfoContributor {
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ResponseBody
   public ResponseEntity getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr);
+
+  @Operation(summary = "Get landing page of schema by schema id (and version).", description = "Show landing page by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
+          + "Furthermore, a specific version of the schema can be returned by providing a version number as request parameter. If no version is specified, all versions will be returned.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the landingpage is returned if the id exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"text/html"})
+  public ModelAndView getLandingPageById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);
@@ -123,7 +136,7 @@ public interface ISchemaRegistryController extends InfoContributor {
           + "If no parameters are provided, all accessible records are listed. With regard to schema versions, only the most recent version of each schema is listed.",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list of no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataSchemaRecord.class))))})
-  @RequestMapping(value = {""}, method = {RequestMethod.GET})
+  @RequestMapping(value = {"", "/"}, method = {RequestMethod.GET})
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<List<MetadataSchemaRecord>> getRecords(

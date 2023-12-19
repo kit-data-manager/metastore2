@@ -16,16 +16,17 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
+import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
@@ -34,7 +35,10 @@ import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
+import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
+import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
 import edu.kit.datamanager.metastore2.validation.IValidator;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -66,7 +70,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
@@ -74,8 +77,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Utility class for handling json documents
@@ -94,6 +100,8 @@ public class MetadataSchemaRecordUtil {
   private static IMetadataFormatDao metadataFormatDao;
 
   private static IUrl2PathDao url2PathDao;
+
+  private static IDataRecordDao dataRecordDao;
 
   MetadataSchemaRecordUtil() {
     //Utility class
@@ -342,8 +350,16 @@ public class MetadataSchemaRecordUtil {
           String id,
           String eTag,
           UnaryOperator<String> supplier) {
-    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
     List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    // Test for linked metadata documents
+    for (SchemaRecord item : listOfSchemaIds) {
+      List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(item.getSchemaId());
+      if (!findBySchemaId.isEmpty()) {
+        throw new ResponseStatusException(HttpStatus.CONFLICT, "Conflict with existing metadata documents.");
+      }
+    }
+    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
+    listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
     for (SchemaRecord item : listOfSchemaIds) {
       LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
       List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
@@ -524,8 +540,14 @@ public class MetadataSchemaRecordUtil {
       }
       metadataSchemaRecord.setSchemaId(dataResource.getId());
       nano2 = System.nanoTime() / 1000000;
-      MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
-      metadataSchemaRecord.setType(schemaType);
+      try {
+        MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
+        metadataSchemaRecord.setType(schemaType);
+      } catch (Exception ex) {
+        String message = "Not a schema resource id. Returning HTTP BAD_REQUEST.";
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
       nano3 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setMimeType(dataResource.getTitles().iterator().next().getValue());
       nano4 = System.nanoTime() / 1000000;
@@ -892,7 +914,13 @@ public class MetadataSchemaRecordUtil {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
     MetadataSchemaRecord result = null;
-    Page<DataResource> dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+    Page<DataResource> dataResource;
+    try {
+    dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+    } catch (ResourceNotFoundException rnfe) {
+       rnfe.setDetail("Schema document with ID '" + recordId + "' doesn't exist!");
+      throw rnfe;
+    }
     long nano2 = System.nanoTime() / 1000000;
     Stream<DataResource> stream = dataResource.get();
     if (version != null) {
@@ -902,9 +930,9 @@ public class MetadataSchemaRecordUtil {
     if (findFirst.isPresent()) {
       result = migrateToMetadataSchemaRecord(metastoreProperties, findFirst.get(), supportEtag);
     } else {
-      String message = String.format("ID '%s' or version '%d' doesn't exist!", recordId, version);
+      String message = String.format("Version '%d' of ID '%s' doesn't exist!",version, recordId);
       LOG.error(message);
-      throw new BadArgumentException(message);
+      throw new ResourceNotFoundException(message);
     }
     long nano3 = System.nanoTime() / 1000000;
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
@@ -919,79 +947,30 @@ public class MetadataSchemaRecordUtil {
    * @return Record with new settings.
    */
   public static MetadataSchemaRecord mergeRecords(MetadataSchemaRecord managed, MetadataSchemaRecord provided) {
-    if ((provided != null)
-            // update pid
-            && !Objects.isNull(provided.getPid())
-            && !provided.getPid().equals(managed.getPid())) {
-      LOG.trace("Updating pid from {} to {}.", managed.getPid(), provided.getPid());
-      managed.setPid(provided.getPid());
+    if (provided != null && managed != null) {
+      //update pid
+      managed.setPid(mergeEntry("Update record->pid", managed.getPid(), provided.getPid()));
+      //update acl
+      managed.setAcl(mergeAcl(managed.getAcl(), provided.getAcl()));
+      // update mimetype
+      managed.setMimeType(mergeEntry("Updating record->mimetype", managed.getMimeType(), provided.getMimeType()));
+      // update type
+      managed.setType(mergeEntry("Updating record->type", managed.getType(), provided.getType()));
+      // update label
+      managed.setLabel(mergeEntry("Updating record->label", managed.getLabel(), provided.getLabel(), true));
+      // update definition
+      managed.setDefinition(mergeEntry("Updating record->definition", managed.getDefinition(), provided.getDefinition(), true));
+      // update comment
+      managed.setComment(mergeEntry("Updating record->comment", managed.getComment(), provided.getComment(), true));
+      // update doNotSync
+      managed.setDoNotSync(mergeEntry("Updating record->doNotSync", managed.getDoNotSync(), provided.getDoNotSync()));
+      //update schemaId
+      managed.setSchemaId(mergeEntry("Updating record->schema", managed.getSchemaId(), provided.getSchemaId()));
+      //update schemaVersion
+      managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
+    } else {
+      managed = (managed != null) ? managed : provided;
     }
-
-    //update acl
-    if (!provided.getAcl().isEmpty()
-            && !provided.getAcl().equals(managed.getAcl())
-            // check for special access rights 
-            // - only administrators are allowed to change ACL
-            && MetadataRecordUtil.checkAccessRights(managed.getAcl())
-            // - at least principal has to remain as ADMIN 
-            && MetadataRecordUtil.checkAccessRights(provided.getAcl())) {
-      LOG.trace("Updating record acl from {} to {}.", managed.getAcl(), provided.getAcl());
-      managed.setAcl(provided.getAcl());
-    }
-
-    //update mimetype
-    if ((provided.getMimeType() != null)
-            && !provided.getMimeType().equals(managed.getMimeType())) {
-      LOG.trace("Updating record mimetype from {} to {}.", managed.getMimeType(), provided.getMimeType());
-      managed.setMimeType(provided.getMimeType());
-    }
-
-    //update type
-    if ((provided.getType() != null)
-            && !provided.getType().equals(managed.getType())) {
-      LOG.trace("Updating record type from {} to {}.", managed.getType(), provided.getType());
-      managed.setType(provided.getType());
-    }
-
-    //update label
-    if ((provided.getLabel() == null) || !provided.getLabel().equals(managed.getLabel())) {
-      LOG.trace("Updating label from {} to {}.", managed.getLabel(), provided.getLabel());
-      managed.setLabel(provided.getLabel());
-    }
-
-    //update definition
-    if ((provided.getDefinition() == null) || !provided.getDefinition().equals(managed.getDefinition())) {
-      LOG.trace("Updating definition from {} to {}.", managed.getDefinition(), provided.getDefinition());
-      managed.setDefinition(provided.getDefinition());
-    }
-
-    //update comment
-    if ((provided.getComment() == null) || !provided.getComment().equals(managed.getComment())) {
-      LOG.trace("Updating comment from {} to {}.", managed.getComment(), provided.getComment());
-      managed.setComment(provided.getComment());
-    }
-
-    //update doNotSync
-    if (!provided.getDoNotSync()
-            .equals(managed.getDoNotSync())) {
-      LOG.trace("Updating do not sync from {} to {}.", managed.getDoNotSync(), provided.getDoNotSync());
-      managed.setDoNotSync(provided.getDoNotSync());
-    }
-
-    //update schemaId
-    if ((provided.getSchemaId() != null)
-            && !provided.getSchemaId().equals(managed.getSchemaId())) {
-      LOG.trace("Updating schema ID comment from {} to {}.", managed.getSchemaId(), provided.getSchemaId());
-      managed.setSchemaId(provided.getSchemaId());
-    }
-
-    //update schemaVersion
-    if ((provided.getSchemaVersion() != null)
-            && !provided.getSchemaVersion().equals(managed.getSchemaVersion())) {
-      LOG.trace("Updating schema version from {} to {}.", managed.getSchemaVersion(), provided.getSchemaVersion());
-      managed.setSchemaVersion(provided.getSchemaVersion());
-    }
-
     return managed;
   }
 
@@ -1232,6 +1211,15 @@ public class MetadataSchemaRecordUtil {
   }
 
   /**
+   * Set DAO for data record.
+   *
+   * @param aDataRecordDao the dataRecordDao to set
+   */
+  public static void setDataRecordDao(IDataRecordDao aDataRecordDao) {
+    dataRecordDao = aDataRecordDao;
+  }
+
+  /**
    * Fix relative URI.
    *
    * @param uri (relative) URI
@@ -1251,6 +1239,46 @@ public class MetadataSchemaRecordUtil {
     }
     LOG.trace("Fix URI '{}' -> '{}'", uri, returnValue);
     return returnValue;
+  }
+
+  /**
+   * Fix local document URI to URL.
+   *
+   * @param schemaRecord record holding schemaId and version of local document.
+   */
+  public static final void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    fixSchemaDocumentUri(schemaRecord, false);
+  }
+
+  /**
+   * Fix local document URI to URL.
+   *
+   * @param schemaRecord record holding schemaId and version of local document.
+   * @param saveUrl save path to file for URL.
+   */
+  public static final void fixSchemaDocumentUri(MetadataSchemaRecord schemaRecord, boolean saveUrl) {
+    String schemaDocumentUri = schemaRecord.getSchemaDocumentUri();
+    schemaRecord.setSchemaDocumentUri(getSchemaDocumentUri(schemaRecord).toString());
+    LOG.trace("Fix schema document Uri '{}' -> '{}'", schemaDocumentUri, schemaRecord.getSchemaDocumentUri());
+    if (saveUrl) {
+      LOG.trace("Store path for URI!");
+      Url2Path url2Path = new Url2Path();
+      url2Path.setPath(schemaDocumentUri);
+      url2Path.setUrl(schemaRecord.getSchemaDocumentUri());
+      url2Path.setType(schemaRecord.getType());
+      url2Path.setVersion(schemaRecord.getSchemaVersion());
+      url2PathDao.save(url2Path);
+    }
+  }
+
+  /**
+   * Get URI for accessing schema document via schemaId and version.
+   *
+   * @param schemaRecord Record holding schemaId and version.
+   * @return URI for accessing schema document.
+   */
+  public static final URI getSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), null, null)).toUri();
   }
 
 }

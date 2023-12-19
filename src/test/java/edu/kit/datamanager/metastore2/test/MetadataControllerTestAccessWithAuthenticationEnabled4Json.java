@@ -111,13 +111,11 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
@@ -257,7 +255,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
             andDo(print()).
@@ -279,7 +277,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
@@ -301,7 +299,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
             andDo(print()).andExpect(status().isOk()).
@@ -322,7 +320,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
             andDo(print()).
@@ -344,7 +342,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/metadata/").
             param("size", Integer.toString(200))).
             andDo(print()).andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize(1))).
@@ -384,7 +382,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
@@ -410,7 +408,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("document", "metadata.json", "application/json", JSON_DOCUMENT.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
@@ -433,7 +431,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).

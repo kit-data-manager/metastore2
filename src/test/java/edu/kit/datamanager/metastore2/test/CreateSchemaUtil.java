@@ -76,49 +76,49 @@ public class CreateSchemaUtil {
   public final static String KIT_DOCUMENT = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_VERSION_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC-DEM</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_SMALL_CHANGE = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>DEM</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_INVALID_1 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"abcdefg\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_INVALID_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab12345\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_INVALID_3 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SC</shortname>\n"
           + "  </department>\n"
           + "</employee>";
   public final static String KIT_DOCUMENT_INVALID_4 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC-TOLONG</shortname>\n"
           + "  </department>\n"
           + "</employee>";
@@ -126,7 +126,7 @@ public class CreateSchemaUtil {
   public final static String KIT_DOCUMENT_WRONG_NAMESPACE = "<employee xmlns=\"http://www.example.org/invalid/ns\" employeeid=\"ab1234\">\n"
           + "  <name>John Doe</name>\n"
           + "  <department>\n"
-          + "  <departmentname>Steinbuch Centre for Computing</departmentname>\n"
+          + "  <departmentname>Scientific Computing Center</departmentname>\n"
           + "    <shortname>SCC</shortname>\n"
           + "  </department>\n"
           + "</employee>";
@@ -262,7 +262,7 @@ public class CreateSchemaUtil {
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
-      result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+      result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
               file(recordFile).
               file(schemaFile).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
@@ -334,7 +334,7 @@ public class CreateSchemaUtil {
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
       // Create metadata document
-      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata").file(recordFile);
+      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/").file(recordFile);
       if (metadataFile != null) {
         file = file.file(metadataFile);
       }

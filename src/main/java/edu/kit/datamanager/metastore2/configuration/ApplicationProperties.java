@@ -44,6 +44,9 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${metastore.schema.schemaFolder}")
   private URL schemaFolder;
 
+  @Value("${metastore.schema.landingpage:/schema-landing-page?schemaId=$(id)&version=$(version)}")
+  private String schemaLandingPage;
+
   @Value("${metastore.schema.synchronization.enabled:FALSE}")
   private boolean synchronizationEnabled;
   
@@ -53,6 +56,9 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @LocalFolderURL
   @Value("${metastore.metadata.metadataFolder}")
   private URL metadataFolder;
+
+  @Value("${metastore.metadata.landingpage:/metadata-landing-page?id=$(id)&version=$(version)}")
+  private String metadataLandingPage;
 
   @Value("${metastore.metadata.storagepattern:dateBased}")
   private String storagePattern;

@@ -19,10 +19,11 @@ services:
     networks:
       - dps
   elasticsearch:
-    image: elasticsearch:7.9.3
+    image: elasticsearch:8.11.1
     container_name: elastic4indexing
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
 #      - logger.org.elasticsearch=ERROR
       - HOSTNAMES=elastic.docker
     healthcheck:
@@ -43,14 +44,19 @@ services:
     container_name: rabbitmq4indexing
     environment:
       - HOSTNAMES=rabbitmq.docker
+      - RABBITMQ_DEFAULT_USER=${RABBIT_MQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_MQ_PASSWORD}
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
       - dps
   indexing-service:
-    image: kitdm/indexing-service:v0.1.3
+    image: kitdm/indexing-service:v1.0.0
     container_name: indexing4metastore
+    environment:
+      - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
+      - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_started
@@ -63,12 +69,14 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:v1.3.0
+    image: kitdm/metastore2:v1.4.0
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
       - REPO_SEARCH_ENABLED=true
       - REPO_MESSAGING_ENABLED=true
+      - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
+      - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_started

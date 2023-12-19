@@ -38,6 +38,7 @@ import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import lombok.Data;
 import org.springframework.http.MediaType;
@@ -112,9 +113,11 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
    * @param newAclList new list with acls.
    */
   public void setAcl(Set<AclEntry> newAclList) {
-    acl.clear();
-    if (newAclList != null) {
-      acl.addAll(newAclList);
+    if (acl != newAclList) {
+      acl.clear();
+      if (newAclList != null) {
+        acl.addAll(newAclList);
+      }
     }
   }
 
@@ -141,6 +144,19 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
       lastUpdate = instant.truncatedTo(ChronoUnit.MILLIS);
     } else {
       lastUpdate = null;
+    }
+  }
+
+  /**
+   * Set schema ID (transform to lower case).
+   *
+   * @param schemaId update date
+   */
+  public void setSchemaId(String schemaId) {
+    if (schemaId != null) {
+      this.schemaId = schemaId.toLowerCase(Locale.getDefault());
+    } else {
+      this.schemaId = null;
     }
   }
 

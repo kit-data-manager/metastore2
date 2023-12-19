@@ -140,7 +140,7 @@ public class WebSecurityConfig {
 
   @Bean
   @SuppressWarnings("StringSplitter")
-  public FilterRegistrationBean corsFilter() {
+  public CorsFilter corsFilter() {
     final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     CorsConfiguration config = new CorsConfiguration();
     config.setAllowCredentials(true);
@@ -155,9 +155,8 @@ public class WebSecurityConfig {
     config.addExposedHeader("ETag");
 
     source.registerCorsConfiguration("/**", config);
-    FilterRegistrationBean<Filter> bean;
-    bean = new FilterRegistrationBean<>(new CorsFilter(source));
-    bean.setOrder(0);
+    CorsFilter bean;
+    bean = new CorsFilter(source);
     return bean;
   }
 

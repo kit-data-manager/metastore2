@@ -38,6 +38,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -46,6 +47,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -65,7 +67,7 @@ public interface IMetadataController extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no schema for the provided schema id was found."),
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the related resource id and the provided schema id.")})
 
-  @RequestMapping(path = "", method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
+  @RequestMapping(value = {"","/"}, method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
   public ResponseEntity createRecord(
           @Parameter(description = "Json representation of the metadata record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile metadataRecord,
@@ -100,6 +102,18 @@ public interface IMetadataController extends InfoContributor {
           WebRequest wr,
           HttpServletResponse hsr);
 
+  @Operation(summary = "Get a landing page by id.", description = "Obtain a single record by its resource identifier. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
+          + "by providing a version number as request parameter.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
+
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"text/html"})
+  public ModelAndView getLandingpageById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+          @Parameter(description = "The version of the metadata document. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+          WebRequest wr,
+          HttpServletResponse hsr);
   @Operation(summary = "Get a metadata document by record identifier.", description = "Obtain a single metadata document identified by its resource identifier."
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the metadata document can be returned by providing a version number as request parameter.",
@@ -122,7 +136,7 @@ public interface IMetadataController extends InfoContributor {
           + "If no parameters are provided, all accessible records are listed. If versioning is enabled, only the most recent version is listed (except in case of 'id' is provided).",
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and a list of records or an empty list if no record matches.", content = @Content(array = @ArraySchema(schema = @Schema(implementation = MetadataRecord.class))))})
-  @RequestMapping(value = {""}, method = {RequestMethod.GET})
+  @RequestMapping(value = {"", "/"}, method = {RequestMethod.GET})
   @PageableAsQueryParam
   @ResponseBody
   public ResponseEntity<List<MetadataRecord>> getRecords(
