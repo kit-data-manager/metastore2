@@ -8,12 +8,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 
 ### Added
-- Add landing page redirecting to configurable site.
 
 ### Changed
  
 ### Fixed
 
+## [1.4.0] - 2023-12-19
+### Security
+
+### Added
+- Add internal landing page
+- Add configuration for redirecting landing page also to external site.
+- Enable authentication for RabbitMQ (#430)
+- 
+### Fixed
+- Filter for rescourceId AND schemaId instead of OR (#401)
+
+### Changed
+- Use softlink to jar file in start script.
+- Refine return messages (#309, #402, #403)
+- Check usage of schema before deleting (#
+- Metadata schema identifiers support lowercase only
+#### Github Actions
+- Bump actions/checkout from 3 to 4
+- Bump actions/setup-java from 3 to 4
+- Bump crazy-max/ghaction-docker-meta from 4 to 5
+- Bump docker/build-push-action from 4 to 5
+- Bump docker/login-action from 2 to 3
+- Bump docker/setup-buildx-action from 2 to 3
+- Bump docker/setup-qemu-action from 2 to 3
+- Bump github/codeql-acion from 2 o 3
+- Bump gradle from 7.6.1 to 8.2.1
+- Bump org.mockito:mockito-core from 5.4.0 to 5.7.0
+#### Plugins
+- Bump io.freefair.lombok from 8.1.0 to 8.4
+- Bump io.freefair.maven-publish-java from 8.1.0 to 8.4 
+- Bump org.owasp.dependencycheck from 8.3.1 to 9.0.7
+- Bump io.spring.dependency-management from 1.1.0 to 1.1.4
+#### Libs
+- Bump edu.kit.datamanager:indexing-service from 0.9.0 to 1.0.0
+- Bump com.networknt:json-schema-validator from 1.0.88 to 1.1.0
+- Bump com.networknt:json-schema-validator from 1.0.87 to 1.0.88
+- Bump com.google.errorprone:error_prone_core from 2.20.0 to 2.23.0
+- Bump com.h2database:h2 from 2.1.214 to 2.2.224
+- Bump com.networknt:json-schema-validator from 1.0.85 to 1.1.0
+- Bump commons-io:commons-io from 2.13.0 to 2.15.1
+- Bump org.apache.tika:tika-core from 2.8.0 to 2.9.1
+- Bump org.javers:javers-core from 7.0.0 to 7.3.6
+- Bump org.javers:javers-spring-boot-starter-sql from 7.0.0 to 7.3.6
+- Bump org.postgresql:postgresql from 42.6.0 to 42.7.1
+- Bump org.springdoc:springdoc-openapi-starter-common from 2.1.0 to 2.3.0
+- Bump org.springdoc:springdoc-openapi-starter-webmvc-api from 2.1.0 to 2.3.0
+- Bump org.springdoc:springdoc-openapi-starter-webmvc-ui from 2.1.0 to 2.3.0
+- Bump org.springframework:spring-messaging from 6.0.2 to 6.1.1
+- Bump org.springframework:spring-cloud-gateway-mvc from 4.0.6 to 4.1.0
+- Bump org.springframework:spring-cloud-starter-config from 4.0.3 to 4.1.0
+- Bump org.springframework:spring-cloud-starter-netflix-eureka-client from 4.0.2 to 4.1.0
+- Bump org.springframework.boot from 3.1.0 to 3.2.0 
+- Bump org.springframework.data:spring-data-elasticsearch from 5.1.0 to 5.2.1 
+- Bump org.apache.commons:commons-text from 1.10.0 to 1.11.0
+ 
 ## [1.3.0] - 2023-07-07
 ### Security
 
@@ -339,7 +393,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...v1.3.0
 [1.2.3]: https://github.com/kit-data-manager/metastore2/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/kit-data-manager/metastore2/compare/v1.2.1...v1.2.2
