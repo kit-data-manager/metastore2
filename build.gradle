@@ -20,7 +20,7 @@ ext {
     springDocVersion  = '2.3.0'
     javersVersion     = '7.3.7'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.24.0'
+    errorproneVersion = '2.24.1'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
