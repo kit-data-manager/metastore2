@@ -190,7 +190,7 @@ asciidoctor {
     dependsOn test  
     sourceDir "docs/"
     outputDir "build/docs/html5"
-    inProcess = JAVA_EXEC
+    executionMode = JAVA_EXEC
     forkOptions {
       jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED"
     }
