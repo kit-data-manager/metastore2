@@ -85,13 +85,13 @@ cd "$ACTUAL_DIR"/.. || { echo "Failure changing to directory $ACTUAL_DIR/.."; ex
 ################################################################################
 # Build local docker
 ################################################################################
-printInfo Build docker container kitdm/"$REPO_NAME":"$TAG_NAME" 
+printInfo Build docker container ghcr.io/kit-data-manager/"$REPO_NAME":"$TAG_NAME" 
 
-if ! docker build -t kitdm/"$REPO_NAME":"$TAG_NAME" .; then
+if ! docker build -t ghcr.io/kit-data-manager/"$REPO_NAME":"$TAG_NAME" .; then
   echo .
   printInfo "ERROR while building docker container!"
   usage
 else 
   echo .
-  printInfo Now you can create and start the container by calling docker "run -d -p8040:8040 --name metastore4docker kitdm/$REPO_NAME:$TAG_NAME"
+  printInfo Now you can create and start the container by calling docker "run -d -p8040:8040 --name metastore4docker ghcr.io/kit-data-manager/$REPO_NAME:$TAG_NAME"
 fi
