@@ -4,7 +4,7 @@ plugins {
     id 'io.freefair.lombok' version '8.4'
     id 'io.freefair.maven-publish-java' version '8.4'
     id 'org.owasp.dependencycheck' version '9.0.8'
-    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'org.asciidoctor.jvm.convert' version '4.0.0'
     id 'net.ltgt.errorprone' version '3.1.0'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.1'
@@ -190,7 +190,7 @@ asciidoctor {
     dependsOn test  
     sourceDir "docs/"
     outputDir "build/docs/html5"
-    inProcess = JAVA_EXEC
+    executionMode = JAVA_EXEC
     forkOptions {
       jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED"
     }
