@@ -12,17 +12,18 @@ services:
       dps:
         ipv4_address: 172.0.0.10
   my-apache:
-    build: https://github.com/kit-data-manager/frontend-collection.git#docker-metastore
-    image: my-apache
+    image: ${PREFIX4DOCKER}/frontend-collection-metastore:${FRONTEND_COLLECTION_VERSION}
+    container_name: my_apache
     ports:
      - "80:80"
     networks:
       - dps
   elasticsearch:
-    image: elasticsearch:7.9.3
+    image: elasticsearch:${ELASTICSEARCH_VERSION}
     container_name: elastic4indexing
     environment:
       - discovery.type=single-node
+      - xpack.security.enabled=false
 #      - logger.org.elasticsearch=ERROR
       - HOSTNAMES=elastic.docker
     healthcheck:
@@ -43,14 +44,19 @@ services:
     container_name: rabbitmq4indexing
     environment:
       - HOSTNAMES=rabbitmq.docker
+      - RABBITMQ_DEFAULT_USER=${RABBIT_MQ_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBIT_MQ_PASSWORD}
     ports:
       - "5672:5672"
       - "15672:15672"
     networks:
       - dps
   indexing-service:
-    image: kitdm/indexing-service:v0.1.3
+    image: ${PREFIX4DOCKER}/indexing-service:${INDEXING_SERVICE_VERSION}
     container_name: indexing4metastore
+    environment:
+      - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
+      - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_started
@@ -63,10 +69,14 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:v1.2.2
+    image: ${PREFIX4DOCKER}/metastore2:${METASTORE_VERSION}
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
+      - REPO_SEARCH_ENABLED=true
+      - REPO_MESSAGING_ENABLED=true
+      - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
+      - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
     depends_on:
       rabbitmq:
         condition: service_started

@@ -17,7 +17,7 @@
 ################################################################################
 function usage {
 ################################################################################
-  echo "Script for creating metastore service."
+  echo "Script for creating $REPO_NAME service."
   echo "USAGE:"
   echo "  $0 [/path/to/installation/dir]"
   echo "IMPORTANT: Please enter an empty or new directory as installation directory."
@@ -87,7 +87,7 @@ testForCommands="chmod cp dirname find java javac mkdir git"
 
 for command in $testForCommands
 do 
-  if ! type $command >> /dev/null; then
+  if ! type "$command" >> /dev/null; then
     echo "Error: command '$command' is not installed!"
     exit 1
   fi
@@ -99,16 +99,16 @@ done
 ACTUAL_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 ################################################################################
-# Check parameters
-################################################################################
-checkParameters "$*"
-
-################################################################################
 # Determine repo name 
 ################################################################################
 REPO_NAME=$(./gradlew -q printProjectName)
 # Use only last line
 REPO_NAME=${REPO_NAME##*$'\n'}
+
+################################################################################
+# Check parameters
+################################################################################
+checkParameters "$*"
 
 printInfo "Build microservice of $REPO_NAME at '$INSTALLATION_DIRECTORY'"
 
@@ -150,6 +150,8 @@ cd "$INSTALLATION_DIRECTORY" || { echo "Failure changing to directory $INSTALLAT
 
 # Determine name of jar file.
 jarFile=($(ls $REPO_NAME*.jar))
+# Create soft link for jar file
+ln -s ${jarFile[0]} $REPO_NAME.jar
 
 {
   echo "#!/bin/bash"                                                                             
@@ -167,7 +169,7 @@ jarFile=($(ls $REPO_NAME*.jar))
   echo "################################################################################"        
   echo "# Define jar file"                                                                       
   echo "################################################################################"        
-  echo "jarFile=${jarFile[0]}"
+  echo "jarFile=${REPO_NAME}.jar"
   echo " "                                                                                       
   echo "################################################################################"        
   echo "# Determine directory of script."                                                        
@@ -178,8 +180,9 @@ jarFile=($(ls $REPO_NAME*.jar))
   echo "################################################################################"        
   echo "# Start micro service"                                                                   
   echo "################################################################################"        
-  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile"
+  echo "java -cp \".:\$jarFile\" -Dloader.path=\"file://\$ACTUAL_DIR/\$jarFile,./lib/,.\" -jar \$jarFile \$*"
 } > run.sh
+
 # make script executable
 chmod 755 run.sh
 

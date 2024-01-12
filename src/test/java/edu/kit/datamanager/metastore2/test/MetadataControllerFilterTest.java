@@ -39,7 +39,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -84,7 +84,7 @@ public class MetadataControllerFilterTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String JSON_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -95,13 +95,11 @@ public class MetadataControllerFilterTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
@@ -142,8 +140,6 @@ public class MetadataControllerFilterTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
@@ -159,7 +155,7 @@ public class MetadataControllerFilterTest {
   @Before
   public void setUp() throws Exception {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation))
             .build();
     // preparation will be done only once.
@@ -171,7 +167,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       String schemaId = JSON_SCHEMA_ID + i;
-      MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
               .param("schemaId", schemaId)
               .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
               .andDo(print())
@@ -189,7 +185,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       String schemaId = JSON_SCHEMA_ID + i;
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("schemaId", schemaId)
               .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
               .andDo(print())
@@ -213,7 +209,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += j;
@@ -237,7 +233,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += j;
@@ -260,7 +256,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByInvalidMimeType() throws Exception {
     String mimeType = INVALID_MIMETYPE;
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -274,7 +270,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByMimeType() throws Exception {
     String mimeType = MediaType.APPLICATION_JSON.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -287,7 +283,7 @@ public class MetadataControllerFilterTest {
       Assert.assertEquals(mimeType, item.getMimeType());
     }
     mimeType = MediaType.APPLICATION_XML.toString();
-    res = this.mockMvc.perform(get("/api/v1/schemas")
+    res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType))
             .andDo(print())
             .andExpect(status().isOk())
@@ -304,7 +300,7 @@ public class MetadataControllerFilterTest {
   public void testFindSchemaRecordsByMultipleMimeTypes() throws Exception {
     String mimeType1 = MediaType.APPLICATION_JSON.toString();
     String mimeType2 = MediaType.APPLICATION_XML.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType1)
             .param("mimeType", mimeType2))
             .andDo(print())
@@ -319,7 +315,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindSchemaRecordsByMultipleMimeTypesIncludingInvalidMimeType() throws Exception {
     String mimeType1 = MediaType.APPLICATION_JSON.toString();
-    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
             .param("mimeType", mimeType1)
             .param("mimeType", INVALID_MIMETYPE))
             .andDo(print())
@@ -335,7 +331,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("resourceId", relatedResource.getIdentifier()))
               .andDo(print())
               .andExpect(status().isOk())
@@ -355,7 +351,7 @@ public class MetadataControllerFilterTest {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      MockHttpServletRequestBuilder get = get("/api/v1/metadata");
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
       noOfResults = 0;
       for (int j = 1; j <= i; j++) {
         noOfResults += (MAX_NO_OF_SCHEMAS - j + 1) * 2;
@@ -378,7 +374,7 @@ public class MetadataControllerFilterTest {
   @Test
   public void testFindRecordsByInvalidResourceId() throws Exception {
 
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
             .param("resourceId", "invalid"))
             .andDo(print())
             .andExpect(status().isOk())
@@ -393,7 +389,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByMultipleResourceIdsIncludingInvalidResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
       ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
-      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+      MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
               .param("resourceId", relatedResource.getIdentifier())
               .param("resourceId", INVALID_MIMETYPE))
               .andDo(print())
@@ -413,7 +409,7 @@ public class MetadataControllerFilterTest {
   public void testFindRecordsByUnknownSchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     String schemaId = "UnknownSchemaId";
-    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata")
+    MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/")
             .param("schemaId", schemaId)
             .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
             .andDo(print())
@@ -448,7 +444,7 @@ public class MetadataControllerFilterTest {
         throw new Exception("Unknown schema type!");
     }
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
@@ -478,7 +474,7 @@ public class MetadataControllerFilterTest {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", XML_DOCUMENT.getBytes());
     }
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
   }
@@ -515,7 +511,7 @@ public class MetadataControllerFilterTest {
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);

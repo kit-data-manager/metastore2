@@ -13,3 +13,7 @@ nbproject
 build
 config
 nbproject
+
+# Ignore VS Code
+bin/
+.vscode/

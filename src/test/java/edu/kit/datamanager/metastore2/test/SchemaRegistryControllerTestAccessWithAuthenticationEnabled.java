@@ -49,7 +49,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -116,8 +116,6 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
@@ -142,7 +140,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41413))
             .build();
@@ -225,7 +223,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
             andDo(print()).
@@ -247,7 +245,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
@@ -269,7 +267,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
             andDo(print()).
@@ -291,7 +289,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas/").
             param("size", Integer.toString(200)).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
             andDo(print()).
@@ -313,7 +311,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     CollectionType mapCollectionType = mapper.getTypeFactory()
             .constructCollectionType(List.class, MetadataSchemaRecord.class);
 
-    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas").
+    MvcResult mvcResult = this.mockMvc.perform(get("/api/v1/schemas/").
             param("size", Integer.toString(200))).
             andDo(print()).
             andExpect(status().isOk()).
@@ -354,7 +352,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
@@ -381,7 +379,7 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).

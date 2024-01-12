@@ -53,12 +53,17 @@ public class DownloadUtil {
 
   private static final int MAX_LENGTH_OF_HEADER = 100;
 
-  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"(.|\\s)*", Pattern.MULTILINE);//^\\s{\\s*\".*");
+  private static final Pattern JSON_FIRST_BYTE = Pattern.compile("(\\R\\s)*\\s*\\{\\s*\"(.|\\s)*", Pattern.MULTILINE);
   private static final Pattern XML_FIRST_BYTE = Pattern.compile("((.|\\s)*<\\?xml[^<]*)?\\s*<\\s*(\\w+:)?\\w+(.|\\s)*", Pattern.MULTILINE);
+
+  DownloadUtil() {
+    // Utility class
+  }
 
   /**
    * Downloads or copy the file behind the given URI and returns its path on
-   * local disc. You should delete or move the file to another location afterwards.
+   * local disc. You should delete or move the file to another location
+   * afterwards.
    *
    * @param resourceURL the given URI
    * @return the path to the created file.
@@ -104,15 +109,13 @@ public class DownloadUtil {
     Path returnFile = pathToFile;
     Path renamedFile = pathToFile;
     try {
-      if ((pathToFile != null) && (pathToFile.toFile().exists())) {
+      if ((pathToFile != null) && pathToFile.toFile().exists()) {
         String contentOfFile = FileUtils.readFileToString(pathToFile.toFile(), StandardCharsets.UTF_8);
-        String newExtension = guessFileExtension(contentOfFile.getBytes());
-        if (newExtension != null) {
-          if (!pathToFile.toString().endsWith(newExtension)) {
-            renamedFile = Paths.get(pathToFile.toString() + newExtension);
-            FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
-            returnFile = renamedFile;
-          }
+        String newExtension = guessFileExtension(contentOfFile.getBytes(StandardCharsets.UTF_8));
+        if ((newExtension != null) && !pathToFile.toString().endsWith(newExtension)) {
+          renamedFile = Paths.get(pathToFile.toString() + newExtension);
+          FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
+          returnFile = renamedFile;
         }
       }
     } catch (IOException ex) {
@@ -132,8 +135,8 @@ public class DownloadUtil {
    */
   public static Path createTempFile(String prefix, String suffix) {
     Path tempFile = null;
-    prefix = ((prefix == null) || (prefix.trim().isEmpty())) ? DEFAULT_PREFIX : prefix;
-    suffix = ((suffix == null) || (suffix.trim().isEmpty())) ? DEFAULT_SUFFIX : suffix;
+    prefix = ((prefix == null) || prefix.trim().isEmpty()) ? DEFAULT_PREFIX : prefix;
+    suffix = ((suffix == null) || suffix.trim().isEmpty()) ? DEFAULT_SUFFIX : suffix;
     try {
       tempFile = Files.createTempFile(prefix, suffix);
     } catch (IllegalArgumentException | IOException ioe) {
@@ -154,13 +157,12 @@ public class DownloadUtil {
     } catch (IOException ioe) {
       throw new CustomInternalServerError("Error removing file '" + tempFile.toString() + "'!");
     }
-    return;
   }
 
   private static String guessFileExtension(byte[] schema) {
     // Cut schema to a maximum of MAX_LENGTH_OF_HEADER characters.
     int length = schema.length > MAX_LENGTH_OF_HEADER ? MAX_LENGTH_OF_HEADER : schema.length;
-    String schemaAsString = new String(schema, 0, length);
+    String schemaAsString = new String(schema, 0, length, StandardCharsets.UTF_8);
     LOGGER.trace("Guess type for '{}'", schemaAsString);
 
     Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);

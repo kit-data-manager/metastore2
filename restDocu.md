@@ -26,14 +26,35 @@ block shows the response comming from the server. In between, special
 characteristics of the calls are explained together with additional,
 optional arguments or alternative responses.
 
-> **Note**
->
-> For technical reasons, all metadata resources shown in the examples
-> contain all fields, e.g. also empty lists or fields with value 'null'.
-> You may ignore most of them as long as they are not needed. Some of
-> them will be assigned by the server, others remain empty or null as
-> long as you don’t assign any value to them. All fields mandatory at
-> creation time are explained in the resource creation example.
+For technical reasons, all metadata resources shown in the examples
+contain all fields, e.g. also empty lists or fields with value 'null'.
+You may ignore most of them as long as they are not needed. Some of them
+will be assigned by the server, others remain empty or null as long as
+you don’t assign any value to them. All fields mandatory at creation
+time are explained in the resource creation example.
+
+Building the URL
+----------------
+
+The URL for accessing the MetaStore REST endpoints is constructed as
+follows:
+
+1.  Protocol (e.g., http, https)
+
+2.  Host name (e.g. localhost, www.example.org)
+
+3.  Port (e.g. 8040)
+
+4.  Context path (e.g. /metastore)
+
+5.  Endpoint (e.g. /api/v1/metadata)
+
+For example, to list all the schema records in your local MetaStore, you
+need to run the following in your browser:
+<http://localhost:8040/metastore/api/v1/schemas>
+
+In former versions (&lt; 1.3.0), no context path was provided by
+default.
 
 XML (Schema)
 ============
@@ -68,8 +89,9 @@ At least the following elements are expected to be provided by the user:
 
 -   type: XML or JSON. For XSD schemas this should be *XML*
 
-In addition, ACL may be useful to make schema editable by others. (This
-will be of interest while updating an existing schema)
+In addition, ACL may be useful to make schema readable/editable by
+others. This will be of interest while accessing/updating an existing
+schema.(if authorization is enabled)
 
 Registering a Metadata Schema Document
 --------------------------------------
@@ -98,7 +120,7 @@ providing mandatory fields mentioned above:
       </xs:element>
     </xs:schema>
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'schema=@schema.xsd;type=application/xml' \
         -F 'record=@schema-record.json;type=application/json'
@@ -107,7 +129,7 @@ You can see, that most of the sent metadata schema record is empty. Only
 schemaId, mimeType and type are provided by the user. HTTP-wise the call
 looks as follows:
 
-    POST /api/v1/schemas HTTP/1.1
+    POST /metastore/api/v1/schemas HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -143,24 +165,24 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/schemas/my_first_xsd?version=1
-    ETag: "701164283"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1
+    ETag: "343002905"
     Content-Type: application/json
-    Content-Length: 457
+    Content-Length: 467
 
     {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:54.418Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.695Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
       "schemaHash" : "sha1:08b262fe74604d6d5d001ed03718408e52bae9aa",
       "doNotSync" : true
     }
@@ -177,20 +199,18 @@ DELETE, in order to avoid conflicts.
 For obtaining one metadata schema record you have to provide the value
 of the field 'schemaId'.
 
-> **Note**
->
-> As 'Accept' field you have to provide
-> 'application/vnd.datamanager.schema-record+json' otherwise you will
-> get the metadata schema instead.
+As 'Accept' field you have to provide
+'application/vnd.datamanager.schema-record+json' otherwise you will get
+the metadata schema instead.
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X GET \
         -H 'Accept: application/vnd.datamanager.schema-record+json'
 
 In the actual HTTP request just access the path of the resource using
 the base path and the 'schemaid'. Be aware that you also have to provide
 the 'Accept' field.
 
-    GET /api/v1/schemas/my_first_xsd HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Accept: application/vnd.datamanager.schema-record+json
     Host: localhost:8040
 
@@ -198,23 +218,23 @@ As a result, you receive the metadata schema record send before and
 again the corresponding ETag in the HTTP response header.
 
     HTTP/1.1 200 OK
-    ETag: "701164283"
+    ETag: "343002905"
     Content-Type: application/vnd.datamanager.schema-record+json
-    Content-Length: 457
+    Content-Length: 467
 
     {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:54.418Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.695Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
       "schemaHash" : "sha1:08b262fe74604d6d5d001ed03718408e52bae9aa",
       "doNotSync" : true
     }
@@ -225,12 +245,12 @@ For obtaining accessible metadata schemas you also have to provide the
 'schemaId'. For accessing schema document you don’t have to provide the
 'Accept' header.
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X GET
 
 In the actual HTTP request there is nothing special. You just access the
 path of the resource using the base path and the 'schemaId'.
 
-    GET /api/v1/schemas/my_first_xsd HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the XSD schema send before.
@@ -261,11 +281,9 @@ As a result, you receive the XSD schema send before.
 
 ### Updating a Metadata Schema Document (add mandatory 'date' field)
 
-> **Note**
->
-> Updating a metadata schema document will not break old metadata
-> documents. As every update results in a new version 'old' metadata
-> schema documents are still available.
+Updating a metadata schema document will not break old metadata
+documents. As every update results in a new version 'old' metadata
+schema documents are still available.
 
 For updating an existing metadata schema (record) a valid ETag is
 needed. The actual ETag is available via the HTTP GET call of the
@@ -288,16 +306,16 @@ updated metadata schema document and/or metadata schema record.
       </xs:element>
     </xs:schema>
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "701164283"' \
+        -H 'If-Match: "343002905"' \
         -F 'schema=@schema-v2.xsd;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/schemas/my_first_xsd HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "701164283"
+    If-Match: "343002905"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -325,24 +343,24 @@ As a result, you receive the updated schema record and in the HTTP
 response header the new location URL and the ETag.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_xsd?version=2
-    ETag: "700011989"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2
+    ETag: "1480363722"
     Content-Type: application/json
-    Content-Length: 457
+    Content-Length: 467
 
     {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 2,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:55.274Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.835Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=2",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2",
       "schemaHash" : "sha1:c227b2bf612264da33fe5a695b5450101ce9d766",
       "doNotSync" : true
     }
@@ -370,16 +388,16 @@ document and/or metadata schema record.
       </xs:element>
     </xs:schema>
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "700011989"' \
+        -H 'If-Match: "1480363722"' \
         -F 'schema=@schema-v3.xsd;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/schemas/my_first_xsd HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "700011989"
+    If-Match: "1480363722"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -408,24 +426,24 @@ As a result, you receive the updated schema record and in the HTTP
 response header the new location URL and the ETag.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_xsd?version=3
-    ETag: "2120896070"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3
+    ETag: "2106056635"
     Content-Type: application/json
-    Content-Length: 457
+    Content-Length: 466
 
     {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 3,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:55.447Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.87Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
       "schemaHash" : "sha1:1baea3a07d95faea70707fcf46d114315613b970",
       "doNotSync" : true
     }
@@ -459,14 +477,14 @@ providing mandatory fields mentioned above:
       </xs:element>
     </xs:schema>
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'schema=@another-schema.xsd;type=application/xml' \
         -F 'record=@another-schema-record.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
-    POST /api/v1/schemas HTTP/1.1
+    POST /metastore/api/v1/schemas HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -502,24 +520,24 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/schemas/another_xsd?version=1
-    ETag: "497145878"
+    Location: http://localhost:8040/metastore/api/v1/schemas/another_xsd?version=1
+    ETag: "-786384830"
     Content-Type: application/json
-    Content-Length: 455
+    Content-Length: 465
 
     {
       "schemaId" : "another_xsd",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:55Z",
-      "lastUpdate" : "2021-08-13T10:00:55.528Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.893Z",
       "acl" : [ {
         "id" : 2,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/another_xsd?version=1",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/another_xsd?version=1",
       "schemaHash" : "sha1:c834a580e7b74c66650a8b00640e4f16cfab7bac",
       "doNotSync" : true
     }
@@ -530,33 +548,33 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 Obtaining all accessible metadata schema records.
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X GET
 
 Same for HTTP request:
 
-    GET /api/v1/schemas HTTP/1.1
+    GET /metastore/api/v1/schemas HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata schema records.
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/2
+    Content-Range: 0-9/2
     Content-Type: application/json
-    Content-Length: 918
+    Content-Length: 937
 
     [ {
       "schemaId" : "another_xsd",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:55Z",
-      "lastUpdate" : "2021-08-13T10:00:55.528Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.893Z",
       "acl" : [ {
         "id" : 2,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/another_xsd?version=1",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/another_xsd?version=1",
       "schemaHash" : "sha1:c834a580e7b74c66650a8b00640e4f16cfab7bac",
       "doNotSync" : true
     }, {
@@ -564,28 +582,24 @@ As a result, you receive a list of metadata schema records.
       "schemaVersion" : 3,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:55.447Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.87Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
       "schemaHash" : "sha1:1baea3a07d95faea70707fcf46d114315613b970",
       "doNotSync" : true
     } ]
 
-> **Note**
->
-> Only the current version of each schemaId is listed.
+Only the current version of each schemaId is listed.
 
-> **Note**
->
-> The header contains the field 'Content-Range" which displays delivered
-> indices and the maximum number of available schema records. If there
-> are more than 20 schemas registered you have to provide page and/or
-> size as additional query parameters.
+The header contains the field 'Content-Range" which displays delivered
+indices and the maximum number of available schema records. If there are
+more than 20 schemas registered you have to provide page and/or size as
+additional query parameters.
 
 -   page: Number of the page you want to get **(starting with page 0)**
 
@@ -593,7 +607,7 @@ As a result, you receive a list of metadata schema records.
 
 The modified HTTP request with pagination looks like follows:
 
-    GET /api/v1/schemas?page=0&size=20 HTTP/1.1
+    GET /metastore/api/v1/schemas?page=0&size=20 HTTP/1.1
     Host: localhost:8040
 
 ### Getting a List of all Schema Records for a Specific SchemaId
@@ -601,34 +615,34 @@ The modified HTTP request with pagination looks like follows:
 If you want to obtain all versions of a specific schema you may add the
 schemaId as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/api/v1/schemas?schemaId=my_first_xsd' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas?schemaId=my_first_xsd' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas?schemaId=my_first_xsd HTTP/1.1
+    GET /metastore/api/v1/schemas?schemaId=my_first_xsd HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata schema records in descending
 order. (current version first)
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/3
+    Content-Range: 0-9/3
     Content-Type: application/json
-    Content-Length: 1379
+    Content-Length: 1408
 
     [ {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 3,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:55.447Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.87Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
       "schemaHash" : "sha1:1baea3a07d95faea70707fcf46d114315613b970",
       "doNotSync" : true
     }, {
@@ -636,14 +650,14 @@ order. (current version first)
       "schemaVersion" : 2,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:55.274Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.835Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=2",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2",
       "schemaHash" : "sha1:c227b2bf612264da33fe5a695b5450101ce9d766",
       "doNotSync" : true
     }, {
@@ -651,14 +665,14 @@ order. (current version first)
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:54.418Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:24.695Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
       "schemaHash" : "sha1:08b262fe74604d6d5d001ed03718408e52bae9aa",
       "doNotSync" : true
     } ]
@@ -668,11 +682,11 @@ order. (current version first)
 To get the current version of the metadata schema document just send an
 HTTP GET with the linked 'schemaId':
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas/my_first_xsd HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the XSD schema document sent before.
@@ -711,11 +725,11 @@ To get a specific version of the metadata schema document just send an
 HTTP GET with the linked 'schemaId' and the version number you are
 looking for as query parameter:
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd?version=1' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas/my_first_xsd?version=1 HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_xsd?version=1 HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the initial XSD schema document (version 1).
@@ -760,22 +774,17 @@ the schemaVersion to validate given document.
 
 On a first step validation with the old schema will be done:
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd/validate?version=1' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd/validate?version=1' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
-        -F 'document=@metadata-v3.xml;type=application/xml' \
-        -F 'version=1'
+        -F 'document=@metadata-v3.xml;type=application/xml'
 
 Same for the HTTP request. The schemaVersion number is set by a query
 parameter.
 
-    POST /api/v1/schemas/my_first_xsd/validate?version=1 HTTP/1.1
+    POST /metastore/api/v1/schemas/my_first_xsd/validate?version=1 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
-    --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    Content-Disposition: form-data; name=version
-
-    1
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.xml
     Content-Type: application/xml
@@ -793,19 +802,29 @@ some information about the error. (Unfortunately not documented here due
 to technical reasons.)
 
     HTTP/1.1 422 Unprocessable Entity
+    Content-Type: application/problem+json
+    Content-Length: 314
+
+    {
+      "type" : "about:blank",
+      "title" : "Unprocessable Entity",
+      "status" : 422,
+      "detail" : "Validation error: cvc-complex-type.2.4.d: Invalid content was found starting with element 'example:date'. No child element is expected at this point.",
+      "instance" : "/metastore/api/v1/schemas/my_first_xsd/validate"
+    }
 
 The document holds a mandatory and an optional field introduced in the
 second and third version of schema. Let’s try to validate with third
 version of schema. Only version number will be different. (if no query
 parameter is available the current version will be selected)
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd/validate' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd/validate' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'document=@metadata-v3.xml;type=application/xml'
 
 Same for the HTTP request.
 
-    POST /api/v1/schemas/my_first_xsd/validate HTTP/1.1
+    POST /metastore/api/v1/schemas/my_first_xsd/validate HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -851,41 +870,41 @@ example we introduce a user called 'admin' and give him all rights.
       ]
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_xsd' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "2120896070"' \
+        -H 'If-Match: "2106056635"' \
         -F 'record=@schema-record-v4.json;type=application/json'
 
 Same for the HTTP request.
 
-    PUT /api/v1/schemas/my_first_xsd HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "2120896070"
+    If-Match: "2106056635"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=schema-record-v4.json
     Content-Type: application/json
 
-    {"schemaId":"my_first_xsd","pid":null,"schemaVersion":3,"label":null,"definition":null,"comment":null,"mimeType":"application/xml","type":"XML","createdAt":"2021-08-13T10:00:54Z","lastUpdate":"2021-08-13T10:00:55.447Z","acl":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}],"schemaDocumentUri":"http://localhost:8040/api/v1/schemas/my_first_xsd?version=3","schemaHash":"sha1:1baea3a07d95faea70707fcf46d114315613b970","doNotSync":true}
+    {"schemaId":"my_first_xsd","pid":null,"schemaVersion":3,"label":null,"definition":null,"comment":null,"mimeType":"application/xml","type":"XML","createdAt":"2023-07-12T12:45:24Z","lastUpdate":"2023-07-12T12:45:24.87Z","acl":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}],"schemaDocumentUri":"http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3","schemaHash":"sha1:1baea3a07d95faea70707fcf46d114315613b970","doNotSync":true}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 As a result, you receive 200 as HTTP status, the updated metadata schema
 record and the updated ETag and location in the HTTP response header.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_xsd?version=3
-    ETag: "811149141"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3
+    ETag: "-229236150"
     Content-Type: application/json
-    Content-Length: 532
+    Content-Length: 543
 
     {
       "schemaId" : "my_first_xsd",
       "schemaVersion" : 3,
       "mimeType" : "application/xml",
       "type" : "XML",
-      "createdAt" : "2021-08-13T10:00:54Z",
-      "lastUpdate" : "2021-08-13T10:00:56.01Z",
+      "createdAt" : "2023-07-12T12:45:24Z",
+      "lastUpdate" : "2023-07-12T12:45:25.147Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
@@ -895,7 +914,7 @@ record and the updated ETag and location in the HTTP response header.
         "sid" : "admin",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
       "schemaHash" : "sha1:1baea3a07d95faea70707fcf46d114315613b970",
       "doNotSync" : true
     }
@@ -949,10 +968,8 @@ At least the following elements are expected to be provided by the user:
 In addition, ACL may be useful to make metadata editable by others.
 (This will be of interest while updating an existing metadata)
 
-> **Note**
->
-> If linked schema is identified by its schemaId the INTERNAL type has
-> to be used.
+If linked schema is identified by its schemaId the INTERNAL type has to
+be used.
 
 ### Register/Ingest a Metadata Record with Metadata Document
 
@@ -981,7 +998,7 @@ and its metadata only providing mandatory fields mentioned above:
 The schemaId used while registering metadata schema has to be used to
 link the metadata with the approbriate metadata schema.
 
-    $ curl 'http://localhost:8040/api/v1/metadata' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'record=@metadata-record.json;type=application/json' \
         -F 'document=@metadata.xml;type=application/xml'
@@ -990,7 +1007,7 @@ You can see, that most of the sent metadata schema record is empty. Only
 schemaId and relatedResource are provided by the user. HTTP-wise the
 call looks as follows:
 
-    POST /api/v1/metadata HTTP/1.1
+    POST /metastore/api/v1/metadata HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -1016,25 +1033,21 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1
-    ETag: "-334720106"
+    Location: http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1
+    ETag: "-769713607"
     Content-Type: application/json
-    Content-Length: 806
+    Content-Length: 709
 
     {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.363Z",
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.2Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -1044,7 +1057,7 @@ the user and will look that way:
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1",
       "documentHash" : "sha1:ac92891f6377919446143e0a8639f12715397228"
     }
 
@@ -1061,12 +1074,12 @@ avoid conflicts.
 For accessing the metadata the location URL provided before may be used.
 The URL is compiled by the id of the metadata and its version.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1' -i -X GET \
         -H 'Accept: application/xml'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1 HTTP/1.1
+    GET /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1 HTTP/1.1
     Accept: application/xml
     Host: localhost:8040
 
@@ -1094,12 +1107,12 @@ The only difference is the content type. It has to be set to
 "application/vnd.datamanager.metadata-record+json". Then the command
 line looks like this:
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1' -i -X GET \
         -H 'Accept: application/vnd.datamanager.metadata-record+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1 HTTP/1.1
+    GET /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1 HTTP/1.1
     Accept: application/vnd.datamanager.metadata-record+json
     Host: localhost:8040
 
@@ -1107,24 +1120,20 @@ The linked metadata will be returned. The result is sent back to the
 user and will look that way:
 
     HTTP/1.1 200 OK
-    ETag: "-334720106"
+    ETag: "-769713607"
     Content-Type: application/vnd.datamanager.metadata-record+json
-    Content-Length: 806
+    Content-Length: 709
 
     {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.363Z",
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.2Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -1134,7 +1143,7 @@ user and will look that way:
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1",
       "documentHash" : "sha1:ac92891f6377919446143e0a8639f12715397228"
     }
 
@@ -1171,25 +1180,25 @@ the ETag is needed:
       <example:date>2018-07-02</example:date>
     </example:metadata>
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-334720106"' \
+        -H 'If-Match: "-769713607"' \
         -F 'record=@metadata-record-v2.json;type=application/json' \
         -F 'document=@metadata-v2.xml;type=application/xml'
 
 You can see, that only the ACL entry for "guest" was added. All other
 properties are still the same. HTTP-wise the call looks as follows:
 
-    PUT /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b HTTP/1.1
+    PUT /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-334720106"
+    If-Match: "-769713607"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record-v2.json
     Content-Type: application/json
 
-    {"id":"ed533130-9e74-43fb-82db-e2464fbb0b1b","pid":{"id":null,"identifier":"ed533130-9e74-43fb-82db-e2464fbb0b1b","identifierType":"INTERNAL"},"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"INTERNAL"},"createdAt":"2021-08-13T10:00:56Z","lastUpdate":"2021-08-13T10:00:56.363Z","schema":{"id":null,"identifier":"my_first_xsd","identifierType":"INTERNAL"},"schemaVersion":2,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1","documentHash":"sha1:ac92891f6377919446143e0a8639f12715397228"}
+    {"id":"7a07631d-d999-42bb-bd64-32d45838fe64","pid":null,"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"URL"},"createdAt":"2023-07-12T12:45:25Z","lastUpdate":"2023-07-12T12:45:25.2Z","schema":{"id":null,"identifier":"my_first_xsd","identifierType":"INTERNAL"},"schemaVersion":2,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1","documentHash":"sha1:ac92891f6377919446143e0a8639f12715397228"}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v2.xml
     Content-Type: application/xml
@@ -1202,39 +1211,35 @@ properties are still the same. HTTP-wise the call looks as follows:
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 You will get the new metadata record with the additional ACL entry.
-Version number was incremented by one, 'lastUpdate' and *recordVersion*
-are also modified by the server.
+Version number of record was incremented by one and 'lastUpdate' was
+also modified by the server.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2
-    ETag: "831113235"
+    Location: http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2
+    ETag: "-561646093"
     Content-Type: application/json
-    Content-Length: 806
+    Content-Length: 711
 
     {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.761Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.348Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2",
       "documentHash" : "sha1:e13a87884df391a611fb6257ea53883811d9451a"
     }
 
@@ -1247,46 +1252,42 @@ Repeat the last step and update to the current version. As mentioned
 before the ETag is needed. As the ETag has changed in the meanwhile you
 first have to get the new ETag.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2' -i -X GET \
         -H 'Accept: application/vnd.datamanager.metadata-record+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2 HTTP/1.1
+    GET /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2 HTTP/1.1
     Accept: application/vnd.datamanager.metadata-record+json
     Host: localhost:8040
 
 You will get the new metadata record with the new ETag.
 
     HTTP/1.1 200 OK
-    ETag: "831113235"
+    ETag: "-561646093"
     Content-Type: application/vnd.datamanager.metadata-record+json
-    Content-Length: 806
+    Content-Length: 711
 
     {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.761Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.348Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2",
       "documentHash" : "sha1:e13a87884df391a611fb6257ea53883811d9451a"
     }
 
@@ -1314,24 +1315,24 @@ Etag.
       <example:note>since version 3 notes are allowed</example:note>
     </example:metadata>
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "831113235"' \
+        -H 'If-Match: "-561646093"' \
         -F 'record=@metadata-record-v3.json;type=application/json' \
         -F 'document=@metadata-v3.xml;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b HTTP/1.1
+    PUT /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "831113235"
+    If-Match: "-561646093"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record-v3.json
     Content-Type: application/json
 
-    {"id":"ed533130-9e74-43fb-82db-e2464fbb0b1b","pid":{"id":null,"identifier":"ed533130-9e74-43fb-82db-e2464fbb0b1b","identifierType":"INTERNAL"},"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"INTERNAL"},"createdAt":"2021-08-13T10:00:56Z","lastUpdate":"2021-08-13T10:00:56.363Z","schema":{"id":null,"identifier":"my_first_xsd","identifierType":"INTERNAL"},"schemaVersion":3,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1","documentHash":"sha1:ac92891f6377919446143e0a8639f12715397228"}
+    {"id":"7a07631d-d999-42bb-bd64-32d45838fe64","pid":null,"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"URL"},"createdAt":"2023-07-12T12:45:25Z","lastUpdate":"2023-07-12T12:45:25.2Z","schema":{"id":null,"identifier":"my_first_xsd","identifierType":"INTERNAL"},"schemaVersion":3,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1","documentHash":"sha1:ac92891f6377919446143e0a8639f12715397228"}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.xml
     Content-Type: application/xml
@@ -1347,46 +1348,42 @@ HTTP-wise the call looks as follows:
 You will get the new metadata record.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3
-    ETag: "-1343323824"
+    Location: http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3
+    ETag: "1386118128"
     Content-Type: application/json
-    Content-Length: 806
+    Content-Length: 711
 
     {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.952Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.428Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3",
       "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
     }
 
 Now you can access the updated metadata via the URI in the HTTP response
 header.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3 HTTP/1.1
+    GET /metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3 HTTP/1.1
     Host: localhost:8040
 
 You will get the updated metadata.
@@ -1421,12 +1418,10 @@ are set via query parameters. The following filters are allowed:
 
 -   until
 
-> **Note**
->
-> The header contains the field 'Content-Range" which displays delivered
-> indices and the maximum number of available schema records. If there
-> are more than 20 metadata records registered you have to provide page
-> and/or size as additional query parameters.
+The header contains the field 'Content-Range" which displays delivered
+indices and the maximum number of available schema records. If there are
+more than 20 metadata records registered you have to provide page and/or
+size as additional query parameters.
 
 -   page: Number of the page you want to get **(starting with page 0)**
 
@@ -1437,85 +1432,73 @@ are set via query parameters. The following filters are allowed:
 If you want to obtain all versions of a specific resource you may add
 'id' as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?id=ed533130-9e74-43fb-82db-e2464fbb0b1b' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?id=7a07631d-d999-42bb-bd64-32d45838fe64' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?id=ed533130-9e74-43fb-82db-e2464fbb0b1b HTTP/1.1
+    GET /metastore/api/v1/metadata?id=7a07631d-d999-42bb-bd64-32d45838fe64 HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata records in descending order.
 (current version first)
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/3
+    Content-Range: 0-9/3
     Content-Type: application/json
-    Content-Length: 2426
+    Content-Length: 2139
 
     [ {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.952Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.428Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3",
       "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
     }, {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.761Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.348Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=2",
-      "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=2",
+      "documentHash" : "sha1:e13a87884df391a611fb6257ea53883811d9451a"
     }, {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.363Z",
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.2Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -1525,8 +1508,8 @@ As a result, you receive a list of metadata records in descending order.
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=1",
-      "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=1",
+      "documentHash" : "sha1:ac92891f6377919446143e0a8639f12715397228"
     } ]
 
 #### Find by resourceId
@@ -1537,44 +1520,40 @@ MetaStore may hold multiple metadata documents per resource.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId HTTP/1.1
+    GET /metastore/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId HTTP/1.1
     Host: localhost:8040
 
 You will get the current version of the metadata record(s).
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/1
+    Content-Range: 0-9/1
     Content-Type: application/json
-    Content-Length: 810
+    Content-Length: 715
 
     [ {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.952Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.428Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3",
       "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
     } ]
 
@@ -1584,45 +1563,41 @@ If you want to find all metadata records updated after a specific date.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?from=2021-08-13T08%3A00%3A57.109937Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A25.517721088Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?from=2021-08-13T08%3A00%3A57.109937Z HTTP/1.1
+    GET /metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A25.517721088Z HTTP/1.1
     Host: localhost:8040
 
 You will get the current version metadata records updated ln the last 2
 hours.
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/1
+    Content-Range: 0-9/1
     Content-Type: application/json
-    Content-Length: 810
+    Content-Length: 715
 
     [ {
-      "id" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-      "pid" : {
-        "identifier" : "ed533130-9e74-43fb-82db-e2464fbb0b1b",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "7a07631d-d999-42bb-bd64-32d45838fe64",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:00:56Z",
-      "lastUpdate" : "2021-08-13T10:00:56.952Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_xsd?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:25Z",
+      "lastUpdate" : "2023-07-12T12:45:25.428Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_xsd?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/ed533130-9e74-43fb-82db-e2464fbb0b1b?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/7a07631d-d999-42bb-bd64-32d45838fe64?version=3",
       "documentHash" : "sha1:55547a0ad07445cfbc11a76484da3b21d23ceb82"
     } ]
 
@@ -1633,18 +1608,18 @@ range.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?from=2021-08-13T08%3A00%3A57.109937Z&until=2021-08-13T09%3A00%3A57.109926Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A25.517721088Z&until=2023-07-12T11%3A45%3A25.517718361Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?from=2021-08-13T08%3A00%3A57.109937Z&until=2021-08-13T09%3A00%3A57.109926Z HTTP/1.1
+    GET /metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A25.517721088Z&until=2023-07-12T11%3A45%3A25.517718361Z HTTP/1.1
     Host: localhost:8040
 
 You will get an empty array as no metadata record exists in the given
 range:
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/0
+    Content-Range: 0-9/0
     Content-Type: application/json
     Content-Length: 3
 
@@ -1703,7 +1678,7 @@ providing mandatory fields mentioned above:
 
     schema.json:
     {
-      "$schema": "http://json-schema.org/draft/2019-09/schema#",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "http://www.example.org/schema/json",
       "type": "object",
       "title": "Json schema for tests",
@@ -1713,7 +1688,6 @@ providing mandatory fields mentioned above:
       ],
       "properties": {
         "title": {
-          "$id": "#/properties/string",
           "type": "string",
           "title": "Title",
           "description": "Title of object."
@@ -1722,7 +1696,7 @@ providing mandatory fields mentioned above:
       "additionalProperties": false
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'schema=@schema.json;type=application/json' \
         -F 'record=@schema-record4json.json;type=application/json'
@@ -1731,7 +1705,7 @@ You can see, that most of the sent metadata schema record is empty. Only
 schemaId, mimeType and type are provided by the user. HTTP-wise the call
 looks as follows:
 
-    POST /api/v1/schemas HTTP/1.1
+    POST /metastore/api/v1/schemas HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -1740,7 +1714,7 @@ looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -1750,7 +1724,6 @@ looks as follows:
         ],
         "properties": {
             "title": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Title",
                 "description": "Title of object."
@@ -1772,25 +1745,25 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/schemas/my_first_json?version=1
-    ETag: "-1424777959"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1
+    ETag: "1946363153"
     Content-Type: application/json
-    Content-Length: 461
+    Content-Length: 471
 
     {
       "schemaId" : "my_first_json",
       "schemaVersion" : 1,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:01.926Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:20.442Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
-      "schemaHash" : "sha1:98741f0d6115474ab69375be3bc9cd5b305ce200",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
+      "schemaHash" : "sha1:a312efb2ad92b1c8ce8f6556c40e2b185c6682c4",
       "doNotSync" : true
     }
 
@@ -1806,20 +1779,18 @@ DELETE, in order to avoid conflicts.
 For obtaining one metadata schema record you have to provide the value
 of the field 'schemaId'.
 
-> **Note**
->
-> As 'Accept' field you have to provide
-> 'application/vnd.datamanager.schema-record+json' otherwise you will
-> get the metadata schema instead.
+As 'Accept' field you have to provide
+'application/vnd.datamanager.schema-record+json' otherwise you will get
+the metadata schema instead.
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X GET \
         -H 'Accept: application/vnd.datamanager.schema-record+json'
 
 In the actual HTTP request just access the path of the resource using
 the base path and the 'schemaid'. Be aware that you also have to provide
 the 'Accept' field.
 
-    GET /api/v1/schemas/my_first_json HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Accept: application/vnd.datamanager.schema-record+json
     Host: localhost:8040
 
@@ -1827,24 +1798,24 @@ As a result, you receive the metadata schema record send before and
 again the corresponding ETag in the HTTP response header.
 
     HTTP/1.1 200 OK
-    ETag: "-1424777959"
+    ETag: "1946363153"
     Content-Type: application/vnd.datamanager.schema-record+json
-    Content-Length: 461
+    Content-Length: 471
 
     {
       "schemaId" : "my_first_json",
       "schemaVersion" : 1,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:01.926Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:20.442Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
-      "schemaHash" : "sha1:98741f0d6115474ab69375be3bc9cd5b305ce200",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
+      "schemaHash" : "sha1:a312efb2ad92b1c8ce8f6556c40e2b185c6682c4",
       "doNotSync" : true
     }
 
@@ -1854,23 +1825,23 @@ For obtaining accessible metadata schemas you also have to provide the
 'schemaId'. For accessing schema document you don’t have to provide the
 'Accept' header.
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X GET
 
 In the actual HTTP request there is nothing special. You just access the
 path of the resource using the base path and the 'schemaId'.
 
-    GET /api/v1/schemas/my_first_json HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the XSD schema send before.
 
     HTTP/1.1 200 OK
     Content-Type: application/json
-    Content-Length: 425
+    Content-Length: 388
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
@@ -1878,7 +1849,6 @@ As a result, you receive the XSD schema send before.
       "required" : [ "title" ],
       "properties" : {
         "title" : {
-          "$id" : "#/properties/string",
           "type" : "string",
           "title" : "Title",
           "description" : "Title of object."
@@ -1889,11 +1859,9 @@ As a result, you receive the XSD schema send before.
 
 ### Updating a Metadata Schema Document (add mandatory 'date' field)
 
-> **Note**
->
-> Updating a metadata schema document will not break old metadata
-> documents. As every update results in a new version 'old' metadata
-> schema documents are still available.
+Updating a metadata schema document will not break old metadata
+documents. As every update results in a new version 'old' metadata
+schema documents are still available.
 
 For updating an existing metadata schema (record) a valid ETag is
 needed. The actual ETag is available via the HTTP GET call of the
@@ -1902,7 +1870,7 @@ updated metadata schema document and/or metadata schema record.
 
     schema-v2.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -1913,13 +1881,11 @@ updated metadata schema document and/or metadata schema record.
         ],
         "properties": {
             "title": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Title",
                 "description": "Title of object."
             },
             "date": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "format": "date",
                 "title": "Date",
@@ -1929,16 +1895,16 @@ updated metadata schema document and/or metadata schema record.
         "additionalProperties": false
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-1424777959"' \
+        -H 'If-Match: "1946363153"' \
         -F 'schema=@schema-v2.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/schemas/my_first_json HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-1424777959"
+    If-Match: "1946363153"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -1946,7 +1912,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -1957,13 +1923,11 @@ HTTP-wise the call looks as follows:
         ],
         "properties": {
             "title": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Title",
                 "description": "Title of object."
             },
             "date": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "format": "date",
                 "title": "Date",
@@ -1978,25 +1942,25 @@ As a result, you receive the updated schema record and in the HTTP
 response header the new location URL and the ETag.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_json?version=2
-    ETag: "-2004027021"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2
+    ETag: "-1107116181"
     Content-Type: application/json
-    Content-Length: 461
+    Content-Length: 471
 
     {
       "schemaId" : "my_first_json",
       "schemaVersion" : 2,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:02.336Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:21.276Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=2",
-      "schemaHash" : "sha1:68c72ab169770015f9b68645d0a50ac33a98f46c",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2",
+      "schemaHash" : "sha1:6d65072f514d887d9fa69997d3aa067524c1c085",
       "doNotSync" : true
     }
 
@@ -2008,7 +1972,7 @@ document and/or metadata schema record.
 
     schema-v3.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -2019,20 +1983,17 @@ document and/or metadata schema record.
         ],
         "properties": {
             "title": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Title",
                 "description": "Title of object."
             },
             "date": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "format": "date",
                 "title": "Date",
                 "description": "Date of object"
             },
             "note": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Note",
                 "description": "Additonal information about object"
@@ -2041,16 +2002,16 @@ document and/or metadata schema record.
         "additionalProperties": false
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-2004027021"' \
+        -H 'If-Match: "-1107116181"' \
         -F 'schema=@schema-v3.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/schemas/my_first_json HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-2004027021"
+    If-Match: "-1107116181"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -2058,7 +2019,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/json
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json",
         "type": "object",
         "title": "Json schema for tests",
@@ -2069,20 +2030,17 @@ HTTP-wise the call looks as follows:
         ],
         "properties": {
             "title": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Title",
                 "description": "Title of object."
             },
             "date": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "format": "date",
                 "title": "Date",
                 "description": "Date of object"
             },
             "note": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Note",
                 "description": "Additonal information about object"
@@ -2096,25 +2054,25 @@ As a result, you receive the updated schema record and in the HTTP
 response header the new location URL and the ETag.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_json?version=3
-    ETag: "1569865828"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3
+    ETag: "-1097218276"
     Content-Type: application/json
-    Content-Length: 461
+    Content-Length: 471
 
     {
       "schemaId" : "my_first_json",
       "schemaVersion" : 3,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:02.699Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:21.512Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
-      "schemaHash" : "sha1:150dc302a01dbd35f360d4f09540fce859bfcd32",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+      "schemaHash" : "sha1:16221eb6fd0177135b873acd78da1a221a8b621d",
       "doNotSync" : true
     }
 
@@ -2135,7 +2093,7 @@ providing mandatory fields mentioned above:
 
     another-schema.json:
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json/example",
         "type": "object",
         "title": "Another Json schema for tests",
@@ -2145,7 +2103,6 @@ providing mandatory fields mentioned above:
         ],
         "properties": {
             "description": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Description",
                 "description": "Any description."
@@ -2154,14 +2111,14 @@ providing mandatory fields mentioned above:
         "additionalProperties": false
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'schema=@another-schema.json;type=application/xml' \
-        -F 'record=@another-schema-record4json.json;type=application/json'
+        -F 'record=@another-schema-record.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
-    POST /api/v1/schemas HTTP/1.1
+    POST /metastore/api/v1/schemas HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -2170,7 +2127,7 @@ HTTP-wise the call looks as follows:
     Content-Type: application/xml
 
     {
-        "$schema": "http://json-schema.org/draft/2019-09/schema#",
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
         "$id": "http://www.example.org/schema/json/example",
         "type": "object",
         "title": "Another Json schema for tests",
@@ -2180,7 +2137,6 @@ HTTP-wise the call looks as follows:
         ],
         "properties": {
             "description": {
-                "$id": "#/properties/string",
                 "type": "string",
                 "title": "Description",
                 "description": "Any description."
@@ -2202,25 +2158,25 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/schemas/another_json?version=1
-    ETag: "-1476067843"
+    Location: http://localhost:8040/metastore/api/v1/schemas/another_json?version=1
+    ETag: "1336866933"
     Content-Type: application/json
-    Content-Length: 458
+    Content-Length: 468
 
     {
       "schemaId" : "another_json",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:02Z",
-      "lastUpdate" : "2021-08-13T10:01:02.973Z",
+      "createdAt" : "2023-07-12T12:45:21Z",
+      "lastUpdate" : "2023-07-12T12:45:21.727Z",
       "acl" : [ {
         "id" : 2,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/another_json?version=1",
-      "schemaHash" : "sha1:ea94d4b621fe2d66a69c3f1a3b5c91665b1714cd",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/another_json?version=1",
+      "schemaHash" : "sha1:a4bd131a0cbd65000fa5db6ca71d45379348adb4",
       "doNotSync" : true
     }
 
@@ -2230,62 +2186,58 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 Obtaining all accessible metadata schema records.
 
-    $ curl 'http://localhost:8040/api/v1/schemas' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas' -i -X GET
 
 Same for HTTP request:
 
-    GET /api/v1/schemas HTTP/1.1
+    GET /metastore/api/v1/schemas HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata schema records.
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/2
+    Content-Range: 0-9/2
     Content-Type: application/json
-    Content-Length: 925
+    Content-Length: 945
 
     [ {
       "schemaId" : "another_json",
       "schemaVersion" : 1,
       "mimeType" : "application/xml",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:02Z",
-      "lastUpdate" : "2021-08-13T10:01:02.973Z",
+      "createdAt" : "2023-07-12T12:45:21Z",
+      "lastUpdate" : "2023-07-12T12:45:21.727Z",
       "acl" : [ {
         "id" : 2,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/another_json?version=1",
-      "schemaHash" : "sha1:ea94d4b621fe2d66a69c3f1a3b5c91665b1714cd",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/another_json?version=1",
+      "schemaHash" : "sha1:a4bd131a0cbd65000fa5db6ca71d45379348adb4",
       "doNotSync" : true
     }, {
       "schemaId" : "my_first_json",
       "schemaVersion" : 3,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:02.699Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:21.512Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
-      "schemaHash" : "sha1:150dc302a01dbd35f360d4f09540fce859bfcd32",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+      "schemaHash" : "sha1:16221eb6fd0177135b873acd78da1a221a8b621d",
       "doNotSync" : true
     } ]
 
-> **Note**
->
-> Only the current version of each schemaId is listed.
+Only the current version of each schemaId is listed.
 
-> **Note**
->
-> The header contains the field 'Content-Range" which displays delivered
-> indices and the maximum number of available schema records. If there
-> are more than 20 schemas registered you have to provide page and/or
-> size as additional query parameters.
+The header contains the field 'Content-Range" which displays delivered
+indices and the maximum number of available schema records. If there are
+more than 20 schemas registered you have to provide page and/or size as
+additional query parameters.
 
 -   page: Number of the page you want to get **(starting with page 0)**
 
@@ -2293,7 +2245,7 @@ As a result, you receive a list of metadata schema records.
 
 The modified HTTP request with pagination looks like follows:
 
-    GET /api/v1/schemas?page=0&size=20 HTTP/1.1
+    GET /metastore/api/v1/schemas?page=0&size=20 HTTP/1.1
     Host: localhost:8040
 
 ### Getting a List of all Schema Records for a Specific SchemaId
@@ -2301,65 +2253,65 @@ The modified HTTP request with pagination looks like follows:
 If you want to obtain all versions of a specific schema you may add the
 schemaId as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/api/v1/schemas?schemaId=my_first_json' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas?schemaId=my_first_json' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas?schemaId=my_first_json HTTP/1.1
+    GET /metastore/api/v1/schemas?schemaId=my_first_json HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata schema records in descending
 order. (current version first)
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/3
+    Content-Range: 0-9/3
     Content-Type: application/json
-    Content-Length: 1391
+    Content-Length: 1421
 
     [ {
       "schemaId" : "my_first_json",
       "schemaVersion" : 3,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:02.699Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:21.512Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
-      "schemaHash" : "sha1:150dc302a01dbd35f360d4f09540fce859bfcd32",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+      "schemaHash" : "sha1:16221eb6fd0177135b873acd78da1a221a8b621d",
       "doNotSync" : true
     }, {
       "schemaId" : "my_first_json",
       "schemaVersion" : 2,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:02.336Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:21.276Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=2",
-      "schemaHash" : "sha1:68c72ab169770015f9b68645d0a50ac33a98f46c",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2",
+      "schemaHash" : "sha1:6d65072f514d887d9fa69997d3aa067524c1c085",
       "doNotSync" : true
     }, {
       "schemaId" : "my_first_json",
       "schemaVersion" : 1,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:01.926Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:20.442Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
-      "schemaHash" : "sha1:98741f0d6115474ab69375be3bc9cd5b305ce200",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
+      "schemaHash" : "sha1:a312efb2ad92b1c8ce8f6556c40e2b185c6682c4",
       "doNotSync" : true
     } ]
 
@@ -2368,22 +2320,22 @@ order. (current version first)
 To get the current version of the metadata schema document just send an
 HTTP GET with the linked 'schemaId':
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas/my_first_json HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the XSD schema document sent before.
 
     HTTP/1.1 200 OK
     Content-Type: application/json
-    Content-Length: 772
+    Content-Length: 661
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
@@ -2391,20 +2343,17 @@ As a result, you receive the XSD schema document sent before.
       "required" : [ "title", "date" ],
       "properties" : {
         "title" : {
-          "$id" : "#/properties/string",
           "type" : "string",
           "title" : "Title",
           "description" : "Title of object."
         },
         "date" : {
-          "$id" : "#/properties/string",
           "type" : "string",
           "format" : "date",
           "title" : "Date",
           "description" : "Date of object"
         },
         "note" : {
-          "$id" : "#/properties/string",
           "type" : "string",
           "title" : "Note",
           "description" : "Additonal information about object"
@@ -2419,22 +2368,22 @@ To get a specific version of the metadata schema document just send an
 HTTP GET with the linked 'schemaId' and the version number you are
 looking for as query parameter:
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json?version=1' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/schemas/my_first_json?version=1 HTTP/1.1
+    GET /metastore/api/v1/schemas/my_first_json?version=1 HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive the initial XSD schema document (version 1).
 
     HTTP/1.1 200 OK
     Content-Type: application/json
-    Content-Length: 425
+    Content-Length: 388
     Accept-Ranges: bytes
 
     {
-      "$schema" : "http://json-schema.org/draft/2019-09/schema#",
+      "$schema" : "https://json-schema.org/draft/2020-12/schema",
       "$id" : "http://www.example.org/schema/json",
       "type" : "object",
       "title" : "Json schema for tests",
@@ -2442,7 +2391,6 @@ As a result, you receive the initial XSD schema document (version 1).
       "required" : [ "title" ],
       "properties" : {
         "title" : {
-          "$id" : "#/properties/string",
           "type" : "string",
           "title" : "Title",
           "description" : "Title of object."
@@ -2466,22 +2414,17 @@ the schemaVersion to validate given document.
 
 On a first step validation with the old schema will be done:
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json/validate?version=1' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json/validate?version=1' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
-        -F 'document=@metadata-v3.json;type=application/json' \
-        -F 'version=1'
+        -F 'document=@metadata-v3.json;type=application/json'
 
 Same for the HTTP request. The schemaVersion number is set by a query
 parameter.
 
-    POST /api/v1/schemas/my_first_json/validate?version=1 HTTP/1.1
+    POST /metastore/api/v1/schemas/my_first_json/validate?version=1 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
-    --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    Content-Disposition: form-data; name=version
-
-    1
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.json
     Content-Type: application/json
@@ -2498,19 +2441,29 @@ some information about the error. (Unfortunately not documented here due
 to technical reasons.)
 
     HTTP/1.1 422 Unprocessable Entity
+    Content-Type: application/problem+json
+    Content-Length: 376
+
+    {
+      "type" : "about:blank",
+      "title" : "Unprocessable Entity",
+      "status" : 422,
+      "detail" : "400 BAD_REQUEST \"Error validating json!\n$.date ist nicht im Schema definiert und das Schema verbietet additionalProperties\n$.note ist nicht im Schema definiert und das Schema verbietet additionalProperties\"",
+      "instance" : "/metastore/api/v1/schemas/my_first_json/validate"
+    }
 
 The document holds a mandatory and an optional field introduced in the
 second and third version of schema. Let’s try to validate with third
 version of schema. Only version number will be different. (if no query
 parameter is available the current version will be selected)
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json/validate' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json/validate' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'document=@metadata-v3.json;type=application/json'
 
 Same for the HTTP request.
 
-    POST /api/v1/schemas/my_first_json/validate HTTP/1.1
+    POST /metastore/api/v1/schemas/my_first_json/validate HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -2552,41 +2505,41 @@ example we introduce a user called 'admin' and give him all rights.
       } ]
     }
 
-    $ curl 'http://localhost:8040/api/v1/schemas/my_first_json' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "1569865828"' \
+        -H 'If-Match: "-1097218276"' \
         -F 'record=@schema-record4json-v4.json;type=application/json'
 
 Same for the HTTP request.
 
-    PUT /api/v1/schemas/my_first_json HTTP/1.1
+    PUT /metastore/api/v1/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "1569865828"
+    If-Match: "-1097218276"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=schema-record4json-v4.json
     Content-Type: application/json
 
-    {"schemaId":"my_first_json","pid":null,"schemaVersion":3,"label":null,"definition":null,"comment":null,"mimeType":"application/json","type":"JSON","createdAt":"2021-08-13T10:01:01Z","lastUpdate":"2021-08-13T10:01:02.699Z","acl":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}],"schemaDocumentUri":"http://localhost:8040/api/v1/schemas/my_first_json?version=3","schemaHash":"sha1:150dc302a01dbd35f360d4f09540fce859bfcd32","doNotSync":true}
+    {"schemaId":"my_first_json","pid":null,"schemaVersion":3,"label":null,"definition":null,"comment":null,"mimeType":"application/json","type":"JSON","createdAt":"2023-07-12T12:45:20Z","lastUpdate":"2023-07-12T12:45:21.512Z","acl":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}],"schemaDocumentUri":"http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3","schemaHash":"sha1:16221eb6fd0177135b873acd78da1a221a8b621d","doNotSync":true}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 As a result, you receive 200 as HTTP status, the updated metadata schema
 record and the updated ETag and location in the HTTP response header.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/schemas/my_first_json?version=3
-    ETag: "-1660325133"
+    Location: http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3
+    ETag: "-2006054549"
     Content-Type: application/json
-    Content-Length: 537
+    Content-Length: 547
 
     {
       "schemaId" : "my_first_json",
       "schemaVersion" : 3,
       "mimeType" : "application/json",
       "type" : "JSON",
-      "createdAt" : "2021-08-13T10:01:01Z",
-      "lastUpdate" : "2021-08-13T10:01:03.296Z",
+      "createdAt" : "2023-07-12T12:45:20Z",
+      "lastUpdate" : "2023-07-12T12:45:22.258Z",
       "acl" : [ {
         "id" : 1,
         "sid" : "SELF",
@@ -2596,8 +2549,8 @@ record and the updated ETag and location in the HTTP response header.
         "sid" : "admin",
         "permission" : "ADMINISTRATE"
       } ],
-      "schemaDocumentUri" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
-      "schemaHash" : "sha1:150dc302a01dbd35f360d4f09540fce859bfcd32",
+      "schemaDocumentUri" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+      "schemaHash" : "sha1:16221eb6fd0177135b873acd78da1a221a8b621d",
       "doNotSync" : true
     }
 
@@ -2647,8 +2600,8 @@ At least the following elements are expected to be provided by the user:
 
 -   relatedResource: The link to the resource.
 
-metadataDocuIn addition, ACL may be useful to make metadata editable by
-others. (This will be of interest while updating an existing metadata)
+In addition, ACL may be useful to make metadata editable by others.
+(This will be of interest while updating an existing metadata)
 
 ### Register/Ingest a Metadata Record with Metadata Document
 
@@ -2676,7 +2629,7 @@ and its metadata only providing mandatory fields mentioned above:
 The schemaId used while registering metadata schema has to be used to
 link the metadata with the approbriate metadata schema.
 
-    $ curl 'http://localhost:8040/api/v1/metadata' -i -X POST \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata' -i -X POST \
         -H 'Content-Type: multipart/form-data' \
         -F 'record=@metadata-record4json.json;type=application/json' \
         -F 'document=@metadata.json;type=application/json'
@@ -2685,7 +2638,7 @@ You can see, that most of the sent metadata schema record is empty. Only
 schemaId and relatedResource are provided by the user. HTTP-wise the
 call looks as follows:
 
-    POST /api/v1/metadata HTTP/1.1
+    POST /metastore/api/v1/metadata HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Host: localhost:8040
 
@@ -2710,25 +2663,21 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1
-    ETag: "812848657"
+    Location: http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1
+    ETag: "1695569906"
     Content-Type: application/json
-    Content-Length: 807
+    Content-Length: 712
 
     {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.406Z",
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.364Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -2738,7 +2687,7 @@ the user and will look that way:
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1",
       "documentHash" : "sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"
     }
 
@@ -2755,12 +2704,12 @@ avoid conflicts.
 For accessing the metadata the location URL provided before may be used.
 The URL is compiled by the id of the metadata and its version.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1' -i -X GET \
         -H 'Accept: application/json'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1 HTTP/1.1
+    GET /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1 HTTP/1.1
     Accept: application/json
     Host: localhost:8040
 
@@ -2785,12 +2734,12 @@ The only difference is the content type. It has to be set to
 "application/vnd.datamanager.metadata-record+json". Then the command
 line looks like this:
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1' -i -X GET \
         -H 'Accept: application/vnd.datamanager.metadata-record+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1 HTTP/1.1
+    GET /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1 HTTP/1.1
     Accept: application/vnd.datamanager.metadata-record+json
     Host: localhost:8040
 
@@ -2798,24 +2747,20 @@ The linked metadata will be returned. The result is sent back to the
 user and will look that way:
 
     HTTP/1.1 200 OK
-    ETag: "812848657"
+    ETag: "1695569906"
     Content-Type: application/vnd.datamanager.metadata-record+json
-    Content-Length: 807
+    Content-Length: 712
 
     {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.406Z",
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.364Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -2825,7 +2770,7 @@ user and will look that way:
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1",
       "documentHash" : "sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"
     }
 
@@ -2860,30 +2805,25 @@ mentioned before the ETag is needed:
     "date": "2018-07-02"
     }
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "812848657"' \
+        -H 'If-Match: "1695569906"' \
         -F 'record=@metadata-record4json-v2.json;type=application/json' \
-        -F 'document=@metadata-v2.json;type=application/xml' \
-        -F 'version=1'
+        -F 'document=@metadata-v2.json;type=application/xml'
 
 You can see, that only the ACL entry for "guest" was added. All other
 properties are still the same. HTTP-wise the call looks as follows:
 
-    PUT /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1 HTTP/1.1
+    PUT /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "812848657"
+    If-Match: "1695569906"
     Host: localhost:8040
 
-    --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    Content-Disposition: form-data; name=version
-
-    1
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record4json-v2.json
     Content-Type: application/json
 
-    {"id":"e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2","pid":{"id":null,"identifier":"e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2","identifierType":"INTERNAL"},"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"INTERNAL"},"createdAt":"2021-08-13T10:01:03Z","lastUpdate":"2021-08-13T10:01:03.406Z","schema":{"id":null,"identifier":"my_first_json","identifierType":"INTERNAL"},"schemaVersion":2,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1","documentHash":"sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"}
+    {"id":"290d4094-8b58-4f16-ba85-d0cc88a1f81e","pid":null,"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"URL"},"createdAt":"2023-07-12T12:45:22Z","lastUpdate":"2023-07-12T12:45:22.364Z","schema":{"id":null,"identifier":"my_first_json","identifierType":"INTERNAL"},"schemaVersion":2,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1","documentHash":"sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v2.json
     Content-Type: application/xml
@@ -2895,39 +2835,35 @@ properties are still the same. HTTP-wise the call looks as follows:
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 You will get the new metadata record with the additional ACL entry.
-Version number was incremented by one, 'lastUpdate' and *recordVersion*
-are also modified by the server.
+Version number of record was incremented by one and 'lastUpdate' was
+also modified by the server.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2
-    ETag: "-398051314"
+    Location: http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2
+    ETag: "834161808"
     Content-Type: application/json
-    Content-Length: 807
+    Content-Length: 712
 
     {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.694Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.565Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2",
       "documentHash" : "sha1:1844c8057b673ae260fcc6b6ba146529b2b52771"
     }
 
@@ -2940,46 +2876,42 @@ Repeat the last step and update to the current version. As mentioned
 before the ETag is needed. As the ETag has changed in the meanwhile you
 first have to get the new ETag.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2' -i -X GET \
         -H 'Accept: application/vnd.datamanager.metadata-record+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2 HTTP/1.1
+    GET /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2 HTTP/1.1
     Accept: application/vnd.datamanager.metadata-record+json
     Host: localhost:8040
 
 You will get the new metadata record with the new ETag.
 
     HTTP/1.1 200 OK
-    ETag: "-398051314"
+    ETag: "834161808"
     Content-Type: application/vnd.datamanager.metadata-record+json
-    Content-Length: 807
+    Content-Length: 712
 
     {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.694Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.565Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2",
       "documentHash" : "sha1:1844c8057b673ae260fcc6b6ba146529b2b52771"
     }
 
@@ -3006,24 +2938,24 @@ Etag.
     "note": "since version 3 notes are allowed"
     }
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-398051314"' \
+        -H 'If-Match: "834161808"' \
         -F 'record=@metadata-record4json-v3.json;type=application/json' \
         -F 'document=@metadata-v3.json;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
-    PUT /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2 HTTP/1.1
+    PUT /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-398051314"
+    If-Match: "834161808"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record4json-v3.json
     Content-Type: application/json
 
-    {"id":"e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2","pid":{"id":null,"identifier":"e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2","identifierType":"INTERNAL"},"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"INTERNAL"},"createdAt":"2021-08-13T10:01:03Z","lastUpdate":"2021-08-13T10:01:03.406Z","schema":{"id":null,"identifier":"my_first_json","identifierType":"INTERNAL"},"schemaVersion":3,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1","documentHash":"sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"}
+    {"id":"290d4094-8b58-4f16-ba85-d0cc88a1f81e","pid":null,"relatedResource":{"id":null,"identifier":"https://repo/anyResourceId","identifierType":"URL"},"createdAt":"2023-07-12T12:45:22Z","lastUpdate":"2023-07-12T12:45:22.364Z","schema":{"id":null,"identifier":"my_first_json","identifierType":"INTERNAL"},"schemaVersion":3,"recordVersion":1,"acl":[{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}],"metadataDocumentUri":"http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1","documentHash":"sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.json
     Content-Type: application/xml
@@ -3038,46 +2970,42 @@ HTTP-wise the call looks as follows:
 You will get the new metadata record.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3
-    ETag: "-765011637"
+    Location: http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3
+    ETag: "2104122253"
     Content-Type: application/json
-    Content-Length: 807
+    Content-Length: 712
 
     {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.853Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.657Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3",
       "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
     }
 
 Now you can access the updated metadata via the URI in the HTTP response
 header.
 
-    $ curl 'http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3 HTTP/1.1
+    GET /metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3 HTTP/1.1
     Host: localhost:8040
 
 You will get the updated metadata.
@@ -3107,12 +3035,10 @@ are set via query parameters. The following filters are allowed:
 
 -   until
 
-> **Note**
->
-> The header contains the field 'Content-Range" which displays delivered
-> indices and the maximum number of available schema records. If there
-> are more than 20 metadata records registered you have to provide page
-> and/or size as additional query parameters.
+The header contains the field 'Content-Range" which displays delivered
+indices and the maximum number of available schema records. If there are
+more than 20 metadata records registered you have to provide page and/or
+size as additional query parameters.
 
 -   page: Number of the page you want to get **(starting with page 0)**
 
@@ -3123,85 +3049,73 @@ are set via query parameters. The following filters are allowed:
 If you want to obtain all versions of a specific resource you may add
 'id' as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?id=e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?id=290d4094-8b58-4f16-ba85-d0cc88a1f81e' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?id=e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2 HTTP/1.1
+    GET /metastore/api/v1/metadata?id=290d4094-8b58-4f16-ba85-d0cc88a1f81e HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of metadata records in descending order.
 (current version first)
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/3
+    Content-Range: 0-9/3
     Content-Type: application/json
-    Content-Length: 2429
+    Content-Length: 2144
 
     [ {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.853Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.657Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3",
       "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
     }, {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.694Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=2",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.565Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=2",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 2,
       "recordVersion" : 2,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=2",
-      "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=2",
+      "documentHash" : "sha1:1844c8057b673ae260fcc6b6ba146529b2b52771"
     }, {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
+        "identifierType" : "URL"
       },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.406Z",
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.364Z",
       "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=1",
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=1",
         "identifierType" : "URL"
       },
       "schemaVersion" : 1,
@@ -3211,8 +3125,8 @@ As a result, you receive a list of metadata records in descending order.
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=1",
-      "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=1",
+      "documentHash" : "sha1:97ac2fb17cd40aac07a55444dc161d615c70af8a"
     } ]
 
 #### Find by resourceId
@@ -3223,44 +3137,40 @@ MetaStore may hold multiple metadata documents per resource.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId HTTP/1.1
+    GET /metastore/api/v1/metadata?resoureId=https%3A%2F%2Frepo%2FanyResourceId HTTP/1.1
     Host: localhost:8040
 
 You will get the current version metadata record.
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/1
+    Content-Range: 0-9/1
     Content-Type: application/json
-    Content-Length: 811
+    Content-Length: 716
 
     [ {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.853Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.657Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3",
       "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
     } ]
 
@@ -3270,45 +3180,41 @@ If you want to find all metadata records updated after a specific date.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?from=2021-08-13T08%3A01%3A04.004539Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A22.771448462Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?from=2021-08-13T08%3A01%3A04.004539Z HTTP/1.1
+    GET /metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A22.771448462Z HTTP/1.1
     Host: localhost:8040
 
 You will get the current version metadata records updated ln the last 2
 hours.
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/1
+    Content-Range: 0-9/1
     Content-Type: application/json
-    Content-Length: 811
+    Content-Length: 716
 
     [ {
-      "id" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-      "pid" : {
-        "identifier" : "e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2",
-        "identifierType" : "INTERNAL"
-      },
+      "id" : "290d4094-8b58-4f16-ba85-d0cc88a1f81e",
       "relatedResource" : {
         "identifier" : "https://repo/anyResourceId",
-        "identifierType" : "INTERNAL"
-      },
-      "createdAt" : "2021-08-13T10:01:03Z",
-      "lastUpdate" : "2021-08-13T10:01:03.853Z",
-      "schema" : {
-        "identifier" : "http://localhost:8040/api/v1/schemas/my_first_json?version=3",
         "identifierType" : "URL"
       },
-      "schemaVersion" : 1,
+      "createdAt" : "2023-07-12T12:45:22Z",
+      "lastUpdate" : "2023-07-12T12:45:22.657Z",
+      "schema" : {
+        "identifier" : "http://localhost:8040/metastore/api/v1/schemas/my_first_json?version=3",
+        "identifierType" : "URL"
+      },
+      "schemaVersion" : 3,
       "recordVersion" : 3,
       "acl" : [ {
         "id" : 4,
         "sid" : "SELF",
         "permission" : "ADMINISTRATE"
       } ],
-      "metadataDocumentUri" : "http://localhost:8040/api/v1/metadata/e37a71ed-4a9d-4754-ad47-82d7bdfdf7c2?version=3",
+      "metadataDocumentUri" : "http://localhost:8040/metastore/api/v1/metadata/290d4094-8b58-4f16-ba85-d0cc88a1f81e?version=3",
       "documentHash" : "sha1:737762db675032231ac3cb872fccd32a83ac24d1"
     } ]
 
@@ -3319,18 +3225,18 @@ range.
 
 Command line:
 
-    $ curl 'http://localhost:8040/api/v1/metadata?from=2021-08-13T08%3A01%3A04.004539Z&until=2021-08-13T09%3A01%3A04.004520Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A22.771448462Z&until=2023-07-12T11%3A45%3A22.771444065Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /api/v1/metadata?from=2021-08-13T08%3A01%3A04.004539Z&until=2021-08-13T09%3A01%3A04.004520Z HTTP/1.1
+    GET /metastore/api/v1/metadata?from=2023-07-12T10%3A45%3A22.771448462Z&until=2023-07-12T11%3A45%3A22.771444065Z HTTP/1.1
     Host: localhost:8040
 
 You will get an empty array as no metadata record exists in the given
 range:
 
     HTTP/1.1 200 OK
-    Content-Range: 0-19/0
+    Content-Range: 0-9/0
     Content-Type: application/json
     Content-Length: 3
 

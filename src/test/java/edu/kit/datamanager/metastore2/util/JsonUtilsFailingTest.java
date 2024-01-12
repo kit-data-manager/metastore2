@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 public class JsonUtilsFailingTest {
 
   private final String jsonSchemaWithversiondraft201909 = "{"
-          + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", "
+          + "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\", "
           + "  \"properties\": {"
           + "    \"id\": {"
           + "      \"type\": \"number\""
@@ -37,7 +37,7 @@ public class JsonUtilsFailingTest {
           + "  }"
           + "}";
   private final String invalidJsonSchemaDocumentWithversiondraft201909 = "{\n"
-          + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "  \"$id\": \"http://localhost:8040/api/v1/schemas/Test\",\n"
           + "  \"title\": \"Test\",\n"
           + "  \"type\": \"object\",\n"

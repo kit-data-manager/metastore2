@@ -31,6 +31,21 @@ In between, special characteristics of the calls are explained together with add
 For technical reasons, all metadata resources shown in the examples contain all fields, e.g. also empty lists or fields with value 'null'. You may ignore most of them
 as long as they are not needed. Some of them will be assigned by the server, others remain empty or null as long as you don't assign any value to them. 
 All fields mandatory at creation time are explained in the resource creation example.
+
+=== Building the URL
+The URL for accessing the MetaStore REST endpoints is constructed as follows:
+
+1. Protocol (e.g., http, https)
+2. Host name (e.g. localhost, www.example.org)
+3. Port (e.g. 8040) 
+4. Context path (e.g. /metastore)
+5. Endpoint (e.g. /api/v1/metadata)
+
+For example, to list all the schema records in your local MetaStore, you need to
+run the following in your browser: http://localhost:8040/metastore/api/v1/schemas
+
+In former versions (< 1.3.0), no context path was provided by default. 
+ 
 [[XML]]
 == XML (Schema)
 [[ChapterMetadataSchemaHandling4Xml]]
@@ -63,7 +78,9 @@ At least the following elements are expected to be provided by the user:
 - schemaId: A unique label for the schema.
 - type: XML or JSON. For XSD schemas this should be 'XML'
 
-In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
+In addition, ACL may be useful to make schema readable/editable by others.
+This will be of interest while accessing/updating an existing schema.(if authorization is enabled)
+
 
 === Registering a Metadata Schema Document
 
@@ -769,7 +786,7 @@ schema-record4json.json:
 ----
 schema.json:
 {
-  "$schema": "http://json-schema.org/draft/2019-09/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "http://www.example.org/schema/json",
   "type": "object",
   "title": "Json schema for tests",
@@ -779,7 +796,6 @@ schema.json:
   ],
   "properties": {
     "title": {
-      "$id": "#/properties/string",
       "type": "string",
       "title": "Title",
       "description": "Title of object."
@@ -852,7 +868,7 @@ Just send an HTTP POST with the updated metadata schema document and/or metadata
 ----
 schema-v2.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "title": "Json schema for tests",
@@ -863,13 +879,11 @@ schema-v2.json:
     ],
     "properties": {
         "title": {
-            "$id": "#/properties/string",
             "type": "string",
             "title": "Title",
             "description": "Title of object."
         },                                                                                                                                                                      
         "date": {
-            "$id": "#/properties/string",
             "type": "string",
             "format": "date",
             "title": "Date",
@@ -900,7 +914,7 @@ Just send an HTTP POST with the updated metadata schema document and/or metadata
 ----
 schema-v3.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "http://www.example.org/schema/json",
     "type": "object",
     "title": "Json schema for tests",
@@ -911,20 +925,17 @@ schema-v3.json:
     ],
     "properties": {
         "title": {
-            "$id": "#/properties/string",
             "type": "string",
             "title": "Title",
             "description": "Title of object."
         },                                                                                                                                                                      
         "date": {
-            "$id": "#/properties/string",
             "type": "string",
             "format": "date",
             "title": "Date",
             "description": "Date of object"
         },
         "note": {
-            "$id": "#/properties/string",
             "type": "string",
             "title": "Note",
             "description": "Additonal information about object"
@@ -962,7 +973,7 @@ another-schema-record4json.json:
 ----
 another-schema.json:
 {
-    "$schema": "http://json-schema.org/draft/2019-09/schema#",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "http://www.example.org/schema/json/example",
     "type": "object",
     "title": "Another Json schema for tests",
@@ -972,7 +983,6 @@ another-schema.json:
     ],
     "properties": {
         "description": {
-            "$id": "#/properties/string",
             "type": "string",
             "title": "Description",
             "description": "Any description."

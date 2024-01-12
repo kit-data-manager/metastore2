@@ -1,94 +1,118 @@
+# Create and publish a Docker image on github
+name: Create and publish a Docker image
 
-name: Docker
-
+# Configures this workflow to run every time a change 
+# is pushed to the 'main' branch.
 on:
   push:
-    # Publish `master` as Docker `latest` image.
+    # Publish `main` as Docker `latest` image.
     branches:
-      - master, main
+      - main
 
     # Publish `v1.2.3` tags as releases.
     tags:
       - v*
+      - '*-v*'
 
-  # Run tests for any PRs.
-  pull_request:
-
+# Defines two custom environment variables for the workflow. 
+# These are used for the Container registry domain, and a 
+# name for the Docker image that this workflow builds.
 env:
-  # TODO: Change variable to your image's name.
-  IMAGE_NAME: metastore2
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
+# Two jobs for creating and pushing Docker image
+# - build-and-push-image -> triggered by commits on main and tagging with semantic version (e.g.: v1.2.3)
+# - build-and-push-image-of-branch -> triggered by tags matching '*-v*' (e.g.: Version_1-v1.2.3)
 jobs:
-  # Run tests.
-  # See also https://docs.docker.com/docker-hub/builds/automated-testing/
-  test:
+  build-and-push-image:
     runs-on: ubuntu-latest
-
+    if: ${{ contains(github.ref_name, '-')  == failure() }}
+    # Sets the permissions granted to the `GITHUB_TOKEN` 
+    # for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      # 
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Run tests
-        run: |
-            ./gradlew jacocoTestReport
-#            docker build . --file Dockerfile
-  # Push image to GitHub Packages.
-  # See also https://docs.docker.com/docker-hub/builds/
-  push:
-    # Ensure test job passes before pushing image.
-    needs: test
-
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - name: Build image
-        run: |
-           docker build . --file Dockerfile --tag $IMAGE_NAME
-      - name: Log into registry
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin
-
-      - name: Push image
-        run: |
-          IMAGE_ID=docker.pkg.github.com/${{ github.repository }}/$IMAGE_NAME
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          # Strip git ref prefix from version
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "main" ] && VERSION=latest
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # Uses the `docker/login-action` action to log in to the Container 
+      # registry using the account and password that will publish the packages. 
+      # Once published, the packages are scoped to the account defined here.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
         with:
-          # list of Docker images to use as base name for tags
-          images: |
-            kitdm/metastore2
-          # add git short SHA as Docker tag
-          tag-sha: true    
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-        
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-        
-      - name: Login to DockerHub
-        uses: docker/login-action@v1
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) 
+      # to extract tags and labels that will be applied to the specified image. 
+      # The `id` "meta" allows the output of this step to be referenced in a 
+      # subsequent step. The `images` value provides the base name for the tags 
+      # and labels.
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}  
-          
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v2
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
+      # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
+      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.docker_meta.outputs.tags }}
-          labels: ${{ steps.docker_meta.outputs.labels }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+  build-and-push-image-of-branch:
+    runs-on: ubuntu-latest
+    if: contains(github.ref_name, '-')
+    # Sets the permissions granted to the `GITHUB_TOKEN` 
+    # for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      # 
+    steps:
+      - name: Split first part 
+        env:
+          TAG: ${{ github.ref_name }}
+        id: split
+        run: echo "branch=${TAG%-v*}" >> $GITHUB_OUTPUT
+      - name: Test variable
+        run: |
+          echo ${{ steps.split.outputs.branch }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      # Uses the `docker/login-action` action to log in to the Container 
+      # registry using the account and password that will publish the packages. 
+      # Once published, the packages are scoped to the account defined here.
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # This step uses [docker/metadata-action](https://github.com/docker/metadata-action#about) 
+      # to extract tags and labels that will be applied to the specified image. 
+      # The `id` "meta" allows the output of this step to be referenced in a 
+      # subsequent step. The `images` value provides the base name for the tags 
+      # and labels.
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta-branch
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-${{steps.split.outputs.branch}}
+      # This step uses the `docker/build-push-action` action to build the image, based on your repository's `Dockerfile`. If the build succeeds, it pushes the image to GitHub Packages.
+      # It uses the `context` parameter to define the build's context as the set of files located in the specified path. For more information, see "[Usage](https://github.com/docker/build-push-action#usage)" in the README of the `docker/build-push-action` repository.
+      # It uses the `tags` and `labels` parameters to tag and label the image with the output from the "meta" step.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta-branch.outputs.tags }}
+          labels: ${{ steps.meta-branch.outputs.labels }}
+        

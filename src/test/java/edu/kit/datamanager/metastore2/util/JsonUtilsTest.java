@@ -25,12 +25,12 @@ import static org.junit.Assert.*;
 public class JsonUtilsTest {
 
   private final String emptySchema = "{}";
-  private final String jsonSchemaWithversiondraft04 = "{\"$schema\": \"http://json-schema.org/draft-04/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft06 = "{\"$schema\": \"http://json-schema.org/draft-06/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft07 = "{\"$schema\": \"http://json-schema.org/draft-07/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
-  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"http://json-schema.org/draft/2019-09/schema#\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft04 = "{\"$schema\": \"https://json-schema.org/draft-04/schema\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft06 = "{\"$schema\": \"https://json-schema.org/draft-06/schema\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft07 = "{\"$schema\": \"https://json-schema.org/draft-07/schema\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
+  private final String jsonSchemaWithversiondraft201909 = "{\"$schema\": \"https://json-schema.org/draft/2019-09/schema\", \"properties\": { \"id\": {\"type\": \"number\"}}}";
   private final String moreComplexExample = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -41,14 +41,12 @@ public class JsonUtilsTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"string\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"The string schema\",\n"
           + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
           + "            \"default\": \"no default\"\n"
           + "        },\n"
           + "        \"number\": {\n"
-          + "            \"$id\": \"#/properties/number\",\n"
           + "            \"type\": \"integer\",\n"
           + "            \"title\": \"The number schema\",\n"
           + "            \"description\": \"An explanation about the purpose of this instance.\",\n"
@@ -58,7 +56,7 @@ public class JsonUtilsTest {
           + "    \"additionalProperties\": false\n"
           + "}";
   private final String dateExample = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -69,13 +67,11 @@ public class JsonUtilsTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
@@ -85,7 +81,7 @@ public class JsonUtilsTest {
           + "    \"additionalProperties\": false\n"
           + "}";
   private final String invalidJsonSchemaDocumentWithversiondraft201909 = "{\n"
-          + "  \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "  \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "  \"$id\": \"http://localhost:8040/api/v1/schemas/Test\",\n"
           + "  \"title\": \"Test\",\n"
           + "  \"type\": \"object\",\n"

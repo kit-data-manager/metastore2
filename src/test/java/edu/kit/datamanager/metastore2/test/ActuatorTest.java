@@ -23,7 +23,6 @@ import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
 import org.hamcrest.core.IsNot;
 import org.javers.core.Javers;
 import org.junit.Before;
@@ -39,7 +38,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -92,8 +91,6 @@ public class ActuatorTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
@@ -130,12 +127,12 @@ public class ActuatorTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+              .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
                       .withPort(41416))
               .build();
       // Create schema only once.
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -162,9 +159,9 @@ public class ActuatorTest {
     ///////////////////////////////////////////////////////////////////////////
     // Remove path of metadata repo
     ///////////////////////////////////////////////////////////////////////////
-    Path metadataPath =  Path.of(TEMP_DIR_4_METADATA);
+    Path metadataPath = Path.of(TEMP_DIR_4_METADATA);
     metadataPath.toFile().delete();
-    
+
     // /actuator/info
     this.mockMvc.perform(get("/actuator/info")).andDo(print()).andExpect(status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasKey("schemaRepo")))
@@ -180,9 +177,9 @@ public class ActuatorTest {
     ///////////////////////////////////////////////////////////////////////////
     // Remove path of schema repo
     ///////////////////////////////////////////////////////////////////////////
-    Path schemaPath =  Path.of(TEMP_DIR_4_SCHEMAS);
+    Path schemaPath = Path.of(TEMP_DIR_4_SCHEMAS);
     schemaPath.toFile().delete();
-    
+
     // /actuator/info
     this.mockMvc.perform(get("/actuator/info")).andDo(print()).andExpect(status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$", IsNot.not(Matchers.hasKey("schemaRepo"))))

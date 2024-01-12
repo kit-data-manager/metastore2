@@ -49,16 +49,16 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class MetadataSearchController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataSearchController.class);
+  
+  private static final String SEARCH_PATH_POSTFIX = "/_search";
 
   @Autowired
   private SearchConfiguration searchConfiguration;
 
   /**
+   * Constructor with configuration.
    *
-   * @param applicationProperties
-   * @param metadataConfig
-   * @param metadataRecordDao
-   * @param dataResourceDao
+   * @param searchConfiguration Configuration for search.
    */
   public MetadataSearchController(SearchConfiguration searchConfiguration) {
     this.searchConfiguration = searchConfiguration;
@@ -92,13 +92,14 @@ public class MetadataSearchController {
                   + "to which the records refer as comma-separated values. "
                   + "Regular expressions are also allowed. "
                   + "See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/multi-index.html", required = true) @PathVariable(value = "schemaId") String schemaIds,
-          ProxyExchange<byte[]> proxy,
+          ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
-    ObjectNode on = prepareQuery(body, pgbl);
+    prepareQuery(body, pgbl);
+    LOG.trace("Redirect post to " + searchConfiguration.getUrl() + "/" + schemaIds + SEARCH_PATH_POSTFIX);
 
-    return proxy.uri(searchConfiguration.getUrl() + "/" + schemaIds + "/_search").post();
+    return proxy.uri(searchConfiguration.getUrl() + "/" + schemaIds + SEARCH_PATH_POSTFIX).post();
   }
 
   @PostMapping("/search")
@@ -122,13 +123,14 @@ public class MetadataSearchController {
   @ResponseBody
   @PageableAsQueryParam
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
-          ProxyExchange<byte[]> proxy,
+          ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
 
     // Prepare query with authorization
-    ObjectNode on = prepareQuery(body, pgbl);
+    prepareQuery(body, pgbl);
+    LOG.trace("Redirect post to " + searchConfiguration.getUrl() + SEARCH_PATH_POSTFIX);
 
-    return proxy.uri(searchConfiguration.getUrl() + "/_search").post();
+    return proxy.uri(searchConfiguration.getUrl() + SEARCH_PATH_POSTFIX).post();
   }
 
   /**

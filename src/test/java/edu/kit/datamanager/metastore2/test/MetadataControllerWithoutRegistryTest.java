@@ -42,7 +42,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -54,7 +54,9 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
@@ -77,6 +79,8 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/withoutRegistry/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/withoutRegistry/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
+@TestPropertySource(properties = {"metastore.metadata.landingpage=http://www.example.org/metadata?id=$(id)&version=$(version)"})
+@TestPropertySource(properties = {"metastore.schema.landingpage=http://www.example.org/schema/$(id)?version=$(version)"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerWithoutRegistryTest {
 
@@ -95,14 +99,12 @@ public class MetadataControllerWithoutRegistryTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  private FilterChainProxy springSecurityFilterChain;
-  @Autowired
   Javers javers = null;
   @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IDataResourceDao dataResourceDao;
- @Autowired
+  @Autowired
   private IDataRecordDao dataRecordDao;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
@@ -133,9 +135,9 @@ public class MetadataControllerWithoutRegistryTest {
     try {
       // setup mockMvc
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .addFilters(springSecurityFilterChain)
+              .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
-      				.withPort(41406))
+                      .withPort(41406))
               .build();
       // Create schema only once.
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
@@ -167,12 +169,39 @@ public class MetadataControllerWithoutRegistryTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", KIT_DOCUMENT.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
   }
 
-  
+  @Test
+  public void testLandingpageMetadata() throws Exception {
+    this.mockMvc.perform(get("/api/v1/metadata/anything")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/metadata?id=anything&version="))
+           .andReturn();
+    this.mockMvc.perform(get("/api/v1/metadata/anything")
+            .queryParam("version", "3")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/metadata?id=anything&version=3"))
+           .andReturn();
+  }
+
+  @Test
+  public void testLandingpageSchema() throws Exception {
+    this.mockMvc.perform(get("/api/v1/schemas/anything")
+            .queryParam("version", "5")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+             .andExpect(redirectedUrl("http://www.example.org/schema/anything?version=5"))
+           .andReturn();
+  }
+
   private void ingestSchemaRecord() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(SCHEMA_ID);
@@ -187,7 +216,7 @@ public class MetadataControllerWithoutRegistryTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }

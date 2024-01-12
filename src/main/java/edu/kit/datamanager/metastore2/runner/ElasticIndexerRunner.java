@@ -27,17 +27,20 @@ import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.ControllerUtils;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +55,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   @Parameter(names = {"--reindex"}, description = "Elasticsearch index should be build from existing documents.")
   boolean updateIndex;
   @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
-  List<String> indices;
+  Set<String> indices;
   @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
 
@@ -73,6 +76,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private Optional<IMessagingService> messagingService;
 
   @Override
+  @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
@@ -83,7 +87,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         updateDate = new Date(0);
       }
       if (indices == null) {
-        indices = new ArrayList<>();
+        indices = new HashSet<>();
       }
     } catch (Exception ex) {
       argueParser.usage();
@@ -91,8 +95,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     }
     if (updateIndex) {
       LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
+      LOG.info("No of schemas: '{}'", schemaRecordDao.count());
       // Try to determine URL of repository
-      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll();
+      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 3)).getContent();
       if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
         // Try to fetch baseURL from this
@@ -103,14 +108,26 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
         if (indices.isEmpty()) {
           LOG.info("Reindex all indices!");
-          for (SchemaRecord item : findAllSchemas) {
-            indices.add(item.getSchemaId());
-          }
+          long noOfEntries = url2PathDao.count();
+          long entriesPerPage = 50;
+          long page = 0;
+          // add also the schema registered in the schema registry
+          do {
+            List<SchemaRecord> allSchemas = schemaRecordDao.findAll(PageRequest.of((int) page, (int) entriesPerPage)).getContent();
+            LOG.trace("Add '{}' schemas of '{}'", allSchemas.size(), noOfEntries);
+            for (SchemaRecord item : allSchemas) {
+              indices.add(item.getSchemaId());
+            }
+            page++;
+          } while (page * entriesPerPage < noOfEntries);
         }
 
         for (String index : indices) {
           LOG.info("Reindex '{}'", index);
           List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
+          List<SchemaRecord> findSchemaBySchemaId = schemaRecordDao.findBySchemaIdOrderByVersionDesc(index);
+          LOG.trace("Search for documents for schema '{}' and update date '{}'", index, updateDate);
+          LOG.trace("No of documents: '{}'", findBySchemaId.size());
           for (DataRecord item : findBySchemaId) {
             MetadataRecord result = toMetadataRecord(item, baseUrl);
             LOG.trace("Sending CREATE event.");
@@ -119,13 +136,15 @@ public class ElasticIndexerRunner implements CommandLineRunner {
           }
           LOG.trace("Search for alternative schemaId (given as URL)");
           DataRecord templateRecord = new DataRecord();
-          for (SchemaRecord debug : schemaRecordDao.findBySchemaIdOrderByVersionDesc(index)) {
+          for (SchemaRecord debug : findSchemaBySchemaId) {
             templateRecord.setSchemaId(debug.getSchemaId());
             templateRecord.setSchemaVersion(debug.getVersion());
             List<Url2Path> findByPath1 = url2PathDao.findByPath(debug.getSchemaDocumentUri());
             for (Url2Path path : findByPath1) {
               LOG.trace("SchemaRecord: '{}'", debug);
               List<DataRecord> findBySchemaUrl = dataRecordDao.findBySchemaIdAndLastUpdateAfter(path.getUrl(), updateDate.toInstant());
+              LOG.trace("Search for documents for schema '{}' and update date '{}'", path.getUrl(), updateDate);
+              LOG.trace("No of documents: '{}'", findBySchemaUrl.size());
               for (DataRecord item : findBySchemaUrl) {
                 templateRecord.setMetadataId(item.getMetadataId());
                 templateRecord.setVersion(item.getVersion());
@@ -144,13 +163,35 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     }
   }
 
-  private MetadataRecord toMetadataRecord(DataRecord record, String baseUrl) {
-    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(record.getMetadataId(), record.getVersion(), null, null)).toUri().toString();
+  /**
+   * Transform DataRecord to MetadataRecord.
+   *
+   * @param dataRecord DataRecord holding all information about metadata document.
+   * @param baseUrl Base URL for accessing service.
+   * @return MetadataRecord of metadata document.
+   */
+  private MetadataRecord toMetadataRecord(DataRecord dataRecord, String baseUrl) {
+    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri().toString();
     MetadataRecord returnValue = new MetadataRecord();
-    returnValue.setId(metadataIdWithVersion);
+    returnValue.setId(dataRecord.getMetadataId());
+    returnValue.setSchemaVersion(dataRecord.getSchemaVersion());
+    returnValue.setRecordVersion(dataRecord.getVersion());
     returnValue.setMetadataDocumentUri(metadataIdWithVersion);
-    returnValue.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(record.getSchemaId()));
-    LOG.trace("MetadataRecord: '{}'", returnValue);
+    returnValue.setSchema(ResourceIdentifier.factoryUrlResourceIdentifier(toSchemaUrl(dataRecord, baseUrl)));
+
     return returnValue;
+  }
+
+  /**
+   * Transform schemaID to URL if it is an internal
+   *
+   * @param dataRecord DataRecord holding schemaID and schema version.
+   * @param baseUrl Base URL for accessing service.
+   * @return URL to Schema as String.
+   */
+  private String toSchemaUrl(DataRecord dataRecord, String baseUrl) {
+    String schemaUrl;
+    schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(dataRecord.getSchemaId(), dataRecord.getVersion(), null, null)).toUri();
+    return schemaUrl;
   }
 }

@@ -50,7 +50,7 @@ import org.springframework.restdocs.operation.preprocess.Preprocessors;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.prettyPrint;
 import org.springframework.restdocs.templates.TemplateFormats;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import org.springframework.security.web.FilterChainProxy;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
 import org.springframework.test.context.TestPropertySource;
@@ -94,8 +94,6 @@ public class RestDocumentation4WebpageTest {
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private FilterChainProxy springSecurityFilterChain;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -105,7 +103,7 @@ public class RestDocumentation4WebpageTest {
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private final static String SCHEMA_V1 = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -115,7 +113,6 @@ public class RestDocumentation4WebpageTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
@@ -125,7 +122,7 @@ public class RestDocumentation4WebpageTest {
           + "}";
 
   private final static String SCHEMA_V2 = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -136,13 +133,11 @@ public class RestDocumentation4WebpageTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
@@ -153,7 +148,7 @@ public class RestDocumentation4WebpageTest {
           + "}";
 
   private final static String SCHEMA_V3 = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Json schema for tests\",\n"
@@ -164,20 +159,17 @@ public class RestDocumentation4WebpageTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"title\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Title\",\n"
           + "            \"description\": \"Title of object.\"\n"
           + "        },\n"
           + "        \"date\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
           + "            \"description\": \"Date of object\"\n"
           + "        },\n"
           + "        \"note\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Note\",\n"
           + "            \"description\": \"Additonal information about object\"\n"
@@ -187,7 +179,7 @@ public class RestDocumentation4WebpageTest {
           + "}";
 
   private final static String ANOTHER_SCHEMA = "{\n"
-          + "    \"$schema\": \"http://json-schema.org/draft/2019-09/schema#\",\n"
+          + "    \"$schema\": \"https://json-schema.org/draft/2019-09/schema\",\n"
           + "    \"$id\": \"http://www.example.org/schema/json/example\",\n"
           + "    \"type\": \"object\",\n"
           + "    \"title\": \"Another Json schema for tests\",\n"
@@ -197,7 +189,6 @@ public class RestDocumentation4WebpageTest {
           + "    ],\n"
           + "    \"properties\": {\n"
           + "        \"description\": {\n"
-          + "            \"$id\": \"#/properties/string\",\n"
           + "            \"type\": \"string\",\n"
           + "            \"title\": \"Description\",\n"
           + "            \"description\": \"Any description.\"\n"
@@ -225,13 +216,13 @@ public class RestDocumentation4WebpageTest {
   @Before
   public void setUp() throws JsonProcessingException {
     try {
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
       }
       Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-      try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
         walk.sorted(Comparator.reverseOrder())
                 .map(Path::toFile)
                 .forEach(File::delete);
@@ -241,7 +232,7 @@ public class RestDocumentation4WebpageTest {
       ex.printStackTrace();
     }
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .addFilters(springSecurityFilterChain)
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation)
                     .snippets().withTemplateFormat(TemplateFormats.markdown())
                     .and()
@@ -266,7 +257,7 @@ public class RestDocumentation4WebpageTest {
     MockMultipartFile recordFile = new MockMultipartFile("record", "schema-record4json.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
 
     //create resource and obtain location from response header
-    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas").
+    String location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(schemaFile).
             file(recordFile)).
             andDo(document("webpage/register-json-schema")).
@@ -308,19 +299,19 @@ public class RestDocumentation4WebpageTest {
     // SKIPPED
     //  7. List all schema records (only current schemas)
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas")).
+    this.mockMvc.perform(get("/api/v1/schemas/")).
             andDo(document("webpage/get-all-json-schemas")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
-    this.mockMvc.perform(get("/api/v1/schemas").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
+    this.mockMvc.perform(get("/api/v1/schemas/").param("page", Integer.toString(0)).param("size", Integer.toString(20))).
             andDo(document("webpage/get-all-json-schemas-pagination")).
             andExpect(status().isOk()).
             andReturn().getResponse();
 
     //  8. List all versions of a schema
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/schemas").param("schemaId", EXAMPLE_SCHEMA_ID)).
+    this.mockMvc.perform(get("/api/v1/schemas/").param("schemaId", EXAMPLE_SCHEMA_ID)).
             andDo(document("webpage/get-all-versions-of-a-json-schema")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -395,7 +386,7 @@ public class RestDocumentation4WebpageTest {
     recordFile = new MockMultipartFile("record", "metadata-record4json.json", "application/json", mapper.writeValueAsString(metadataRecord).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.json", "application/json", DOCUMENT_V1.getBytes());
 
-    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata").
+    location = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
             file(metadataFile)).
             andDo(document("webpage/ingest-json-metadata-document")).
@@ -453,14 +444,14 @@ public class RestDocumentation4WebpageTest {
     // 5. List all (recent) metadata document records
     //**************************************************************************
     String resourceId = record.getId();
-    this.mockMvc.perform(get("/api/v1/metadata")).
+    this.mockMvc.perform(get("/api/v1/metadata/")).
             andDo(print()).
             andDo(document("webpage/list-all-metadata-records")).
             andExpect(status().isOk()).
             andReturn();
     // 6. List all versions of a record
     //**************************************************************************
-    this.mockMvc.perform(get("/api/v1/metadata").param("id", resourceId)).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("id", resourceId)).
             andDo(print()).
             andDo(document("webpage/list-all-versions-of-json-metadata-document")).
             andExpect(status().isOk()).
@@ -471,19 +462,19 @@ public class RestDocumentation4WebpageTest {
     // find all metadata for a resource
     Instant oneHourBefore = Instant.now().minusSeconds(3600);
     Instant twoHoursBefore = Instant.now().minusSeconds(7200);
-    this.mockMvc.perform(get("/api/v1/metadata").param("resoureId", RELATED_RESOURCE.getIdentifier())).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("resoureId", RELATED_RESOURCE.getIdentifier())).
             andDo(print()).
             andDo(document("webpage/find-json-metadata-record-resource")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString())).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString())).
             andDo(print()).
             andDo(document("webpage/find-json-metadata-record-from")).
             andExpect(status().isOk()).
             andReturn();
 
-    this.mockMvc.perform(get("/api/v1/metadata").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).
+    this.mockMvc.perform(get("/api/v1/metadata/").param("from", twoHoursBefore.toString()).param("until", oneHourBefore.toString())).andDo(print()).
             andDo(document("webpage/find-json-metadata-record-from-to")).
             andExpect(status().isOk()).
             andReturn();

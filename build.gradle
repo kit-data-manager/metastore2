@@ -1,10 +1,11 @@
 plugins { 
-    id 'org.springframework.boot' version '2.7.9'
-    id 'io.spring.dependency-management' version '1.1.0'
-    id 'io.freefair.lombok' version '6.6.3'
-    id 'io.freefair.maven-publish-java' version '6.6.3'
-    id 'org.owasp.dependencycheck' version '8.1.2'
+    id 'org.springframework.boot' version '3.2.1'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'io.freefair.lombok' version '8.4'
+    id 'io.freefair.maven-publish-java' version '8.4'
+    id 'org.owasp.dependencycheck' version '9.0.7'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'net.ltgt.errorprone' version '3.1.0'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.1'
     id 'java'
@@ -16,10 +17,10 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '1.6.15'
-    javersVersion     = '6.12.0'
+    springDocVersion  = '2.3.0'
+    javersVersion     = '7.3.7'
     keycloakVersion   = '19.0.0'
-
+    errorproneVersion = '2.24.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -33,8 +34,10 @@ repositories {
     mavenCentral()
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
+java {
+  sourceCompatibility = JavaVersion.VERSION_17
+  targetCompatibility = JavaVersion.VERSION_17
+}
  
 if (System.getProperty('profile') == 'minimal') {
     println 'Using minimal profile for building ' + project.getName()
@@ -46,8 +49,8 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:5.3.26'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:3.1.6'
+    implementation 'org.springframework:spring-messaging:6.1.1'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.1.1'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -66,20 +69,13 @@ dependencies {
 
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:3.1.6"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:3.1.5"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:4.1.0"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.1.0"
 
     // springdoc
-    implementation "org.springdoc:springdoc-openapi-ui:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-data-rest:${springDocVersion}"
-    implementation "org.springdoc:springdoc-openapi-webmvc-core:${springDocVersion}"
-
-   //Keycloak already imported in service-base
-//    implementation "org.keycloak:keycloak-spring-boot-starter:${keycloakVersion}"
-//    implementation "com.nimbusds:nimbus-jose-jwt:9.23"
-//    implementation "io.jsonwebtoken:jjwt-api:0.11.5"
-//    implementation "io.jsonwebtoken:jjwt-impl:0.11.5"
-//    implementation "io.jsonwebtoken:jjwt-jackson:0.11.5"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-common:${springDocVersion}"
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-api:${springDocVersion}"
 
     // CLI Parser
     implementation "com.beust:jcommander:1.82"
@@ -88,7 +84,7 @@ dependencies {
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.4"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.10.0"
+    implementation "org.apache.commons:commons-text:1.11.0"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
@@ -98,51 +94,63 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.6.0"
+    implementation "org.postgresql:postgresql:42.7.1"
     //driver for h2
-    implementation "com.h2database:h2:2.1.214"
+    implementation "com.h2database:h2:2.2.224"
     
     // apache
-    implementation "commons-io:commons-io:2.11.0"
-    implementation "org.apache.tika:tika-core:2.7.0"
+    implementation "commons-io:commons-io:2.15.1"
+    implementation "org.apache.tika:tika-core:2.9.1"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.0.78"
+    implementation "com.networknt:json-schema-validator:1.1.0"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation 'xerces:xercesImpl:2.12.2'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:1.1.2"
-    implementation "edu.kit.datamanager:service-base:1.1.1"
+    implementation "edu.kit.datamanager:repo-core:1.2.1"
+    implementation "edu.kit.datamanager:service-base:1.2.0"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:4.4.9"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.2.1"
 
     // DOIP SDK
-    implementation "net.dona.doip:doip-sdk:2.1.0"
+    implementation "net.dona.doip:doip-sdk:2.2.0"
 
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:2.0.7.RELEASE"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.0"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.2.0"
+    testImplementation "org.mockito:mockito-core:5.8.0"
     testImplementation "junit:junit:4.13.2"
+    testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
+
+    // errorprone
+    errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
 }
 
 compileJava {
-    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+//    options.errorprone.disableAllWarnings = true
+    options.errorprone.disableWarningsInGeneratedCode = true
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xmaxwarns" << "200"
+}
+
+compileTestJava {
+    // disable errorprone for tests
+    options.errorprone.disableWarningsInGeneratedCode = true
+    options.errorprone.enabled = false // change it to true to enable
 }
 
 test {
     finalizedBy jacocoTestReport
     environment "spring.config.location", "classpath:/test-config/"
-
+    
     maxHeapSize = "8192m"
     testLogging {
         outputs.upToDateWhen {false}
@@ -157,7 +165,7 @@ tasks.withType(Test) {
 }
 
 jacoco {
-    toolVersion = "0.8.7"
+    toolVersion = "0.8.10"
 }
 
 import java.text.SimpleDateFormat
@@ -202,7 +210,7 @@ bootJar {
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
-        attributes 'Main-Class': 'org.springframework.boot.loader.PropertiesLauncher'
+        attributes 'Main-Class': 'org.springframework.boot.loader.launch.PropertiesLauncher'
     }
     dependsOn asciidoctor
     from ("${asciidoctor.outputDir}") {
