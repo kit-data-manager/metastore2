@@ -5,9 +5,14 @@
 [![Codecov](https://codecov.io/gh/kit-data-manager/metastore2/graph/badge.svg)](https://codecov.io/gh/kit-data-manager/metastore2)
 [![CodeQL](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml/badge.svg)](https://github.com/kit-data-manager/metastore2/actions/workflows/codeql-analysis.yml)
 ![License](https://img.shields.io/github/license/kit-data-manager/metastore2.svg)
-[![Docker Build Status](https://img.shields.io/docker/automated/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
-[![Docker Image Version](https://img.shields.io/docker/v/kitdm/metastore2/latest)](https://hub.docker.com/r/kitdm/metastore2/tags)
-[![Docker Pulls](https://img.shields.io/docker/pulls/kitdm/metastore2)](https://hub.docker.com/r/kitdm/metastore2/tags)
+[![docker]](https://github.com/kit-data-manager/metastore2/pkgs/container/metastore2)
+[![currentVersion]](https://github.com/kit-data-manager/metastore2/pkgs/container/metastore2)
+[![size]](https://github.com/kit-data-manager/metastore2/pkgs/container/metastore2)
+
+
+[docker]: <https://ghcr-badge.egpl.dev/kit-data-manager/metastore2/tags?trim=major&color=steelblue&ignore=main,latest&label=docker versions>
+[currentVersion]: <https://ghcr-badge.egpl.dev/kit-data-manager/metastore2/latest_tag?trim=major&color=steelblue&label=current version>
+[size]: <https://ghcr-badge.egpl.dev/kit-data-manager/metastore2/size?color=steelblue&label=size>
 
 MetaStore is a research data repository software for storing metadata documents and schemas.
 Quality and consistency are ensured by associating and validating each document against a schema.
@@ -22,19 +27,19 @@ It allows you to
  
 ## Installation
 There are three ways to install metaStore2 as a microservice:
-- [Using](#Installation-via-DockerHub) the image available via [DockerHub](https://hub.docker.com/r/kitdm/) (***recommended***)
+- [Using](#Installation-via-GitHub-Packages) the image available via [GitHub Packages](https://github.com/orgs/kit-data-manager/packages?repo_name=metastore2) (***recommended***)
 - [Building](#Build-docker-container-locally) docker image locally
 - [Building](#Build-and-run-locally) and running locally
 
-## Installation via DockerHub
+## Installation via GitHub Packages
 ### Prerequisites
 In order to run this microservice via docker you'll need:
 
 * [Docker](https://www.docker.com/) 
 
 ### Installation
-Typically, there is no need for locally building images as all version are accessible via DockerHub.
-Have a look of available images and their tags [here](https://hub.docker.com/r/kitdm/metastore2) 
+Typically, there is no need for locally building images as all version are accessible via GitHub Packages.
+Have a look of available images and their tags [here](https://github.com/orgs/kit-data-manager/packages?repo_name=metastore2) 
 Just follow instructions [below](#Build-docker-container).
 
 ## Build docker container locally
@@ -64,7 +69,7 @@ On default the created images will be tagged as follows:
 ```
 user@localhost:/home/user/metastore2$ bash docker/buildDocker.sh
 ---------------------------------------------------------------------------
-Build docker container kitdm/metastore2:1.2.0-2023-06-27
+Build docker container ghcr.io/kit-data-manager/metastore2:1.2.0-2023-06-27
 ---------------------------------------------------------------------------
 [...]
 ---------------------------------------------------------------------------
@@ -77,9 +82,9 @@ user@localhost:/home/user/metastore2$
 After building image you have to create (and start) a container for executing microservice:
 ```
 # If you want to use a specific image you may list all possible tags first.
-user@localhost:/home/user/metastore2$ docker images kitdm/metastore2 --format {{.Tag}}
+user@localhost:/home/user/metastore2$ docker images ghcr.io/kit-data-manager/metastore2 --format {{.Tag}}
 1.2.0-2023-06-27
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker kitdm/metastore2:1.2.0-2023-06-27
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 --name metastore4docker ghcr.io/kit-data-manager/metastore2:1.2.0-2023-06-27
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```
@@ -94,7 +99,7 @@ Therefor you have to provide an additional flag to the command mentioned before:
 user@localhost:/home/user/metastore2$ mkdir config
 # Place your own 'application.properties' inside the config directory
 # Create/run container
-user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 -v `pwd`/config:/spring/metastore2/config --name metastore4docker kitdm/metastore2:1.2.0-2023-06-27
+user@localhost:/home/user/metastore2$ docker run -d -p8040:8040 -v `pwd`/config:/spring/metastore2/config --name metastore4docker ghcr.io/kit-data-manager/metastore2:1.2.0-2023-06-27
 57c973e7092bfc3778569f90632d60775dfecd12352f13a4fd2fdf4270865286
 user@localhost:/home/user/metastore2$
 ```

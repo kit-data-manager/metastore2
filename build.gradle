@@ -1,10 +1,10 @@
 plugins { 
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot' version '3.2.1'
     id 'io.spring.dependency-management' version '1.1.4'
     id 'io.freefair.lombok' version '8.4'
     id 'io.freefair.maven-publish-java' version '8.4'
-    id 'org.owasp.dependencycheck' version '9.0.7'
-    id 'org.asciidoctor.jvm.convert' version '3.3.2'
+    id 'org.owasp.dependencycheck' version '9.0.8'
+    id 'org.asciidoctor.jvm.convert' version '4.0.1'
     id 'net.ltgt.errorprone' version '3.1.0'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.1'
@@ -18,9 +18,9 @@ group = 'edu.kit.datamanager'
 ext {
     // versions of dependencies
     springDocVersion  = '2.3.0'
-    javersVersion     = '7.3.6'
+    javersVersion     = '7.3.7'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.23.0'
+    errorproneVersion = '2.24.1'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -50,7 +50,7 @@ if (System.getProperty('profile') == 'minimal') {
 dependencies {
     // Spring
     implementation 'org.springframework:spring-messaging:6.1.1'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.1.0'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.1.1'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -113,7 +113,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.2.0"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.2.1"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.2.2"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
@@ -190,7 +190,7 @@ asciidoctor {
     dependsOn test  
     sourceDir "docs/"
     outputDir "build/docs/html5"
-    inProcess = JAVA_EXEC
+    executionMode = JAVA_EXEC
     forkOptions {
       jvmArgs "--add-opens", "java.base/sun.nio.ch=ALL-UNNAMED", "--add-opens", "java.base/java.io=ALL-UNNAMED"
     }
