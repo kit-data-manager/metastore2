@@ -12,14 +12,14 @@ services:
       dps:
         ipv4_address: 172.0.0.10
   my-apache:
-    build: https://github.com/kit-data-manager/frontend-collection.git#docker-metastore
-    image: my-apache
+    image: ${PREFIX4DOCKER}/frontend-collection-metastore:${FRONTEND_COLLECTION_VERSION}
+    container_name: my_apache
     ports:
      - "80:80"
     networks:
       - dps
   elasticsearch:
-    image: elasticsearch:8.11.1
+    image: elasticsearch:${ELASTICSEARCH_VERSION}
     container_name: elastic4indexing
     environment:
       - discovery.type=single-node
@@ -52,7 +52,7 @@ services:
     networks:
       - dps
   indexing-service:
-    image: kitdm/indexing-service:v1.0.0
+    image: ${PREFIX4DOCKER}/indexing-service:${INDEXING_SERVICE_VERSION}
     container_name: indexing4metastore
     environment:
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
@@ -69,7 +69,7 @@ services:
     networks:
       - dps
   metastore:
-    image: kitdm/metastore2:v1.4.0
+    image: ${PREFIX4DOCKER}/metastore2:${METASTORE_VERSION}
     container_name: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
