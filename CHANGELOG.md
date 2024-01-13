@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
+## [1.4.1] - 2024-01-13
+### Added
+
+### Changed
+- Switch to GitHub Packages.
+- Loge for SCC (Scientific Computing Centre)
+
+### Libs
+- Bump com.google.errorprone:error_prone_core from 2.24.0 to 2.24.1
+- Bump com.google.errorprone:error_prone_core from 2.23.0 to 2.24.0 
+- Bump javersVersion from 7.3.6 to 7.3.7 
+- Bump org.asciidoctor.jvm.convert from 4.0.0 to 4.0.1
+- Bump org.asciidoctor.jvm.convert from 3.3.2 to 4.0.0
+- Bump org.owasp.dependencycheck from 9.0.7 to 9.0.8
+- Bump org.springframework.boot from 3.2.0 to 3.2.1
+- Bump org.springframework.cloud:spring-cloud-gateway-mvc from 4.1.0 to 4.1.1
+- Bump org.springframework.data:spring-data-elasticsearch from 5.2.1 to 5.2.2
+
 ## [1.4.0] - 2023-12-19
 ### Security
 
