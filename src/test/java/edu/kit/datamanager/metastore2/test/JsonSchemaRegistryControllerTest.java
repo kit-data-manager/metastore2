@@ -164,7 +164,7 @@ public class JsonSchemaRegistryControllerTest {
           + "    } "
           + "}";
   private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
-  private final static String INVALID_JSON_DOCUMENT = "{\"title\":\"any string\",\"date\":\"2020-10-16T10:13:24\"}";
+  private final static String INVALID_JSON_DOCUMENT = "{\"title\":\"any string\",\"dates\":\"2020-10-16T10:13:24\"}";
   private final static String DC_DOCUMENT = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<oai_dc:dc xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:oai_dc=\"http://www.openarchives.org/OAI/2.0/oai_dc/\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.openarchives.org/OAI/2.0/oai_dc/ http://www.openarchives.org/OAI/2.0/oai_dc.xsd\">\n"
           + "  <dc:creator>Carbon, Seth</dc:creator>\n"
