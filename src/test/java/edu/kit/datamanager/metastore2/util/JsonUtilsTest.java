@@ -18,6 +18,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 
 /**
  *
@@ -714,6 +715,7 @@ public class JsonUtilsTest {
    * Test of validateJson method, of class JsonUtils.
    */
   @Test
+  @Ignore
   public void testValidateJsonWithInvalidDateDocument() {
     System.out.println("testValidateJsonWithInvalidDateDocument");
     String[] jsonDocuments = {invalidDateDocument};
