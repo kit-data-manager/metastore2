@@ -40,6 +40,7 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
@@ -445,6 +446,7 @@ public class MetadataRecordUtil {
       dataResource.getTitles().add(Title.factoryTitle(defaultTitle, Title.TYPE.OTHER));
     }
     dataResource.setResourceType(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
+    checkLicense(dataResource, metadataRecord.getLicenseUri());
 
     return dataResource;
   }
@@ -562,6 +564,10 @@ public class MetadataRecordUtil {
           }
         }
       }
+      // Only one license allowed. So don't worry about size of set.
+      if (!dataResource.getRights().isEmpty()) {
+        metadataRecord.setLicenseUri(dataResource.getRights().iterator().next().getSchemeUri());
+      }
       long nano5 = System.nanoTime() / 1000000;
       LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, provideETag);
     }
@@ -622,7 +628,8 @@ public class MetadataRecordUtil {
         URI finalUri = builder.build().toUri();
 
         try {
-          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class);
+          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class
+          );
           success = true;
           break;
         } catch (HttpClientErrorException ce) {
@@ -672,7 +679,8 @@ public class MetadataRecordUtil {
         URI finalUri = builder.build().toUri();
 
         try {
-          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class);
+          returnValue = SimpleServiceClient.create(finalUri.toString()).withBearerToken(guestToken).accept(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).getResource(MetadataSchemaRecord.class
+          );
           success = true;
           break;
         } catch (HttpClientErrorException ce) {
@@ -856,9 +864,10 @@ public class MetadataRecordUtil {
       managed.setRelatedResource(mergeEntry("Updating record->relatedResource", managed.getRelatedResource(), provided.getRelatedResource()));
       //update schemaId
       managed.setSchema(mergeEntry("Updating record->schema", managed.getSchema(), provided.getSchema()));
-
       //update schemaVersion
       managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
+      // update licenseUri
+      managed.setLicenseUri(mergeEntry("Updating record->licenseUri", managed.getLicenseUri(), provided.getLicenseUri(), true));
     } else {
       managed = (managed != null) ? managed : provided;
     }
@@ -1048,7 +1057,29 @@ public class MetadataRecordUtil {
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
-    metadataRecord.setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
+    metadataRecord
+            .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class
+            ).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
     LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
+  }
+
+  public static void checkLicense(DataResource dataResource, String licenseUri) {
+    if (licenseUri != null) {
+      Set<Scheme> rights = dataResource.getRights();
+      String licenseId = licenseUri.substring(licenseUri.lastIndexOf("/"));
+      Scheme license = Scheme.factoryScheme(licenseId, licenseUri);
+      if (rights.isEmpty()) {
+        rights.add(license);
+      } else {
+        // Check if license already exists (only one license allowed)
+        if (!rights.contains(license)) {
+          rights.clear();
+          rights.add(license);
+        }
+      }
+    } else {
+      // Remove license
+      dataResource.getRights().clear();
+    }
   }
 }
