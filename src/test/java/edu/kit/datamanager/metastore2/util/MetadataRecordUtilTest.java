@@ -21,6 +21,7 @@ import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
+import edu.kit.datamanager.repo.domain.Scheme;
 import java.time.Instant;
 import java.util.function.UnaryOperator;
 import org.javers.core.Javers;
@@ -82,6 +83,7 @@ public class MetadataRecordUtilTest {
   private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
   private static final String METADATA_RECORD_ID = "test_id";
   private static final String PID = "anyPID";
+  private static final String LICENSE = "https://spdx.org/licenses/Apache-2.0";
   private static final String PRINCIPAL = "principal";
   private static final String SCHEMA_ID = "my_dc";
   private static final String INVALID_SCHEMA = "invalid_dc";
@@ -670,6 +672,7 @@ public class MetadataRecordUtilTest {
     assertEquals("Id should be the same!", result.getId(), dataResource.getId());
     assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
     assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertTrue("License should be 'null'", result.getLicenseUri() == null);
     assertNull("PID should be empty", result.getPid());
     assertNull("Create date should be empty!", result.getCreatedAt());
     assertNull("Last update date should be empty!", result.getLastUpdate());
@@ -682,6 +685,7 @@ public class MetadataRecordUtilTest {
     assertEquals("Id should be the same!", result.getId(), dataResource.getId());
     assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
     assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertTrue("License should be 'null'", result.getLicenseUri() == null);
     assertNull("PID should be empty", result.getPid());
     assertNull("Create date should be empty!", result.getCreatedAt());
     assertNull("Last update date should be empty!", result.getLastUpdate());
@@ -693,12 +697,30 @@ public class MetadataRecordUtilTest {
     assertEquals("Id should be the same!", result.getId(), dataResource.getId());
     assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
     assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertTrue("License should be 'null'", result.getLicenseUri() == null);
     assertNull("Create date should be empty!", result.getCreatedAt());
     assertNull("Last update date should be empty!", result.getLastUpdate());
     // PID should be set
     assertNotNull("PID shouldn't be NULL", result.getPid());
     assertEquals(PID, result.getPid().getIdentifier());
     assertEquals(ResourceIdentifier.IdentifierType.UPC, result.getPid().getIdentifierType());
+    // Test migration of PID with two alternate identifiers (internal & UPC)
+    dataResource.getRights().add(Scheme.factoryScheme("test", LICENSE));
+    result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
+    assertNotNull(result.getId());
+    assertEquals("Id should be the same!", result.getId(), dataResource.getId());
+    assertEquals("Version should be '1'", Long.valueOf(1l), result.getRecordVersion());
+    assertTrue("ACL should be empty", result.getAcl().isEmpty());
+    assertNull("Create date should be empty!", result.getCreatedAt());
+    assertNull("Last update date should be empty!", result.getLastUpdate());
+    // PID should be set
+    assertNotNull("PID shouldn't be NULL", result.getPid());
+    assertEquals(PID, result.getPid().getIdentifier());
+    assertEquals(ResourceIdentifier.IdentifierType.UPC, result.getPid().getIdentifierType());
+    // License should be set
+    assertNotNull("License shouldn't be NULL", result.getLicenseUri());
+    assertEquals(LICENSE, result.getLicenseUri());
+    
     // Add schemaID, resourceType, relatedIdentifier for schema
     //@ToDo Make this working again
 //    dataResource.getTitles().add(Title.factoryTitle(SCHEMA_ID));

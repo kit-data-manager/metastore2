@@ -112,8 +112,8 @@ import org.springframework.web.context.WebApplicationContext;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class SchemaRegistryControllerTest {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/schematest/";
-  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
+  private static final String TEMP_DIR_4_ALL = "/tmp/metastore2/schematest/";
+  private static final String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
   private static final String PID = "anyPID";
   private static final ResourceIdentifier.IdentifierType PID_TYPE = ResourceIdentifier.IdentifierType.HANDLE;
   private static final String SCHEMA_ID = "dc";
@@ -121,9 +121,9 @@ public class SchemaRegistryControllerTest {
   private static final String LABEL = "any unique label for test";
   private static final String DEFINITION = "any unique definition for test";
   private static final String COMMENT = "any unique comment for test";
-  private final static String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
-
-  private final static String KIT_SCHEMA_V2 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
+  private static final String KIT_SCHEMA = CreateSchemaUtil.KIT_SCHEMA;
+  private static final String APACHE_2_LICENSE = "https://spdx.org/licenses/Apache-2.0";
+  private static final String KIT_SCHEMA_V2 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
           + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
           + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
@@ -138,15 +138,15 @@ public class SchemaRegistryControllerTest {
           + "      </xs:element>\n"
           + "    </xs:schema>";
 
-  private final static String KIT_DOCUMENT = CreateSchemaUtil.KIT_DOCUMENT;
-  private final static String INVALID_KIT_DOCUMENT = CreateSchemaUtil.KIT_DOCUMENT_INVALID_1;
-  private final static String SCHEMA_V1 = CreateSchemaUtil.XML_SCHEMA_V1;
-  private final static String SCHEMA_V2 = CreateSchemaUtil.XML_SCHEMA_V2;
-  private final static String SCHEMA_V3 = CreateSchemaUtil.XML_SCHEMA_V3;
-  private final static String XML_DOCUMENT_V1 = CreateSchemaUtil.XML_DOCUMENT_V1;
-  private final static String XML_DOCUMENT_V2 = CreateSchemaUtil.XML_DOCUMENT_V2;
-  private final static String XML_DOCUMENT_V3 = CreateSchemaUtil.XML_DOCUMENT_V3;
-  private final static String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
+  private static final String KIT_DOCUMENT = CreateSchemaUtil.KIT_DOCUMENT;
+  private static final String INVALID_KIT_DOCUMENT = CreateSchemaUtil.KIT_DOCUMENT_INVALID_1;
+  private static final String SCHEMA_V1 = CreateSchemaUtil.XML_SCHEMA_V1;
+  private static final String SCHEMA_V2 = CreateSchemaUtil.XML_SCHEMA_V2;
+  private static final String SCHEMA_V3 = CreateSchemaUtil.XML_SCHEMA_V3;
+  private static final String XML_DOCUMENT_V1 = CreateSchemaUtil.XML_DOCUMENT_V1;
+  private static final String XML_DOCUMENT_V2 = CreateSchemaUtil.XML_DOCUMENT_V2;
+  private static final String XML_DOCUMENT_V3 = CreateSchemaUtil.XML_DOCUMENT_V3;
+  private static final String JSON_DOCUMENT = "{\"title\":\"any string\",\"date\": \"2020-10-16\"}";
   private static final String RELATED_RESOURCE_STRING = "anyResourceId";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE_STRING);
 
@@ -1056,6 +1056,8 @@ public class SchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertNull(record2.getLicenseUri());
+    Assert.assertEquals(record.getLicenseUri(), record2.getLicenseUri());
     Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -1073,6 +1075,86 @@ public class SchemaRegistryControllerTest {
 
     Assert.assertEquals(KIT_SCHEMA_V2, content);
   }
+
+
+  @Test
+  public void testUpdateRecordAndDocumentWithLicense() throws Exception {
+    String schemaId = "updateRecordAndDocumentWithLicense".toLowerCase(Locale.getDefault());
+    ingestSchemaRecord(schemaId);
+    MvcResult result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record.getMimeType();
+    record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    record.setLicenseUri(APACHE_2_LICENSE);
+    System.out.println("****************************************************************************************");
+    System.out.println("****************************************************************************************");
+    System.out.println(mapper.writeValueAsString(record));
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA_V2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).
+            file(schemaFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+    etag = result.getResponse().getHeader("ETag");
+
+    MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertNotNull(record2.getLicenseUri());
+    Assert.assertEquals(record.getLicenseUri(), record2.getLicenseUri());
+    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
+    testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
+//    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertNotEquals(record.getSchemaHash(), record2.getSchemaHash());
+    Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
+    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Test also document for update
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    Assert.assertEquals(KIT_SCHEMA_V2, content);
+    // Remove license
+    record2.setLicenseUri(null);
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/" + schemaId).
+            file(recordFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=*")).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataSchemaRecord record3 = mapper.readValue(body, MetadataSchemaRecord.class);
+    Assert.assertNull(record3.getLicenseUri());
+    Assert.assertEquals(record2.getMimeType(), record3.getMimeType());//mime type was changed by update
+    Assert.assertEquals(record2.getCreatedAt(), record3.getCreatedAt());
+    Assert.assertEquals(record2.getSchemaDocumentUri(), record3.getSchemaDocumentUri());
+//    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
+    Assert.assertEquals(record2.getSchemaHash(), record3.getSchemaHash());
+    Assert.assertEquals(record2.getSchemaId(), record3.getSchemaId());
+    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());//version is not changing for metadata update
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
+    }
+    Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
+ }
 
   @Test
   public void testUpdateRecordAndDocumentWithWrongVersion() throws Exception {
