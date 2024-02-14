@@ -18,7 +18,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 
 /**
  *
@@ -74,6 +73,7 @@ public class JsonUtilsTest {
           + "        },\n"
           + "        \"date\": {\n"
           + "            \"type\": \"string\",\n"
+          + "            \"pattern\": \"^[0-9]{4}-[01][0-9]-[0-3][0-9]$\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
           + "            \"description\": \"Date of object\"\n"
@@ -715,7 +715,6 @@ public class JsonUtilsTest {
    * Test of validateJson method, of class JsonUtils.
    */
   @Test
-  @Ignore
   public void testValidateJsonWithInvalidDateDocument() {
     System.out.println("testValidateJsonWithInvalidDateDocument");
     String[] jsonDocuments = {invalidDateDocument};
