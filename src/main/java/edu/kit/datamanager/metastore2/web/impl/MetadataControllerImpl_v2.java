@@ -25,13 +25,14 @@ import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.exceptions.UnprocessableEntityException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.ILinkedDataResourceDao;
+import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
-import edu.kit.datamanager.metastore2.domain.LinkedDataResource;
+import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
-import edu.kit.datamanager.metastore2.util.DataResourceUtil;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController_v2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -41,6 +42,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
@@ -110,7 +112,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
 
   private final ApplicationProperties applicationProperties;
 
-  private final ILinkedDataResourceDao metadataRecordDao;
+  private final ILinkedMetadataRecordDao metadataRecordDao;
 
   private final MetastoreConfiguration metadataConfig;
 
@@ -136,7 +138,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
    */
   public MetadataControllerImpl_v2(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
-          ILinkedDataResourceDao metadataRecordDao,
+          ILinkedMetadataRecordDao metadataRecordDao,
           IDataResourceDao dataResourceDao) {
     this.applicationProperties = applicationProperties;
     this.metadataConfig = metadataConfig;
@@ -151,7 +153,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
-    DataResourceUtil.setToken(guestToken);
+    MetadataRecordUtil.setToken(guestToken);
   }
 
   @Override
@@ -166,14 +168,14 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     LOG.trace("Performing createRecord({},...).", recordDocument);
     DataResource metadataRecord;
     if (recordDocument == null || recordDocument.isEmpty()) {
-      String message = "No metadata record provided. Returning HTTP BAD_REQUEST.";
+      String message = "No data resource record provided. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
       throw new BadArgumentException(message);
     }
     try {
       metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), DataResource.class);
     } catch (IOException ex) {
-      String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
+      String message = "No valid data resource record provided. Returning HTTP BAD_REQUEST.";
       if (ex instanceof JsonParseException) {
         message = message + " Reason: " + ex.getMessage();
       }
@@ -182,15 +184,12 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     }
     long nano2 = System.nanoTime() / 1000000;
 
-    if (metadataRecord.getRelatedResource() == null || metadataRecord.getRelatedResource().getIdentifier() == null || metadataRecord.getSchema() == null || metadataRecord.getSchema().getIdentifier() == null) {
-      LOG.error("Mandatory attributes relatedResource and/or schemaId not found in record. Returning HTTP BAD_REQUEST.");
-      return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Mandatory attributes relatedResource and/or schemaId not found in record.");
-    }
+    DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(metadataRecord);
 
     LOG.debug("Test for existing metadata record for given schema and resource");
-    ResourceIdentifier schemaIdentifier;
+    RelatedIdentifier schemaIdentifier;
     try {
-      schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(metadataConfig, metadataRecord);
+      schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(metadataRecord);
     } catch (ResourceNotFoundException rnfe) {
       LOG.debug("Error checking for existing relations.", rnfe);
       throw new UnprocessableEntityException("Schema ID seems to be invalid");
@@ -206,13 +205,13 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
       LOG.error(message);
       return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
     }
-    DataResource result = DataResourceUtil.createDataResource(metadataConfig, recordDocument, document);
+    DataResource result = MetadataRecordUtil.createDataResource(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
     long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
-    DataResourceUtil.fixMetadataDocumentUri(result);
+    MetadataRecordUtil.fixMetadataDocumentUri(result);
     long nano5 = System.nanoTime() / 1000000;
-    metadataRecordDao.save(new LinkedDataResource(result));
+    metadataRecordDao.save(new LinkedMetadataRecord(result));
     long nano6 = System.nanoTime() / 1000000;
 
     URI locationUri;
@@ -237,12 +236,12 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    DataResource metadataRecord = DataResourceUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    DataResource metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of DataResource.");
     String etag = metadataRecord.getEtag();
-    DataResourceUtil.fixMetadataDocumentUri(metadataRecord);
+    MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
   }
@@ -259,8 +258,8 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    DataResource metadataRecord = DataResourceUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
-    DataResourceUtil.fixMetadataDocumentUri(metadataRecord);
+    DataResource metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
+    MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
     AclRecord aclRecord = new AclRecord();
     aclRecord.setAcl(metadataRecord.getAcl());
     aclRecord.setDataResource(metadataRecord);
@@ -277,7 +276,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
   ) {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
-    Path metadataDocumentPath = DataResourceUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
+    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
 
     return ResponseEntity.
             ok().
@@ -314,17 +313,17 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    DataResource recordByIdAndVersion = DataResourceUtil.getRecordByIdAndVersion(metadataConfig, id);
+    DataResource recordByIdAndVersion = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id);
     List<DataResource> recordList = new ArrayList<>();
     long totalNoOfElements = recordByIdAndVersion.getRecordVersion();
     for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
-      recordList.add(DataResourceUtil.getRecordByIdAndVersion(metadataConfig, id, version));
+      recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
     }
 
     LOG.trace("Transforming Dataresource to DataResource");
     List<DataResource> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
-      DataResourceUtil.fixMetadataDocumentUri(metadataRecord);
+      MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
       metadataList.add(metadataRecord);
     });
 
@@ -375,7 +374,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
       for (String schemaId : schemaIds) {
         MetadataSchemaRecord currentSchemaRecord;
         try {
-          currentSchemaRecord = DataResourceUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
+          currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
           // Test for internal URI -> Transform to global URI.
           if (currentSchemaRecord.getSchemaDocumentUri().startsWith("file:")) {
             ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(currentSchemaRecord);
@@ -389,7 +388,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
           allRelatedIdentifiersSchema.add("UNKNOWN_SCHEMA_ID");
         }
         for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
-          MetadataSchemaRecord schemaRecord = DataResourceUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
+          MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
           // Test for internal URI -> Transform to global URI.
           if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
             ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaRecord);
@@ -432,8 +431,8 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     List<DataResource> recordList = records.getContent();
     List<DataResource> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
-      DataResource item = DataResourceUtil.migrateToDataResource(metadataConfig, metadataRecord, false);
-      DataResourceUtil.fixMetadataDocumentUri(item);
+      DataResource item = MetadataRecordUtil.migrateToDataResource(metadataConfig, metadataRecord, false);
+      MetadataRecordUtil.fixMetadataDocumentUri(item);
       metadataList.add(item);
     });
 
@@ -455,11 +454,11 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     UnaryOperator<String> getById;
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    DataResource updateDataResource = DataResourceUtil.updateDataResource(metadataConfig, id, eTag, metadataRecord, document, getById);
+    DataResource updateDataResource = MetadataRecordUtil.updateDataResource(metadataConfig, id, eTag, metadataRecord, document, getById);
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateDataResource.getEtag();
-    DataResourceUtil.fixMetadataDocumentUri(updateDataResource);
+    MetadataRecordUtil.fixMetadataDocumentUri(updateDataResource);
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateDataResource.getId(), updateDataResource.getRecordVersion(), null, null)).toUri();
@@ -482,7 +481,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
 
     String eTag = ControllerUtils.getEtagFromHeader(wr);
-    DataResourceUtil.deleteDataResource(metadataConfig, id, eTag, getById);
+    MetadataRecordUtil.deleteDataResource(metadataConfig, id, eTag, getById);
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
@@ -495,7 +494,7 @@ public class MetadataControllerImpl_v2 implements IMetadataController_v2 {
     Map<String, String> details = ActuatorUtil.testDirectory(basePath);
 
     if (!details.isEmpty()) {
-      details.put("No of metadata documents", Long.toString(DataResourceUtil.getNoOfDocuments()));
+      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
       builder.withDetail("metadataRepo", details);
     }
   }
