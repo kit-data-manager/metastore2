@@ -1,8 +1,8 @@
 plugins { 
     id 'org.springframework.boot' version '3.2.2'
     id 'io.spring.dependency-management' version '1.1.4'
-    id 'io.freefair.lombok' version '8.4'
-    id 'io.freefair.maven-publish-java' version '8.4'
+    id 'io.freefair.lombok' version '8.6'
+    id 'io.freefair.maven-publish-java' version '8.6'
     id 'org.owasp.dependencycheck' version '9.0.9'
     id 'org.asciidoctor.jvm.convert' version '4.0.2'
     id 'net.ltgt.errorprone' version '3.1.0'
@@ -20,7 +20,7 @@ ext {
     springDocVersion  = '2.3.0'
     javersVersion     = '7.3.7'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.24.1'
+    errorproneVersion = '2.25.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -113,7 +113,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.2.0"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.2.2"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.2.3"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
