@@ -33,7 +33,5 @@ public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, J
 
   List<SchemaRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
 
-  SchemaRecord findTopBySchemaIdOrderByVersionDesc(String schemaId);
-
   SchemaRecord findFirstBySchemaIdOrderByVersionDesc(String schemaId);
 }

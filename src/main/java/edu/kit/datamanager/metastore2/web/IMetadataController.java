@@ -52,10 +52,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Interface for metadata documents controller.
+ * @deprecated version 3 please use IMetadataController_v2 instead
  */
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
+@Deprecated
 public interface IMetadataController extends InfoContributor {
 
   @Operation(summary = "Ingest a new metadata document and its record.", description = "This endpoint allows to create a new metadata record by providing the record metadata as JSON document as well as the actual metadata as file upload. The record metadata mainly contains "

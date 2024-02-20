@@ -1102,7 +1102,7 @@ public class MetadataSchemaRecordUtil {
     return schemaRecord;
   }
 
-  private static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
+  public static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
     if (schemaRecordDao != null) {
       try {
         schemaRecordDao.save(schemaRecord);

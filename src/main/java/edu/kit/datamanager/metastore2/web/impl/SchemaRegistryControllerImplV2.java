@@ -24,7 +24,6 @@ import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
-import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
@@ -72,6 +71,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
+import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerV2;
 
 /**
  * Controller for schema documents.
@@ -80,9 +80,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RequestMapping(value = "/api/v2/schemas")
 @Tag(name = "Schema Registry")
 @Schema(description = "Schema Registry")
-public class SchemaRegistryControllerImpl_v2 implements ISchemaRegistryController {
+public class SchemaRegistryControllerImplV2 implements ISchemaRegistryControllerV2 {
 
-  private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl_v2.class);
+  private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImplV2.class);
 
   private final ApplicationProperties applicationProperties;
 
@@ -97,12 +97,13 @@ public class SchemaRegistryControllerImpl_v2 implements ISchemaRegistryControlle
    * @param schemaConfig Configuration for metadata documents repository.
    * @param dataResourceDao DAO for data resources.
    */
-  public SchemaRegistryControllerImpl_v2(ApplicationProperties applicationProperties,
+  public SchemaRegistryControllerImplV2(ApplicationProperties applicationProperties,
           MetastoreConfiguration schemaConfig,
           IDataResourceDao dataResourceDao) {
     this.applicationProperties = applicationProperties;
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
+    DataResourceRecordUtil.setDataResourceDao(dataResourceDao);
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
     LOG.info("------------------------------------------------------");
@@ -125,7 +126,7 @@ public class SchemaRegistryControllerImpl_v2 implements ISchemaRegistryControlle
 
     LOG.trace("Schema record successfully persisted.");
     URI locationUri;
-    locationUri = SchemaRegistryControllerImpl_v2.getSchemaDocumentUri(dataResourceRecord);
+    locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(dataResourceRecord);
     LOG.warn("location uri              " + locationUri);
     return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(dataResourceRecord);
   }
@@ -225,7 +226,7 @@ public class SchemaRegistryControllerImpl_v2 implements ISchemaRegistryControlle
           WebRequest wr,
           HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
-    DataResourceRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
+//    DataResourceRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
     LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
@@ -357,6 +358,6 @@ public class SchemaRegistryControllerImpl_v2 implements ISchemaRegistryControlle
    * @return URI for accessing schema document.
    */
   public static final URI getSchemaDocumentUri(DataResource dataResourceRecord) {
-    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl_v2.class).getSchemaDocumentById(dataResourceRecord.getId(), Long.parseLong(dataResourceRecord.getVersion()), null, null)).toUri();
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(dataResourceRecord.getId(), Long.parseLong(dataResourceRecord.getVersion()), null, null)).toUri();
   }
 }

@@ -218,6 +218,46 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
   }
 
   @Test
+  public void testCreateRecordWithoutAuthentication() throws Exception {
+    String schemaId = "no_authentication";
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(schemaId);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).
+            // Test with no authentication
+//            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).
+            andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  public void testCreateRecordAsGuestOnly() throws Exception {
+    String schemaId = "guest_authentication";
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(schemaId);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile).
+            // Test with guest rights only
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
+            andDo(print()).
+            andExpect(status().isUnauthorized());
+  }
+
+  @Test
   public void testAccessRecordListAdmin() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
     CollectionType mapCollectionType = mapper.getTypeFactory()

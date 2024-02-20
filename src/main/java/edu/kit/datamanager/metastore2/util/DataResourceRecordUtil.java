@@ -45,7 +45,10 @@ import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import static edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil.fixRelativeURI;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
+import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
@@ -88,6 +91,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -125,6 +130,7 @@ public class DataResourceRecordUtil {
   private static String guestToken = null;
 
   private static IDataRecordDao dataRecordDao;
+  private static IDataResourceDao dataResourceDao;
   private static ISchemaRecordDao schemaRecordDao;
   private static IMetadataFormatDao metadataFormatDao;
 
@@ -151,7 +157,7 @@ public class DataResourceRecordUtil {
 
     // Do some checks first.
     metadataRecord = checkParameters(recordDocument, document, true);
-    
+    Objects.requireNonNull(metadataRecord);
     if (metadataRecord.getId() == null) {
       String message = "Mandatory attribute 'id' not found in record. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
@@ -172,7 +178,7 @@ public class DataResourceRecordUtil {
     }
     // End of parameter checks
     // validate schema document / determine type if not given
-    validateMetadataSchemaDocument(applicationProperties, schemaRecord, document);
+    validateMetadataSchemaDocument(applicationProperties, metadataRecord, document);
     // set internal parameters
     if (metadataRecord.getFormats().isEmpty()) {
       LOG.trace("No mimetype set! Try to determine...");
@@ -202,7 +208,7 @@ public class DataResourceRecordUtil {
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
-    saveNewSchemaRecord(schemaRecord);
+    MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
     // Settings for OAI PMH
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
@@ -222,89 +228,89 @@ public class DataResourceRecordUtil {
     return metadataRecord;
   }
 
-  /**
-   * Create a digital object from metadata record and metadata document.
-   *
-   * @param applicationProperties Configuration properties.
-   * @param recordDocument Metadata record.
-   * @param document Metadata document.
-   * @return Enriched metadata record.
-   */
-  public static MetadataRecord createDataResource4MetadataDocument(MetastoreConfiguration applicationProperties,
-          MultipartFile recordDocument, MultipartFile document) {
-    DataResource metadataRecord;
-    long nano1 = System.nanoTime() / 1000000;
-    // Do some checks first.
-    metadataRecord = checkParameters(recordDocument, document, true);
-
-    if (metadataRecord.getRelatedResource() == null || metadataRecord.getRelatedResource().getIdentifier() == null || metadataRecord.getSchema() == null || metadataRecord.getSchema().getIdentifier() == null) {
-      String message = "Mandatory attributes relatedResource and/or schema not found in record. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-    // Test for schema version
-    if (metadataRecord.getSchemaVersion() == null) {
-      MetadataSchemaRecord currentSchemaRecord;
-      try {
-        currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(applicationProperties, metadataRecord.getSchema());
-      } catch (ResourceNotFoundException rnfe) {
-        throw new UnprocessableEntityException("Unknown schema ID '" + metadataRecord.getSchema().getIdentifier() + "'!");
-      }
-      metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
-    }
-
-    // validate document
-    long nano2 = System.nanoTime() / 1000000;
-    // validate schema document
-    validateMetadataDocument(applicationProperties, metadataRecord, document);
-    // set internal parameters
-    metadataRecord.setRecordVersion(1l);
-
-    long nano3 = System.nanoTime() / 1000000;
-    // create record.
-    DataResource dataResource = migrateToDataResource(applicationProperties, metadataRecord);
-    // add id as internal identifier if exists
-    // Note: DataResourceUtils.createResource will ignore id of resource. 
-    // id will be set to alternate identifier if exists. 
-    if (dataResource.getId() != null) {
-      // check for valid identifier without any chars which may be encoded
-      try {
-        String originalId = dataResource.getId();
-        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
-        if (!value.equals(originalId)) {
-          String message = "Not a valid id! Encoded: " + value;
-          LOG.error(message);
-          throw new BadArgumentException(message);
-        }
-      } catch (UnsupportedEncodingException ex) {
-        String message = "Error encoding id " + metadataRecord.getSchemaId();
-        LOG.error(message);
-        throw new CustomInternalServerError(message);
-      }
-
-      dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
-    }
-    long nano4 = System.nanoTime() / 1000000;
-    DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
-    long nano5 = System.nanoTime() / 1000000;
-    // store document
-    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-    long nano6 = System.nanoTime() / 1000000;
-    // Create additional metadata record for faster access
-    DataRecord dataRecord = new DataRecord();
-    dataRecord.setMetadataId(createResource.getId());
-    dataRecord.setVersion(metadataRecord.getRecordVersion());
-    dataRecord.setSchemaId(metadataRecord.getSchema().getIdentifier());
-    dataRecord.setSchemaVersion(metadataRecord.getSchemaVersion());
-    dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
-    dataRecord.setDocumentHash(contentInformation.getHash());
-    dataRecord.setLastUpdate(dataResource.getLastUpdate());
-    saveNewDataRecord(dataRecord);
-    long nano7 = System.nanoTime() / 1000000;
-    LOG.info("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
-
-    return migrateToMetadataRecord(applicationProperties, createResource, true);
-  }
+//  /**
+//   * Create a digital object from metadata record and metadata document.
+//   *
+//   * @param applicationProperties Configuration properties.
+//   * @param recordDocument Metadata record.
+//   * @param document Metadata document.
+//   * @return Enriched metadata record.
+//   */
+//  public static MetadataRecord createDataResource4MetadataDocument(MetastoreConfiguration applicationProperties,
+//          MultipartFile recordDocument, MultipartFile document) {
+//    DataResource metadataRecord;
+//    long nano1 = System.nanoTime() / 1000000;
+//    // Do some checks first.
+//    metadataRecord = checkParameters(recordDocument, document, true);
+//
+//    if (metadataRecord.getRelatedResource() == null || metadataRecord.getRelatedResource().getIdentifier() == null || metadataRecord.getSchema() == null || metadataRecord.getSchema().getIdentifier() == null) {
+//      String message = "Mandatory attributes relatedResource and/or schema not found in record. Returning HTTP BAD_REQUEST.";
+//      LOG.error(message);
+//      throw new BadArgumentException(message);
+//    }
+//    // Test for schema version
+//    if (metadataRecord.getSchemaVersion() == null) {
+//      MetadataSchemaRecord currentSchemaRecord;
+//      try {
+//        currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(applicationProperties, metadataRecord.getSchema());
+//      } catch (ResourceNotFoundException rnfe) {
+//        throw new UnprocessableEntityException("Unknown schema ID '" + metadataRecord.getSchema().getIdentifier() + "'!");
+//      }
+//      metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
+//    }
+//
+//    // validate document
+//    long nano2 = System.nanoTime() / 1000000;
+//    // validate schema document
+//    validateMetadataDocument(applicationProperties, metadataRecord, document);
+//    // set internal parameters
+//    metadataRecord.setRecordVersion(1l);
+//
+//    long nano3 = System.nanoTime() / 1000000;
+//    // create record.
+//    DataResource dataResource = migrateToDataResource(applicationProperties, metadataRecord);
+//    // add id as internal identifier if exists
+//    // Note: DataResourceUtils.createResource will ignore id of resource. 
+//    // id will be set to alternate identifier if exists. 
+//    if (dataResource.getId() != null) {
+//      // check for valid identifier without any chars which may be encoded
+//      try {
+//        String originalId = dataResource.getId();
+//        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
+//        if (!value.equals(originalId)) {
+//          String message = "Not a valid id! Encoded: " + value;
+//          LOG.error(message);
+//          throw new BadArgumentException(message);
+//        }
+//      } catch (UnsupportedEncodingException ex) {
+//        String message = "Error encoding id " + metadataRecord.getSchemaId();
+//        LOG.error(message);
+//        throw new CustomInternalServerError(message);
+//      }
+//
+//      dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
+//    }
+//    long nano4 = System.nanoTime() / 1000000;
+//    DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
+//    long nano5 = System.nanoTime() / 1000000;
+//    // store document
+//    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
+//    long nano6 = System.nanoTime() / 1000000;
+//    // Create additional metadata record for faster access
+//    DataRecord dataRecord = new DataRecord();
+//    dataRecord.setMetadataId(createResource.getId());
+//    dataRecord.setVersion(metadataRecord.getRecordVersion());
+//    dataRecord.setSchemaId(metadataRecord.getSchema().getIdentifier());
+//    dataRecord.setSchemaVersion(metadataRecord.getSchemaVersion());
+//    dataRecord.setMetadataDocumentUri(contentInformation.getContentUri());
+//    dataRecord.setDocumentHash(contentInformation.getHash());
+//    dataRecord.setLastUpdate(dataResource.getLastUpdate());
+//    saveNewDataRecord(dataRecord);
+//    long nano7 = System.nanoTime() / 1000000;
+//    LOG.info("Create Record times, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
+//
+//    return migrateToMetadataRecord(applicationProperties, createResource, true);
+//  }
 
   /**
    * Update a digital object with given metadata record and/or metadata
@@ -428,6 +434,52 @@ public class DataResourceRecordUtil {
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
+  }
+
+  /**
+   * Delete schema document.
+   *
+   * @param applicationProperties Settings of repository.
+   * @param id ID of the schema document.
+   * @param eTag E-Tag of the current schema document.
+   * @param supplier Method for creating access URL.
+   */
+  public static void deleteMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
+          String id,
+          String eTag,
+          UnaryOperator<String> supplier) {
+    // Find all versions for given id...
+    int pageNo = 0;
+    int pageSize = 10;
+    int totalNoOfPages; 
+    Set<String> uris = new HashSet<>();
+    Pageable pgbl;
+    Page<DataResource> allVersionsOfResource;
+    do {
+      pgbl = PageRequest.of(pageNo, pageSize);
+     allVersionsOfResource = DataResourceUtils.readAllVersionsOfResource(applicationProperties, id, pgbl);
+     totalNoOfPages = allVersionsOfResource.getTotalPages();
+      for (DataResource item : allVersionsOfResource.getContent()) {
+        uris.add(SchemaRegistryControllerImplV2.getSchemaDocumentUri(item).toString());
+      }
+      pageNo++;
+    } while (pageNo < totalNoOfPages);
+    // Test for linked metadata documents
+    Specification<DataResource> spec = RelatedIdentifierSpec.toSpecification(uris.toArray(new String[]{}));
+    Optional<DataResource> findOne = dataResourceDao.findOne(spec);
+    // No references to this schema available -> Ready for deletion
+    if (findOne.isEmpty()) {
+    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
+      List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    for (SchemaRecord item : listOfSchemaIds) {
+      LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
+      List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
+      for (Url2Path entry : findByPath) {
+        url2PathDao.delete(entry);
+      }
+    }
+    schemaRecordDao.deleteAll(listOfSchemaIds);
+    }
   }
 
   /**
@@ -885,7 +937,6 @@ public class DataResourceRecordUtil {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null);
   }
 
-
   public static DataResource getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
@@ -913,26 +964,26 @@ public class DataResourceRecordUtil {
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return findFirst.get();
   }
-
-  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
-    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
-  }
-
-  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version) throws ResourceNotFoundException {
-    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
-    MetadataRecord metadataRecord = getRecordByIdAndVersion(metastoreProperties, recordId, version);
-
-    URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
-
-    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-    }
-    return metadataDocumentPath;
-  }
+//
+//  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+//          String recordId) throws ResourceNotFoundException {
+//    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
+//  }
+//
+//  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+//          String recordId, Long version) throws ResourceNotFoundException {
+//    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
+//    MetadataRecord metadataRecord = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+//
+//    URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
+//
+//    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+//    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+//      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+//      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+//    }
+//    return metadataDocumentPath;
+//  }
 
   /**
    * Merge new metadata record in the existing one.
@@ -1051,6 +1102,15 @@ public class DataResourceRecordUtil {
    */
   public static void setDataRecordDao(IDataRecordDao aDataRecordDao) {
     dataRecordDao = aDataRecordDao;
+  }
+
+  /**
+   * Set DAO for data record.
+   *
+   * @param aDataRecordDao the dataRecordDao to set
+   */
+  public static void setDataResourceDao(IDataResourceDao aDataResourceDao) {
+    dataResourceDao = aDataResourceDao;
   }
 
   /**
@@ -1300,7 +1360,7 @@ public class DataResourceRecordUtil {
     }
   }
 
-  private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, MultipartFile document) {
+  private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, DataResource schemaRecord, MultipartFile document) {
     LOG.debug("Validate metadata schema document...");
     if (document == null || document.isEmpty()) {
       String message = "Missing metadata schema document in body. Returning HTTP BAD_REQUEST.";
@@ -1316,7 +1376,7 @@ public class DataResourceRecordUtil {
     }
   }
 
-  private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, byte[] document) {
+  private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, DataResource dataResource, byte[] document) {
     LOG.debug("Validate metadata schema document...");
     if (document == null || document.length == 0) {
       String message = "Missing metadata schema document in body. Returning HTTP BAD_REQUEST.";
@@ -1326,15 +1386,15 @@ public class DataResourceRecordUtil {
 
     IValidator applicableValidator = null;
     try {
-      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, document);
+      applicableValidator = getValidatorForRecord(metastoreProperties, dataResource, document);
 
       if (applicableValidator == null) {
-        String message = "No validator found for schema type " + schemaRecord.getType() + ". Returning HTTP UNPROCESSABLE_ENTITY.";
+        String message = "No validator found for schema type " + dataResource.getFormats().iterator().next() + ". Returning HTTP UNPROCESSABLE_ENTITY.";
         LOG.error(message);
         throw new UnprocessableEntityException(message);
       } else {
         LOG.trace("Validator found. Checking provided schema file.");
-        LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
+        LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", dataResource.getId(), dataResource.getVersion(), applicableValidator);
         try (InputStream inputStream = new ByteArrayInputStream(document)) {
           if (!applicableValidator.isSchemaValid(inputStream)) {
             String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
@@ -1355,54 +1415,44 @@ public class DataResourceRecordUtil {
     LOG.trace("Schema document is valid!");
   }
 
-  private static IValidator getValidatorForRecord(MetastoreConfiguration metastoreProperties, SchemaRecord schemaRecord, byte[] schemaDocument) {
+  private static IValidator getValidatorForRecord(MetastoreConfiguration metastoreProperties, DataResource schemaRecord, byte[] schemaDocument) {
     IValidator applicableValidator = null;
     //obtain/guess record type
-    if (schemaRecord.getType() == null) {
-      schemaRecord.setType(SchemaUtils.guessType(schemaDocument));
-      if (schemaRecord.getType() == null) {
+    if (schemaRecord.getFormats().isEmpty()) {
+      String formatDetected = SchemaUtils.guessMimetype(schemaDocument);
+      if (formatDetected == null) {
         String message = "Unable to detect schema type automatically. Please provide a valid type";
         LOG.error(message);
         throw new UnprocessableEntityException(message);
       } else {
-        LOG.debug("Automatically detected schema type {}.", schemaRecord.getType());
+        schemaRecord.getFormats().add(formatDetected);
+        LOG.debug("Automatically detected mimetype of schema: '{}'.", formatDetected);
       }
     }
     for (IValidator validator : metastoreProperties.getValidators()) {
-      if (validator.supportsSchemaType(schemaRecord.getType())) {
-        applicableValidator = validator.getInstance();
-        LOG.trace("Found validator for schema: '{}'", schemaRecord.getType().name());
-        break;
+      for (String mimetype : schemaRecord.getFormats()) {
+        if (validator.supportsMimetype(mimetype)) {
+          applicableValidator = validator.getInstance();
+          LOG.trace("Found validator for schema: '{}'", mimetype);
+          return applicableValidator;
+        }
       }
     }
     return applicableValidator;
   }
 
-  private static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
-    if (schemaRecordDao != null) {
-      try {
-        schemaRecordDao.save(schemaRecord);
-      } catch (Exception npe) {
-        LOG.error("Can't save schema record: " + schemaRecord, npe);
-      }
-      LOG.trace("Schema record saved: {}", schemaRecord);
-    }
-  }
-
   private static DataResource checkParameters(MultipartFile dataResourceRecord, MultipartFile document, boolean bothRequired) {
-    boolean recordAvailable;
-    boolean documentAvailable;
+    boolean recordNotAvailable;
+    boolean documentNotAvailable;
     DataResource metadataRecord = null;
-    
-    recordAvailable = dataResourceRecord == null || dataResourceRecord.isEmpty();
-    documentAvailable = document == null || document.isEmpty();
+
+    recordNotAvailable = dataResourceRecord == null || dataResourceRecord.isEmpty();
+    documentNotAvailable = document == null || document.isEmpty();
     String message = null;
-    if (bothRequired) {
-      if (!recordAvailable || !documentAvailable) {
-        message = "No data resource record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
-      }
+    if (bothRequired && !recordNotAvailable && !documentNotAvailable) {
+      message = "No data resource record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
     } else {
-      if (!(recordAvailable || documentAvailable)) {
+      if (recordNotAvailable && documentNotAvailable) {
         message = "Neither metadata record nor metadata document provided.";
       }
     }
@@ -1411,7 +1461,7 @@ public class DataResourceRecordUtil {
       throw new BadArgumentException(message);
     }
     // Do some checks first.
-    if (!recordAvailable) {
+    if (!recordNotAvailable) {
       try {
         metadataRecord = Json.mapper().readValue(dataResourceRecord.getInputStream(), DataResource.class);
       } catch (IOException ex) {
@@ -1426,121 +1476,121 @@ public class DataResourceRecordUtil {
     return metadataRecord;
   }
 
-  /**
-   * Validate metadata document with given schema. In case of an error a runtime
-   * exception is thrown.
-   *
-   * @param metastoreProperties Configuration properties.
-   * @param document Document to validate.
-   * @param schemaId SchemaId of schema.
-   * @param version Version of the document.
-   */
-  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MultipartFile document,
-          String schemaId,
-          Long version) {
-    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaId, document);
-    if (schemaId == null) {
-      String message = "Missing schemaID. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-
-    long nano1 = System.nanoTime() / 1000000;
-    ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(schemaId);
-    SchemaRecord schemaRecord = getSchemaRecord(resourceIdentifier, version);
-    long nano2 = System.nanoTime() / 1000000;
-    validateMetadataDocument(metastoreProperties, document, schemaRecord);
-    long nano3 = System.nanoTime() / 1000000;
-    LOG.info("Validate document(schemaId,version), {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
-    
-    cleanUp(schemaRecord);
-  }
-
-  /**
-   * Validate metadata document with given schema. In case of an error a runtime
-   * exception is thrown.
-   *
-   * @param metastoreProperties Configuration properties.
-   * @param document Document to validate.
-   * @param schemaRecord Record of the schema.
-   */
-  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MultipartFile document,
-          SchemaRecord schemaRecord) {
-    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaRecord, document);
-
-    if (document == null || document.isEmpty()) {
-      String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-    try {
-      try (InputStream inputStream = document.getInputStream()) {
-        validateMetadataDocument(metastoreProperties, inputStream, schemaRecord);
-      }
-    } catch (IOException ex) {
-      String message = LOG_ERROR_READ_METADATA_DOCUMENT;
-      LOG.error(message, ex);
-      throw new UnprocessableEntityException(message);
-    }
-  }
-
-  /**
-   * Validate metadata document with given schema. In case of an error a runtime
-   * exception is thrown.
-   *
-   * @param metastoreProperties Configuration properties.
-   * @param inputStream Document to validate.
-   * @param schemaRecord Record of the schema.
-   */
-  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          InputStream inputStream,
-          SchemaRecord schemaRecord) throws IOException {
-    LOG.trace("validateMetadataInputStream {},{}, {}", metastoreProperties, schemaRecord, inputStream);
-
-    long nano1 = System.nanoTime() / 1000000;
-    if (schemaRecord == null || schemaRecord.getSchemaDocumentUri() == null || schemaRecord.getSchemaDocumentUri().trim().isEmpty()) {
-      String message = "Missing or invalid schema record. Returning HTTP BAD_REQUEST.";
-      LOG.error(message + " -> '{}'", schemaRecord);
-      throw new BadArgumentException(message);
-    }
-    long nano2 = System.nanoTime() / 1000000;
-    LOG.trace("Checking local schema file.");
-    Path schemaDocumentPath = Paths.get(URI.create(schemaRecord.getSchemaDocumentUri()));
-
-    if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-      LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaId(), schemaDocumentPath);
-      throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-    }
-    LOG.trace("obtain validator for type");
-    IValidator applicableValidator;
-    if (schemaRecord.getType() == null) {
-      byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
-      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, schemaDocument);
-    } else {
-      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
-    }
-    long nano3 = System.nanoTime() / 1000000;
-
-    if (applicableValidator == null) {
-      String message = "No validator found for schema type " + schemaRecord.getType();
-      LOG.error(message);
-      throw new UnprocessableEntityException(message);
-    } else {
-      LOG.trace("Validator found.");
-
-      LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
-      long nano4 = System.nanoTime() / 1000000;
-      if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), inputStream)) {
-        LOG.warn("Metadata document validation failed. -> " + applicableValidator.getErrorMessage());
-        throw new UnprocessableEntityException(applicableValidator.getErrorMessage());
-      }
-      long nano5 = System.nanoTime() / 1000000;
-      LOG.info("Validate document(schemaRecord), {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
-    }
-    LOG.trace("Metadata document validation succeeded.");
-  }
+//  /**
+//   * Validate metadata document with given schema. In case of an error a runtime
+//   * exception is thrown.
+//   *
+//   * @param metastoreProperties Configuration properties.
+//   * @param document Document to validate.
+//   * @param schemaId SchemaId of schema.
+//   * @param version Version of the document.
+//   */
+//  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
+//          MultipartFile document,
+//          String schemaId,
+//          Long version) {
+//    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaId, document);
+//    if (schemaId == null) {
+//      String message = "Missing schemaID. Returning HTTP BAD_REQUEST.";
+//      LOG.error(message);
+//      throw new BadArgumentException(message);
+//    }
+//
+//    long nano1 = System.nanoTime() / 1000000;
+//    ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(schemaId);
+//    SchemaRecord schemaRecord = getSchemaRecord(resourceIdentifier, version);
+//    long nano2 = System.nanoTime() / 1000000;
+//    validateMetadataDocument(metastoreProperties, document, schemaRecord);
+//    long nano3 = System.nanoTime() / 1000000;
+//    LOG.info("Validate document(schemaId,version), {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
+//
+//    cleanUp(schemaRecord);
+//  }
+//
+//  /**
+//   * Validate metadata document with given schema. In case of an error a runtime
+//   * exception is thrown.
+//   *
+//   * @param metastoreProperties Configuration properties.
+//   * @param document Document to validate.
+//   * @param schemaRecord Record of the schema.
+//   */
+//  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
+//          MultipartFile document,
+//          SchemaRecord schemaRecord) {
+//    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaRecord, document);
+//
+//    if (document == null || document.isEmpty()) {
+//      String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
+//      LOG.error(message);
+//      throw new BadArgumentException(message);
+//    }
+//    try {
+//      try (InputStream inputStream = document.getInputStream()) {
+//        validateMetadataDocument(metastoreProperties, inputStream, schemaRecord);
+//      }
+//    } catch (IOException ex) {
+//      String message = LOG_ERROR_READ_METADATA_DOCUMENT;
+//      LOG.error(message, ex);
+//      throw new UnprocessableEntityException(message);
+//    }
+//  }
+//
+//  /**
+//   * Validate metadata document with given schema. In case of an error a runtime
+//   * exception is thrown.
+//   *
+//   * @param metastoreProperties Configuration properties.
+//   * @param inputStream Document to validate.
+//   * @param schemaRecord Record of the schema.
+//   */
+//  public static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
+//          InputStream inputStream,
+//          SchemaRecord schemaRecord) throws IOException {
+//    LOG.trace("validateMetadataInputStream {},{}, {}", metastoreProperties, schemaRecord, inputStream);
+//
+//    long nano1 = System.nanoTime() / 1000000;
+//    if (schemaRecord == null || schemaRecord.getSchemaDocumentUri() == null || schemaRecord.getSchemaDocumentUri().trim().isEmpty()) {
+//      String message = "Missing or invalid schema record. Returning HTTP BAD_REQUEST.";
+//      LOG.error(message + " -> '{}'", schemaRecord);
+//      throw new BadArgumentException(message);
+//    }
+//    long nano2 = System.nanoTime() / 1000000;
+//    LOG.trace("Checking local schema file.");
+//    Path schemaDocumentPath = Paths.get(URI.create(schemaRecord.getSchemaDocumentUri()));
+//
+//    if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
+//      LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaId(), schemaDocumentPath);
+//      throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
+//    }
+//    LOG.trace("obtain validator for type");
+//    IValidator applicableValidator;
+//    if (schemaRecord.getType() == null) {
+//      byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
+//      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, schemaDocument);
+//    } else {
+//      applicableValidator = getValidatorForRecord(metastoreProperties, schemaRecord, null);
+//    }
+//    long nano3 = System.nanoTime() / 1000000;
+//
+//    if (applicableValidator == null) {
+//      String message = "No validator found for schema type " + schemaRecord.getType();
+//      LOG.error(message);
+//      throw new UnprocessableEntityException(message);
+//    } else {
+//      LOG.trace("Validator found.");
+//
+//      LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
+//      long nano4 = System.nanoTime() / 1000000;
+//      if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), inputStream)) {
+//        LOG.warn("Metadata document validation failed. -> " + applicableValidator.getErrorMessage());
+//        throw new UnprocessableEntityException(applicableValidator.getErrorMessage());
+//      }
+//      long nano5 = System.nanoTime() / 1000000;
+//      LOG.info("Validate document(schemaRecord), {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1);
+//    }
+//    LOG.trace("Metadata document validation succeeded.");
+//  }
 
   /**
    * Gets SchemaRecord from identifier. Afterwards there should be a clean up.
@@ -1577,7 +1627,8 @@ public class DataResourceRecordUtil {
       case URL -> {
         schemaRecord = prepareResourceFromUrl(identifier, version);
       }
-      default -> throw new BadArgumentException("For schema document identifier type '" + identifier.getIdentifierType() + "' is not allowed!");
+      default ->
+        throw new BadArgumentException("For schema document identifier type '" + identifier.getIdentifierType() + "' is not allowed!");
     }
     if (schemaRecord != null) {
       LOG.trace("getSchemaRecord {},{}", schemaRecord.getSchemaDocumentUri(), schemaRecord.getVersion());
@@ -1588,31 +1639,32 @@ public class DataResourceRecordUtil {
   }
 
   private static SchemaRecord prepareResourceFromUrl(ResourceIdentifier identifier, Long version) {
-            String url = identifier.getIdentifier();
-        Path pathToFile;
-        MetadataSchemaRecord.SCHEMA_TYPE type = null;
-        Optional<Url2Path> findByUrl = url2PathDao.findByUrl(url);
-        if (findByUrl.isPresent()) {
-          url = findByUrl.get().getPath();
-          type = findByUrl.get().getType();
-          pathToFile = Paths.get(URI.create(url));
-        } else {
-          URI resourceUrl;
-          try {
-            resourceUrl = new URI(url);
-          } catch (URISyntaxException ex) {
-            String message = String.format("Invalid URL: '%s'", url);
-            LOG.error(message, ex);
-            throw new BadArgumentException(message);
-          }
-          Optional<Path> path = DownloadUtil.downloadResource(resourceUrl);
-          pathToFile = path.get();
-        }
-        SchemaRecord schemaRecord = new SchemaRecord();
-        schemaRecord.setSchemaDocumentUri(pathToFile.toUri().toString());
-        schemaRecord.setType(type);
-     return schemaRecord;
+    String url = identifier.getIdentifier();
+    Path pathToFile;
+    MetadataSchemaRecord.SCHEMA_TYPE type = null;
+    Optional<Url2Path> findByUrl = url2PathDao.findByUrl(url);
+    if (findByUrl.isPresent()) {
+      url = findByUrl.get().getPath();
+      type = findByUrl.get().getType();
+      pathToFile = Paths.get(URI.create(url));
+    } else {
+      URI resourceUrl;
+      try {
+        resourceUrl = new URI(url);
+      } catch (URISyntaxException ex) {
+        String message = String.format("Invalid URL: '%s'", url);
+        LOG.error(message, ex);
+        throw new BadArgumentException(message);
+      }
+      Optional<Path> path = DownloadUtil.downloadResource(resourceUrl);
+      pathToFile = path.get();
+    }
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaDocumentUri(pathToFile.toUri().toString());
+    schemaRecord.setType(type);
+    return schemaRecord;
   }
+
   /**
    * Remove all downloaded files for schema Record.
    *
@@ -1676,22 +1728,18 @@ public class DataResourceRecordUtil {
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
-    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
     if (metadataRecord != null) {
-      metadataRecord.setVersion(Long.toString(schemaRecord.getVersion()));
-      existingRecord = mergeRecords(existingRecord, metadataRecord);
-      mergeSchemaRecord(schemaRecord, existingRecord);
-      dataResource = migrateToDataResource(applicationProperties, existingRecord);
+      metadataRecord.setVersion(dataResource.getVersion());
+      dataResource = metadataRecord;
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
 
+    ContentInformation info;
+    info = getContentInformationOfResource(applicationProperties, dataResource);
     if (schemaDocument != null) {
       // Get schema record for this schema
-      validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
-
-      ContentInformation info;
-      info = getContentInformationOfResource(applicationProperties, dataResource);
+      validateMetadataSchemaDocument(applicationProperties, dataResource, schemaDocument);
 
       boolean noChanges = false;
       String fileName = schemaDocument.getOriginalFilename();
@@ -1727,24 +1775,23 @@ public class DataResourceRecordUtil {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
-      } else {
-        schemaRecordDao.delete(schemaRecord);
       }
     } else {
-      schemaRecordDao.delete(schemaRecord);
       // validate if document is still valid due to changed record settings.
-      metadataRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
-      URI schemaDocumentUri = URI.create(metadataRecord.getSchemaDocumentUri());
+      Objects.requireNonNull(info);
+      URI schemaDocumentUri = URI.create(info.getContentUri());
 
       Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
+      if (!Files.exists(schemaDocumentPath) || 
+              !Files.isRegularFile(schemaDocumentPath) || 
+              !Files.isReadable(schemaDocumentPath)) {
         LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
         throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
       }
 
       try {
         byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
-        MetadataSchemaRecordUtil.validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDoc);
+        DataResourceRecordUtil.validateMetadataSchemaDocument(applicationProperties, dataResource, schemaDoc);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);
       }
@@ -1752,8 +1799,6 @@ public class DataResourceRecordUtil {
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
-    return migrateToMetadataSchemaRecord(applicationProperties, dataResource, true);
+    return dataResource;
   }
-
-
 }

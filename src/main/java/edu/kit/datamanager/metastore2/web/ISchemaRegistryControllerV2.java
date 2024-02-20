@@ -57,7 +57,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface ISchemaRegistryController_v2 extends InfoContributor {
+public interface ISchemaRegistryControllerV2 extends InfoContributor {
 
   @Operation(summary = "Register a schema document and its record.", description = "This endpoint allows to register a schema document and its record. "
           + "The record must contain at least an unique identifier (schemaId) and the type of the schema (type).",

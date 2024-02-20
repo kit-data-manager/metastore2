@@ -42,7 +42,18 @@ public interface IValidator {
    * 
    * @return supports schema type or not.
    */
+  @Deprecated
   boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type);
+
+  /**
+   * Supports the given MIME type.
+   *
+   * @see https://www.iana.org/assignments/media-types/media-types.xhtml
+   * @param type Type of the schema.
+   * 
+   * @return supports schema type or not.
+   */
+  boolean supportsMimetype(String mimetype);
 
   /**
    * Is given schema valid.

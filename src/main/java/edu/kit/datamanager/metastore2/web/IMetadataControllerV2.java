@@ -55,7 +55,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
-public interface IMetadataController_v2 extends InfoContributor {
+public interface IMetadataControllerV2 extends InfoContributor {
 
   @Operation(summary = "Ingest a new metadata document and its record.", description = "This endpoint allows to create a new metadata record by providing the record metadata as JSON document as well as the actual metadata as file upload. The record metadata mainly contains "
           + "the resource identifier the record is associated with as well as the identifier of the schema which can be used to validate the provided metadata document. In the current version, both parameters are required. If no schema version is given (if 'INTERNAL' reference"

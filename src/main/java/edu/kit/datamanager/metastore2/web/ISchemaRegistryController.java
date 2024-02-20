@@ -50,12 +50,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * Interface for schema document controller.
+ * 
+ * @deprecated version 3 please use ISchemaRegistryController_v2 instead
  *
  * @author jejkal
  */
 @ApiResponses(value = {
   @ApiResponse(responseCode = "401", description = "Unauthorized is returned if authorization in required but was not provided."),
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
+  @Deprecated
 public interface ISchemaRegistryController extends InfoContributor {
 
   @Operation(summary = "Register a schema document and its record.", description = "This endpoint allows to register a schema document and its record. "

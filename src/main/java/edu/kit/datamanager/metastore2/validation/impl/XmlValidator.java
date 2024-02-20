@@ -28,6 +28,7 @@ import org.apache.xerces.impl.Constants;
 import org.apache.xerces.impl.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXNotRecognizedException;
@@ -47,6 +48,11 @@ public class XmlValidator implements IValidator {
   @Override
   public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
     return MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(type);
+  }
+
+  @Override
+  public boolean supportsMimetype(String type) {
+    return MediaType.APPLICATION_XML_VALUE.equals(type);
   }
 
   @Override

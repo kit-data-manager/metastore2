@@ -15,6 +15,7 @@ import java.io.InputStream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
 /**
@@ -35,6 +36,11 @@ public class JsonValidator implements IValidator {
   @Override
   public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
     return MetadataSchemaRecord.SCHEMA_TYPE.JSON.equals(type);
+  }
+
+  @Override
+  public boolean supportsMimetype(String type) {
+    return MediaType.APPLICATION_JSON_VALUE.equals(type);
   }
 
   @Override

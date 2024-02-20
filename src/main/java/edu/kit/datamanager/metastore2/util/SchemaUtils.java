@@ -27,8 +27,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
 
@@ -73,6 +73,34 @@ public class SchemaUtils {
           m = XML_FIRST_BYTE.matcher(schemaAsString);
           if (m.matches()) {
             return MetadataSchemaRecord.SCHEMA_TYPE.XML;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Guess type of schema document.
+   *
+   * @param schema schema document.
+   * @return Mimetype of document.
+   */
+  public static String guessMimetype(byte[] schema) {
+    // Cut schema to a maximum of MAX_LENGTH_OF_HEADER characters.
+    if (schema != null) {
+      int length = schema.length > MAX_LENGTH_OF_HEADER ? MAX_LENGTH_OF_HEADER : schema.length;
+      String schemaAsString = new String(schema, 0, length, StandardCharsets.UTF_8);
+      LOG.trace("Guess type for '{}'", schemaAsString);
+
+      Matcher m = JSON_FIRST_BYTE.matcher(schemaAsString);
+      if (schemaAsString.contains("{") && m.matches()) {
+          return MediaType.APPLICATION_JSON_VALUE;
+      } else {
+        if (schemaAsString.contains("<")) {
+          m = XML_FIRST_BYTE.matcher(schemaAsString);
+          if (m.matches()) {
+            return MediaType.APPLICATION_XML_VALUE;
           }
         }
       }
