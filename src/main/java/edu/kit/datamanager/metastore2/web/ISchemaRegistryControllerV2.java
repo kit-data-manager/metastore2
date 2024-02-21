@@ -59,7 +59,9 @@ import org.springframework.web.util.UriComponentsBuilder;
   @ApiResponse(responseCode = "403", description = "Forbidden is returned if the caller has no sufficient privileges.")})
 public interface ISchemaRegistryControllerV2 extends InfoContributor {
 
-  @Operation(summary = "Register a schema document and its record.", description = "This endpoint allows to register a schema document and its record. "
+  @Operation(operationId = "createSchema",
+          summary = "Register a schema document and its record.", 
+          description = "This endpoint allows to register a schema document and its (datacite) record. "
           + "The record must contain at least an unique identifier (schemaId) and the type of the schema (type).",
           responses = {
             @ApiResponse(responseCode = "201", description = "Created is returned only if the record has been validated, persisted and the document was successfully validated and stored.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
@@ -67,14 +69,16 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the provided schema id.")})
   @RequestMapping(value = {"", "/"}, method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
-  public ResponseEntity createRecord(
+  public ResponseEntity<DataResource> createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
           final HttpServletResponse response,
           final UriComponentsBuilder uriBuilder);
 
-  @Operation(summary = "Get schema record by schema id (and version).", description = "Obtain is single schema record by its schema id. "
+  @Operation(operationId = "getDataCiteRecordOfSchema",
+          summary = "Get schema record by schema id (and version).", 
+          description = "Obtain is single schema record by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.",
           responses = {
@@ -82,7 +86,7 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
   @ResponseBody
-  public ResponseEntity getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+  public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);
@@ -162,7 +166,7 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
   @Parameters({
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
-  ResponseEntity updateRecord(
+  ResponseEntity<DataResource> updateRecord(
           @Parameter(description = "The schema id.", required = true) @PathVariable("schemaId") final String schemaId,
           @Parameter(description = "Json representation of the schema record.", required = false) @RequestPart(name = "record", required = false) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = false) @RequestPart(name = "schema", required = false) final MultipartFile document,

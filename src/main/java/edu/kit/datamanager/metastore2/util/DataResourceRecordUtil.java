@@ -163,19 +163,15 @@ public class DataResourceRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
+    metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(metadataRecord.getId()));
     // Check if id is lower case and URL encodable. 
+    // and save as alternate identifier. (In case of 
+    // upper letters in both versions (with and without 
+    // upper letters)
     DataResourceRecordUtil.check4validId(metadataRecord);
-    // Create schema record
-    SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(metadataRecord.getId());
-    if (!metadataRecord.getFormats().isEmpty()) {
-      String mimeType = metadataRecord.getFormats().iterator().next().toLowerCase();
-      if (mimeType.contains("json")) {
-        schemaRecord.setType(JSON);
-      } else if (mimeType.contains("xml")) {
-        schemaRecord.setType(XML);
-      }
-    }
+    
+    // Add resource type for schema if not already defined
+    DataResourceRecordUtil.check4validResourceType(metadataRecord);
     // End of parameter checks
     // validate schema document / determine type if not given
     validateMetadataSchemaDocument(applicationProperties, metadataRecord, document);
@@ -185,30 +181,40 @@ public class DataResourceRecordUtil {
       if (document.getContentType() != null) {
         LOG.trace("Set mimetype determined from document: '{}'", document.getContentType());
         metadataRecord.getFormats().add(document.getContentType());
+      }
+    }
+    // Create schema record
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaId(metadataRecord.getId());
+    if (!metadataRecord.getFormats().isEmpty()) {
+      for (String mimetype : metadataRecord.getFormats()) {
+        mimetype = mimetype.toLowerCase();
+        if (mimetype.contains("json")) {
+          schemaRecord.setType(JSON);
+          break;
       } else {
-        LOG.trace("Set mimetype according to type '{}'.", schemaRecord.getType());
-        switch (schemaRecord.getType()) {
-          case JSON:
-            metadataRecord.getFormats().add(MediaType.APPLICATION_JSON_VALUE);
+          if (mimetype.contains("xml")) {
+            schemaRecord.setType(XML);
             break;
-          case XML:
-            metadataRecord.getFormats().add(MediaType.APPLICATION_XML_VALUE);
-            break;
-          default:
-            throw new BadArgumentException("Please provide mimetype for type '" + schemaRecord.getType() + "'");
         }
       }
     }
+    } else {
+      throw new BadArgumentException("Please provide format for data resource '" + schemaRecord.getSchemaId() + "'");
+    }
+
     metadataRecord.setVersion(Long.toString(1));
     // create record.
     DataResource dataResource = metadataRecord;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
+
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
     MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
+    
     // Settings for OAI PMH
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
@@ -1338,11 +1344,21 @@ public class DataResourceRecordUtil {
     check4validId(metadataRecord);
     String id = metadataRecord.getId();
     String lowerCaseId = id.toLowerCase();
-    // schema id should be lower case due to elasticsearch
     if (!lowerCaseId.equals(id)) {
       metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
-      metadataRecord.setId(lowerCaseId);
     }
+    // schema id should be lower case due to elasticsearch
+      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
+    }
+
+  /**
+   * Overwrite setting for resource type with
+   * "Schema" and type "MODEL".
+   *
+   * @param metadataRecord Datacite Record.
+   */
+  public static final void check4validResourceType(DataResource metadataRecord) {
+    metadataRecord.setResourceType(ResourceType.createResourceType("Schema", ResourceType.TYPE_GENERAL.MODEL));
   }
 
   public static final void check4validId(DataResource metadataRecord) {
@@ -1449,10 +1465,10 @@ public class DataResourceRecordUtil {
     recordNotAvailable = dataResourceRecord == null || dataResourceRecord.isEmpty();
     documentNotAvailable = document == null || document.isEmpty();
     String message = null;
-    if (bothRequired && !recordNotAvailable && !documentNotAvailable) {
+    if (bothRequired && (recordNotAvailable || documentNotAvailable)) {
       message = "No data resource record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
     } else {
-      if (recordNotAvailable && documentNotAvailable) {
+      if (!bothRequired && recordNotAvailable && documentNotAvailable) {
         message = "Neither metadata record nor metadata document provided.";
       }
     }

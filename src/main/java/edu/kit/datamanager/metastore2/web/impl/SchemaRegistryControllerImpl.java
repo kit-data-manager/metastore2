@@ -62,6 +62,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -117,7 +118,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Performing createRecord({},....", recordDocument);
     BiFunction<String, Long, String> getSchemaDocumentById;
     getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
-
+    Authentication authentication = AuthenticationHelper.getAuthentication();
+    authentication.isAuthenticated();
     MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = schemaRecord.getEtag();

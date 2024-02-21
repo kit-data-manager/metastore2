@@ -110,7 +110,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
   }
 
   @Override
-  public ResponseEntity createRecord(
+  public ResponseEntity<DataResource> createRecord(
           @RequestPart(name = "record") final MultipartFile recordDocument,
           @RequestPart(name = "schema") MultipartFile document,
           HttpServletRequest request,
@@ -127,12 +127,12 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     LOG.trace("Schema record successfully persisted.");
     URI locationUri;
     locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(dataResourceRecord);
-    LOG.warn("location uri              " + locationUri);
+    LOG.trace("Set locationUri to '{}'", locationUri.toString());
     return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(dataResourceRecord);
   }
 
   @Override
-  public ResponseEntity getRecordById(
+  public ResponseEntity<DataResource> getRecordById(
           @PathVariable(value = "schemaId") String schemaId,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
@@ -283,7 +283,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
   }
 
   @Override
-  public ResponseEntity updateRecord(@PathVariable("schemaId") final String schemaId,
+  public ResponseEntity<DataResource> updateRecord(@PathVariable("schemaId") final String schemaId,
           @RequestPart(name = "record", required = false) MultipartFile schemaRecord,
           @RequestPart(name = "schema", required = false) final MultipartFile document,
           final WebRequest request, final HttpServletResponse response) {
@@ -291,16 +291,15 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     UnaryOperator<String> getById;
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    MetadataSchemaRecord updatedSchemaRecord = MetadataSchemaRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
+    DataResource updatedSchemaRecord = DataResourceRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
 
-    LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
+    LOG.trace("DataResource record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
-    MetadataSchemaRecordUtil.fixSchemaDocumentUri(updatedSchemaRecord, true);
     // Fix Url for OAI PMH entry
-    MetadataSchemaRecordUtil.updateMetadataFormat(updatedSchemaRecord);
+//    MetadataSchemaRecordUtil.updateMetadataFormat(updatedSchemaRecord);
 
     URI locationUri;
-    locationUri = MetadataSchemaRecordUtil.getSchemaDocumentUri(updatedSchemaRecord);
+    locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(updatedSchemaRecord);
     LOG.trace("Set locationUri to '{}'", locationUri.toString());
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedSchemaRecord);
   }
