@@ -542,14 +542,36 @@ public class MetadataSchemaRecordUtil {
       }
       metadataSchemaRecord.setSchemaId(dataResource.getId());
       nano2 = System.nanoTime() / 1000000;
+      String message = null;
+      String type = null;
       try {
-        MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next());
+        type = dataResource.getFormats().iterator().next();
+        MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(type);
         metadataSchemaRecord.setType(schemaType);
       } catch (Exception ex) {
-        String message = "Not a schema resource id. Returning HTTP BAD_REQUEST.";
+          message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
+        // Test for new schema version
+        ResourceType resourceType = dataResource.getResourceType();
+        if (resourceType.getTypeGeneral().equals(ResourceType.TYPE_GENERAL.MODEL) &&
+                resourceType.getValue().endsWith(DataResourceRecordUtil.SCHEMA_SUFFIX)) {
+          type = resourceType.getValue().replace(DataResourceRecordUtil.SCHEMA_SUFFIX, "");
+          try {
+          metadataSchemaRecord.setType(SCHEMA_TYPE.valueOf(type));
+          // new 
+          message = null;
+          } catch (Exception ex2) {
+          message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
+          }
+          
+        } 
+        
+      } finally {
+      if (message != null) {
         LOG.error(message);
         throw new BadArgumentException(message);
+        
       }
+    }
       nano3 = System.nanoTime() / 1000000;
       metadataSchemaRecord.setMimeType(dataResource.getTitles().iterator().next().getValue());
       nano4 = System.nanoTime() / 1000000;

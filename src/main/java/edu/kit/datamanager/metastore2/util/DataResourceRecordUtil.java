@@ -136,6 +136,9 @@ public class DataResourceRecordUtil {
 
   private static IUrl2PathDao url2PathDao;
 
+  public static final String SCHEMA_SUFFIX = "_Schema";
+  public static final String METADATA_SUFFIX = "_Metadata";
+
   DataResourceRecordUtil() {
     //Utility class
   }
@@ -163,20 +166,16 @@ public class DataResourceRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-    metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(metadataRecord.getId()));
     // Check if id is lower case and URL encodable. 
     // and save as alternate identifier. (In case of 
     // upper letters in both versions (with and without 
     // upper letters)
-    DataResourceRecordUtil.check4validId(metadataRecord);
-    
-    // Add resource type for schema if not already defined
-    DataResourceRecordUtil.check4validResourceType(metadataRecord);
+    DataResourceRecordUtil.check4validSchemaId(metadataRecord);
     // End of parameter checks
     // validate schema document / determine type if not given
     validateMetadataSchemaDocument(applicationProperties, metadataRecord, document);
     // set internal parameters
-    if (metadataRecord.getFormats().isEmpty()) {
+    if (metadataRecord.getResourceType() == null) {
       LOG.trace("No mimetype set! Try to determine...");
       if (document.getContentType() != null) {
         LOG.trace("Set mimetype determined from document: '{}'", document.getContentType());
@@ -186,23 +185,17 @@ public class DataResourceRecordUtil {
     // Create schema record
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(metadataRecord.getId());
-    if (!metadataRecord.getFormats().isEmpty()) {
-      for (String mimetype : metadataRecord.getFormats()) {
-        mimetype = mimetype.toLowerCase();
-        if (mimetype.contains("json")) {
-          schemaRecord.setType(JSON);
-          break;
+    String type = metadataRecord.getResourceType().getValue();
+    if (type.equals(JSON + SCHEMA_SUFFIX)) {
+      schemaRecord.setType(JSON);
+    } else {
+      if (type.equals(XML + SCHEMA_SUFFIX)) {
+        schemaRecord.setType(XML);
+
       } else {
-          if (mimetype.contains("xml")) {
-            schemaRecord.setType(XML);
-            break;
-        }
+        throw new BadArgumentException("Please provide resource type for data resource '" + schemaRecord.getSchemaId() + "'");
       }
     }
-    } else {
-      throw new BadArgumentException("Please provide format for data resource '" + schemaRecord.getSchemaId() + "'");
-    }
-
     metadataRecord.setVersion(Long.toString(1));
     // create record.
     DataResource dataResource = metadataRecord;
@@ -214,7 +207,7 @@ public class DataResourceRecordUtil {
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
     MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
-    
+
     // Settings for OAI PMH
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
@@ -317,7 +310,6 @@ public class DataResourceRecordUtil {
 //
 //    return migrateToMetadataRecord(applicationProperties, createResource, true);
 //  }
-
   /**
    * Update a digital object with given metadata record and/or metadata
    * document.
@@ -457,14 +449,14 @@ public class DataResourceRecordUtil {
     // Find all versions for given id...
     int pageNo = 0;
     int pageSize = 10;
-    int totalNoOfPages; 
+    int totalNoOfPages;
     Set<String> uris = new HashSet<>();
     Pageable pgbl;
     Page<DataResource> allVersionsOfResource;
     do {
       pgbl = PageRequest.of(pageNo, pageSize);
-     allVersionsOfResource = DataResourceUtils.readAllVersionsOfResource(applicationProperties, id, pgbl);
-     totalNoOfPages = allVersionsOfResource.getTotalPages();
+      allVersionsOfResource = DataResourceUtils.readAllVersionsOfResource(applicationProperties, id, pgbl);
+      totalNoOfPages = allVersionsOfResource.getTotalPages();
       for (DataResource item : allVersionsOfResource.getContent()) {
         uris.add(SchemaRegistryControllerImplV2.getSchemaDocumentUri(item).toString());
       }
@@ -475,16 +467,16 @@ public class DataResourceRecordUtil {
     Optional<DataResource> findOne = dataResourceDao.findOne(spec);
     // No references to this schema available -> Ready for deletion
     if (findOne.isEmpty()) {
-    DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
+      DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
       List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
-    for (SchemaRecord item : listOfSchemaIds) {
-      LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
-      List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
-      for (Url2Path entry : findByPath) {
-        url2PathDao.delete(entry);
+      for (SchemaRecord item : listOfSchemaIds) {
+        LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
+        List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
+        for (Url2Path entry : findByPath) {
+          url2PathDao.delete(entry);
+        }
       }
-    }
-    schemaRecordDao.deleteAll(listOfSchemaIds);
+      schemaRecordDao.deleteAll(listOfSchemaIds);
     }
   }
 
@@ -1344,21 +1336,11 @@ public class DataResourceRecordUtil {
     check4validId(metadataRecord);
     String id = metadataRecord.getId();
     String lowerCaseId = id.toLowerCase();
+    // schema id should be lower case due to elasticsearch
+    metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
     if (!lowerCaseId.equals(id)) {
       metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
     }
-    // schema id should be lower case due to elasticsearch
-      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
-    }
-
-  /**
-   * Overwrite setting for resource type with
-   * "Schema" and type "MODEL".
-   *
-   * @param metadataRecord Datacite Record.
-   */
-  public static final void check4validResourceType(DataResource metadataRecord) {
-    metadataRecord.setResourceType(ResourceType.createResourceType("Schema", ResourceType.TYPE_GENERAL.MODEL));
   }
 
   public static final void check4validId(DataResource metadataRecord) {
@@ -1405,7 +1387,7 @@ public class DataResourceRecordUtil {
       applicableValidator = getValidatorForRecord(metastoreProperties, dataResource, document);
 
       if (applicableValidator == null) {
-        String message = "No validator found for schema type " + dataResource.getFormats().iterator().next() + ". Returning HTTP UNPROCESSABLE_ENTITY.";
+        String message = "No validator found for schema type " + dataResource.getResourceType().getValue() + ". Returning HTTP UNPROCESSABLE_ENTITY.";
         LOG.error(message);
         throw new UnprocessableEntityException(message);
       } else {
@@ -1434,24 +1416,30 @@ public class DataResourceRecordUtil {
   private static IValidator getValidatorForRecord(MetastoreConfiguration metastoreProperties, DataResource schemaRecord, byte[] schemaDocument) {
     IValidator applicableValidator = null;
     //obtain/guess record type
-    if (schemaRecord.getFormats().isEmpty()) {
+    if ((schemaRecord.getResourceType() == null)
+            || (schemaRecord.getResourceType().getValue() == null)) {
       String formatDetected = SchemaUtils.guessMimetype(schemaDocument);
       if (formatDetected == null) {
         String message = "Unable to detect schema type automatically. Please provide a valid type";
         LOG.error(message);
         throw new UnprocessableEntityException(message);
       } else {
-        schemaRecord.getFormats().add(formatDetected);
-        LOG.debug("Automatically detected mimetype of schema: '{}'.", formatDetected);
+        String type;
+        if (formatDetected.contains("json")) {
+          type = JSON + SCHEMA_SUFFIX;
+        } else {
+          type = XML + SCHEMA_SUFFIX;
+        }
+        schemaRecord.setResourceType(ResourceType.createResourceType(type, ResourceType.TYPE_GENERAL.MODEL));
+        LOG.debug("Automatically detected mimetype of schema: '{}' -> '{}'.", formatDetected, type);
       }
     }
+    String schemaType = schemaRecord.getResourceType().getValue().replace(SCHEMA_SUFFIX, "");
     for (IValidator validator : metastoreProperties.getValidators()) {
-      for (String mimetype : schemaRecord.getFormats()) {
-        if (validator.supportsMimetype(mimetype)) {
-          applicableValidator = validator.getInstance();
-          LOG.trace("Found validator for schema: '{}'", mimetype);
-          return applicableValidator;
-        }
+      if (validator.supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE.valueOf(schemaType))) {
+        applicableValidator = validator.getInstance();
+        LOG.trace("Found validator for schema: '{}'", schemaType);
+        return applicableValidator;
       }
     }
     return applicableValidator;
@@ -1607,7 +1595,6 @@ public class DataResourceRecordUtil {
 //    }
 //    LOG.trace("Metadata document validation succeeded.");
 //  }
-
   /**
    * Gets SchemaRecord from identifier. Afterwards there should be a clean up.
    *
@@ -1798,9 +1785,9 @@ public class DataResourceRecordUtil {
       URI schemaDocumentUri = URI.create(info.getContentUri());
 
       Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-      if (!Files.exists(schemaDocumentPath) || 
-              !Files.isRegularFile(schemaDocumentPath) || 
-              !Files.isReadable(schemaDocumentPath)) {
+      if (!Files.exists(schemaDocumentPath)
+              || !Files.isRegularFile(schemaDocumentPath)
+              || !Files.isReadable(schemaDocumentPath)) {
         LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
         throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
       }
