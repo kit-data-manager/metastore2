@@ -67,6 +67,7 @@ like this:
     "sid" : "...",
     "permission" : "..."
   } ],
+  "licenseUri" : "...",
   "schemaDocumentUri" : "...",
   "schemaHash" : "...",
   "locked" : false
@@ -81,6 +82,8 @@ At least the following elements are expected to be provided by the user:
 In addition, ACL may be useful to make schema readable/editable by others.
 This will be of interest while accessing/updating an existing schema.(if authorization is enabled)
 
+[NOTE]
+License URI is optional. It's new since 1.5.0.
 
 === Registering a Metadata Schema Document
 
@@ -464,6 +467,7 @@ like this:
             "sid": "...",
             "permission": "..."
         }],
+    "licenseUri": "...",
     "metadataDocumentUri": "...",
     "documentHash": "..."
 }
@@ -478,6 +482,9 @@ In addition, ACL may be useful to make metadata editable by others. (This will b
 
 [NOTE]
 If linked schema is identified by its schemaId the INTERNAL type has to be used.
+
+[NOTE]
+License URI is optional. It's new since 1.5.0.
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
@@ -757,6 +764,7 @@ like this:
     "sid" : "...",
     "permission" : "..."
   } ],
+  "licenseUri" : "...",
   "schemaDocumentUri" : "...",
   "schemaHash" : "...",
   "locked" : false
@@ -770,6 +778,9 @@ At least the following elements are expected to be provided by the user:
 - type: XML or JSON. For JSON schemas this should be 'JSON'
 
 In addition, ACL may be useful to make schema editable by others. (This will be of interest while updating an existing schema)
+
+[NOTE]
+License URI is optional. It's new since 1.5.0.
 
 === Registering a Metadata Schema Document
 
@@ -1186,6 +1197,7 @@ like this:
             "sid": "...",
             "permission": "..."
         }],
+    "licenseUri": "...",
     "metadataDocumentUri": "...",
     "documentHash": "..."
 }
@@ -1197,6 +1209,9 @@ At least the following elements are expected to be provided by the user:
 - relatedResource: The link to the resource. 
 
 In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
+
+[NOTE]
+License URI is optional. It's new since 1.5.0.
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
