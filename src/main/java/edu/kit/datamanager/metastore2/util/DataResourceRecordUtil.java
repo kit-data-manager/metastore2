@@ -1337,10 +1337,11 @@ public class DataResourceRecordUtil {
     String id = metadataRecord.getId();
     String lowerCaseId = id.toLowerCase();
     // schema id should be lower case due to elasticsearch
-    metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
+    // alternate identifier is used to set id to a given id.
+      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
     if (!lowerCaseId.equals(id)) {
       metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
-    }
+    } 
   }
 
   public static final void check4validId(DataResource metadataRecord) {
