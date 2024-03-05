@@ -137,7 +137,14 @@ public class DataResourceRecordUtil {
   private static IUrl2PathDao url2PathDao;
 
   public static final String SCHEMA_SUFFIX = "_Schema";
+  public static final String XML_SCHEMA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + SCHEMA_SUFFIX;
+  public static final String JSON_SCHEMA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.JSON + SCHEMA_SUFFIX;
+
   public static final String METADATA_SUFFIX = "_Metadata";
+  public static final String XML_METADATA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + METADATA_SUFFIX;
+  public static final String JSON_METADATA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.JSON + METADATA_SUFFIX;
+  
+  
 
   DataResourceRecordUtil() {
     //Utility class
@@ -873,7 +880,7 @@ public class DataResourceRecordUtil {
    * @param document document
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MetadataRecord metadataRecord,
+          DataResource metadataRecord,
           MultipartFile document) {
     LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, metadataRecord, document);
     if (document == null || document.isEmpty()) {
@@ -887,7 +894,7 @@ public class DataResourceRecordUtil {
       LOG.trace(LOG_SCHEMA_REGISTRY);
       if (schemaConfig != null) {
         try {
-          MetadataSchemaRecordUtil.validateMetadataDocument(schemaConfig, document, metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
+          validateMetadataDocument(schemaConfig, document, metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
           validationSuccess = true;
         } catch (Exception ex) {
           String message = "Error validating document!";
@@ -962,26 +969,17 @@ public class DataResourceRecordUtil {
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return findFirst.get();
   }
-//
-//  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-//          String recordId) throws ResourceNotFoundException {
-//    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
-//  }
-//
-//  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-//          String recordId, Long version) throws ResourceNotFoundException {
-//    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
-//    MetadataRecord metadataRecord = getRecordByIdAndVersion(metastoreProperties, recordId, version);
-//
-//    URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
-//
-//    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-//    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-//      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-//      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-//    }
-//    return metadataDocumentPath;
-//  }
+
+  public static ContentInformation getContentInformationByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId) throws ResourceNotFoundException {
+    return getContentInformationByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static ContentInformation getContentInformationByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
+    return metastoreProperties.getContentInformationService().getContentInformation(recordId, null, version);
+  }
 
   /**
    * Merge new metadata record in the existing one.
@@ -1338,10 +1336,10 @@ public class DataResourceRecordUtil {
     String lowerCaseId = id.toLowerCase();
     // schema id should be lower case due to elasticsearch
     // alternate identifier is used to set id to a given id.
-      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
+    metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
     if (!lowerCaseId.equals(id)) {
-      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
-    } 
+      metadataRecord.getAlternateIdentifiers().add(Identifier.factoryIdentifier(id, Identifier.IDENTIFIER_TYPE.OTHER));
+    }
   }
 
   public static final void check4validId(DataResource metadataRecord) {
@@ -1734,6 +1732,7 @@ public class DataResourceRecordUtil {
     ControllerUtils.checkEtag(eTag, dataResource);
     if (metadataRecord != null) {
       metadataRecord.setVersion(dataResource.getVersion());
+      metadataRecord.setId(dataResource.getId());
       dataResource = metadataRecord;
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
@@ -1801,7 +1800,7 @@ public class DataResourceRecordUtil {
       }
 
     }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
+    dataResource = DataResourceUtils.updateResource(applicationProperties, dataResource.getId(), dataResource, eTag, supplier);
 
     return dataResource;
   }

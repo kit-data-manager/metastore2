@@ -41,7 +41,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -72,6 +71,8 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerV2;
+import edu.kit.datamanager.repo.domain.ContentInformation;
+import java.nio.file.Path;
 
 /**
  * Controller for schema documents.
@@ -175,11 +176,11 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
 
     LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
-    MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
-    URI schemaDocumentUri = URI.create(schemaRecord.getSchemaDocumentUri());
-
-    MediaType contentType = MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType()) ? MediaType.APPLICATION_XML : MediaType.APPLICATION_JSON;
-    Path schemaDocumentPath = Paths.get(schemaDocumentUri);
+    DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
+    ContentInformation contentInfo = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaRecord.getId(), Long.valueOf(schemaRecord.getVersion()));
+    MediaType contentType = MediaType.valueOf(contentInfo.getMediaType());
+    URI pathToFile = URI.create(contentInfo.getContentUri());
+    Path schemaDocumentPath = Paths.get(pathToFile);
     if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
       LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Schema document on server either does not exist or is no file or is not readable.");
@@ -226,7 +227,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           WebRequest wr,
           HttpServletResponse hsr) {
     LOG.trace("Performing validate({}, {}, {}).", schemaId, version, "#document");
-//    DataResourceRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
+    DataResourceRecordUtil.validateMetadataDocument(schemaConfig, document, schemaId, version);
     LOG.trace("Metadata document validation succeeded. Returning HTTP NOT_CONTENT.");
     return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
   }
@@ -246,13 +247,32 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    boolean searchForJson = true;
+    boolean searchForXml = true;
+    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+    if (mimeTypes != null) {
+      searchForJson = false;
+      searchForXml = false;
+      for (String mimeType : mimeTypes) {
+        if (mimeType.contains("json")) {
+          searchForJson = true;
+        }
+        if (mimeType.contains("xml")) {
+          searchForXml = true;
+        }
+      }
+      if (searchForJson && !searchForXml) {
+        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      } 
+      if (!searchForJson && searchForXml) {
+        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      }
+      if (!searchForJson && !searchForXml)
+        resourceType = ResourceType.createResourceType("unknown");
+    }
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
     // Add authentication if enabled
     spec = addAuthenticationSpecification(spec);
-    //one of given mimetypes.
-    if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
-      spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
-    }
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
