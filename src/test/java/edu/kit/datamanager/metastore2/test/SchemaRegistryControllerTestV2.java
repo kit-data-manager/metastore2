@@ -29,6 +29,7 @@ import edu.kit.datamanager.repo.domain.Contributor;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.Description;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
@@ -48,6 +49,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
+import net.bytebuddy.agent.VirtualMachine;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
@@ -224,7 +226,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecord() throws Exception {
-    DataResource record = createDataResource("my_dc");
+    DataResource record = createDataResource4Schema("my_dc");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -237,7 +239,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithAlternateEndpoint() throws Exception {
-    DataResource record = createDataResource("my_dc_alternate");
+    DataResource record = createDataResource4Schema("my_dc_alternate");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -251,7 +253,7 @@ public class SchemaRegistryControllerTestV2 {
   @Test
   public void testCreateSchemaRecordWithCapitalLetter() throws Exception {
     String schemaIDWithCapitalLetters = "myFirstTest";
-    DataResource record = createDataResource(schemaIDWithCapitalLetters);
+    DataResource record = createDataResource4Schema(schemaIDWithCapitalLetters);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -271,7 +273,7 @@ public class SchemaRegistryControllerTestV2 {
   @Test
   public void testCreateRegisterSchemaRecordWithSameIdButCapitalLetter() throws Exception {
     String schemaIDWithCapitalLetters = "mySecondTest";
-    DataResource record = createDataResource(schemaIDWithCapitalLetters);
+    DataResource record = createDataResource4Schema(schemaIDWithCapitalLetters);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -298,7 +300,7 @@ public class SchemaRegistryControllerTestV2 {
 
   //@Test
   public void testCreateSchemaRecordWithIdentifierWithoutType() throws Exception {
-    DataResource record = createDataResource("my_dc_without_type");
+    DataResource record = createDataResource4Schema("my_dc_without_type");
     Identifier ri = Identifier.factoryIdentifier("any", null);
     record.getAlternateIdentifiers().add(ri);
     ObjectMapper mapper = new ObjectMapper();
@@ -313,7 +315,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithoutMimeType() throws Exception {
-    DataResource record = createDataResource("my_dc_2");
+    DataResource record = createDataResource4Schema("my_dc_2");
     record.getFormats().clear();
     ObjectMapper mapper = new ObjectMapper();
 
@@ -327,7 +329,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithoutContentType() throws Exception {
-    DataResource record = createDataResource("my_dc_3");
+    DataResource record = createDataResource4Schema("my_dc_3");
     record.getFormats().clear();
     record.setResourceType(null);
     ObjectMapper mapper = new ObjectMapper();
@@ -342,7 +344,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithLocationUri() throws Exception {
-    DataResource record = createDataResource("my_dc_new");
+    DataResource record = createDataResource4Schema("my_dc_new");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -363,7 +365,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateInvalidSchemaRecord() throws Exception {
-    DataResource record = createDataResource(INVALID_SCHEMA_ID);
+    DataResource record = createDataResource4Schema(INVALID_SCHEMA_ID);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -376,7 +378,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithEmptyAclSid() throws Exception {
-    DataResource record = createDataResource("my_dc_empty_sid");
+    DataResource record = createDataResource4Schema("my_dc_empty_sid");
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry(null, PERMISSION.ADMINISTRATE));
     record.setAcls(aclEntries);
@@ -428,7 +430,7 @@ public class SchemaRegistryControllerTestV2 {
 
   // @Test 
   public void testCreateSchemaRecordFromExternal() throws Exception {
-    DataResource record = createDataResource("my_dc_from_extern");
+    DataResource record = createDataResource4Schema("my_dc_from_extern");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -447,7 +449,7 @@ public class SchemaRegistryControllerTestV2 {
 
   //@Test @ToDo Set external remote address.
   public void testCreateSchemaRecordUpdateFromExternal() throws Exception {
-    DataResource record = createDataResource("my_dcExt");
+    DataResource record = createDataResource4Schema("my_dcExt");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -462,7 +464,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWrongType() throws Exception {
-    DataResource record = createDataResource("my_dc");
+    DataResource record = createDataResource4Schema("my_dc");
     record.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.SCHEMA_TYPE.JSON + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     ObjectMapper mapper = new ObjectMapper();
 
@@ -476,7 +478,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordGuessingType() throws Exception {
-    DataResource record = createDataResource("my_dc");
+    DataResource record = createDataResource4Schema("my_dc");
     record.setResourceType(null);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -492,7 +494,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordGuessingTypeFails() throws Exception {
-    DataResource record = createDataResource("my_dc");
+    DataResource record = createDataResource4Schema("my_dc");
     record.setResourceType(null);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -507,7 +509,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithBadSchema() throws Exception {
-    DataResource record = createDataResource("bad_schema");
+    DataResource record = createDataResource4Schema("bad_schema");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -520,7 +522,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithEmptySchema() throws Exception {
-    DataResource record = createDataResource("empty_schema");
+    DataResource record = createDataResource4Schema("empty_schema");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -540,7 +542,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateSchemaRecordWithoutSchema() throws Exception {
-    DataResource record = createDataResource("without_schema");
+    DataResource record = createDataResource4Schema("without_schema");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -552,7 +554,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testCreateSchemaRecordWithBadRecord() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
 
-    DataResource record = createDataResource(null);
+    DataResource record = createDataResource4Schema(null);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
@@ -564,7 +566,7 @@ public class SchemaRegistryControllerTestV2 {
 
   @Test
   public void testCreateTwoVersionsOfSchemaRecord() throws Exception {
-    DataResource record = createDataResource("my_dc_with_version");
+    DataResource record = createDataResource4Schema("my_dc_with_version");
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -761,21 +763,24 @@ public class SchemaRegistryControllerTestV2 {
   public void testValidate() throws Exception {
     String schemaId = "testValidate".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNoContent()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNoContent()).andReturn();
   }
 
   @Test
   public void testValidateUnknownVersion() throws Exception {
     String schemaId = "testValidateUnknownVersion".toLowerCase(Locale.getDefault());
+    String version = "666";
     ingestXmlDataResource(schemaId);
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate?version=666").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    MvcResult andReturn = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate?version=" + version).file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    Assert.assertTrue(andReturn.getResponse().getContentAsString().contains(version));
+    Assert.assertTrue(andReturn.getResponse().getContentAsString().contains(schemaId));
   }
 
   @Test
   public void testValidateKnownVersion() throws Exception {
     String schemaId = "testValidateKnownVersion".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate?version=1").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNoContent()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate?version=1").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNoContent()).andReturn();
   }
 
   @Test
@@ -789,14 +794,14 @@ public class SchemaRegistryControllerTestV2 {
   public void testValidateWithInvalidDocument() throws Exception {
     String schemaId = "testValidateWithInvalidDocument".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate").file("document", INVALID_KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", INVALID_KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   @Test
   public void testValidateWithEmptyDocument() throws Exception {
     String schemaId = "testValidateWithEmptyDocument".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate").file("document", "".getBytes())).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", "".getBytes())).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
 
   @Test
@@ -809,7 +814,7 @@ public class SchemaRegistryControllerTestV2 {
     String schemaId = "testValidateWithoutValidator".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId +"/validate").file("document", JSON_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", JSON_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   @Test
@@ -819,7 +824,7 @@ public class SchemaRegistryControllerTestV2 {
     // Get location of schema file.
     DataResource dataRes = DataResource.factoryNewDataResource();
     dataRes.setId(schemaId.toLowerCase());
-    String contentUri = contentInformationDao.findByParentResource(dataRes,PageRequest.of(0, 2)).getContent().get(0).getContentUri();
+    String contentUri = contentInformationDao.findByParentResource(dataRes, PageRequest.of(0, 2)).getContent().get(0).getContentUri();
     //delete schema file
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
@@ -1207,7 +1212,7 @@ public class SchemaRegistryControllerTestV2 {
     DataResource record2 = mapper.readValue(body, DataResource.class);
     Assert.assertNotEquals(mimeTypeBefore, record2.getFormats().iterator().next());//mime type was changed by update
     validateCreateDates(record.getDates(), record2.getDates());
-   Assert.assertEquals(record.getId(), record2.getId());
+    Assert.assertEquals(record.getId(), record2.getId());
     Assert.assertEquals(2l, (long) Long.parseLong(record2.getVersion()));//version is not changing for metadata update
     validateSets(record.getAcls(), record2.getAcls());
     validateUpdateDates(record.getDates(), record2.getDates());
@@ -1266,7 +1271,7 @@ public class SchemaRegistryControllerTestV2 {
   @Test
   public void testUpdateRecordWithSmallChangesInDocument() throws Exception {
     String schemaId = "updateRecordWithSmallChanges";
-    DataResource schemaRecord = createDataResource(schemaId);
+    DataResource schemaRecord = createDataResource4Schema(schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
@@ -1291,7 +1296,7 @@ public class SchemaRegistryControllerTestV2 {
   @Test
   public void testUpdateRecordWithoutExplizitGet() throws Exception {
     String schemaId = "updateWithoutGet";
-    DataResource record = createDataResource(schemaId);
+    DataResource record = createDataResource4Schema(schemaId);
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1372,7 +1377,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testCreateSchemaRecordWithUpdateWithoutChanges() throws Exception {
     // Test with a schema missing schema property.
     String schemaId = "updateWithoutChanges_xsd".toLowerCase(Locale.getDefault());
-    DataResource record = createDataResource(schemaId);
+    DataResource record = createDataResource4Schema(schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -1427,10 +1432,7 @@ public class SchemaRegistryControllerTestV2 {
 
     this.mockMvc.perform(delete(API_SCHEMA_PATH + schemaId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
     // create should return conflict
-    SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
-    schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    DataResource schemaRecord = createDataResource4Schema(schemaId);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(schemaRecord).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
@@ -1727,7 +1729,7 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   private void ingestXmlDataResource(String schemaId) throws Exception {
-    DataResource record = createDataResource(schemaId);
+    DataResource record = createDataResource4Schema(schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -1739,7 +1741,7 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   private void ingestJsonDataResource(String schemaId) throws Exception {
-    DataResource record = createDataResource(schemaId);
+    DataResource record = createDataResource4Schema(schemaId);
     record.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
     record.getFormats().clear();
     record.getFormats().add(MediaType.APPLICATION_JSON_VALUE);
@@ -1808,7 +1810,7 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   private void ingestSchemaWithVersion(String schemaId, long version) throws Exception {
-    DataResource record = createDataResource(schemaId);
+    DataResource record = createDataResource4Schema(schemaId);
     setComment(record, COMMENT + version);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1832,6 +1834,11 @@ public class SchemaRegistryControllerTestV2 {
     if (version > 1) {
       // Read ETag
       result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      String body = result.getResponse().getContentAsString();
+
+      DataResource oldRecord = mapper.readValue(body, DataResource.class);
+      setComment(oldRecord, COMMENT + version);
+      recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(oldRecord).getBytes());
       String etag = result.getResponse().getHeader("ETag");
       result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId).
               file(recordFile).
@@ -1868,7 +1875,7 @@ public class SchemaRegistryControllerTestV2 {
             andReturn();
   }
 
-  private DataResource createDataResource(String id) {
+  public static DataResource createDataResource4Schema(String id) {
     DataResource record = new DataResource();
     record.setId(id);
     setTitle(record, id);
@@ -1884,24 +1891,44 @@ public class SchemaRegistryControllerTestV2 {
     return record;
   }
 
-  private String createKitMetadataRecord(String schemaId) throws Exception {
-    MetadataRecord record = new MetadataRecord();
-//    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
-    record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
-    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
-    ObjectMapper mapper = new ObjectMapper();
+  private DataResource createDataResource4Document(String id, String schemaId) {
+    DataResource record = new DataResource();
+    record.setId(id);
+    // mandatory element title has to be set
+    setTitle(record, id);
+    record.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.XML_METADATA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
+    
+    RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING, null, null);
+    relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+    record.getRelatedIdentifiers().add(relatedResource);
+    relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaId, null, null);
+    relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    record.getRelatedIdentifiers().add(relatedResource);
 
+    record.getFormats().add(MediaType.APPLICATION_XML.toString());
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry("test", PERMISSION.READ));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
+    record.setAcls(aclEntries);
+    return record;
+  }
+
+  private String createKitMetadataRecord(String schemaId) throws Exception {
+    String documentId = "kit";
+    DataResource record = createDataResource4Document(documentId, schemaId);
+
+    ObjectMapper mapper = new ObjectMapper();
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
 
     MvcResult andReturn = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
-    MetadataRecord result = mapper.readValue(andReturn.getResponse().getContentAsString(), MetadataRecord.class);
+            file(metadataFile)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
+            andReturn();
+    DataResource result = mapper.readValue(andReturn.getResponse().getContentAsString(), DataResource.class);
 
     return result.getId();
   }
@@ -1978,7 +2005,7 @@ public class SchemaRegistryControllerTestV2 {
     Assert.assertEquals(first.getLanguage(), second.getLanguage());
     if (update) {
       Assert.assertTrue(first.getLastUpdate().isBefore(second.getLastUpdate()));
-    }else {
+    } else {
       Assert.assertEquals(first.getLastUpdate(), second.getLastUpdate());
     }
     Assert.assertEquals(first.getPublicationYear(), second.getPublicationYear());
