@@ -1891,7 +1891,7 @@ public class SchemaRegistryControllerTestV2 {
     return record;
   }
 
-  private DataResource createDataResource4Document(String id, String schemaId) {
+  public static DataResource createDataResource4Document(String id, String schemaId) {
     DataResource record = new DataResource();
     record.setId(id);
     // mandatory element title has to be set
@@ -1980,18 +1980,18 @@ public class SchemaRegistryControllerTestV2 {
     return isPart;
   }
 
-  private static void validateDataResources(String first, String second) throws JsonProcessingException {
+  public static void validateDataResources(String first, String second) throws JsonProcessingException {
     ObjectMapper mapper = new ObjectMapper();
     DataResource firstRecord = mapper.readValue(first, DataResource.class);
     DataResource secondRecord = mapper.readValue(second, DataResource.class);
     validateDataResources(firstRecord, secondRecord);
   }
 
-  private static void validateDataResources(DataResource first, DataResource second) {
+  public static void validateDataResources(DataResource first, DataResource second) {
     validateDataResources(first, second, false);
   }
 
-  private static void validateDataResources(DataResource first, DataResource second, boolean update) {
+  public static void validateDataResources(DataResource first, DataResource second, boolean update) {
     if (first == second) {
       return;
     }
@@ -2037,7 +2037,7 @@ public class SchemaRegistryControllerTestV2 {
     first.getSubjects();
   }
 
-  private static void validateSets(Set<AclEntry> first, Set<AclEntry> second) {
+  public static void validateSets(Set<AclEntry> first, Set<AclEntry> second) {
     if (first == second) {
       return;
     }
@@ -2059,7 +2059,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateIdentifierSets(Set<Identifier> first, Set<Identifier> second) {
+  public static void validateIdentifierSets(Set<Identifier> first, Set<Identifier> second) {
     if (first == second) {
       return;
     }
@@ -2081,7 +2081,32 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateContributors(Set<Contributor> first, Set<Contributor> second) {
+  public static void validateRelatedIdentifierSets(Set<RelatedIdentifier> first, Set<RelatedIdentifier> second) {
+    if (first == second) {
+      return;
+    }
+    Assert.assertEquals(first.size(), second.size());
+    Set<RelatedIdentifier> copy = new HashSet<>();
+    copy.addAll(second);
+    boolean identical;
+    for (RelatedIdentifier item : first) {
+      identical = false;
+      for (RelatedIdentifier item2 : copy) {
+        identical = (item.getIdentifierType() == item2.getIdentifierType())
+                && ((item.getValue() == item2.getValue()) || item.getValue().equals(item2.getValue()))
+                && (item.getRelationType() == item2.getRelationType())
+                && ((item.getScheme() == item2.getScheme()) || (item.getScheme().getSchemeId().equals(item2.getScheme().getSchemeId()) && 
+                item.getScheme().getSchemeUri().equals(item2.getScheme().getSchemeUri())));
+        if (identical) {
+          copy.remove(item2);
+          break;
+        }
+      }
+      Assert.assertTrue(identical);
+    }
+  }
+
+  public static void validateContributors(Set<Contributor> first, Set<Contributor> second) {
     if (first == second) {
       return;
     }
@@ -2104,7 +2129,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateCreators(Set<Agent> first, Set<Agent> second) {
+  public static void validateCreators(Set<Agent> first, Set<Agent> second) {
     if (first == second) {
       return;
     }
@@ -2127,7 +2152,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateDates(Set<Date> first, Set<Date> second) {
+  public static void validateDates(Set<Date> first, Set<Date> second) {
     if (first == second) {
       return;
     }
@@ -2149,7 +2174,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateCreateDates(Set<Date> first, Set<Date> second) {
+  public static void validateCreateDates(Set<Date> first, Set<Date> second) {
     if (first == second) {
       return;
     }
@@ -2169,7 +2194,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateUpdateDates(Set<Date> first, Set<Date> second) {
+  public static void validateUpdateDates(Set<Date> first, Set<Date> second) {
     if (first == second) {
       return;
     }
@@ -2189,7 +2214,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateDescriptions(Set<Description> first, Set<Description> second) {
+  public static void validateDescriptions(Set<Description> first, Set<Description> second) {
     if (first == second) {
       return;
     }
@@ -2212,7 +2237,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateDescriptions(DataResource record,
+  public static void validateDescriptions(DataResource record,
           String label,
           String definition,
           String comment) {
@@ -2272,7 +2297,7 @@ public class SchemaRegistryControllerTestV2 {
     return true;
   }
 
-  private static void validateRights(Set<Scheme> first, Set<Scheme> second) {
+  public static void validateRights(Set<Scheme> first, Set<Scheme> second) {
     if (first == second) {
       return;
     }
@@ -2294,7 +2319,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static void validateTitles(Set<Title> first, Set<Title> second) {
+  public static void validateTitles(Set<Title> first, Set<Title> second) {
     if (first == second) {
       return;
     }
