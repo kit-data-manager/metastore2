@@ -45,7 +45,6 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.Description;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
@@ -70,6 +69,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -1127,6 +1127,10 @@ public class MetadataSchemaRecordUtil {
   public static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
     if (schemaRecordDao != null) {
       try {
+        schemaRecord.setAlternateId(DataResourceRecordUtil.getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
+        if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
+          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
+        }
         schemaRecordDao.save(schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);

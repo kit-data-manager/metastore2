@@ -243,7 +243,7 @@ public class MetadataControllerTestV2 {
       this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
               .apply(springSecurity())
               .apply(documentationConfiguration(this.restDocumentation).uris()
-                      .withPort(41401))
+                      .withPort(41421))
               .build();
       // Create schema only once.
       try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {

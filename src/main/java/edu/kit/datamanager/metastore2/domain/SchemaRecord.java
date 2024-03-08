@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.domain;
 
+import edu.kit.datamanager.entities.Identifier;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -42,7 +43,7 @@ public class SchemaRecord implements Serializable {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   Long id;
-  @NotBlank(message = "The unqiue identifier of the schema used in the metadata repository for identifying the schema.")
+  @NotBlank(message = "The unqiue (internal) identifier of the schema used in the metadata repository for identifying the schema.")
   private String schemaId;
   @NotNull(message = "The schema version. The version is set by the schema registry and cannot be provided manually. Typically, a new schema version is only for metadata changes via PUT. In a few cases, \"\n"
           + "          + \"e.g. schema synchronization, a new version can be also created by overwriting an existing schema received from a remote, authoritative source.")
@@ -50,10 +51,10 @@ public class SchemaRecord implements Serializable {
   @Enumerated(EnumType.STRING)
   @NotNull(message = "The schema type used for quick decision making, e.g. to select a proper validator.")
   private MetadataSchemaRecord.SCHEMA_TYPE type;
-
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
-
+  @NotBlank(message = "Alternate id of schema document.")
+  private String alternateId;
 }

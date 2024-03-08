@@ -121,7 +121,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     BiFunction<String, Long, String> getSchemaDocumentById;
     getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
 
-    DataResource dataResourceRecord = DataResourceRecordUtil.createDataResourceRecord4Schema(schemaConfig, recordDocument, document, getSchemaDocumentById);
+    DataResource dataResourceRecord = DataResourceRecordUtil.createDataResourceRecord4Schema(schemaConfig, recordDocument, document);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = dataResourceRecord.getEtag();
 

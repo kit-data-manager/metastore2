@@ -42,9 +42,9 @@ import static edu.kit.datamanager.metastore2.domain.ResourceIdentifier.Identifie
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
-import static edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil.fixRelativeURI;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
+import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -81,7 +81,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.StringTokenizer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -95,9 +95,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.client.HttpClientErrorException;
@@ -161,8 +158,7 @@ public class DataResourceRecordUtil {
    */
   public static DataResource createDataResourceRecord4Schema(MetastoreConfiguration applicationProperties,
           MultipartFile recordDocument,
-          MultipartFile document,
-          BiFunction<String, Long, String> getSchemaDocumentById) {
+          MultipartFile document) {
     DataResource metadataRecord;
 
     // Do some checks first.
@@ -209,10 +205,12 @@ public class DataResourceRecordUtil {
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-
+    // Get URL for schema
+    String schemaUrl = getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion());
     schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
+    schemaRecord.setAlternateId(schemaUrl);
     MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
 
     // Settings for OAI PMH
@@ -220,7 +218,7 @@ public class DataResourceRecordUtil {
       try {
         MetadataFormat metadataFormat = new MetadataFormat();
         metadataFormat.setMetadataPrefix(schemaRecord.getSchemaId());
-        metadataFormat.setSchema(getSchemaDocumentById.apply(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
+        metadataFormat.setSchema(schemaUrl);
         String metadataNamespace = SchemaUtils.getTargetNamespaceFromSchema(document.getBytes());
         metadataFormat.setMetadataNamespace(metadataNamespace);
         metadataFormatDao.save(metadataFormat);
@@ -329,14 +327,14 @@ public class DataResourceRecordUtil {
    * @param supplier Function for updating record.
    * @return Enriched metadata record.
    */
-  public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
+  public static DataResource updateDataResource4MetadataDocument(MetastoreConfiguration applicationProperties,
           String resourceId,
           String eTag,
           MultipartFile recordDocument,
           MultipartFile document,
           UnaryOperator<String> supplier) {
-    MetadataRecord metadataRecord = null;
-    MetadataRecord existingRecord;
+    DataResource metadataRecord = null;
+    DataResource existingRecord;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (document == null || document.isEmpty())) {
@@ -346,7 +344,7 @@ public class DataResourceRecordUtil {
     }
     if (!(recordDocument == null || recordDocument.isEmpty())) {
       try {
-        metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), MetadataRecord.class);
+        metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), DataResource.class);
       } catch (IOException ex) {
         String message = "Can't map record document to MetadataRecord";
         if (ex instanceof JsonParseException) {
@@ -362,9 +360,8 @@ public class DataResourceRecordUtil {
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (metadataRecord != null) {
-      existingRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      existingRecord = mergeRecords(existingRecord, metadataRecord);
-      dataResource = migrateToDataResource(applicationProperties, existingRecord);
+      existingRecord = metadataRecord;
+ //     existingRecord = mergeDataResourceRecords(existingRecord, metadataRecord);
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
@@ -411,8 +408,8 @@ public class DataResourceRecordUtil {
 
     } else {
       // validate if document is still valid due to changed record settings.
-      metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
+  //    metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
+      URI metadataDocumentUri = getMetadataDocumentUri(dataResource.getId(), dataResource.getVersion());
 
       Path metadataDocumentPath = Paths.get(metadataDocumentUri);
       if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
@@ -422,7 +419,8 @@ public class DataResourceRecordUtil {
 
       try {
         InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
+        ResourceIdentifier schema  = ResourceIdentifier.factoryInternalResourceIdentifier(DataResourceRecordUtil.getSchemaIdentifier(dataResource).getValue());
+        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecord(schema, Long.parseLong(metadataRecord.getVersion()));
         MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);
@@ -437,7 +435,7 @@ public class DataResourceRecordUtil {
     }
     dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
-    return migrateToMetadataRecord(applicationProperties, dataResource, true);
+    return dataResource;
   }
 
   /**
@@ -494,7 +492,7 @@ public class DataResourceRecordUtil {
    * @param eTag ETag of the old digital object.
    * @param supplier Function for updating record.
    */
-  public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
+  public static void deleteDataResourceRecord(MetastoreConfiguration applicationProperties,
           String id,
           String eTag,
           UnaryOperator<String> supplier) {
@@ -978,26 +976,25 @@ public class DataResourceRecordUtil {
    * @param provided New metadata record.
    * @return Merged record
    */
-  public static MetadataRecord mergeRecords(MetadataRecord managed, MetadataRecord provided) {
-    if (provided != null && managed != null) {
-      //update pid
-      managed.setPid(mergeEntry("Update record->pid", managed.getPid(), provided.getPid()));
-
-      //update acl
-      managed.setAcl(mergeAcl(managed.getAcl(), provided.getAcl()));
-      //update getRelatedResource
-      managed.setRelatedResource(mergeEntry("Updating record->relatedResource", managed.getRelatedResource(), provided.getRelatedResource()));
-      //update schemaId
-      managed.setSchema(mergeEntry("Updating record->schema", managed.getSchema(), provided.getSchema()));
-      //update schemaVersion
-      managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
-      // update licenseUri
-      managed.setLicenseUri(mergeEntry("Updating record->licenseUri", managed.getLicenseUri(), provided.getLicenseUri(), true));
-    } else {
-      managed = (managed != null) ? managed : provided;
-    }
-    return managed;
-  }
+//  public static MetadataRecord mergeDataResources(DataResource managed, DataResource provided) {
+//    if (provided != null && managed != null) {
+//      //update pid
+//      managed.setAlternateIdentifiers(mergeEntry("Update record->pid", managed.getAlternateIdentifiers(), provided.getAlternateIdentifiers()));
+//
+//      //update acl
+//      managed.setAcls(mergeAcl(managed.getAcls(), provided.getAcls()));
+//      //update getRelatedResource
+//      managed.setRelatedIdentifiers(mergeEntry("Updating record->relatedResource", managed.getRelatedIdentifiers(), provided.getRelatedIdentifiers()));
+//      //update schemaVersion
+//      managed.setVersion(mergeEntry("Updating record->schemaVersion", managed.getVersion(), provided.getVersion()));
+//      managed.setRights(mergeEntry("halo", managed.getRights(), provided.getRights(), true));
+//      // update licenseUri
+//      managed.setRights(mergeEntry("Updating record->licenseUri", managed.getRights(), provided.getRights(), true));
+//1    } else {
+//      managed = (managed != null) ? managed : provided;
+//    }
+//    return managed;
+//  }
 
   /**
    * Check validity of acl list and then merge new acl list in the existing one.
@@ -1215,6 +1212,34 @@ public class DataResourceRecordUtil {
     LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }
 
+  public static final void fixSchemaUrl(DataResource dataresource) {
+    RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataresource);
+    if ((schemaIdentifier != null) && (schemaIdentifier.getIdentifierType().equals(Identifier.IDENTIFIER_TYPE.INTERNAL))) {
+      String value = schemaIdentifier.getValue();
+      StringTokenizer tokenizer = new StringTokenizer(schemaIdentifier.getValue());
+      Long version = null;
+      String schemaId = null;
+      SchemaRecord schemaRecord = null;
+      switch (tokenizer.countTokens()) {
+        case 2:
+          schemaId = tokenizer.nextToken();
+          version = Long.parseLong(tokenizer.nextToken());
+          schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+          break;
+        case 1:
+          schemaId = tokenizer.nextToken();
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+          break;
+        default:
+          throw new CustomInternalServerError("Invalid schemaId!");
+      }
+
+      schemaIdentifier.setValue(schemaRecord.getAlternateId());
+      schemaIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+      LOG.trace("Fix scheme Url '{}' -> '{}'", value, schemaIdentifier.getValue());
+    }
+  }
+
   public static void checkLicense(DataResource dataResource, String licenseUri) {
     if (licenseUri != null) {
       Set<Scheme> rights = dataResource.getRights();
@@ -1293,24 +1318,36 @@ public class DataResourceRecordUtil {
   }
 
   /**
+   * Get schema identifier of data resource.
+   *
+   * @param dataResourceRecord Metadata record hold schema identifier.
+   * @return RelatedIdentifier with a global accessible identifier.
+   */
+  public static RelatedIdentifier getSchemaIdentifier(DataResource dataResourceRecord) {
+    LOG.trace("Get schema identifier for '{}'.", dataResourceRecord.getId());
+    RelatedIdentifier relatedIdentifier = getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    return relatedIdentifier;
+  }
+
+  /**
    * Transform schema identifier to global available identifier (if neccessary).
    *
    * @param dataResourceRecord Metadata record hold schema identifier.
    * @return ResourceIdentifier with a global accessible identifier.
    */
-  public static RelatedIdentifier getSchemaIdentifier(DataResource dataResourceRecord) {
-    LOG.trace("Get schema identifier for '{}'.", dataResourceRecord.getId());
-    RelatedIdentifier schemaIdentifier = null;
+  public static RelatedIdentifier getRelatedIdentifier(DataResource dataResourceRecord, RelatedIdentifier.RELATION_TYPES relationType) {
+    LOG.trace("Get related identifier for '{}' of type '{}'.", dataResourceRecord.getId(), relationType);
+    RelatedIdentifier relatedIdentifier = null;
 
     Set<RelatedIdentifier> relatedResources = dataResourceRecord.getRelatedIdentifiers();
 
     // Check if related resource already exists (only one related resource of type isMetadataFor allowed)
     for (RelatedIdentifier item : relatedResources) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        schemaIdentifier = item;
+      if (item.getRelationType().equals(relationType)) {
+        relatedIdentifier = item;
       }
     }
-    return schemaIdentifier;
+    return relatedIdentifier;
   }
 
   /**
@@ -1517,7 +1554,7 @@ public class DataResourceRecordUtil {
     DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
     ContentInformation contentInfo = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaRecord.getId(), Long.valueOf(schemaRecord.getVersion()));
     validateMetadataDocument(metastoreProperties, document, contentInfo);
- 
+
     cleanUp(contentInfo);
   }
 //
@@ -1805,5 +1842,27 @@ public class DataResourceRecordUtil {
     dataResource = DataResourceUtils.updateResource(applicationProperties, dataResource.getId(), dataResource, eTag, supplier);
 
     return dataResource;
+  }
+
+  /**
+   * Get String (URL) for accessing schema document via schemaId and version.
+   *
+   * @param schemaId schemaId.
+   * @param version version.
+   * @return String for accessing schema document.
+   */
+  public static final String getSchemaDocumentUri(String schemaId, Long version) {
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(schemaId, version, null, null)).toUri().toString();
+  }
+
+  /**
+   * Get String (URL) for accessing metadata document via id and version.
+   *
+   * @param id id.
+   * @param version version.
+   * @return URI for accessing schema document.
+   */
+  public static final URI getMetadataDocumentUri(String id, String version) {
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, Long.parseLong(version), null, null)).toUri();
   }
 }
