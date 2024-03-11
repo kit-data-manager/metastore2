@@ -55,6 +55,6 @@ public class SchemaRecord implements Serializable {
   private String schemaDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")
   private String documentHash;
-  @NotBlank(message = "Alternate id of schema document.")
+//  @NotBlank(message = "Alternate id of schema document.")
   private String alternateId;
 }

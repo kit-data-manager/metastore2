@@ -75,6 +75,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import java.util.Locale;
@@ -788,12 +789,15 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithEmptyAclSid() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry(null, PERMISSION.READ));
-    record.setAcl(aclEntries);
+    String id = "testCreateRecordWithEmptyAclSid";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    Set<AclEntry> aclEntries = new HashSet<>();
+//    aclEntries.add(new AclEntry(null, PERMISSION.READ));
+//    record.setAcl(aclEntries);
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -809,9 +813,12 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithInvalidMetadataNamespace() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    String id = "testCreateRecordWithInvalidMetadataNamespace";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -824,9 +831,12 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithInvalidMetadata() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    String id = "testCreateRecordWithInvalidMetadata";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -846,9 +856,12 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithoutSchema() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
+    String id = "testCreateRecordWithoutSchema";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -858,12 +871,15 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithBadRecord() throws Exception {
+    String id = "testCreateRecordWithBadRecord";
+    String schemaId = null;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
-    MetadataRecord record = new MetadataRecord();
-    //schemaId is missing
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
-    record.setRelatedResource(RELATED_RESOURCE);
+//    MetadataRecord record = new MetadataRecord();
+//    //schemaId is missing
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
+//    record.setRelatedResource(RELATED_RESOURCE);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
@@ -877,8 +893,13 @@ public class MetadataControllerTestV2 {
   public void testCreateRecordWithBadRecord2() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
 
-    MetadataRecord record = new MetadataRecord();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+    String id = "testCreateRecordWithLocationUri";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    record.getRelatedIdentifiers().remove(relatedIdentifier);
+//    MetadataRecord record = new MetadataRecord();
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
     //related resource is missing
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -891,14 +912,17 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateRecordWithoutDocument() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-//    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
-//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
-//    record.setAcl(aclEntries);
+    String id = "testCreateRecordWithoutDocument";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+////    record.setId("my_id");
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    Set<AclEntry> aclEntries = new HashSet<>();
+////    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+////    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+////    record.setAcl(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -910,11 +934,14 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateTwoVersionsOfSameRecord() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-//    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
+    String id = "testCreateTwoVersionsOfSameRecord";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//    MetadataRecord record = new MetadataRecord();
+////    record.setId("my_id");
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -938,11 +965,14 @@ public class MetadataControllerTestV2 {
 
   @Test
   public void testCreateTwoVersions() throws Exception {
-    MetadataRecord record = new MetadataRecord();
-//    record.setId("my_id");
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    record.setRelatedResource(RELATED_RESOURCE);
-    Set<AclEntry> aclEntries = new HashSet<>();
+     String id = "testCreateTwoVersions";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+//   MetadataRecord record = new MetadataRecord();
+////    record.setId("my_id");
+//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+//    record.setRelatedResource(RELATED_RESOURCE);
+//    Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -955,7 +985,7 @@ public class MetadataControllerTestV2 {
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
     Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
 
-    record.setRelatedResource(RELATED_RESOURCE_2);
+    DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).setValue(RELATED_RESOURCE_2.toString());
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).

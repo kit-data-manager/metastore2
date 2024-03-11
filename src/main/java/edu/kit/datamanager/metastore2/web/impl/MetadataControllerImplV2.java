@@ -228,7 +228,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 //      LOG.error(message);
 //      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
 //    }
-    DataResource result = DataResourceRecordUtil.createDataResourceRecord4Schema(metadataConfig, recordDocument, document);
+    DataResource result = DataResourceRecordUtil.createDataResourceRecord4Metadata(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
 //    long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");

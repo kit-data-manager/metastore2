@@ -1128,9 +1128,9 @@ public class MetadataSchemaRecordUtil {
     if (schemaRecordDao != null) {
       try {
         schemaRecord.setAlternateId(DataResourceRecordUtil.getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
-        if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
-          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
-        }
+//        if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
+//          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
+//        }
         schemaRecordDao.save(schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);
