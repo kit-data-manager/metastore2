@@ -1891,12 +1891,22 @@ public class SchemaRegistryControllerTestV2 {
     return record;
   }
 
+  public static DataResource createDataResource4JsonDocument(String id, String schemaId) {
+    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.JSON_METADATA_TYPE);
+  }
+  public static DataResource createDataResource4XmlDocument(String id, String schemaId) {
+    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
+  }
   public static DataResource createDataResource4Document(String id, String schemaId) {
+    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
+  }
+  public static DataResource createDataResource4Document(String id, String schemaId, String metadataType) {
     DataResource record = new DataResource();
     record.setId(id);
+    record.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
     // mandatory element title has to be set
     setTitle(record, id);
-    record.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.XML_METADATA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
+    record.setResourceType(ResourceType.createResourceType(metadataType, ResourceType.TYPE_GENERAL.MODEL));
     
     RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -1904,8 +1914,11 @@ public class SchemaRegistryControllerTestV2 {
     relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaId, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
     record.getRelatedIdentifiers().add(relatedResource);
-
-    record.getFormats().add(MediaType.APPLICATION_XML.toString());
+    if (metadataType.contains("XML")) {
+      record.getFormats().add(MediaType.APPLICATION_XML.toString());
+    } else {
+      record.getFormats().add(MediaType.APPLICATION_JSON.toString());
+    }
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));

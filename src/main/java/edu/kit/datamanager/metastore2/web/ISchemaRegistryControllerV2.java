@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.web;
 
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -84,9 +85,23 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
-  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.schema-record+json"})
+  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
   public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr);
+  @Operation(operationId = "getContentInformationRecordOfSchema",
+          summary = "Get content information record by schema id (and version).", 
+          description = "Obtain is single schema record by its schema id. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
+          + "Furthermore, a specific version of the record can be returned by providing a version number as request parameter. If no version is specified, the most recent version is returned.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
+  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.content-information+json"})
+  @ResponseBody
+  public ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
           HttpServletResponse hsr);
@@ -125,7 +140,7 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
           responses = {
             @ApiResponse(responseCode = "200", description = "OK and the schema document is returned if the record exists and the user has sufficient permission."),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
-  @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/json", "application/xml"})
+  @RequestMapping(value = {"/{schemaId}/data"}, method = {RequestMethod.GET}, produces = {"application/json", "application/xml"})
   @ResponseBody
   public ResponseEntity getSchemaDocumentById(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,

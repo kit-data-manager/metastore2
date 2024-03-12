@@ -30,7 +30,6 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
-import edu.kit.datamanager.metastore2.domain.LinkedMetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
@@ -45,6 +44,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
@@ -267,6 +267,22 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
 
     return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
+  }
+
+  @Override
+  public ResponseEntity<ContentInformation> getContentInformationById(
+          @PathVariable(value = "id") String id,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr
+  ) {
+    LOG.trace("Performing getRecordById({}, {}).", id, version);
+
+    LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
+    ContentInformation contentInformation = DataResourceRecordUtil.getContentInformationByIdAndVersion(metadataConfig, id, version);
+    LOG.trace("Metadata record found. Prepare response.");
+ 
+    return ResponseEntity.ok().body(contentInformation);
   }
 
   @Override

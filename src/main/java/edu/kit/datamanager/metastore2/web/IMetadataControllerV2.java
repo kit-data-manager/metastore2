@@ -16,6 +16,7 @@
 package edu.kit.datamanager.metastore2.web;
 
 import edu.kit.datamanager.metastore2.domain.AclRecord;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -84,6 +85,19 @@ public interface IMetadataControllerV2 extends InfoContributor {
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
   public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+          WebRequest wr,
+          HttpServletResponse hsr);
+
+  @Operation(summary = "Get a content information record by id.", description = "Obtain a single record by its resource identifier. "
+          + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
+          + "by providing a version number as request parameter.",
+          responses = {
+            @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = DataResource.class))),
+            @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
+
+  @RequestMapping(value = {"/{id}/data"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
+  public ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
           HttpServletResponse hsr);

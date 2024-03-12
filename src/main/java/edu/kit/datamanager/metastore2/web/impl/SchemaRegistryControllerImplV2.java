@@ -149,6 +149,21 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
   }
 
   @Override
+  public ResponseEntity<ContentInformation> getContentInformationById(
+          @PathVariable(value = "schemaId") String schemaId,
+          @RequestParam(value = "version", required = false) Long version,
+          WebRequest wr,
+          HttpServletResponse hsr) {
+    LOG.trace("Performing getContentInformationById({}, {}).", schemaId, version);
+
+    LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
+    ContentInformation contentInformation = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaId, version);
+
+    LOG.trace("Returning result.");
+    return ResponseEntity.ok().body(contentInformation);
+  }
+
+  @Override
   public ModelAndView getLandingPageById(@PathVariable(value = "schemaId") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
