@@ -292,7 +292,7 @@ public class MetadataControllerTestV2 {
     ingestHttpJsonSchemaRecord();
     String id = "testCreateRecordWithHttpSchema";
     String schemaId = SCHEMA_ID;
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonDocument(id, schemaId);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -312,7 +312,7 @@ public class MetadataControllerTestV2 {
     ingestHttpJsonSchemaRecordWithHash();
     String id = "testCreateRecordWithHttpSchemaAndHash";
     String schemaId = JSON_HTTP_SCHEMA_ID_WITH_HASH;
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonDocument(id, schemaId);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -2356,7 +2356,7 @@ public class MetadataControllerTestV2 {
 
   private void ingestHttpJsonSchemaRecord() throws Exception {
     String schemaId = JSON_HTTP_SCHEMA_ID;
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Schema(schemaId);
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonSchema(schemaId);
 //    MetadataSchemaRecord record = new MetadataSchemaRecord();
 //    record.setSchemaId(JSON_HTTP_SCHEMA_ID);
 //    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
@@ -2376,7 +2376,7 @@ public class MetadataControllerTestV2 {
 
   private void ingestHttpJsonSchemaRecordWithHash() throws Exception {
     String schemaId = JSON_HTTP_SCHEMA_ID_WITH_HASH;
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Schema(schemaId);
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonSchema(schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());

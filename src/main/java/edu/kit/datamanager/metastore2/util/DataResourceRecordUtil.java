@@ -193,32 +193,14 @@ public class DataResourceRecordUtil {
         metadataRecord.getFormats().add(document.getContentType());
       }
     }
-    // Create schema record
-    SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(metadataRecord.getId());
-    String type = metadataRecord.getResourceType().getValue();
-    if (type.equals(JSON + SCHEMA_SUFFIX)) {
-      schemaRecord.setType(JSON);
-    } else {
-      if (type.equals(XML + SCHEMA_SUFFIX)) {
-        schemaRecord.setType(XML);
-
-      } else {
-        throw new BadArgumentException("Please provide resource type for data resource '" + schemaRecord.getSchemaId() + "'");
-      }
-    }
     metadataRecord.setVersion(Long.toString(1));
     // create record.
     DataResource dataResource = metadataRecord;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-    // Get URL for schema
-    String schemaUrl = getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion());
-    schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
-    schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
-    schemaRecord.setDocumentHash(contentInformation.getHash());
-    schemaRecord.setAlternateId(schemaUrl);
+    // Create schema record
+    SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
     MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
 
     // Settings for OAI PMH
@@ -226,7 +208,7 @@ public class DataResourceRecordUtil {
       try {
         MetadataFormat metadataFormat = new MetadataFormat();
         metadataFormat.setMetadataPrefix(schemaRecord.getSchemaId());
-        metadataFormat.setSchema(schemaUrl);
+        metadataFormat.setSchema(schemaRecord.getAlternateId());
         String documentString = new String(document.getBytes());
         LOG.trace(documentString);
         String metadataNamespace = SchemaUtils.getTargetNamespaceFromSchema(document.getBytes());
@@ -1635,7 +1617,20 @@ public class DataResourceRecordUtil {
           String schemaId,
           Long version) {
     LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaId, document);
-    SchemaRecord findBySchemaIdAndVersion = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+    SchemaRecord findBySchemaIdAndVersion;
+    if (version == null) {
+      findBySchemaIdAndVersion = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+    } else {
+      findBySchemaIdAndVersion = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+    }
+    if (findBySchemaIdAndVersion == null) {
+      String errorMessage = "SchemaId '" + schemaId + "' doesn't exist.";
+      if (schemaRecordDao.existsSchemaRecordBySchemaIdAndVersion(schemaId, 1l)) {
+        errorMessage = "Version '" + version + "' of schema ID '" + schemaId + "' doesn't exist.";
+      }
+      LOG.error(errorMessage);
+      throw new ResourceNotFoundException(errorMessage);
+    }
     validateMetadataDocument(metastoreProperties, document, findBySchemaIdAndVersion);
   }
 //
@@ -1897,7 +1892,10 @@ public class DataResourceRecordUtil {
         if (version != null) {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
-        ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
+        ContentInformation newSchemaFile = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
+        SchemaRecord schemaRecord = createSchemaRecord(dataResource, newSchemaFile);
+        MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
+
       }
     } else {
       // validate if document is still valid due to changed record settings.
@@ -1967,6 +1965,38 @@ public class DataResourceRecordUtil {
     if (!validationSuccess) {
       throw new UnprocessableEntityException(errorMessage.toString());
     }
+  }
+
+  /**
+   * Create schema record from DataResource and ContentInformation.
+   *
+   * @param dataResource Data resource
+   * @param contentInformation Content information
+   * @return schema record
+   */
+  public static final SchemaRecord createSchemaRecord(DataResource dataResource, ContentInformation contentInformation) {
+    SchemaRecord schemaRecord = new SchemaRecord();
+    schemaRecord.setSchemaId(dataResource.getId());
+    schemaRecord.setVersion(Long.valueOf(dataResource.getVersion()));
+    String type = dataResource.getResourceType().getValue();
+    if (type.equals(JSON + SCHEMA_SUFFIX)) {
+      schemaRecord.setType(JSON);
+    } else {
+      if (type.equals(XML + SCHEMA_SUFFIX)) {
+        schemaRecord.setType(XML);
+
+      } else {
+        throw new BadArgumentException("Please provide a valid resource type for data resource '" + schemaRecord.getSchemaId() + "'!\n"
+                + "One of ['" + JSON + SCHEMA_SUFFIX + "', '" + XML + SCHEMA_SUFFIX + "']");
+      }
+    }
+    // Get URL for schema
+    String schemaUrl = getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion());
+    schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
+    schemaRecord.setDocumentHash(contentInformation.getHash());
+    schemaRecord.setAlternateId(schemaUrl);
+
+    return schemaRecord;
   }
 
   /**

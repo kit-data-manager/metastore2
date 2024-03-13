@@ -829,7 +829,7 @@ public class SchemaRegistryControllerTestV2 {
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isInternalServerError()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNotFound()).andReturn();
   }
 
   // Update only record
@@ -1875,6 +1875,19 @@ public class SchemaRegistryControllerTestV2 {
             andReturn();
   }
 
+  public static DataResource createDataResource4JsonSchema(String id) {
+    DataResource record = createDataResource4Schema(id);
+    record.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.SCHEMA_TYPE.JSON + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    record.getFormats().clear();
+    record.getFormats().add(MediaType.APPLICATION_JSON.toString());
+    
+    return record;
+  }
+
+  public static DataResource createDataResource4XmlSchema(String id) {
+    return createDataResource4Schema(id);
+  }
+
   public static DataResource createDataResource4Schema(String id) {
     DataResource record = new DataResource();
     record.setId(id);
@@ -1894,12 +1907,15 @@ public class SchemaRegistryControllerTestV2 {
   public static DataResource createDataResource4JsonDocument(String id, String schemaId) {
     return createDataResource4Document(id, schemaId, DataResourceRecordUtil.JSON_METADATA_TYPE);
   }
+
   public static DataResource createDataResource4XmlDocument(String id, String schemaId) {
     return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
   }
+
   public static DataResource createDataResource4Document(String id, String schemaId) {
     return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
   }
+
   public static DataResource createDataResource4Document(String id, String schemaId, String metadataType) {
     DataResource record = new DataResource();
     record.setId(id);
@@ -1907,7 +1923,7 @@ public class SchemaRegistryControllerTestV2 {
     // mandatory element title has to be set
     setTitle(record, id);
     record.setResourceType(ResourceType.createResourceType(metadataType, ResourceType.TYPE_GENERAL.MODEL));
-    
+
     RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     record.getRelatedIdentifiers().add(relatedResource);
@@ -2108,8 +2124,8 @@ public class SchemaRegistryControllerTestV2 {
         identical = (item.getIdentifierType() == item2.getIdentifierType())
                 && ((item.getValue() == item2.getValue()) || item.getValue().equals(item2.getValue()))
                 && (item.getRelationType() == item2.getRelationType())
-                && ((item.getScheme() == item2.getScheme()) || (item.getScheme().getSchemeId().equals(item2.getScheme().getSchemeId()) && 
-                item.getScheme().getSchemeUri().equals(item2.getScheme().getSchemeUri())));
+                && ((item.getScheme() == item2.getScheme()) || (item.getScheme().getSchemeId().equals(item2.getScheme().getSchemeId())
+                && item.getScheme().getSchemeUri().equals(item2.getScheme().getSchemeUri())));
         if (identical) {
           copy.remove(item2);
           break;
