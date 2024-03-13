@@ -83,7 +83,7 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = DataResource.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
-  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datacite.org+json"})
   public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
@@ -96,7 +96,7 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "200", description = "OK and the record is returned if the record exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = DataResource.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
-  @RequestMapping(value = {"/{id}/data"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.metadata-record+json"})
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.content-information+json"})
   public ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
@@ -134,7 +134,7 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "200", description = "OK and the metadata document is returned if the record exists and the user has sufficient permission."),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
-  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/xml", "application/json"})
   @ResponseBody
   public ResponseEntity getMetadataDocumentById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
           @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,

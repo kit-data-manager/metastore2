@@ -356,7 +356,7 @@ public class SchemaRegistryControllerTestV2 {
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
 
-    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String content2 = result2.getResponse().getContentAsString();
 
     validateDataResources(content, content2);
@@ -589,7 +589,7 @@ public class SchemaRegistryControllerTestV2 {
     String schemaId = "testGetSchemaRecordByIdWithoutVersion".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
 
-    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource result = map.readValue(res.getResponse().getContentAsString(), DataResource.class);
     Assert.assertNotNull(result);
@@ -603,7 +603,7 @@ public class SchemaRegistryControllerTestV2 {
     String schemaId = "testGetSchemaRecordByIdWithVersion".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
 
-    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).param("version", "1").header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).param("version", "1").header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource result = map.readValue(res.getResponse().getContentAsString(), DataResource.class);
     Assert.assertNotNull(result);
@@ -616,7 +616,7 @@ public class SchemaRegistryControllerTestV2 {
     String schemaId = "testGetSchemaRecordByIdWithInvalidId".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
     MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + "cd").
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isNotFound()).
             andReturn();
@@ -629,7 +629,7 @@ public class SchemaRegistryControllerTestV2 {
     ingestXmlDataResource(schemaId);
     MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
             param("version", "13").
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isNotFound()).
             andReturn();
@@ -640,7 +640,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testFindRecordsBySchemaIdWithAlternateEndpoint() throws Exception {
     String schemaId = "testFindRecordsBySchemaIdWithAlternateEndpoint".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult res = this.mockMvc.perform(get(ALTERNATE_API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(ALTERNATE_API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
@@ -651,7 +651,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testFindRecordsBySchemaId() throws Exception {
     String schemaId = "testFindRecordsBySchemaId".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
@@ -839,7 +839,7 @@ public class SchemaRegistryControllerTestV2 {
     String newComment = "new comment";
     String newLabel = "label changed!";
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -889,7 +889,7 @@ public class SchemaRegistryControllerTestV2 {
     String newComment = "new comment";
     String newLabel = "label changed!";
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -936,7 +936,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordIgnoreACL() throws Exception {
     String schemaId = "updateRecord".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -991,7 +991,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithIgnoringInvalidSetting4Xml() throws Exception {
     String schemaId = "updateMimetypeOfRecord".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1013,7 +1013,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithInvalidSetting4Xml() throws Exception {
     String schemaId = "updateTypeOfRecord".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1034,7 +1034,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithoutChanges() throws Exception {
     String schemaId = "updateRecordWithoutChanges".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1065,7 +1065,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordAndDocument() throws Exception {
     String schemaId = "updateRecordAndDocument";
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1108,7 +1108,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordAndDocumentWithLicense() throws Exception {
     String schemaId = "updateRecordAndDocumentWithLicense".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1192,7 +1192,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordAndDocumentWithWrongVersion() throws Exception {
     String schemaId = "updateRecordAndDocumentWithWrongVersion".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1231,7 +1231,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateOnlyDocument() throws Exception {
     String schemaId = "updateRecordDocumentOnly".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1280,7 +1280,7 @@ public class SchemaRegistryControllerTestV2 {
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-//    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+//    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.XML_SCHEMA_V1_TYPO.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId).
@@ -1337,7 +1337,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithoutETag() throws Exception {
     String schemaId = "testUpdateRecordWithoutETag".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String body = result.getResponse().getContentAsString();
     ObjectMapper mapper = new ObjectMapper();
     DataResource record = mapper.readValue(body, DataResource.class);
@@ -1353,7 +1353,7 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithWrongETag() throws Exception {
     String schemaId = "testUpdateRecordWithWrongETag".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag") + "unknown";
     String body = result.getResponse().getContentAsString();
     ObjectMapper mapper = new ObjectMapper();
@@ -1367,10 +1367,10 @@ public class SchemaRegistryControllerTestV2 {
   public void testUpdateRecordWithoutBody() throws Exception {
     String schemaId = "testUpdateRecordWithoutBody".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
-    this.mockMvc.perform(put(API_SCHEMA_PATH + schemaId).header("If-Match", etag).contentType(MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isUnsupportedMediaType()).andReturn();
+    this.mockMvc.perform(put(API_SCHEMA_PATH + schemaId).header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content("{}")).andDo(print()).andExpect(status().isUnsupportedMediaType()).andReturn();
   }
 
   @Test
@@ -1417,14 +1417,14 @@ public class SchemaRegistryControllerTestV2 {
 
     // Get a list of all records
     MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
     int noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
 
     result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -1440,7 +1440,7 @@ public class SchemaRegistryControllerTestV2 {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
     //delete second time // should be really deleted -> gone
-    result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     etag = result.getResponse().getHeader("ETag");
     this.mockMvc.perform(delete(API_SCHEMA_PATH + schemaId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
 
@@ -1450,7 +1450,7 @@ public class SchemaRegistryControllerTestV2 {
             file(schemaFile)).andDo(print()).andExpect(status().isGone()).andReturn();
 
     // List of records should be smaller afterwards
-    result = this.mockMvc.perform(get(API_SCHEMA_PATH).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get(API_SCHEMA_PATH).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
     Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
@@ -1833,7 +1833,7 @@ public class SchemaRegistryControllerTestV2 {
     MvcResult result;
     if (version > 1) {
       // Read ETag
-      result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
       String body = result.getResponse().getContentAsString();
 
       DataResource oldRecord = mapper.readValue(body, DataResource.class);
@@ -1857,7 +1857,7 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   private void ingestNewSchemaRecord(String schemaId, long version) throws Exception {
-    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 

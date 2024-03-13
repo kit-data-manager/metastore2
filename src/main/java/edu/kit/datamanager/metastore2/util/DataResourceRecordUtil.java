@@ -109,6 +109,12 @@ import org.springframework.web.util.UriComponentsBuilder;
  */
 public class DataResourceRecordUtil {
 
+  public static final String RESOURCE_TYPE = "application/vnd.datacite.org+json";
+  /**
+   * Mediatype for fetching a DataResource.
+   */
+  public static final MediaType DATA_RESOURCE_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
+
   /**
    * Separator for separating schemaId and schemaVersion.
    */
