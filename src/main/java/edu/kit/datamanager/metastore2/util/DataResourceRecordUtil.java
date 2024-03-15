@@ -95,7 +95,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -257,33 +256,12 @@ public class DataResourceRecordUtil {
         metadataRecord.getFormats().add(document.getContentType());
       }
     }
-    // Create schema record
-    SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(metadataRecord.getId());
-    String type = metadataRecord.getResourceType().getValue();
-    if (type.equals(JSON + SCHEMA_SUFFIX) || type.equals(JSON + METADATA_SUFFIX)) {
-      schemaRecord.setType(JSON);
-    } else {
-      if (type.equals(XML + SCHEMA_SUFFIX) || type.equals(XML + METADATA_SUFFIX)) {
-        schemaRecord.setType(XML);
-
-      } else {
-        throw new BadArgumentException("Please provide resource type for data resource '" + schemaRecord.getSchemaId() + "'");
-      }
-    }
     metadataRecord.setVersion(Long.toString(1));
     // create record.
     DataResource dataResource = metadataRecord;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-    // Get URL for schema
-    String schemaUrl = getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion());
-    schemaRecord.setVersion(applicationProperties.getAuditService().getCurrentVersion(dataResource.getId()));
-    schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
-    schemaRecord.setDocumentHash(contentInformation.getHash());
-    schemaRecord.setAlternateId(schemaUrl);
-    MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
 
     return metadataRecord;
   }
@@ -1616,22 +1594,26 @@ public class DataResourceRecordUtil {
           MultipartFile document,
           String schemaId,
           Long version) {
-    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaId, document);
-    SchemaRecord findBySchemaIdAndVersion;
-    if (version == null) {
-      findBySchemaIdAndVersion = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+    LOG.trace("validateMetadataDocument {},SchemaID {}, Version {}, {}", metastoreProperties, schemaId, version, document);
+    SchemaRecord schemaRecord;
+    DataResource dataResource = DataResourceRecordUtil.getRecordById(metastoreProperties, schemaId);
+    if (dataResource == null) {
+      String message = "Unknown schemaID '" + schemaId + "'!";
+      LOG.error(message);
+      throw new ResourceNotFoundException(message);
+    }
+    schemaId = dataResource.getId();
+    if (version != null) {
+      schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
     } else {
-      findBySchemaIdAndVersion = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+      schemaRecord = schemaRecordDao.findBySchemaIdOrderByVersionDesc(schemaId).get(0);
     }
-    if (findBySchemaIdAndVersion == null) {
-      String errorMessage = "SchemaId '" + schemaId + "' doesn't exist.";
-      if (schemaRecordDao.existsSchemaRecordBySchemaIdAndVersion(schemaId, 1l)) {
-        errorMessage = "Version '" + version + "' of schema ID '" + schemaId + "' doesn't exist.";
-      }
-      LOG.error(errorMessage);
-      throw new ResourceNotFoundException(errorMessage);
+    if (schemaRecord == null) {
+      String message = "Unknown version '" + version + "' for schemaID '" + schemaId + "'!";
+      LOG.error(message);
+      throw new ResourceNotFoundException(message);
     }
-    validateMetadataDocument(metastoreProperties, document, findBySchemaIdAndVersion);
+    validateMetadataDocument(metastoreProperties, document, schemaRecord);
   }
 //
 //  /**
@@ -1892,10 +1874,9 @@ public class DataResourceRecordUtil {
         if (version != null) {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
-        ContentInformation newSchemaFile = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
-        SchemaRecord schemaRecord = createSchemaRecord(dataResource, newSchemaFile);
-        MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
-
+        ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
+        SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
+        MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);        
       }
     } else {
       // validate if document is still valid due to changed record settings.
@@ -1966,7 +1947,7 @@ public class DataResourceRecordUtil {
       throw new UnprocessableEntityException(errorMessage.toString());
     }
   }
-
+  
   /**
    * Create schema record from DataResource and ContentInformation.
    *
@@ -1977,7 +1958,6 @@ public class DataResourceRecordUtil {
   public static final SchemaRecord createSchemaRecord(DataResource dataResource, ContentInformation contentInformation) {
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId());
-    schemaRecord.setVersion(Long.valueOf(dataResource.getVersion()));
     String type = dataResource.getResourceType().getValue();
     if (type.equals(JSON + SCHEMA_SUFFIX)) {
       schemaRecord.setType(JSON);
@@ -1990,8 +1970,9 @@ public class DataResourceRecordUtil {
                 + "One of ['" + JSON + SCHEMA_SUFFIX + "', '" + XML + SCHEMA_SUFFIX + "']");
       }
     }
-    // Get URL for schema
-    String schemaUrl = getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion());
+    Long currentVersion = Long.valueOf(dataResource.getVersion());
+    String schemaUrl = getSchemaDocumentUri(dataResource.getId(),currentVersion);
+    schemaRecord.setVersion(currentVersion);
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());
     schemaRecord.setAlternateId(schemaUrl);

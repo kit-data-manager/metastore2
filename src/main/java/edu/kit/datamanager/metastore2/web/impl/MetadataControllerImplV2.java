@@ -196,7 +196,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     LOG.debug("Test for existing metadata record for given schema and resource");
     RelatedIdentifier schemaIdentifier;
-    try {
+//    try {
       schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(metadataRecord);
       switch (schemaIdentifier.getIdentifierType()) {
         case INTERNAL:
@@ -204,16 +204,22 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           break;
         case URL:
           SchemaRecord schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
+          if (schemaRecord == null) {
+            String message = "External URLs are not supported yet!\n"
+                    + "But '" + schemaIdentifier.getValue() + "' seems not to be an internal one!";
+            LOG.error(message);
+            throw new ResourceNotFoundException(message);
+          }
           schemaIdentifier.setValue(schemaRecord.getSchemaId());
           schemaIdentifier.setIdentifierType(INTERNAL);
           break;
         default: 
           throw new UnprocessableEntityException("Schema referenced by '" + schemaIdentifier.getIdentifierType().toString() + "' is not supported yet!");
       }
-    } catch (ResourceNotFoundException rnfe) {
-      LOG.debug("Error checking for existing relations.", rnfe);
-      throw new UnprocessableEntityException("Schema ID seems to be invalid");
-    }
+//    } catch (ResourceNotFoundException rnfe) {
+//      LOG.debug("Error checking for existing relations.", rnfe);
+//      throw new UnprocessableEntityException("Schema ID seems to be invalid");
+//    }
     //Can't test this 
 //    boolean recordAlreadyExists = metadataRecordDao.existsDataResourceByRelatedResourceAndSchemaId(
 //            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue(), 

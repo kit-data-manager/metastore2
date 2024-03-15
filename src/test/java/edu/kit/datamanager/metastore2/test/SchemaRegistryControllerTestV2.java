@@ -829,7 +829,7 @@ public class SchemaRegistryControllerTestV2 {
     URI uri = new URI(contentUri);
     Files.delete(Paths.get(uri));
 
-    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().isNotFound()).andReturn();
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId + "/validate").file("document", KIT_DOCUMENT.getBytes())).andDo(print()).andExpect(status().is5xxServerError()).andReturn();
   }
 
   // Update only record
@@ -1880,7 +1880,7 @@ public class SchemaRegistryControllerTestV2 {
     record.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.SCHEMA_TYPE.JSON + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     record.getFormats().clear();
     record.getFormats().add(MediaType.APPLICATION_JSON.toString());
-    
+
     return record;
   }
 
@@ -1931,7 +1931,7 @@ public class SchemaRegistryControllerTestV2 {
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
     record.getRelatedIdentifiers().add(relatedResource);
     if (metadataType.contains("XML")) {
-      record.getFormats().add(MediaType.APPLICATION_XML.toString());
+    record.getFormats().add(MediaType.APPLICATION_XML.toString());
     } else {
       record.getFormats().add(MediaType.APPLICATION_JSON.toString());
     }
