@@ -110,12 +110,11 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @TestPropertySource(properties = {"repo.search.url=http://localhost:41421"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestV2 {
- 
+
   private static final String API_BASE_PATH = "/api/v2";
   private static final String ALTERNATE_API_SCHEMA_PATH = API_BASE_PATH + "/schemas";
   private static final String API_SCHEMA_PATH = ALTERNATE_API_SCHEMA_PATH + "/";
   private static final String API_METADATA_PATH = API_BASE_PATH + "/metadata/";
-
 
   private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/v2/md/";
   private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
@@ -366,10 +365,10 @@ public class MetadataControllerTestV2 {
     DataResource result = mapper.readValue(res.getResponse().getContentAsString(), DataResource.class);
     RelatedIdentifier relatedIdentifier1 = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
     RelatedIdentifier relatedIdentifier2 = DataResourceRecordUtil.getRelatedIdentifier(result, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
-    Assert.assertEquals("Value of related resource should be unchanged!", 
+    Assert.assertEquals("Value of related resource should be unchanged!",
             relatedIdentifier1.getValue(),
             relatedIdentifier2.getValue());
-    Assert.assertEquals("Type of related resource should be unchanged!", 
+    Assert.assertEquals("Type of related resource should be unchanged!",
             relatedIdentifier1.getIdentifierType(),
             relatedIdentifier2.getIdentifierType());
   }
@@ -394,7 +393,7 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithUrlSchemaNull";
     String schemaId = null;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-    for (RelatedIdentifier item: record.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
         item.setValue(null);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -416,10 +415,10 @@ public class MetadataControllerTestV2 {
   @Test
   public void testCreateRecordWithInvalidUrl() throws Exception {
     String id = "testCreateRecordWithInvalidUrl";
-   String invalidSchemaUrl = getSchemaUrl(SCHEMA_ID).substring(1);
+    String invalidSchemaUrl = getSchemaUrl(SCHEMA_ID).substring(1);
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-    for (RelatedIdentifier item: record.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
         item.setValue(invalidSchemaUrl);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -444,7 +443,7 @@ public class MetadataControllerTestV2 {
     String schemaId = INVALID_SCHEMA;
     String urlWithInvalidSchema = getSchemaUrl(SCHEMA_ID).replace(SCHEMA_ID, INVALID_SCHEMA);
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-    for (RelatedIdentifier item: record.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
         item.setValue(urlWithInvalidSchema);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -479,7 +478,7 @@ public class MetadataControllerTestV2 {
     String schemaId = INVALID_SCHEMA;
     String schemaUrl = "http://anyurl.example.org/shouldNotExist";
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-    for (RelatedIdentifier item: record.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
         item.setValue(schemaUrl);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -530,11 +529,6 @@ public class MetadataControllerTestV2 {
     String id = "http://localhost:8080/d1";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-    //   XXXXX  XXX  XXXX   XXX
-    //     X   X   X X   X X   X
-    //     X   X   X X   X X   X
-    //     X   X   X X   X X   X
-    //     X    XXX  XXXX   XXX
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -558,7 +552,7 @@ public class MetadataControllerTestV2 {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-    for (RelatedIdentifier item: record.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR)) {
         item.setValue(RELATED_RESOURCE_2.getIdentifier());
       }
@@ -592,11 +586,7 @@ public class MetadataControllerTestV2 {
     DataResource data2 = mapper.readValue(result2.getResponse().getContentAsString(), DataResource.class);
     SchemaRegistryControllerTestV2.validateDataResources(data1, data2);
   }
-    //   XXXXX  XXX  XXXX   XXX
-    //     X   X   X X   X X   X
-    //     X   X   X X   X X   X
-    //     X   X   X X   X X   X
-    //     X    XXX  XXXX   XXX
+
   @Test
   public void testCreateInvalidRecord() throws Exception {
     String id = "testCreateInvalidRecord";
@@ -734,12 +724,9 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithEmptyAclSid";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-//    DataResource record = new DataResource();
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-//    record.setRelatedResource(RELATED_RESOURCE);
-//    Set<AclEntry> aclEntries = new HashSet<>();
-//    aclEntries.add(new AclEntry(null, PERMISSION.READ));
-//    record.setAcl(aclEntries);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(null, PERMISSION.READ));
+    record.setAcls(aclEntries);
 
     ObjectMapper mapper = new ObjectMapper();
 
@@ -758,9 +745,6 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithInvalidMetadataNamespace";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-//    DataResource record = new DataResource();
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -776,9 +760,6 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithInvalidMetadata";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-//    DataResource record = new DataResource();
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -793,7 +774,11 @@ public class MetadataControllerTestV2 {
   public void testCreateRecordWithoutRecord() throws Exception {
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
-            file(metadataFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+            // no record defined!
+            file(metadataFile)).
+            andDo(print()).
+            andExpect(status().isBadRequest()).
+            andReturn();
   }
 
   @Test
@@ -801,14 +786,15 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithoutSchema";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-//    DataResource record = new DataResource();
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-//    record.setRelatedResource(RELATED_RESOURCE);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
-            file(recordFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+            // no schema defined!
+            file(recordFile)).
+            andDo(print()).
+            andExpect(status().isBadRequest()).
+            andReturn();
   }
 
   @Test
@@ -818,17 +804,16 @@ public class MetadataControllerTestV2 {
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     ObjectMapper mapper = new ObjectMapper();
 
-//    DataResource record = new DataResource();
-//    //schemaId is missing
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(null));
-//    record.setRelatedResource(RELATED_RESOURCE);
+    //schemaId is missing
+    RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(record);
+    schemaIdentifier.setValue(null);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
   }
 
   @Test
@@ -838,11 +823,9 @@ public class MetadataControllerTestV2 {
     String id = "testCreateRecordWithLocationUri";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    //remove related resource
     RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
     record.getRelatedIdentifiers().remove(relatedIdentifier);
-//    DataResource record = new DataResource();
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-    //related resource is missing
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
@@ -902,19 +885,13 @@ public class MetadataControllerTestV2 {
 
     Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(id));
-    Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }
 
   @Test
   public void testCreateTwoVersions() throws Exception {
-     String id = "testCreateTwoVersions";
+    String id = "testCreateTwoVersions";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
-//   DataResource record = new DataResource();
-////    record.setId("my_id");
-//    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
-//    record.setRelatedResource(RELATED_RESOURCE);
-//    Set<AclEntry> aclEntries = new HashSet<>();
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -929,6 +906,7 @@ public class MetadataControllerTestV2 {
 
     DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).setValue(RELATED_RESOURCE_2.toString());
     record.getAlternateIdentifiers().clear();
+    record.setId(null);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).
@@ -942,7 +920,7 @@ public class MetadataControllerTestV2 {
   public void testGetRecordById() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
 
-    MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource result = map.readValue(res.getResponse().getContentAsString(), DataResource.class);
     Assert.assertNotNull(result);
@@ -961,7 +939,7 @@ public class MetadataControllerTestV2 {
   public void testGetRecordByIdWithVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
 
-    MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).param("version", "1").header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).param("version", "1").header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource result = map.readValue(res.getResponse().getContentAsString(), DataResource.class);
     Assert.assertNotNull(result);
@@ -978,12 +956,13 @@ public class MetadataControllerTestV2 {
   @Test
   public void testGetRecordByIdWithInvalidId() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + "cd").
+    String wrongId = metadataRecordId.substring(1);
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + wrongId).
             header("Accept", MediaType.APPLICATION_JSON_VALUE)).
             andDo(print()).
             andExpect(status().isNotFound()).
             andReturn();
-    Assert.assertTrue("Try to access invalid id!", result.getResponse().getContentAsString().contains("Metadata document with ID 'cd' doesn't exist!"));
+    Assert.assertTrue("Try to access invalid id!", result.getResponse().getContentAsString().contains("No content information for identifier " + wrongId));
   }
 
   @Test
@@ -991,7 +970,7 @@ public class MetadataControllerTestV2 {
     String metadataRecordId = createDCMetadataRecord();
     MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             param("version", "13").
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isNotFound()).
             andReturn();
@@ -1007,6 +986,7 @@ public class MetadataControllerTestV2 {
 
     Assert.assertEquals(1, result.length);
   }
+// ToDo
 
   @Test
   public void testFindRecordsBySchemaId() throws Exception {
@@ -1035,24 +1015,24 @@ public class MetadataControllerTestV2 {
   @Test
   public void testFindRecordsOfMultipleVersionsBySchemaId() throws Exception {
     String schemaId = "multipleSchemas".toLowerCase(Locale.getDefault());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2, metadataConfig.getJwtSecret(), true, status().isOk());
-    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3, metadataConfig.getJwtSecret(), true, status().isOk());
+    String schema1 = SchemaRegistryControllerTestV2.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V1, metadataConfig.getJwtSecret(), false, status().isCreated());
+    String schema2 = SchemaRegistryControllerTestV2.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V2, metadataConfig.getJwtSecret(), true, status().isOk());
+    String schema3 = SchemaRegistryControllerTestV2.ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, XML_SCHEMA_V3, metadataConfig.getJwtSecret(), true, status().isOk());
     ObjectMapper map = new ObjectMapper();
     String[] multipleVersions = {"1", "2", "3"};
     // Ingest 1st version of document.
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 1l, multipleVersions[0], XML_DOCUMENT_V1, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocumentV2(mockMvc, schema1, 1l, multipleVersions[0], XML_DOCUMENT_V1, metadataConfig.getJwtSecret());
     MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH).param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(1, result.length);
     // Ingest 2nd version of document
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 2l, multipleVersions[1], XML_DOCUMENT_V2, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocumentV2(mockMvc, schema2, 2l, multipleVersions[1], XML_DOCUMENT_V2, metadataConfig.getJwtSecret());
     res = this.mockMvc.perform(get(API_METADATA_PATH).param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
     Assert.assertEquals(2, result.length);
     // Ingest 3rd version of document
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 3l, multipleVersions[2], XML_DOCUMENT_V3, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocumentV2(mockMvc, schema3, 3l, multipleVersions[2], XML_DOCUMENT_V3, metadataConfig.getJwtSecret());
     res = this.mockMvc.perform(get(API_METADATA_PATH).param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
@@ -1080,15 +1060,17 @@ public class MetadataControllerTestV2 {
   public void testFindRecordsBySchemaIdANDResourceId() throws Exception {
     String relatedResource = "testFindRecordsBySchemaIdANDResourceId";
     String relatedResource2 = "anotherTestFindRecordsBySchemaIdANDResourceId";
-    String secondSchemaId = "schema_for_find_records_by_schema_and_resource_id";
-    CreateSchemaUtil.ingestKitSchemaRecord(mockMvc, secondSchemaId, schemaConfig.getJwtSecret());
-    String metadataRecordId = createDCMetadataRecordWithRelatedResource(relatedResource, SCHEMA_ID);
-    String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2, SCHEMA_ID);
+    String firstSchemaId = "first_schema_for_find_records_by_schema_and_resource_id";
+    String secondSchemaId = "second_schema_for_find_records_by_schema_and_resource_id";
+    CreateSchemaUtil.ingestKitSchemaRecordV2(mockMvc, firstSchemaId, schemaConfig.getJwtSecret());
+    CreateSchemaUtil.ingestKitSchemaRecordV2(mockMvc, secondSchemaId, schemaConfig.getJwtSecret());
+    String metadataRecordId = createDCMetadataRecordWithRelatedResource(relatedResource, firstSchemaId);
+    String metadataRecordId2 = createDCMetadataRecordWithRelatedResource(relatedResource2, firstSchemaId);
     String metadataRecordIdv2 = createDCMetadataRecordWithRelatedResource(relatedResource, secondSchemaId);
     String metadataRecordId2v2 = createDCMetadataRecordWithRelatedResource(relatedResource2, secondSchemaId);
     // Looking for first schema
     MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID)).
+            param("schemaId", firstSchemaId)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -1105,7 +1087,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(2, result.length);
     // Looking for first AND second schema
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("schemaId", secondSchemaId)).
             andDo(print()).
             andExpect(status().isOk()).
@@ -1114,7 +1096,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(4, result.length);
     // Looking for first, second AND invalid schema
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("schemaId", secondSchemaId).
             param("schemaId", "invalidschemaid")).
             andDo(print()).
@@ -1124,7 +1106,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(4, result.length);
     // Looking for first, second AND invalid schema AND resource1 and resource2
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("schemaId", secondSchemaId).
             param("schemaId", "invalidschemaid").
             param("resourceId", relatedResource).
@@ -1136,7 +1118,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(4, result.length);
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("resourceId", relatedResource).
             param("resourceId", relatedResource2)).
             andDo(print()).
@@ -1146,7 +1128,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(2, result.length);
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("resourceId", relatedResource)).
             andDo(print()).
             andExpect(status().isOk()).
@@ -1155,7 +1137,7 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(1, result.length);
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
-            param("schemaId", SCHEMA_ID).
+            param("schemaId", firstSchemaId).
             param("resourceId", relatedResource2)).
             andDo(print()).
             andExpect(status().isOk()).
@@ -1238,7 +1220,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testGetSchemaDocument() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).accept(MediaType.APPLICATION_XML)).andDo(print()).andExpect(status().isOk()).andReturn();
     String content = result.getResponse().getContentAsString();
 
     String dcMetadata = DC_DOCUMENT;
@@ -1256,22 +1238,36 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecord() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String etag = result.getResponse().getHeader("ETag");
+    ObjectMapper mapper = new ObjectMapper();
+    // Get ContentInformation of first version
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     String body = result.getResponse().getContentAsString();
 
-    ObjectMapper mapper = new ObjectMapper();
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String locationUri = result.getResponse().getHeader("Location");
+    String etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
     DataResource record = mapper.readValue(body, DataResource.class);
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
             file(recordFile).
-            file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
+            file(metadataFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).andExpect(status().isOk()).andReturn();
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    String locationUri2 = result.getResponse().getHeader("Location");
     body = result.getResponse().getContentAsString();
-    String locationUri = result.getResponse().getHeader("Location");
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
@@ -1280,9 +1276,29 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1l);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, contentInformation2.getVersion().longValue());
+    Assert.assertNotEquals(contentInformation1, contentInformation2);
+    Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
+    Assert.assertNotEquals(contentInformation1.getFileVersion(), contentInformation2.getFileVersion());
+    Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
+    Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
+
     // Check for new metadata document.
-    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String locationUri2 = result.getResponse().getHeader("Location");
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(MediaType.APPLICATION_JSON)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     String content = result.getResponse().getContentAsString();
 
     String dcMetadata = DC_DOCUMENT_VERSION_2;
@@ -1295,7 +1311,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithWrongVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1309,7 +1325,7 @@ public class MetadataControllerTestV2 {
             file(recordFile).
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
@@ -1348,7 +1364,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordIgnoreACL() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1366,7 +1382,7 @@ public class MetadataControllerTestV2 {
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
@@ -1408,6 +1424,16 @@ public class MetadataControllerTestV2 {
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
 
+     // Check ContentInformation of first version
+    result = this.mockMvc.perform(get(locationUri).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String cibody = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation1 = mapper.readValue(cibody, ContentInformation.class);
+    
     DataResource record2 = mapper.readValue(body, DataResource.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
     MockMultipartFile metadataFile2 = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
@@ -1421,27 +1447,45 @@ public class MetadataControllerTestV2 {
             andExpect(status().isOk()).
             andReturn();
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record3 = mapper.readValue(body, DataResource.class);
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
     SchemaRegistryControllerTestV2.validateCreateDates(record2.getDates(), record3.getDates());
-    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
+    SchemaRegistryControllerTestV2.validateRelatedIdentifierSets(record2.getRelatedIdentifiers(), record2.getRelatedIdentifiers());
     Assert.assertEquals(Long.parseLong(record2.getVersion()), Long.parseLong(record3.getVersion()) - 1l);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record2.getAcls(), record3.getAcls());
     Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + id).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, contentInformation2.getVersion().longValue());
+    Assert.assertNotEquals(contentInformation1, contentInformation2);
+    Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
+    Assert.assertNotEquals(contentInformation1.getFileVersion(), contentInformation2.getFileVersion());
+    Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
+    Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
+    Assert.assertEquals(DC_DOCUMENT.length(), contentInformation1.getSize());
+    Assert.assertEquals(DC_DOCUMENT_VERSION_2.length(), contentInformation2.getSize());
   }
 
   @Test
   public void testUpdateRecordWithSameDocument() throws Exception {
+    String id = "testUpdateRecordWithSameDocument";
     ObjectMapper mapper = new ObjectMapper();
-    MvcResult result = CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT, schemaConfig.getJwtSecret());
+    MvcResult result = CreateSchemaUtil.ingestXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1l, id, DC_DOCUMENT, schemaConfig.getJwtSecret());
     String body = result.getResponse().getContentAsString();
 
     DataResource record1 = mapper.readValue(body, DataResource.class);
     // Update without any changes.
-    result = CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT, schemaConfig.getJwtSecret(), true, status().isOk());
+    result = CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1l, id, DC_DOCUMENT, schemaConfig.getJwtSecret(), true, status().isOk());
     body = result.getResponse().getContentAsString();
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
@@ -1451,12 +1495,12 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithSmallChangesInDocument() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
-    MvcResult result = CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT, schemaConfig.getJwtSecret());
+    MvcResult result = CreateSchemaUtil.ingestXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT, schemaConfig.getJwtSecret());
     String body = result.getResponse().getContentAsString();
 
     DataResource record1 = mapper.readValue(body, DataResource.class);
     // Update without any changes.
-    result = CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT_SMALL_CHANGE, schemaConfig.getJwtSecret(), true, status().isOk());
+    result = CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1l, "document", DC_DOCUMENT_SMALL_CHANGE, schemaConfig.getJwtSecret(), true, status().isOk());
     body = result.getResponse().getContentAsString();
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
@@ -1467,7 +1511,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithoutETag() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1484,7 +1528,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithWrongETag() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag") + "unknown";
     String body = result.getResponse().getContentAsString();
 
@@ -1506,7 +1550,7 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithoutRecord() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1533,7 +1577,7 @@ public class MetadataControllerTestV2 {
     // Update only Json document
     ingestJsonSchemaRecord();
     String metadataRecordId = createJsonMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -1571,38 +1615,68 @@ public class MetadataControllerTestV2 {
   @Test
   public void testUpdateRecordWithoutDocument() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String etag = result.getResponse().getHeader("ETag");
+    ObjectMapper mapper = new ObjectMapper();
+    // Check ContentInformation of first version
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     String body = result.getResponse().getContentAsString();
 
-    ObjectMapper mapper = new ObjectMapper();
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+    
+     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+     body = result.getResponse().getContentAsString();
+
     DataResource record = mapper.readValue(body, DataResource.class);
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + metadataRecordId).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
-//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record2 = mapper.readValue(body, DataResource.class);
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
     SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
     Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()));// version should be 1 higher
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()));// version should be the same
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
-    Assert.assertEquals(record.getEtag().replace("version=1", "version=2"), record2.getEtag());
+    Assert.assertNotEquals(record.getEtag().replace("version=1", "version=2"), record2.getEtag());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1, contentInformation2);
   }
 
   @Test
   public void testUpdateRecordWithoutDocumentChangingRelatedResource() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     String expectedRelatedResource;
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String etag = result.getResponse().getHeader("ETag");
+    ObjectMapper mapper = new ObjectMapper();
+    // Check ContentInformation of first version
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     String body = result.getResponse().getContentAsString();
 
-    ObjectMapper mapper = new ObjectMapper();
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+    // Get dataresource record version 1
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
     DataResource record = mapper.readValue(body, DataResource.class);
     DataResource record2 = mapper.readValue(body, DataResource.class);
     RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record2, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
@@ -1612,7 +1686,7 @@ public class MetadataControllerTestV2 {
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + metadataRecordId).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
-//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
     body = result.getResponse().getContentAsString();
     etag = result.getResponse().getHeader("ETag");
 
@@ -1620,9 +1694,8 @@ public class MetadataControllerTestV2 {
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
     SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
     Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1l);// version should be 1 higher
+    Assert.assertEquals(record.getVersion(), record2.getVersion());// version should be the same
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
-    Assert.assertEquals(record.getEtag().replace("version=1", "version=2"), record2.getEtag());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     RelatedIdentifier relatedIdentifier1 = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
     RelatedIdentifier relatedIdentifier2 = DataResourceRecordUtil.getRelatedIdentifier(record2, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
@@ -1637,23 +1710,30 @@ public class MetadataControllerTestV2 {
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + metadataRecordId).
             file(recordFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
-//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+//    this.mockMvc.perform(put(API_METADATA_PATH + "dc").contentType("application/json").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isBadRequest()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record3 = mapper.readValue(body, DataResource.class);
-//    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
-    SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record3.getDates());
-    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record3));
-    Assert.assertEquals(record.getEtag(), record3.getEtag());
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record3.getVersion()) - 1l);// version should be 1 higher
-    SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record3.getAcls());
-    Assert.assertEquals(record.getEtag().replace("version=1", "version=2"), record3.getEtag());
-    Assert.assertTrue(record.getLastUpdate().isBefore(record3.getLastUpdate()));
-    RelatedIdentifier relatedIdentifier3 = DataResourceRecordUtil.getRelatedIdentifier(record2, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
-    RelatedIdentifier relatedIdentifier4 = DataResourceRecordUtil.getRelatedIdentifier(record3, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
-    Assert.assertEquals("Related resource should be the same!", relatedIdentifier3.getValue(), relatedIdentifier4.getValue());
-    Assert.assertEquals("Related resource type should be changed!", expectedIdentifierType, relatedIdentifier4.getIdentifierType());
+    SchemaRegistryControllerTestV2.validateCreateDates(record2.getDates(), record3.getDates());
+    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record2), DataResourceRecordUtil.getSchemaIdentifier(record3));
+    Assert.assertEquals(record2.getVersion(), record3.getVersion());// version should be the same
+    SchemaRegistryControllerTestV2.validateSets(record2.getAcls(), record3.getAcls());
+    Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
+    relatedIdentifier1 = DataResourceRecordUtil.getRelatedIdentifier(record2, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    relatedIdentifier2 = DataResourceRecordUtil.getRelatedIdentifier(record3, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    Assert.assertEquals("Related resource should be the same!", relatedIdentifier1.getValue(), relatedIdentifier2.getValue());
+    Assert.assertEquals("Related resource type should be updated!", expectedIdentifierType, relatedIdentifier2.getIdentifierType());
 
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1, contentInformation2);
   }
 
   @Test
@@ -1663,24 +1743,23 @@ public class MetadataControllerTestV2 {
     CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, alternativeSchemaId, CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());
     CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, alternativeSchemaId, 2l, "document", CreateSchemaUtil.XML_DOCUMENT_V2, schemaConfig.getJwtSecret());
     // Change only version of schema to a version which is not valid.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, alternativeSchemaId, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
     // Change to a nonexistent version of schema.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isNotFound());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isNotFound());
     // Change to another schema
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1l, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
   }
 
   @Test
   public void testUpdateRecordWithLicense() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
     MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
-    
 
     ObjectMapper mapper = new ObjectMapper();
     DataResource record = mapper.readValue(body, DataResource.class);
@@ -1701,7 +1780,7 @@ public class MetadataControllerTestV2 {
             andExpect(status().isOk()).
             andReturn();
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
 
@@ -1732,7 +1811,7 @@ public class MetadataControllerTestV2 {
 
     Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -1752,7 +1831,7 @@ public class MetadataControllerTestV2 {
             andExpect(status().isOk()).
             andReturn();
 
-//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(MediaType.APPLICATION_JSON_VALUE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
 
     DataResource record3 = mapper.readValue(body, DataResource.class);
@@ -1770,7 +1849,7 @@ public class MetadataControllerTestV2 {
   public void testDeleteRecordWithoutAuthentication() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
 
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
 
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
@@ -1785,14 +1864,14 @@ public class MetadataControllerTestV2 {
 
     // Get a list of all records
     MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
     int noOfRecords = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
 
     // Get Etag
-    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     // Delete record
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
@@ -1815,7 +1894,7 @@ public class MetadataControllerTestV2 {
 
     // List of records should be smaller afterwards
     result = this.mockMvc.perform(get(API_METADATA_PATH).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -1832,7 +1911,7 @@ public class MetadataControllerTestV2 {
       // Read all versions 
       this.mockMvc.perform(get(API_METADATA_PATH).param("id", id).header(HttpHeaders.ACCEPT, "application/json")).andDo(print()).andExpect(status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$", Matchers.hasSize((int) version)));
 
-      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
       String etag = result.getResponse().getHeader("ETag");
       String body = result.getResponse().getContentAsString();
 
@@ -2051,7 +2130,7 @@ public class MetadataControllerTestV2 {
             .andDo(print())
             .andExpect(status().isOk());
     // Ingest a second version...
-    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + documentId).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + documentId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
 
@@ -2109,7 +2188,7 @@ public class MetadataControllerTestV2 {
             andReturn();
     // Get Etag
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -2130,7 +2209,7 @@ public class MetadataControllerTestV2 {
 
     // Delete second time
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
-            header("Accept", MediaType.APPLICATION_JSON_VALUE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -2190,7 +2269,7 @@ public class MetadataControllerTestV2 {
 
   private String createDCMetadataRecordWithRelatedResource(String myRelatedResource, String schemaId) throws Exception {
     String randomId = UUID.randomUUID().toString();
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonDocument(randomId, SCHEMA_ID);
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonDocument(randomId, schemaId);
     RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
     relatedIdentifier.setIdentifierType(IDENTIFIER_TYPE.INTERNAL);
     relatedIdentifier.setValue(myRelatedResource);
@@ -2224,7 +2303,7 @@ public class MetadataControllerTestV2 {
       id = createDCMetadataRecord();
     } else {
       // add new version
-      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
       String etag = result.getResponse().getHeader("ETag");
       String body = result.getResponse().getContentAsString();
 
@@ -2256,7 +2335,7 @@ public class MetadataControllerTestV2 {
       id = createDCMetadataRecord();
     } else {
       // add new version
-      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", MediaType.APPLICATION_JSON_VALUE)).andDo(print()).andExpect(status().isOk()).andReturn();
+      MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + id).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
       String etag = result.getResponse().getHeader("ETag");
       String body = result.getResponse().getContentAsString();
 
@@ -2288,7 +2367,7 @@ public class MetadataControllerTestV2 {
       return request;
     };
   }
- 
+
   private void ingestJsonSchemaRecord() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(JSON_SCHEMA_ID);
@@ -2347,8 +2426,9 @@ public class MetadataControllerTestV2 {
     String content = res.getResponse().getContentAsString();
     ContentInformation result = map.readValue(res.getResponse().getContentAsString(), ContentInformation.class);
     schemaUrl = result.getContentUri();
-    if (schemaUrl != null)
+    if (schemaUrl != null) {
       schemaUrl = schemaUrl.replaceFirst("8080", "41421");
+    }
     return schemaUrl;
   }
 

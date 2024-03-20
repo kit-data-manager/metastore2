@@ -235,6 +235,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 //      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
 //    }
     DataResource result = DataResourceRecordUtil.createDataResourceRecord4Metadata(metadataConfig, recordDocument, document);
+    String eTag = result.getEtag();
     // Successfully created metadata record.
 //    long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
@@ -252,7 +253,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
-    return ResponseEntity.created(locationUri).eTag("\"" + result.getEtag() + "\"").body(result);
+    return ResponseEntity.created(locationUri).eTag("\"" + eTag + "\"").body(result);
   }
 
   @Override
@@ -271,8 +272,10 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Get ETag of DataResource.");
     String etag = metadataRecord.getEtag();
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
+    URI locationUri;
+    locationUri = DataResourceRecordUtil.getMetadataDocumentUri(metadataRecord.getId(), metadataRecord.getVersion());
 
-    return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
+    return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(metadataRecord);
   }
 
   @Override
@@ -282,11 +285,18 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           WebRequest wr,
           HttpServletResponse hsr
   ) {
-    LOG.trace("Performing getRecordById({}, {}).", id, version);
+    LOG.trace("Performing getContentInformationById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
     ContentInformation contentInformation = DataResourceRecordUtil.getContentInformationByIdAndVersion(metadataConfig, id, version);
-    LOG.trace("Metadata record found. Prepare response.");
+    LOG.trace("ContentInformation record found. Prepare response...");
+    DataResource minimalDataResource = DataResource.factoryNewDataResource(contentInformation.getParentResource().getId());
+    URI locationUri;
+    locationUri = DataResourceRecordUtil.getMetadataDocumentUri(id, contentInformation.getFileVersion());
+    contentInformation.setParentResource(minimalDataResource);
+    contentInformation.setContentUri(locationUri.toString());
+    contentInformation.setRelativePath(null);
+    contentInformation.setVersioningService(null);
  
     return ResponseEntity.ok().body(contentInformation);
   }
@@ -321,7 +331,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
   ) {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
-    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
+    Path metadataDocumentPath = DataResourceRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
 
     return ResponseEntity.
             ok().
@@ -390,7 +400,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       return getAllVersions(id, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(DataResourceRecordUtil.METADATA_SUFFIX));
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     // Add authentication if enabled
     if (metadataConfig.isAuthEnabled()) {
       boolean isAdmin;
@@ -407,45 +417,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
         }
       }
     }
-    List<String> allRelatedIdentifiersSchema = new ArrayList<>();
-    List<String> allRelatedIdentifiersResource = new ArrayList<>();
-
-//    File file = new File(new URIoa)
-    if (schemaIds != null) {
-      for (String schemaId : schemaIds) {
-        MetadataSchemaRecord currentSchemaRecord;
-        try {
-          currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
-          // Test for internal URI -> Transform to global URI.
-          if (currentSchemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(currentSchemaRecord);
-            currentSchemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
-          }
-          allRelatedIdentifiersSchema.add(currentSchemaRecord.getSchemaDocumentUri());
-        } catch (Exception rnfe) {
-          //  schemaID not found set version to 1
-          currentSchemaRecord = new MetadataSchemaRecord();
-          currentSchemaRecord.setSchemaVersion(1l);
-          allRelatedIdentifiersSchema.add("UNKNOWN_SCHEMA_ID");
-        }
-        for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
-          MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
-          // Test for internal URI -> Transform to global URI.
-          if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaRecord);
-            schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
-          }
-          allRelatedIdentifiersSchema.add(schemaRecord.getSchemaDocumentUri());
-        }
-      }
-      Specification<DataResource> schemaSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersSchema.toArray(new String[allRelatedIdentifiersSchema.size()]));
-      spec = spec.and(schemaSpecification);
-    }
-    if (relatedIds != null) {
-      allRelatedIdentifiersResource.addAll(relatedIds);
-      Specification<DataResource> relResourceSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersResource.toArray(new String[allRelatedIdentifiersResource.size()]));
-      spec = spec.and(relResourceSpecification);
-    }
+    spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
+    spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
@@ -470,12 +443,6 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     LOG.trace("Transforming Dataresource to DataResource");
     List<DataResource> recordList = records.getContent();
-//    List<DataResource> metadataList = new ArrayList<>();
-//    recordList.forEach(metadataRecord -> {
-////      DataResource item = MetadataRecordUtil.migrateToDataResource(metadataConfig, metadataRecord, false);
-////      MetadataRecordUtil.fixMetadataDocumentUri(item);
-//      metadataList.add(metadataRecord);
-//    });
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
 
@@ -499,6 +466,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateDataResource.getEtag();
+    DataResourceRecordUtil.fixSchemaUrl(updateDataResource);
 
     URI locationUri;
     locationUri = DataResourceRecordUtil.getMetadataDocumentUri(updateDataResource.getId(), updateDataResource.getVersion());

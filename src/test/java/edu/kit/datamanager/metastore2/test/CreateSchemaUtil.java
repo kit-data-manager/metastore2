@@ -497,16 +497,17 @@ public class CreateSchemaUtil {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
     }
     result = mockMvc.perform(get("/api/v2/metadata/" + metadataId).
-            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
       // Create metadata document
-      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/").file(recordFile);
+      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v2/metadata/").file(recordFile);
       if (metadataFile != null) {
         file = file.file(metadataFile);
       }
-      MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken);
+      MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+              accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE);
       result = mockMvc.perform(header).
               andDo(print()).
               andExpect(expectedStatus).

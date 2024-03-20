@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
@@ -34,6 +35,7 @@ import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -65,6 +67,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -84,6 +87,7 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultMatcher;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -1928,10 +1932,14 @@ public class SchemaRegistryControllerTestV2 {
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     record.getRelatedIdentifiers().add(relatedResource);
     relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaId, null, null);
-    relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    if ((schemaId != null) && schemaId.startsWith("http")) {
+      relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+    } else {
+      relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    }
     record.getRelatedIdentifiers().add(relatedResource);
     if (metadataType.contains("XML")) {
-    record.getFormats().add(MediaType.APPLICATION_XML.toString());
+      record.getFormats().add(MediaType.APPLICATION_XML.toString());
     } else {
       record.getFormats().add(MediaType.APPLICATION_JSON.toString());
     }
@@ -1974,6 +1982,80 @@ public class SchemaRegistryControllerTestV2 {
       request.setMethod("PUT");
       return request;
     };
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateXmlSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    String locationUri = null;
+    jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
+    String userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken("test_user", RepoUserRole.USER).
+            addSimpleClaim("email", "any@example.org").
+            addSimpleClaim("orcid", "0000-0001-2345-6789").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    DataResource record = createDataResource4XmlSchema(schemaId);
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    record.setAcls(aclEntries);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile;
+    MockMultipartFile schemaFile;
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
+    // Test if schema is already registered.
+    MvcResult result = mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andReturn();
+    if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
+
+      result = mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
+              file(recordFile).
+              file(schemaFile).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+              andDo(print()).andExpect(expectedStatus).andReturn();
+      if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
+        locationUri = result.getResponse().getHeader("Location");
+      }
+    } else {
+      if (update) {
+        String etag = result.getResponse().getHeader("ETag");
+        String body = result.getResponse().getContentAsString();
+        record = mapper.readValue(body, DataResource.class);
+        recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+        // Update metadata document
+        MockHttpServletRequestBuilder header = MockMvcRequestBuilders.
+                multipart(API_SCHEMA_PATH + schemaId).
+                file(recordFile).
+                file(schemaFile).
+                header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                header("If-Match", etag).
+                with(putMultipart());
+        result = mockMvc.perform(header).
+                andDo(print()).
+                andExpect(expectedStatus).
+                andReturn();
+        if (result.getResponse().getStatus() == HttpStatus.OK.value()) {
+          locationUri = result.getResponse().getHeader("Location");
+        }
+      }
+
+    }
+    return locationUri;
   }
 
   private void testForNextVersion(String first, String second) {

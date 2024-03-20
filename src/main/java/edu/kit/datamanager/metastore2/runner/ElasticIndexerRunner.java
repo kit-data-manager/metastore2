@@ -125,7 +125,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         for (String index : indices) {
           LOG.info("Reindex '{}'", index);
           List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
-          List<SchemaRecord> findSchemaBySchemaId = schemaRecordDao.findBySchemaIdOrderByVersionDesc(index);
+          List<SchemaRecord> findSchemaBySchemaId = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(index + "/");
           LOG.trace("Search for documents for schema '{}' and update date '{}'", index, updateDate);
           LOG.trace("No of documents: '{}'", findBySchemaId.size());
           for (DataRecord item : findBySchemaId) {

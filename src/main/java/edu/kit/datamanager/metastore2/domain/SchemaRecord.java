@@ -57,4 +57,12 @@ public class SchemaRecord implements Serializable {
   private String documentHash;
 //  @NotBlank(message = "Alternate id of schema document.")
   private String alternateId;
+  
+  public String getSchemaId() {
+    String pureSchemaId = null;
+    if (schemaId != null) {
+      pureSchemaId = schemaId.split("/")[0];
+    } 
+    return pureSchemaId;
+  }
 }

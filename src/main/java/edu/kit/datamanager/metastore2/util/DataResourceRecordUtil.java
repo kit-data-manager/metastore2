@@ -75,6 +75,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -240,10 +241,9 @@ public class DataResourceRecordUtil {
     // Do some checks first.
     metadataRecord = checkParameters(recordDocument, document, true);
     Objects.requireNonNull(metadataRecord);
-    if (metadataRecord.getId() == null) {
-      String message = "Mandatory attribute 'id' not found in record. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
+    if (metadataRecord.getId() != null) {
+      // Optional id set. Check for valid ID
+      check4validId(metadataRecord, true);
     }
     // End of parameter checks
     // validate schema document / determine type if not given
@@ -368,7 +368,7 @@ public class DataResourceRecordUtil {
           MultipartFile document,
           UnaryOperator<String> supplier) {
     DataResource metadataRecord = null;
-    DataResource existingRecord;
+    DataResource updatedDataResource;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (document == null || document.isEmpty())) {
@@ -391,22 +391,28 @@ public class DataResourceRecordUtil {
 
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
+    LOG.trace("ETag: '{}'", dataResource.getEtag());
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
     if (metadataRecord != null) {
-      existingRecord = metadataRecord;
-      //     existingRecord = mergeDataResourceRecords(existingRecord, metadataRecord);
+      updatedDataResource = metadataRecord;
+      if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
+        updatedDataResource.setAcls(dataResource.getAcls());
+      }
     } else {
-      dataResource = DataResourceUtils.copyDataResource(dataResource);
+      updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
     }
+
+    LOG.trace("ETag: '{}'", dataResource.getEtag());
 
     boolean noChanges = false;
     if (document != null) {
-      validateMetadataDocument(applicationProperties, document, dataResource.getId(), Long.valueOf(dataResource.getVersion()));
+      SchemaRecord schemaRecord = getSchemaRecordFromDataResource(updatedDataResource);
+      validateMetadataDocument(applicationProperties, document, schemaRecord);
 
       ContentInformation info;
       String fileName = document.getOriginalFilename();
-      info = getContentInformationOfResource(applicationProperties, dataResource);
+      info = getContentInformationOfResource(applicationProperties, updatedDataResource);
       if (info != null) {
         fileName = info.getRelativePath();
         noChanges = true;
@@ -435,17 +441,19 @@ public class DataResourceRecordUtil {
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+          updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
       }
 
     } else {
+      ContentInformation info;
+      info = getContentInformationOfResource(applicationProperties, updatedDataResource);
       // validate if document is still valid due to changed record settings.
       //    metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      URI metadataDocumentUri = getMetadataDocumentUri(dataResource.getId(), dataResource.getVersion());
+      String metadataDocumentUri = info.getContentUri();
 
-      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+      Path metadataDocumentPath = Paths.get(URI.create(metadataDocumentUri));
       if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
         LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
         throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
@@ -467,7 +475,7 @@ public class DataResourceRecordUtil {
         dataRecordDao.delete(dataRecord.get());
       }
     }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
+    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, updatedDataResource, eTag, supplier);
 
     return dataResource;
   }
@@ -506,7 +514,7 @@ public class DataResourceRecordUtil {
     // No references to this schema available -> Ready for deletion
     if (findOne.isEmpty()) {
       DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-      List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+      List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + "/");
       for (SchemaRecord item : listOfSchemaIds) {
         LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
         List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
@@ -1014,6 +1022,66 @@ public class DataResourceRecordUtil {
     return metastoreProperties.getContentInformationService().getContentInformation(recordId, null, version);
   }
 
+  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId) throws ResourceNotFoundException {
+    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    LOG.trace("Obtaining content information record with id {} and version {}.", recordId, version);
+    ContentInformation metadataRecord = getContentInformationByIdAndVersion(metastoreProperties, recordId, version);
+
+    URI metadataDocumentUri = URI.create(metadataRecord.getContentUri());
+
+    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+    }
+    return metadataDocumentPath;
+  }
+
+  /**
+   * Create specification for all listed schemaIds.
+   *
+   * @param specification Specification for search.
+   * @param schemaIds Provided schemaIDs...
+   * @return Specification with schemaIds added.
+   */
+  public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
+    Specification<DataResource> specWithSchema = specification;
+    if (schemaIds != null) {
+      List<String> allSchemaIds = new ArrayList<>();
+      for (String schemaId : schemaIds) {
+        allSchemaIds.add(schemaId);
+        List<SchemaRecord> allVersions = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+        for (SchemaRecord schemaRecord : allVersions) {
+          allSchemaIds.add(schemaRecord.getAlternateId());
+        }
+      }
+      if (!allSchemaIds.isEmpty()) {
+        specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(allSchemaIds.toArray(String[]::new)));
+      }
+    }
+    return specWithSchema;
+  }
+
+  /**
+   * Create specification for all listed schemaIds.
+   *
+   * @param specification Specification for search.
+   * @param relatedIds Provided schemaIDs...
+   * @return Specification with schemaIds added.
+   */
+  public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
+    Specification<DataResource> specWithSchema = specification;
+    if ((relatedIds != null) && !relatedIds.isEmpty()) {
+      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(relatedIds.toArray(String[]::new)));
+    }
+    return specWithSchema;
+  }
+
   /**
    * Merge new metadata record in the existing one.
    *
@@ -1268,11 +1336,11 @@ public class DataResourceRecordUtil {
         case 2:
           schemaId = tokenizer.nextToken();
           version = Long.parseLong(tokenizer.nextToken());
-          schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
           break;
         case 1:
           schemaId = tokenizer.nextToken();
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
           break;
         default:
           throw new CustomInternalServerError("Invalid schemaId!");
@@ -1402,22 +1470,27 @@ public class DataResourceRecordUtil {
    * @param metadataRecord Datacite Record.
    */
   public static final void check4validSchemaId(DataResource metadataRecord) {
-    check4validId(metadataRecord);
-    String id = metadataRecord.getId();
-    String lowerCaseId = id.toLowerCase();
     // schema id should be lower case due to elasticsearch
     // alternate identifier is used to set id to a given id.
+    check4validId(metadataRecord, false);
+  }
+
+  public static final void check4validId(DataResource metadataRecord, boolean allowUpperCase) {
+    String id = metadataRecord.getId();
+    String lowerCaseId = id.toLowerCase();
+
+    if (allowUpperCase) {
+      lowerCaseId = id;
+    }
     metadataRecord.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(lowerCaseId));
     if (!lowerCaseId.equals(id)) {
       metadataRecord.getAlternateIdentifiers().add(Identifier.factoryIdentifier(id, Identifier.IDENTIFIER_TYPE.OTHER));
     }
-  }
 
-  public static final void check4validId(DataResource metadataRecord) {
     try {
       String value = URLEncoder.encode(metadataRecord.getId(), StandardCharsets.UTF_8.toString());
       if (!value.equals(metadataRecord.getId())) {
-        String message = "Not a valid schema id! Encoded: " + value;
+        String message = "Not a valid ID! Encoded: " + value;
         LOG.error(message);
         throw new BadArgumentException(message);
       }
@@ -1426,6 +1499,7 @@ public class DataResourceRecordUtil {
       LOG.error(message);
       throw new CustomInternalServerError(message);
     }
+
   }
 
   private static void validateMetadataSchemaDocument(MetastoreConfiguration metastoreProperties, DataResource schemaRecord, MultipartFile document) {
@@ -1604,9 +1678,9 @@ public class DataResourceRecordUtil {
     }
     schemaId = dataResource.getId();
     if (version != null) {
-      schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+      schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
     } else {
-      schemaRecord = schemaRecordDao.findBySchemaIdOrderByVersionDesc(schemaId).get(0);
+      schemaRecord = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/").get(0);
     }
     if (schemaRecord == null) {
       String message = "Unknown version '" + version + "' for schemaID '" + schemaId + "'!";
@@ -1728,9 +1802,9 @@ public class DataResourceRecordUtil {
           throw new BadArgumentException(message);
         }
         if (version != null) {
-          schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
         } else {
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
         }
       }
       case URL -> {
@@ -1743,6 +1817,30 @@ public class DataResourceRecordUtil {
       LOG.trace("getSchemaRecord {},{}", schemaRecord.getSchemaDocumentUri(), schemaRecord.getVersion());
     } else {
       LOG.trace("No matching schema record found!");
+    }
+    return schemaRecord;
+  }
+
+  private static SchemaRecord getSchemaRecordFromDataResource(DataResource dataResource) {
+    SchemaRecord schemaRecord = null;
+    RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataResource);
+    String schemaId = schemaIdentifier.getValue();
+    switch (schemaIdentifier.getIdentifierType()) {
+      case URL:
+       schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
+       break;
+      case INTERNAL:
+        String[] split = schemaId.split("/");
+        if (split.length == 1) {
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+        } else {
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId);
+        }
+        break;
+      default:
+        String message = "Unsupported identifier type: '" + schemaIdentifier.getIdentifierType() + "'!";
+        LOG.error(message);
+        throw new ResourceNotFoundException(message);
     }
     return schemaRecord;
   }
@@ -1876,7 +1974,7 @@ public class DataResourceRecordUtil {
         }
         ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
         SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
-        MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);        
+        MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
       }
     } else {
       // validate if document is still valid due to changed record settings.
@@ -1928,7 +2026,7 @@ public class DataResourceRecordUtil {
       if (schemaIdentifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
         findByAlternateId = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
       } else {
-        findByAlternateId = schemaRecordDao.findBySchemaIdOrderByVersionDesc(schemaIdentifier.getValue()).get(0);
+        findByAlternateId = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaIdentifier.getValue() + "/");
       }
       if (findByAlternateId != null) {
         try {
@@ -1940,14 +2038,15 @@ public class DataResourceRecordUtil {
           errorMessage.append(ex.getMessage()).append("\n");
         }
       } else {
-        throw new CustomInternalServerError("No schema registries defined! ");
+        errorMessage.append("No matching schema found for '" + schemaIdentifier.getValue() + "'!");
       }
     }
     if (!validationSuccess) {
+      LOG.error(errorMessage.toString());
       throw new UnprocessableEntityException(errorMessage.toString());
     }
   }
-  
+
   /**
    * Create schema record from DataResource and ContentInformation.
    *
@@ -1971,7 +2070,7 @@ public class DataResourceRecordUtil {
       }
     }
     Long currentVersion = Long.valueOf(dataResource.getVersion());
-    String schemaUrl = getSchemaDocumentUri(dataResource.getId(),currentVersion);
+    String schemaUrl = getSchemaDocumentUri(dataResource.getId(), currentVersion);
     schemaRecord.setVersion(currentVersion);
     schemaRecord.setSchemaDocumentUri(contentInformation.getContentUri());
     schemaRecord.setDocumentHash(contentInformation.getHash());

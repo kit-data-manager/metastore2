@@ -259,7 +259,7 @@ public class MetadataSchemaRecordUtil {
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
-    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(dataResource.getId());
+    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(dataResource.getId() + "/");
     if (metadataRecord != null) {
       metadataRecord.setSchemaVersion(schemaRecord.getVersion());
       MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
@@ -351,7 +351,7 @@ public class MetadataSchemaRecordUtil {
           String id,
           String eTag,
           UnaryOperator<String> supplier) {
-    List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + "/");
     // Test for linked metadata documents
     for (SchemaRecord item : listOfSchemaIds) {
       List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(item.getSchemaId());
@@ -360,7 +360,7 @@ public class MetadataSchemaRecordUtil {
       }
     }
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-    listOfSchemaIds = schemaRecordDao.findBySchemaIdOrderByVersionDesc(id);
+    listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + "/");
     for (SchemaRecord item : listOfSchemaIds) {
       LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
       List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
@@ -612,7 +612,7 @@ public class MetadataSchemaRecordUtil {
       SchemaRecord schemaRecord;
       try {
         LOG.debug("findByIDAndVersion {},{}", dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
-        schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(dataResource.getId(), metadataSchemaRecord.getSchemaVersion());
+        schemaRecord = schemaRecordDao.findBySchemaId(dataResource.getId() + "/" + metadataSchemaRecord.getSchemaVersion());
         metadataSchemaRecord.setSchemaDocumentUri(schemaRecord.getSchemaDocumentUri());
         metadataSchemaRecord.setSchemaHash(schemaRecord.getDocumentHash());
       } catch (NullPointerException npe) {
@@ -742,9 +742,9 @@ public class MetadataSchemaRecordUtil {
           throw new BadArgumentException(message);
         }
         if (version != null) {
-          schemaRecord = schemaRecordDao.findBySchemaIdAndVersion(schemaId, version);
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
         } else {
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdOrderByVersionDesc(schemaId);
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
         }
         break;
       case URL:
@@ -1128,9 +1128,9 @@ public class MetadataSchemaRecordUtil {
     if (schemaRecordDao != null) {
       try {
         schemaRecord.setAlternateId(DataResourceRecordUtil.getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
-//        if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
-//          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
-//        }
+        if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
+          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
+        }
         schemaRecordDao.save(schemaRecord);
       } catch (Exception npe) {
         LOG.error("Can't save schema record: " + schemaRecord, npe);

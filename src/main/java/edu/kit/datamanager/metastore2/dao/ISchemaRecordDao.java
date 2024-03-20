@@ -29,11 +29,15 @@ public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, J
 
   boolean existsSchemaRecordBySchemaIdAndVersion(String schemaId, Long version);
 
-  SchemaRecord findBySchemaIdAndVersion(String schemaId, Long version);
+  SchemaRecord findBySchemaId(String schemaIdWithVersion);
+
+//  SchemaRecord findBySchemaIdAndVersion(String schemaId, Long version);
 
   SchemaRecord findByAlternateId(String alternateId);
 
-  List<SchemaRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
+//  List<SchemaRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
 
-  SchemaRecord findFirstBySchemaIdOrderByVersionDesc(String schemaId);
+  List<SchemaRecord> findBySchemaIdStartsWithOrderByVersionDesc(String schemaId);
+
+  SchemaRecord findFirstBySchemaIdStartsWithOrderByVersionDesc(String schemaId);
 }
