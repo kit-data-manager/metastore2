@@ -440,10 +440,11 @@ public class DataResourceRecordUtil {
         // Everything seems to be fine update document and increment version
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
-        if (version != null) {
-          updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        if (version == null) {
+          version = "0";
         }
-        ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
+          updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
       }
 
     } else {
@@ -461,8 +462,7 @@ public class DataResourceRecordUtil {
 
       try {
         InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-        ResourceIdentifier schema = ResourceIdentifier.factoryInternalResourceIdentifier(DataResourceRecordUtil.getSchemaIdentifier(dataResource).getValue());
-        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecord(schema, Long.parseLong(metadataRecord.getVersion()));
+        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecordFromDataResource(dataResource);
         MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);

@@ -427,7 +427,7 @@ public class CreateSchemaUtil {
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
     MvcResult result = mockMvc.perform(get("/api/v2/schemas/" + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
