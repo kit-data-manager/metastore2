@@ -1797,7 +1797,7 @@ public class SchemaRegistryControllerTestV2 {
     ci = contentInformationDao.save(ci);
 
     SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(dataResource.getId());
+    schemaRecord.setSchemaId(dataResource.getId() + "/1");
     schemaRecord.setVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());

@@ -58,10 +58,18 @@ public class SchemaRecord implements Serializable {
 //  @NotBlank(message = "Alternate id of schema document.")
   private String alternateId;
   
-  public String getSchemaId() {
+  public String getSchemaIdWithoutVersion() {
     String pureSchemaId = null;
     if (schemaId != null) {
+      String split[] = schemaId.split("/");
       pureSchemaId = schemaId.split("/")[0];
+      if (split.length < 2) {
+      System.out.println("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr");
+      System.out.println(schemaId + "-> '" + split[0] + "', 'null'");
+      } else {
+      System.out.println(schemaId + "-> '" + split[0] + "', '" + split[1] + "'");
+        
+      }
     } 
     return pureSchemaId;
   }

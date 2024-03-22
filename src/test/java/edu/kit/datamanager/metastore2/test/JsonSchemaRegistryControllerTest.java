@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtilTest;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -1096,7 +1097,7 @@ public class JsonSchemaRegistryControllerTest {
     contentInformationDao.save(ci);
 
     SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(dataResource.getId());
+    schemaRecord.setSchemaId(dataResource.getId() + "/1");
     schemaRecord.setVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());

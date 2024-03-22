@@ -207,7 +207,7 @@ public class DataResourceRecordUtil {
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
         MetadataFormat metadataFormat = new MetadataFormat();
-        metadataFormat.setMetadataPrefix(schemaRecord.getSchemaId());
+        metadataFormat.setMetadataPrefix(schemaRecord.getSchemaIdWithoutVersion());
         metadataFormat.setSchema(schemaRecord.getAlternateId());
         String documentString = new String(document.getBytes());
         LOG.trace(documentString);
@@ -2065,7 +2065,7 @@ public class DataResourceRecordUtil {
         schemaRecord.setType(XML);
 
       } else {
-        throw new BadArgumentException("Please provide a valid resource type for data resource '" + schemaRecord.getSchemaId() + "'!\n"
+        throw new BadArgumentException("Please provide a valid resource type for data resource '" + schemaRecord.getSchemaIdWithoutVersion() + "'!\n"
                 + "One of ['" + JSON + SCHEMA_SUFFIX + "', '" + XML + SCHEMA_SUFFIX + "']");
       }
     }

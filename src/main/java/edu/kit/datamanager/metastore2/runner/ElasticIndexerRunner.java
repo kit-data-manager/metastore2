@@ -116,7 +116,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
             List<SchemaRecord> allSchemas = schemaRecordDao.findAll(PageRequest.of((int) page, (int) entriesPerPage)).getContent();
             LOG.trace("Add '{}' schemas of '{}'", allSchemas.size(), noOfEntries);
             for (SchemaRecord item : allSchemas) {
-              indices.add(item.getSchemaId());
+              indices.add(item.getSchemaIdWithoutVersion());
             }
             page++;
           } while (page * entriesPerPage < noOfEntries);
@@ -137,7 +137,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
           LOG.trace("Search for alternative schemaId (given as URL)");
           DataRecord templateRecord = new DataRecord();
           for (SchemaRecord debug : findSchemaBySchemaId) {
-            templateRecord.setSchemaId(debug.getSchemaId());
+            templateRecord.setSchemaId(debug.getSchemaIdWithoutVersion());
             templateRecord.setSchemaVersion(debug.getVersion());
             List<Url2Path> findByPath1 = url2PathDao.findByPath(debug.getSchemaDocumentUri());
             for (Url2Path path : findByPath1) {

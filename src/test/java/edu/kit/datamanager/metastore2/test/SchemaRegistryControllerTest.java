@@ -1167,9 +1167,9 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testUpdateRecordWithSmallChangesInDocument() throws Exception {
     String schemaId = "updateRecordWithSmallChanges".toLowerCase(Locale.getDefault());
-    SchemaRecord schemaRecord = new SchemaRecord();
+    MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setSchemaVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1693,7 +1693,7 @@ public class SchemaRegistryControllerTest {
     ci = contentInformationDao.save(ci);
 
     SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(dataResource.getId());
+    schemaRecord.setSchemaId(dataResource.getId() + "/1");
     schemaRecord.setVersion(1l);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.valueOf(dataResource.getFormats().iterator().next()));
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());

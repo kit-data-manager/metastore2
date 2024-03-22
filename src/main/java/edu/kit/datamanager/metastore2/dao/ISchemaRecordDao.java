@@ -28,6 +28,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, JpaSpecificationExecutor<SchemaRecord> {
 
   boolean existsSchemaRecordBySchemaIdAndVersion(String schemaId, Long version);
+  boolean existsSchemaRecordBySchemaIdStartsWithAndVersion(String schemaId, Long version);
 
   SchemaRecord findBySchemaId(String schemaIdWithVersion);
 

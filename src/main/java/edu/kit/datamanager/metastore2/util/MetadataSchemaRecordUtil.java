@@ -202,8 +202,8 @@ public class MetadataSchemaRecordUtil {
     if (MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType())) {
       try {
         MetadataFormat metadataFormat = new MetadataFormat();
-        metadataFormat.setMetadataPrefix(schemaRecord.getSchemaId());
-        metadataFormat.setSchema(getSchemaDocumentById.apply(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
+        metadataFormat.setMetadataPrefix(schemaRecord.getSchemaIdWithoutVersion());
+        metadataFormat.setSchema(getSchemaDocumentById.apply(schemaRecord.getSchemaIdWithoutVersion(), schemaRecord.getVersion()));
         String metadataNamespace = SchemaUtils.getTargetNamespaceFromSchema(document.getBytes());
         metadataFormat.setMetadataNamespace(metadataNamespace);
         metadataFormatDao.save(metadataFormat);
@@ -354,7 +354,7 @@ public class MetadataSchemaRecordUtil {
     List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + "/");
     // Test for linked metadata documents
     for (SchemaRecord item : listOfSchemaIds) {
-      List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(item.getSchemaId());
+      List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaId(item.getSchemaIdWithoutVersion());
       if (!findBySchemaId.isEmpty()) {
         throw new ResponseStatusException(HttpStatus.CONFLICT, "Conflict with existing metadata documents.");
       }
@@ -710,7 +710,7 @@ public class MetadataSchemaRecordUtil {
     Objects.requireNonNull(newSettings);
     oldRecord.setDocumentHash(newSettings.getSchemaHash());
     oldRecord.setSchemaDocumentUri(newSettings.getSchemaDocumentUri());
-    oldRecord.setSchemaId(newSettings.getSchemaId());
+//    oldRecord.setSchemaId(newSettings.getSchemaId() + "/" + newSettings.getSchemaVersion());
     oldRecord.setVersion(newSettings.getSchemaVersion());
     oldRecord.setType(newSettings.getType());
   }
@@ -895,7 +895,7 @@ public class MetadataSchemaRecordUtil {
     Path schemaDocumentPath = Paths.get(URI.create(schemaRecord.getSchemaDocumentUri()));
 
     if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-      LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaId(), schemaDocumentPath);
+      LOG.error("Schema document with schemaId '{}'at path {} either does not exist or is no file or is not readable.", schemaRecord.getSchemaIdWithoutVersion(), schemaDocumentPath);
       throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
     }
     LOG.trace("obtain validator for type");
@@ -915,7 +915,7 @@ public class MetadataSchemaRecordUtil {
     } else {
       LOG.trace("Validator found.");
 
-      LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
+      LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaIdWithoutVersion(), schemaRecord.getVersion(), applicableValidator);
       long nano4 = System.nanoTime() / 1000000;
       if (!applicableValidator.validateMetadataDocument(schemaDocumentPath.toFile(), inputStream)) {
         LOG.warn("Metadata document validation failed. -> " + applicableValidator.getErrorMessage());
@@ -1038,7 +1038,7 @@ public class MetadataSchemaRecordUtil {
         throw new UnprocessableEntityException(message);
       } else {
         LOG.trace("Validator found. Checking provided schema file.");
-        LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaId(), schemaRecord.getVersion(), applicableValidator);
+        LOG.trace("Performing validation of metadata document using schema {}, version {} and validator {}.", schemaRecord.getSchemaIdWithoutVersion(), schemaRecord.getVersion(), applicableValidator);
         try (InputStream inputStream = new ByteArrayInputStream(document)) {
           if (!applicableValidator.isSchemaValid(inputStream)) {
             String message = "Metadata schema document validation failed. Returning HTTP UNPROCESSABLE_ENTITY.";
@@ -1127,9 +1127,9 @@ public class MetadataSchemaRecordUtil {
   public static void saveNewSchemaRecord(SchemaRecord schemaRecord) {
     if (schemaRecordDao != null) {
       try {
-        schemaRecord.setAlternateId(DataResourceRecordUtil.getSchemaDocumentUri(schemaRecord.getSchemaId(), schemaRecord.getVersion()));
+        schemaRecord.setAlternateId(DataResourceRecordUtil.getSchemaDocumentUri(schemaRecord.getSchemaIdWithoutVersion(), schemaRecord.getVersion()));
         if (new StringTokenizer(schemaRecord.getSchemaId()).countTokens() < 2) {
-          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + " " + schemaRecord.getVersion());
+          schemaRecord.setSchemaId(schemaRecord.getSchemaId() + "/" + schemaRecord.getVersion());
         }
         schemaRecordDao.save(schemaRecord);
       } catch (Exception npe) {
