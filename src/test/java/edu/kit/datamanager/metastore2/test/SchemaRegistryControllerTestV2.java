@@ -1909,18 +1909,30 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   public static DataResource createDataResource4JsonDocument(String id, String schemaId) {
-    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.JSON_METADATA_TYPE);
+    return createDataResource4Document(id, schemaId, null, DataResourceRecordUtil.JSON_METADATA_TYPE);
   }
 
   public static DataResource createDataResource4XmlDocument(String id, String schemaId) {
-    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
+    return createDataResource4Document(id, schemaId, null, DataResourceRecordUtil.XML_METADATA_TYPE);
   }
 
   public static DataResource createDataResource4Document(String id, String schemaId) {
-    return createDataResource4Document(id, schemaId, DataResourceRecordUtil.XML_METADATA_TYPE);
+    return createDataResource4Document(id, schemaId, null, DataResourceRecordUtil.XML_METADATA_TYPE);
   }
 
-  public static DataResource createDataResource4Document(String id, String schemaId, String metadataType) {
+  public static DataResource createDataResource4JsonDocument(String id, String schemaId, String version) {
+    return createDataResource4Document(id, schemaId, version, DataResourceRecordUtil.JSON_METADATA_TYPE);
+  }
+
+  public static DataResource createDataResource4XmlDocument(String id, String schemaId, String version) {
+    return createDataResource4Document(id, schemaId, version, DataResourceRecordUtil.XML_METADATA_TYPE);
+  }
+
+  public static DataResource createDataResource4Document(String id, String schemaId, String version) {
+    return createDataResource4Document(id, schemaId, version, DataResourceRecordUtil.XML_METADATA_TYPE);
+  }
+
+  public static DataResource createDataResource4Document(String id, String schemaId, String version, String metadataType) {
     DataResource record = new DataResource();
     record.setId(id);
     record.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(id));
@@ -1936,6 +1948,9 @@ public class SchemaRegistryControllerTestV2 {
       relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     } else {
       relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+      if (version != null) {
+        relatedResource.setValue(schemaId + DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR + version);
+      }
     }
     record.getRelatedIdentifiers().add(relatedResource);
     if (metadataType.contains("XML")) {

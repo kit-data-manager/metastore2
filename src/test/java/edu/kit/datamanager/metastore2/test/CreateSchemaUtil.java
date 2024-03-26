@@ -408,6 +408,38 @@ public class CreateSchemaUtil {
    * @throws Exception
    */
   public static String ingestOrUpdateXmlSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_XML, schemaId, schemaContent, jwtSecret, update, expectedStatus);
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateJsonSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_JSON, schemaId, schemaContent, jwtSecret, update, expectedStatus);
+  }
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param mediaType 
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateSchemaRecordV2(MockMvc mockMvc, MediaType mediaType, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
     String locationUri = null;
     jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
     userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
@@ -416,9 +448,14 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Schema(schemaId);
+    DataResource record;
+    if (mediaType.toString().contains("xml")) {
+      record = SchemaRegistryControllerTestV2.createDataResource4XmlSchema(schemaId);
+    } else {
+      record = SchemaRegistryControllerTestV2.createDataResource4JsonSchema(schemaId);
+    }
     record.getAcls().add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
-    
+
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile;
@@ -479,10 +516,14 @@ public class CreateSchemaUtil {
     // Test if metadataId is already registered.
 
     MvcResult result = null;
-
-    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(metadataId, schemaId);
+    String versionAsString = null;
     if (version != null) {
-      record.setVersion(version.toString());
+      versionAsString = version.toString();
+    }
+
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(metadataId, schemaId, versionAsString);
+    if (versionAsString != null) {
+      record.setVersion(versionAsString);
     }
     RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
     relatedIdentifier.setValue("any");
@@ -518,10 +559,18 @@ public class CreateSchemaUtil {
         String body = result.getResponse().getContentAsString();
         record = mapper.readValue(body, DataResource.class);
         relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
-        relatedIdentifier.setValue(schemaId);
-        relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
-        if (version != null) {
-          record.setVersion(version.toString());
+        if ((schemaId != null) && schemaId.startsWith("http")) {
+          relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+        } else {
+          relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+          if (versionAsString != null) {
+            relatedIdentifier.setValue(schemaId + DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR + versionAsString);
+          } else {
+            relatedIdentifier.setValue(schemaId);
+          }
+        }
+        if (versionAsString != null) {
+          record.setVersion(versionAsString);
         }
         recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
         // Update metadata document

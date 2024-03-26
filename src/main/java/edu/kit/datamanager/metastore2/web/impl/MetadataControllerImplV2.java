@@ -375,12 +375,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
     }
 
-    LOG.trace("Transforming Dataresource to DataResource");
-    List<DataResource> metadataList = new ArrayList<>();
-
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
 
-    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(metadataList);
+    return ResponseEntity.status(HttpStatus.OK).header("Content-Range", contentRange).body(recordList);
   }
 
   @Override
@@ -395,7 +392,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           HttpServletResponse hsr,
           UriComponentsBuilder ucb
   ) {
-    LOG.trace("Performing getRecords({}, {}, {}, {}).", relatedIds, schemaIds, updateFrom, updateUntil);
+    LOG.trace("Performing getRecords({}, {}, {}, {}, {}).", id, relatedIds, schemaIds, updateFrom, updateUntil);
     if (id != null) {
       return getAllVersions(id, pgbl);
     }

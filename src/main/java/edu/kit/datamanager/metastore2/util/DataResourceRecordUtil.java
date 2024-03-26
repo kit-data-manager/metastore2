@@ -118,7 +118,7 @@ public class DataResourceRecordUtil {
   /**
    * Separator for separating schemaId and schemaVersion.
    */
-  public static final String SCHEMA_VERSION_SEPARATOR = ":";
+  public static final String SCHEMA_VERSION_SEPARATOR = "/";
   /**
    * Logger for messages.
    */
@@ -399,6 +399,9 @@ public class DataResourceRecordUtil {
       if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
         updatedDataResource.setAcls(dataResource.getAcls());
       }
+      if (updatedDataResource.getRights() == null) {
+        updatedDataResource.setRights(new HashSet<>());
+      }
     } else {
       updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
     }
@@ -459,10 +462,10 @@ public class DataResourceRecordUtil {
         LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
         throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
       }
-
+      // test if document is still valid for updated(?) schema.
       try {
         InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecordFromDataResource(dataResource);
+        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecordFromDataResource(updatedDataResource);
         MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);
@@ -514,7 +517,7 @@ public class DataResourceRecordUtil {
     // No references to this schema available -> Ready for deletion
     if (findOne.isEmpty()) {
       DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
-      List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + "/");
+      List<SchemaRecord> listOfSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(id + SCHEMA_VERSION_SEPARATOR);
       for (SchemaRecord item : listOfSchemaIds) {
         LOG.trace("Delete entry for path '{}'", item.getSchemaDocumentUri());
         List<Url2Path> findByPath = url2PathDao.findByPath(item.getSchemaDocumentUri());
@@ -1055,7 +1058,7 @@ public class DataResourceRecordUtil {
       List<String> allSchemaIds = new ArrayList<>();
       for (String schemaId : schemaIds) {
         allSchemaIds.add(schemaId);
-        List<SchemaRecord> allVersions = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+        List<SchemaRecord> allVersions = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
         for (SchemaRecord schemaRecord : allVersions) {
           allSchemaIds.add(schemaRecord.getAlternateId());
         }
@@ -1328,7 +1331,7 @@ public class DataResourceRecordUtil {
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataresource);
     if ((schemaIdentifier != null) && (schemaIdentifier.getIdentifierType().equals(Identifier.IDENTIFIER_TYPE.INTERNAL))) {
       String value = schemaIdentifier.getValue();
-      StringTokenizer tokenizer = new StringTokenizer(schemaIdentifier.getValue());
+      StringTokenizer tokenizer = new StringTokenizer(schemaIdentifier.getValue(), SCHEMA_VERSION_SEPARATOR);
       Long version = null;
       String schemaId = null;
       SchemaRecord schemaRecord = null;
@@ -1336,11 +1339,11 @@ public class DataResourceRecordUtil {
         case 2:
           schemaId = tokenizer.nextToken();
           version = Long.parseLong(tokenizer.nextToken());
-          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + SCHEMA_VERSION_SEPARATOR + version);
           break;
         case 1:
           schemaId = tokenizer.nextToken();
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
           break;
         default:
           throw new CustomInternalServerError("Invalid schemaId!");
@@ -1355,7 +1358,7 @@ public class DataResourceRecordUtil {
   public static void checkLicense(DataResource dataResource, String licenseUri) {
     if (licenseUri != null) {
       Set<Scheme> rights = dataResource.getRights();
-      String licenseId = licenseUri.substring(licenseUri.lastIndexOf("/"));
+      String licenseId = licenseUri.substring(licenseUri.lastIndexOf(SCHEMA_VERSION_SEPARATOR));
       Scheme license = Scheme.factoryScheme(licenseId, licenseUri);
       if (rights.isEmpty()) {
         rights.add(license);
@@ -1678,9 +1681,9 @@ public class DataResourceRecordUtil {
     }
     schemaId = dataResource.getId();
     if (version != null) {
-      schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
+      schemaRecord = schemaRecordDao.findBySchemaId(schemaId + SCHEMA_VERSION_SEPARATOR + version);
     } else {
-      schemaRecord = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/").get(0);
+      schemaRecord = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR).get(0);
     }
     if (schemaRecord == null) {
       String message = "Unknown version '" + version + "' for schemaID '" + schemaId + "'!";
@@ -1802,9 +1805,9 @@ public class DataResourceRecordUtil {
           throw new BadArgumentException(message);
         }
         if (version != null) {
-          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + "/" + version);
+          schemaRecord = schemaRecordDao.findBySchemaId(schemaId + SCHEMA_VERSION_SEPARATOR + version);
         } else {
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
         }
       }
       case URL -> {
@@ -1830,9 +1833,9 @@ public class DataResourceRecordUtil {
        schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
        break;
       case INTERNAL:
-        String[] split = schemaId.split("/");
+        String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
         if (split.length == 1) {
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + "/");
+          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
         } else {
           schemaRecord = schemaRecordDao.findBySchemaId(schemaId);
         }
@@ -2022,11 +2025,18 @@ public class DataResourceRecordUtil {
     StringBuilder errorMessage = new StringBuilder();
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(metadataRecord);
     SchemaRecord findByAlternateId;
-    if (schemaIdentifier != null) {
+    if ((schemaIdentifier != null) && (schemaIdentifier.getValue() != null)) {
       if (schemaIdentifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
         findByAlternateId = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
       } else {
-        findByAlternateId = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaIdentifier.getValue() + "/");
+        String schemaId = schemaIdentifier.getValue();
+        String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
+        
+        if (split.length > 1) {
+           findByAlternateId = schemaRecordDao.findBySchemaId(schemaId);
+        } else {
+          findByAlternateId = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(split[0] + SCHEMA_VERSION_SEPARATOR);
+        }
       }
       if (findByAlternateId != null) {
         try {
