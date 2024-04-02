@@ -107,6 +107,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/v2/md/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/v2/md/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
+@TestPropertySource(properties = {"metastore.metadata.landingpage=/metadata-landing-page-v2?id=$(id)&version=$(version)"})
 @TestPropertySource(properties = {"repo.search.url=http://localhost:41421"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestV2 {
@@ -2273,7 +2274,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version="))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + documentId + "&version="))
             .andReturn();
     String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2339,7 +2340,7 @@ public class MetadataControllerTestV2 {
     // Deletion of schema shouldn't work
     // Get ETag.
     MvcResult result = mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -2391,7 +2392,7 @@ public class MetadataControllerTestV2 {
             andReturn();
     // But it's still available
     result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
@@ -2404,7 +2405,7 @@ public class MetadataControllerTestV2 {
             andReturn();
     // Now it' gone
     result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isNotFound()).
             andReturn();

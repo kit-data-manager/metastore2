@@ -23,7 +23,7 @@ import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
-import edu.kit.datamanager.metastore2.web.ILandingPageController;
+import edu.kit.datamanager.metastore2.web.ILandingPageControllerV2;
 import edu.kit.datamanager.repo.domain.DataResource;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -61,7 +61,7 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
    * @param metadataConfig Configuration for metadata documents repository.
    * @param schemaConfig Configuration for schema documents repository.
    */
-  public LandingPageControllerImpl(ApplicationProperties applicationProperties,
+  public LandingPageControllerImplV2(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
           MetastoreConfiguration schemaConfig) {
     this.metadataConfig = metadataConfig;
@@ -81,20 +81,20 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing  a query for records with given id.");
-    MetadataSchemaRecord recordByIdAndVersion = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-    List<MetadataSchemaRecord> recordList = new ArrayList<>();
+    DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+    List<DataResource> recordList = new ArrayList<>();
     recordList.add(recordByIdAndVersion);
     if (version == null) {
-      long totalNoOfElements = recordByIdAndVersion.getSchemaVersion();
+      long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
       for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, id, size));
+        recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, size));
       }
     }
 
     LOG.trace("Fix URL for all schema records");
-    List<MetadataSchemaRecord> metadataList = new ArrayList<>();
+    List<DataResource> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
-      MetadataSchemaRecordUtil.fixSchemaDocumentUri(metadataRecord);
+      DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
       metadataList.add(metadataRecord);
     });
 
@@ -116,27 +116,19 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
     //if security is enabled, include principal in query
     LOG.debug("Performing  a query for all records with given id...");
     DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-    List<MetadataRecord> recordList = new ArrayList<>();
+    List<DataResource> recordList = new ArrayList<>();
 
     recordList.add(recordByIdAndVersion);
     if (version == null) {
       long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
       for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, size));
+        recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, size));
       }
     }
 
-    LOG.trace("Fix URL for all metadata records");
-    List<MetadataRecord> metadataList = new ArrayList<>();
-    recordList.forEach(metadataRecord -> {
-      MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
-      metadataList.add(metadataRecord);
-    });
 
-    SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataList.get(0).getSchema(), metadataList.get(0).getSchemaVersion());
-
-    model.addAttribute("type", schemaRecord.getType());
-    model.addAttribute("records", metadataList);
+    model.addAttribute("type", recordList.get(0).getFormats().iterator().next());
+    model.addAttribute("records", recordList);
 
     return "metadata-landing-page-v2.html";
   }
