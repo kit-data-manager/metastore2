@@ -98,6 +98,8 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
   private Instant lastUpdate;
   @Transient
   private final Set<AclEntry> acl = new HashSet<>();
+  @NotBlank(message = "The uri of the license, e.g. for Apache-2.0 license this would be 'https://spdx.org/licenses/Apache-2.0'.")
+  private String licenseUri;
   @NotBlank(message = "The schema document uri, e.g. pointing to a local file.")
   private String schemaDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated schema file. The hash is used for comparison while synchonization.")
