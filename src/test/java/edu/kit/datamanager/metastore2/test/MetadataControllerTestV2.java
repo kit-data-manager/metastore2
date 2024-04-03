@@ -2224,7 +2224,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=anything&version="))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=anything&version="))
             .andReturn();
     String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2239,7 +2239,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + SCHEMA_ID + "&version="))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + SCHEMA_ID + "&version="))
             .andReturn();
     String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2257,7 +2257,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=2"))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + documentId + "&version=2"))
             .andReturn();
     String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2286,7 +2286,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=1"))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + documentId + "&version=1"))
             .andReturn();
     redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2310,7 +2310,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version=2"))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + documentId + "&version=2"))
             .andReturn();
     redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)
@@ -2321,7 +2321,7 @@ public class MetadataControllerTestV2 {
             .accept("text/html"))
             .andDo(print())
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/metadata-landing-page?id=" + documentId + "&version="))
+            .andExpect(redirectedUrl("/metadata-landing-page-v2?id=" + documentId + "&version="))
             .andReturn();
     redirectedUrl = andReturn.getResponse().getRedirectedUrl();
     this.mockMvc.perform(get(redirectedUrl)

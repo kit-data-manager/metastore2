@@ -446,7 +446,7 @@ public class DataResourceRecordUtil {
         if (version == null) {
           version = "0";
         }
-          updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
         ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
       }
 
@@ -554,115 +554,17 @@ public class DataResourceRecordUtil {
   }
 
   /**
-   * Migrate metadata record to data resource.
-   *
-   * @param applicationProperties Configuration settings of repository.
-   * @param metadataRecord Metadata record to migrate.
-   * @return Data resource of metadata record.
-   */
-  public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
-          MetadataRecord metadataRecord) {
-    DataResource dataResource;
-    if (metadataRecord.getId() != null) {
-      try {
-        dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
-        dataResource = DataResourceUtils.copyDataResource(dataResource);
-      } catch (ResourceNotFoundException rnfe) {
-        LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
-        dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
-        dataResource.setVersion("1");
-      }
-    } else {
-      dataResource = new DataResource();
-      dataResource.setVersion("1");
-    }
-    dataResource.setAcls(metadataRecord.getAcl());
-    if (metadataRecord.getCreatedAt() != null) {
-      boolean createDateExists = false;
-      Set<Date> dates = dataResource.getDates();
-      for (edu.kit.datamanager.repo.domain.Date d : dates) {
-        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-          LOG.trace("Creation date entry found.");
-          createDateExists = true;
-          break;
-        }
-      }
-      if (!createDateExists) {
-        dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
-      }
-    }
-    Set<Identifier> identifiers = dataResource.getAlternateIdentifiers();
-    if (metadataRecord.getPid() != null) {
-      ResourceIdentifier identifier = metadataRecord.getPid();
-      MetadataSchemaRecordUtil.checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
-    } else {
-      LOG.trace("Remove existing identifiers (others than URL)...");
-      Set<Identifier> removeItems = new HashSet<>();
-      for (Identifier item : identifiers) {
-        if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
-          removeItems.add(item);
-        }
-      }
-      identifiers.removeAll(removeItems);
-    }
-    boolean relationFound = false;
-    boolean schemaIdFound = false;
-    for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-        LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
-        relatedIds.setValue(metadataRecord.getRelatedResource().getIdentifier());
-        relatedIds.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
-        relationFound = true;
-      }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        updateRelatedIdentifierForSchema(relatedIds, metadataRecord);
-        schemaIdFound = true;
-      }
-    }
-    if (!relationFound) {
-      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource().getIdentifier(), null, null);
-      relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
-      dataResource.getRelatedIdentifiers().add(relatedResource);
-    }
-    if (!schemaIdFound) {
-      RelatedIdentifier schemaId = updateRelatedIdentifierForSchema(null, metadataRecord);
-      dataResource.getRelatedIdentifiers().add(schemaId);
-    }
-    String defaultTitle = "Metadata 4 metastore";
-    boolean titleExists = false;
-    for (Title title : dataResource.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER && title.getValue().equals(defaultTitle)) {
-        titleExists = true;
-      }
-    }
-    if (!titleExists) {
-      dataResource.getTitles().add(Title.factoryTitle(defaultTitle, Title.TYPE.OTHER));
-    }
-    dataResource.setResourceType(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
-    checkLicense(dataResource, metadataRecord.getLicenseUri());
-
-    return dataResource;
-  }
-
-  /**
    * Migrate data resource to metadata record.
    *
    * @param applicationProperties Configuration settings of repository.
    * @param dataResource Data resource to migrate.
-   * @param provideETag Flag for calculating etag.
    * @return Metadata record of data resource.
    */
-  public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
-          DataResource dataResource,
-          boolean provideETag) {
-    long nano1 = System.nanoTime() / 1000000;
+  public static MetadataRecord migrateToMetadataRecordV2(RepoBaseConfiguration applicationProperties,
+          DataResource dataResource) {
     MetadataRecord metadataRecord = new MetadataRecord();
     if (dataResource != null) {
       metadataRecord.setId(dataResource.getId());
-      if (provideETag) {
-        metadataRecord.setETag(dataResource.getEtag());
-      }
       metadataRecord.setAcl(dataResource.getAcls());
 
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
@@ -726,44 +628,19 @@ public class DataResourceRecordUtil {
         throw new BadArgumentException(message);
       }
       DataRecord dataRecord = null;
-      long nano2 = System.nanoTime() / 1000000;
-      Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), recordVersion);
-      long nano3 = System.nanoTime() / 1000000;
-      long nano4 = nano3;
-      boolean isAvailable = false;
-      boolean saveDataRecord = false;
-      if (dataRecordResult.isPresent()) {
-        LOG.trace("Get document URI from DataRecord.");
-        dataRecord = dataRecordResult.get();
-        nano4 = System.nanoTime() / 1000000;
-        metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
-        metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
-        metadataRecord.setSchemaVersion(dataRecord.getSchemaVersion());
-        isAvailable = true;
-      } else {
-        saveDataRecord = true;
-      }
-      if (!isAvailable) {
-        LOG.trace("Get document URI from ContentInformation.");
-        ContentInformation info;
-        info = getContentInformationOfResource(applicationProperties, dataResource);
-        nano4 = System.nanoTime() / 1000000;
-        if (info != null) {
-          metadataRecord.setDocumentHash(info.getHash());
-          metadataRecord.setMetadataDocumentUri(info.getContentUri());
-          MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
-          metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
-          if (saveDataRecord) {
-            saveNewDataRecord(metadataRecord);
-          }
-        }
+      LOG.trace("Get document URI from ContentInformation.");
+      ContentInformation info;
+      info = getContentInformationOfResource(applicationProperties, dataResource);
+      if (info != null) {
+        metadataRecord.setDocumentHash(info.getHash());
+        metadataRecord.setMetadataDocumentUri(info.getContentUri());
+        MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
+        metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
       }
       // Only one license allowed. So don't worry about size of set.
       if (!dataResource.getRights().isEmpty()) {
         metadataRecord.setLicenseUri(dataResource.getRights().iterator().next().getSchemeUri());
       }
-      long nano5 = System.nanoTime() / 1000000;
-      LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, provideETag);
     }
 
     return metadataRecord;
@@ -1830,8 +1707,8 @@ public class DataResourceRecordUtil {
     String schemaId = schemaIdentifier.getValue();
     switch (schemaIdentifier.getIdentifierType()) {
       case URL:
-       schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
-       break;
+        schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
+        break;
       case INTERNAL:
         String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
         if (split.length == 1) {
@@ -2031,9 +1908,9 @@ public class DataResourceRecordUtil {
       } else {
         String schemaId = schemaIdentifier.getValue();
         String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
-        
+
         if (split.length > 1) {
-           findByAlternateId = schemaRecordDao.findBySchemaId(schemaId);
+          findByAlternateId = schemaRecordDao.findBySchemaId(schemaId);
         } else {
           findByAlternateId = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(split[0] + SCHEMA_VERSION_SEPARATOR);
         }
