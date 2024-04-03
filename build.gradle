@@ -109,7 +109,7 @@ dependencies {
     implementation 'xerces:xercesImpl:2.12.2'
 
     // datamanager
-    implementation "edu.kit.datamanager:repo-core:1.2.1"
+    implementation "edu.kit.datamanager:repo-core:1.2.2"
     implementation "edu.kit.datamanager:service-base:1.2.1"
 
     // elasticsearch (since service-base 1.1.0)
