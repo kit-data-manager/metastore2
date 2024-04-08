@@ -76,7 +76,7 @@ public class ActuatorUtil {
       String response = client.getResource(String.class);
       ObjectMapper objectMapper = new ObjectMapper();
       JsonNode node = objectMapper.readTree(response);
-      properties.put("elastic", node.get("tagline").asText());
+      properties.put("tagline", node.get("tagline").asText());
     } catch (Throwable ex) {
       LOG.error("Invalid elastic uri of '" + elasticUrl.toString() + "'.", ex);
     }

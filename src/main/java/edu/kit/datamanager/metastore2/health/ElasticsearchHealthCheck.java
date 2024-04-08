@@ -16,10 +16,7 @@
 package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.configuration.SearchConfiguration;
-import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
-import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
-import java.net.URL;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,10 +54,10 @@ public class ElasticsearchHealthCheck  implements HealthIndicator {
     Health health = Health.unknown().build();
     if (elasticConfig.isSearchEnabled()) {
       Map<String, String> details = ActuatorUtil.testElastic(elasticConfig.getUrl());
-    if (details.isEmpty()) {
-      health = Health.down().withDetail("tagline", "-").build();
-    } else {
+    if (!details.isEmpty()) {
       health = Health.up().withDetails(details).build();
+    } else {
+      health = Health.down().withDetail("tagline", "-").build();
     }
     } 
     return health;
