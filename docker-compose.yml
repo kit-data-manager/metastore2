@@ -77,6 +77,7 @@ services:
       - REPO_MESSAGING_ENABLED=true
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
       - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
+      - MANAGEMENT_HEALTH_RABBIT_ENABLED=true
     depends_on:
       rabbitmq:
         condition: service_started

@@ -15,6 +15,9 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.clients.SimpleServiceClient;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -56,6 +59,26 @@ public class ActuatorUtil {
       properties = determineDetailsForPath(path);
     } catch (URISyntaxException ex) {
       LOG.error("Invalid base path uri of '" + pathUrl.toString() + "'.", ex);
+    }
+    return properties;
+  }
+
+  /**
+   * Determine all details for given directory.
+   *
+   * @param elasticUrl URL of directory
+   * @return Map with details.
+   */
+  public static final Map<String, String> testElastic(URL elasticUrl) {
+    Map<String, String> properties = new HashMap<>();
+    try {
+      SimpleServiceClient client = SimpleServiceClient.create(elasticUrl.toString());
+      String response = client.getResource(String.class);
+      ObjectMapper objectMapper = new ObjectMapper();
+      JsonNode node = objectMapper.readTree(response);
+      properties.put("tagline", node.get("tagline").asText());
+    } catch (Throwable ex) {
+      LOG.error("Invalid elastic uri of '" + elasticUrl.toString() + "'.", ex);
     }
     return properties;
   }
