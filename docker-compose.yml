@@ -57,6 +57,7 @@ services:
     environment:
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
       - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
+      - REPO_AUTH_JWTSECRET=${JWT_SECRET}
     depends_on:
       rabbitmq:
         condition: service_started
@@ -78,6 +79,8 @@ services:
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
       - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
       - MANAGEMENT_HEALTH_RABBIT_ENABLED=true
+      - REPO_AUTH_ENABLED=${REPO_AUTH_ENABLED}
+      - REPO_AUTH_JWTSECRET=${JWT_SECRET}
     depends_on:
       rabbitmq:
         condition: service_started
