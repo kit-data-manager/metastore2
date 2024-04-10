@@ -13,6 +13,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
+## [1.4.2] - 2024-04-10
+### Security
+
+### Added
+- Enable AAI for docker compose
+- Add licenseUri to metadata records
+
+### Changed
+- Bump to gradle from 8.2.1 to 8.7
+ 
+### Fixed
+- Fix health endpoint to evaluate elasticsearch if needed
+
+### Libs
+- Bump com.google.errorprone:error_prone_core from 2.24.1 to 2.26.1
+- Bump com.networknt:json-schema-validator from 1.1.0 to 1.4.0
+- Bump commons-io:commons-io from 2.15.1 to 2.16.1
+- Bump edu.kit.datamanager:repo-core from 1.2.1 to 1.2.2 
+- Bump edu.kit.datamanager:service-base from 1.2.0 to 1.2.1 
+- Bump io.freefair.lombok from 8.4 to 8.6
+- Bump io.freefair.maven-publish-java from 8.4 to 8.6
+- Bump javersVersion from 7.3.7 to 7.4.2
+- Bump org.apache.tika:tika-core from 2.9.1 to 2.9.2
+- Bump org.mockito:mockito-core from 5.8.0 to 5.11.0
+- Bump org.owasp.dependencycheck from 9.0.8 to 9.1.0 
+- Bump org.postgresql:postgresql from 42.7.1 to 42.7.3
+- Bump org.springframework.boot from 3.2.1 to 3.2.4
+- Bump org.springframework.cloud:spring-cloud-gateway-mvc from 4.1.1 to 4.1.2
+- Bump org.springframework.data:spring-data-elasticsearch from 5.2.2 to 5.2.4
+- Bump springDocVersion from 2.3.0 to 2.5.0
+
+### Github Actions
+- Bump codecov/codecov-action from 3 to 4
+
 ## [1.4.1] - 2024-01-13
 ### Added
 
@@ -413,7 +447,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...1.4.2
 [1.4.1]: https://github.com/kit-data-manager/metastore2/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...v1.3.0
