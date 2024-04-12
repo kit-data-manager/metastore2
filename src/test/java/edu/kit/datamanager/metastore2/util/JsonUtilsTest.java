@@ -73,6 +73,7 @@ public class JsonUtilsTest {
           + "        },\n"
           + "        \"date\": {\n"
           + "            \"type\": \"string\",\n"
+          + "            \"pattern\": \"^[0-9]{4}-[01][0-9]-[0-3][0-9]$\",\n"
           + "            \"format\": \"date\",\n"
           + "            \"title\": \"Date\",\n"
           + "            \"description\": \"Date of object\"\n"

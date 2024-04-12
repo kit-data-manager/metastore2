@@ -45,6 +45,7 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.Description;
 import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Scheme;
 import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
@@ -444,6 +445,7 @@ public class MetadataSchemaRecordUtil {
     checkDescription(descriptions, metadataSchemaRecord.getLabel(), Description.TYPE.OTHER);
     checkDescription(descriptions, metadataSchemaRecord.getDefinition(), Description.TYPE.TECHNICAL_INFO);
     checkDescription(descriptions, metadataSchemaRecord.getComment(), Description.TYPE.ABSTRACT);
+    MetadataRecordUtil.checkLicense(dataResource, metadataSchemaRecord.getLicenseUri());
 
     return dataResource;
   }
@@ -601,30 +603,34 @@ public class MetadataSchemaRecordUtil {
           saveNewSchemaRecord(metadataSchemaRecord);
         }
       }
-    }
-    long nano7 = System.nanoTime() / 1000000;
-    // label -> description of type (OTHER)
-    // description -> description of type (TECHNICAL_INFO)
-    // comment -> description of type (ABSTRACT)
-    Iterator<Description> iterator = dataResource.getDescriptions().iterator();
-    while (iterator.hasNext()) {
-      Description nextDescription = iterator.next();
-      switch (nextDescription.getType()) {
-        case ABSTRACT:
-          metadataSchemaRecord.setComment(nextDescription.getDescription());
-          break;
-        case TECHNICAL_INFO:
-          metadataSchemaRecord.setDefinition(nextDescription.getDescription());
-          break;
-        case OTHER:
-          metadataSchemaRecord.setLabel(nextDescription.getDescription());
-          break;
-        default:
-          LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
+      long nano7 = System.nanoTime() / 1000000;
+      // label -> description of type (OTHER)
+      // description -> description of type (TECHNICAL_INFO)
+      // comment -> description of type (ABSTRACT)
+      Iterator<Description> desc_iterator = dataResource.getDescriptions().iterator();
+      while (desc_iterator.hasNext()) {
+        Description nextDescription = desc_iterator.next();
+        switch (nextDescription.getType()) {
+          case ABSTRACT:
+            metadataSchemaRecord.setComment(nextDescription.getDescription());
+            break;
+          case TECHNICAL_INFO:
+            metadataSchemaRecord.setDefinition(nextDescription.getDescription());
+            break;
+          case OTHER:
+            metadataSchemaRecord.setLabel(nextDescription.getDescription());
+            break;
+          default:
+            LOG.trace("Unknown description type: '{}' -> skipped", nextDescription.getType());
+        }
       }
-    }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1, provideETag);
+      // Only one license allowed. So don't worry about size of set.
+      if (!dataResource.getRights().isEmpty()) {
+        metadataSchemaRecord.setLicenseUri(dataResource.getRights().iterator().next().getSchemeUri());
+      }
+      if (LOG.isTraceEnabled()) {
+        LOG.trace("Migrate to schema record, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1, provideETag);
+      }
     }
     return metadataSchemaRecord;
   }
@@ -916,9 +922,9 @@ public class MetadataSchemaRecordUtil {
     MetadataSchemaRecord result = null;
     Page<DataResource> dataResource;
     try {
-    dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+      dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
     } catch (ResourceNotFoundException rnfe) {
-       rnfe.setDetail("Schema document with ID '" + recordId + "' doesn't exist!");
+      rnfe.setDetail("Schema document with ID '" + recordId + "' doesn't exist!");
       throw rnfe;
     }
     long nano2 = System.nanoTime() / 1000000;
@@ -930,7 +936,7 @@ public class MetadataSchemaRecordUtil {
     if (findFirst.isPresent()) {
       result = migrateToMetadataSchemaRecord(metastoreProperties, findFirst.get(), supportEtag);
     } else {
-      String message = String.format("Version '%d' of ID '%s' doesn't exist!",version, recordId);
+      String message = String.format("Version '%d' of ID '%s' doesn't exist!", version, recordId);
       LOG.error(message);
       throw new ResourceNotFoundException(message);
     }
@@ -968,6 +974,8 @@ public class MetadataSchemaRecordUtil {
       managed.setSchemaId(mergeEntry("Updating record->schema", managed.getSchemaId(), provided.getSchemaId()));
       //update schemaVersion
       managed.setSchemaVersion(mergeEntry("Updating record->schemaVersion", managed.getSchemaVersion(), provided.getSchemaVersion()));
+      // update licenseUri
+      managed.setLicenseUri(mergeEntry("Updating record->licenseUri", managed.getLicenseUri(), provided.getLicenseUri(), true));
     } else {
       managed = (managed != null) ? managed : provided;
     }

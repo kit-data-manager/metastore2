@@ -77,6 +77,8 @@ public class MetadataRecord implements EtagSupport, Serializable {
   @NotNull(message = "A list of access control entries for resticting access.")
   @OneToMany(cascade = jakarta.persistence.CascadeType.ALL, orphanRemoval = true)
   private final Set<AclEntry> acl = new HashSet<>();
+  @NotBlank(message = "The uri of the license, e.g. for Apache-2.0 license this would be 'https://spdx.org/licenses/Apache-2.0'.")
+  private String licenseUri;
   @NotBlank(message = "The metadata document uri, e.g. pointing to a local file.")
   private String metadataDocumentUri;
   @NotBlank(message = "The SHA-1 hash of the associated metadata file. The hash is used for comparison while updating.")

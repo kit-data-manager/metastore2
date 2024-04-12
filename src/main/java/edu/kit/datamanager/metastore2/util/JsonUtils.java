@@ -244,7 +244,7 @@ public class JsonUtils {
     JsonSchemaFactory factory = JsonSchemaFactory.getInstance(version);
     JsonSchema schema = factory.getSchema(schemaContent);
     checkSchema(schema);
-    Optional<VersionFlag> optionalVersionFound = SpecVersionDetector.detectOptionalVersion(schema.getSchemaNode());
+    Optional<VersionFlag> optionalVersionFound = SpecVersionDetector.detectOptionalVersion(schema.getSchemaNode(), false);
     VersionFlag versionFound = version;
     if (!optionalVersionFound.isEmpty()) {
       versionFound = optionalVersionFound.get();
