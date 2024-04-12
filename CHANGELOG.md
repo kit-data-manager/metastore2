@@ -18,10 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Enable AAI for docker compose
-- Add licenseUri to metadata records
+- Add licenseUri to metadata (schema) records
 
 ### Changed
-- Bump to gradle from 8.2.1 to 8.7
+- Bump gradle from 8.2.1 to 8.7
  
 ### Fixed
 - Fix health endpoint to evaluate elasticsearch if needed
