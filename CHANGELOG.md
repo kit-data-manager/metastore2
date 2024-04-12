@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
-## [1.4.2] - 2024-04-10
+## [1.4.2] - 2024-04-12
 ### Security
 
 ### Added
@@ -31,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump com.networknt:json-schema-validator from 1.1.0 to 1.4.0
 - Bump commons-io:commons-io from 2.15.1 to 2.16.1
 - Bump edu.kit.datamanager:repo-core from 1.2.1 to 1.2.2 
-- Bump edu.kit.datamanager:service-base from 1.2.0 to 1.2.1 
+- Bump edu.kit.datamanager:service-base from 1.2.0 to 1.3.0 
 - Bump io.freefair.lombok from 8.4 to 8.6
 - Bump io.freefair.maven-publish-java from 8.4 to 8.6
 - Bump javersVersion from 7.3.7 to 7.4.2
