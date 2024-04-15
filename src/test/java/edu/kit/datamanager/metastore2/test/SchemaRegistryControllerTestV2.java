@@ -1964,6 +1964,33 @@ public class SchemaRegistryControllerTestV2 {
     record.setAcls(aclEntries);
     return record;
   }
+  
+  public static void setRelatedResource(DataResource dataResource, String relatedResource) {
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    if (relatedIdentifier != null) { 
+      relatedIdentifier.setValue(relatedResource);
+    } else {
+       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedResource, null, null);
+    dataResource.getRelatedIdentifiers().add(relatedIdentifier);
+    }
+    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+ 
+  }
+  public static void setRelatedSchema(DataResource dataResource, String relatedSchema) {
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    if (relatedIdentifier != null) { 
+      relatedIdentifier.setValue(relatedSchema);
+    } else {
+       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, relatedSchema, null, null);
+    dataResource.getRelatedIdentifiers().add(relatedIdentifier);
+    }
+    if (relatedSchema.startsWith("http"))   {
+      relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+    } else {
+      relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    }
+ 
+  }
 
   private String createKitMetadataRecord(String schemaId) throws Exception {
     String documentId = "kit";
@@ -2467,7 +2494,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static String getTitle(DataResource record) {
+  public static String getTitle(DataResource record) {
     String returnValue = null;
     for (Title item : record.getTitles()) {
       if (item.getTitleType() == null) {
@@ -2478,7 +2505,7 @@ public class SchemaRegistryControllerTestV2 {
     return returnValue;
   }
 
-  private static void setTitle(DataResource record, String title) {
+  public static void setTitle(DataResource record, String title) {
     boolean addTitle = true;
     for (Title item : record.getTitles()) {
       if (item.getTitleType() == null) {
@@ -2492,7 +2519,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static String getDefinition(DataResource record) {
+  public static String getDefinition(DataResource record) {
     String returnValue = null;
     for (Description item : record.getDescriptions()) {
       if (item.getType() == Description.TYPE.TECHNICAL_INFO) {
@@ -2503,7 +2530,7 @@ public class SchemaRegistryControllerTestV2 {
     return returnValue;
   }
 
-  private static void setDefinition(DataResource record, String definition) {
+  public static void setDefinition(DataResource record, String definition) {
     boolean addDefinition = true;
     for (Description item : record.getDescriptions()) {
       if (item.getType() == Description.TYPE.TECHNICAL_INFO) {
@@ -2517,7 +2544,7 @@ public class SchemaRegistryControllerTestV2 {
     }
   }
 
-  private static String getComment(DataResource record) {
+  public static String getComment(DataResource record) {
     String returnValue = null;
     for (Description item : record.getDescriptions()) {
       if (item.getType() == Description.TYPE.OTHER) {
@@ -2528,7 +2555,7 @@ public class SchemaRegistryControllerTestV2 {
     return returnValue;
   }
 
-  private static void setComment(DataResource record, String comment) {
+  public static void setComment(DataResource record, String comment) {
     boolean addComment = true;
     for (Description item : record.getDescriptions()) {
       if (item.getType() == Description.TYPE.OTHER) {
