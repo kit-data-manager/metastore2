@@ -115,6 +115,7 @@ public class MetadataControllerTest {
   private static final String UNKNOWN_RELATED_RESOURCE = "unknownHResourceId";
   private static final String RELATED_RESOURCE_STRING = "anyResourceId";
   private static final String APACHE_2_LICENSE = "https://spdx.org/licenses/Apache-2.0";
+  private static final String MIT_LICENSE = "https://spdx.org/licenses/MIT";
   private static final ResourceIdentifier RELATED_RESOURCE = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE_STRING);
   private static final ResourceIdentifier RELATED_RESOURCE_URL = ResourceIdentifier.factoryUrlResourceIdentifier(RELATED_RESOURCE_STRING);
   private static final ResourceIdentifier RELATED_RESOURCE_2 = ResourceIdentifier.factoryInternalResourceIdentifier("anyOtherResourceId");
@@ -1660,9 +1661,8 @@ public class MetadataControllerTest {
     etag = result.getResponse().getHeader("ETag");
     body = result.getResponse().getContentAsString();
 
-    mapper = new ObjectMapper();
     record = mapper.readValue(body, MetadataRecord.class);
-    record.setLicenseUri(null);
+    record.setLicenseUri(MIT_LICENSE);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
@@ -1685,7 +1685,41 @@ public class MetadataControllerTest {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
     Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
-    Assert.assertNull(record3.getLicenseUri());
+    Assert.assertNotNull(record3.getLicenseUri());
+    Assert.assertTrue(record3.getLicenseUri().equals(MIT_LICENSE));
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
+    record = mapper.readValue(body, MetadataRecord.class);
+    record.setLicenseUri(null);
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record4 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record2.getDocumentHash(), record4.getDocumentHash());
+    Assert.assertEquals(record2.getCreatedAt(), record4.getCreatedAt());
+    Assert.assertEquals(record2.getSchema().getIdentifier(), record4.getSchema().getIdentifier());
+    Assert.assertEquals((long) record2.getRecordVersion(), (long)record4.getRecordVersion());// version should be the same
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record2.getAcl().containsAll(record4.getAcl()));
+    }
+    Assert.assertTrue(record3.getLastUpdate().isBefore(record4.getLastUpdate()));
+    Assert.assertNull(record4.getLicenseUri());
 
   }
 

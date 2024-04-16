@@ -5,16 +5,19 @@
  */
 package edu.kit.datamanager.metastore2.test;
 
+import edu.kit.datamanager.configuration.SearchConfiguration;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -108,6 +111,8 @@ public class ActuatorTest {
   private MetastoreConfiguration metadataConfig;
   @Autowired
   private MetastoreConfiguration schemaConfig;
+  @Autowired
+  private SearchConfiguration elasticConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -190,6 +195,15 @@ public class ActuatorTest {
     this.mockMvc.perform(get("/actuator/health")).andDo(print())
             .andExpect(MockMvcResultMatchers.jsonPath("$.components.MetadataRepo.status", is("DOWN")))
             .andExpect(MockMvcResultMatchers.jsonPath("$.components.SchemaRepo.status", is("DOWN")))
+            .andReturn();
+    elasticConfig.setSearchEnabled(true);
+    elasticConfig.setUrl(URI.create("http://localhost:41400/").toURL());
+    this.mockMvc.perform(get("/actuator/health")).andDo(print())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.components.Elasticsearch.status", is("DOWN")))
+            .andReturn();
+    elasticConfig.setUrl(URI.create("http://localhost:41416/api/v1/schemas/").toURL());
+    this.mockMvc.perform(get("/actuator/health")).andDo(print())
+            .andExpect(MockMvcResultMatchers.jsonPath("$.components.Elasticsearch.status", is("DOWN")))
             .andReturn();
   }
 
