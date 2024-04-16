@@ -52,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Switch to GitHub Packages.
-- Loge for SCC (Scientific Computing Centre)
+- Logo for SCC (Scientific Computing Centre)
 
 ### Libs
 - Bump com.google.errorprone:error_prone_core from 2.24.0 to 2.24.1
