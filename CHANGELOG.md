@@ -13,6 +13,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
+## [1.4.3] - 2024-04-19
+
+### Deprecated
+- Search API of Metadata Management Controller
+
+### Fixed
+- Fix bug while authentication via keycloak
+
+### Libs
+- Bump edu.kit.datamanager:service-base from 1.3.0 to 1.3.1 
+- Bump org.apache.commons:commons-text from 1.11.0 to 1.12.0
+- Bump org.springframework.boot from 3.2.4 to 3.2.5
+- Bump org.springframework.cloud:spring-cloud-gateway-mvc from 4.1.2 to 4.1.3
+
 ## [1.4.2] - 2024-04-12
 ### Security
 
@@ -447,8 +461,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...HEAD
-[1.4.2]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...1.4.2
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...HEAD
+[1.4.3]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...v1.4.3
+[1.4.2]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/kit-data-manager/metastore2/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/kit-data-manager/metastore2/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/kit-data-manager/metastore2/compare/v1.2.3...v1.3.0

@@ -46,6 +46,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @RequestMapping(value = "/api/v1/metadata")
 @Tag(name = "Metadata Repository")
 @Schema(description = "Metadata Resource Management")
+@Deprecated(since = "1.4.2", forRemoval = true)
 public class MetadataSearchController {
 
   private static final Logger LOG = LoggerFactory.getLogger(MetadataSearchController.class);
@@ -68,8 +69,10 @@ public class MetadataSearchController {
   }
 
   @PostMapping("/{schemaId}/search")
-  @Operation(summary = "Search for metadata document/records",
-          description = "Search for metadata document/records using the configured Elastic backend. "
+  @Operation(deprecated = true,
+          summary = "Search for metadata document/records",
+          description = "Use '/api/v1/{index}/_search' instead!"
+          + "Search for metadata document/records using the configured Elastic backend. "
           + "This endpoint serves as direct proxy to the RESTful endpoint of Elastic. "
           + "In the body, a query document following the Elastic query format has to be provided. "
           + "Format errors are returned directly from Elastic. "
@@ -87,8 +90,19 @@ public class MetadataSearchController {
           })
   @ResponseBody
   @PageableAsQueryParam
+  /**
+   * Proxy for elasticsearch.
+   * 
+   * @deprecation Please use SearchController instead!
+   * @param body query
+   * @param schemaIds schemaIds which should be used for search (prefix with 'metastore-')        
+   * @param proxy set by Spring Boot
+   * @param pgbl page information
+   * @return Prepared query with post filter for authorization.
+   * 
+   */
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
-          @Parameter(description = "Contains all schemaIds "
+          @Parameter(description = "Contains all schemaIds prefixed with 'metastore-'"
                   + "to which the records refer as comma-separated values. "
                   + "Regular expressions are also allowed. "
                   + "See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/multi-index.html", required = true) @PathVariable(value = "schemaId") String schemaIds,
@@ -103,8 +117,10 @@ public class MetadataSearchController {
   }
 
   @PostMapping("/search")
-  @Operation(summary = "Search for metadata document/records",
-          description = "Search for metadata document/records using the configured Elastic backend. "
+  @Operation(deprecated = true,
+          summary = "Search for metadata document/records",
+          description = "Use '/api/v1/{index}/_search' instead!"
+          + "Search for metadata document/records using the configured Elastic backend. "
           + "This endpoint serves as direct proxy to the RESTful endpoint of Elastic. "
           + "In the body, a query document following the Elastic query format has to be provided. "
           + "Format errors are returned directly from Elastic. "
@@ -122,6 +138,16 @@ public class MetadataSearchController {
           })
   @ResponseBody
   @PageableAsQueryParam
+  /**
+   * Proxy for elasticsearch.
+   * 
+   * @deprecation Please use SearchController instead!
+   * @param body query
+   * @param proxy set by Spring Boot
+   * @param pgbl page information
+   * @return Search result.
+   * 
+   */
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
           ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {
