@@ -2585,8 +2585,8 @@ public class SchemaRegistryControllerTestV2 {
       }
     }
     if (addDefinition) {
-      Scheme scheme = Scheme.factoryScheme(schemeId, "https://spdx.org/licenses/" + schemeId + ".html")
-      record.getDescriptions().add(Scheme..factoryDescription(label, Description.TYPE.ABSTRACT));
+      Scheme scheme = Scheme.factoryScheme(schemeId, "https://spdx.org/licenses/" + schemeId + ".html");
+      record.getRights().add(scheme);
     }
   }
 
