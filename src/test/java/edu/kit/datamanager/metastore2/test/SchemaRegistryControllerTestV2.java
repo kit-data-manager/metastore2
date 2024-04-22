@@ -1893,10 +1893,11 @@ public class SchemaRegistryControllerTestV2 {
   public static DataResource createDataResource4Schema(String id) {
     DataResource record = new DataResource();
     record.setId(id);
+    // mandatory element title has to be set
     setTitle(record, id);
+    // the following fields are optional
     setComment(record, COMMENT);
     setDefinition(record, DEFINITION);
-    // mandatory element title has to be set
     record.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.SCHEMA_TYPE.XML + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     record.getFormats().add(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();

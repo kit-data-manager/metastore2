@@ -43,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
@@ -236,9 +237,9 @@ public class SchemaRegistryControllerDocumentationTestV2 {
     //**************************************************************************
     schemaRecord.setId(EXAMPLE_SCHEMA_ID);
     SchemaRegistryControllerTestV2.setTitle(schemaRecord, "Title for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setComment(schemaRecord, "Comment for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setDefinition(schemaRecord, "Definition for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setLabel(schemaRecord, "Labels for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setComment(schemaRecord, "Comment for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setDefinition(schemaRecord, "Definition for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setLabel(schemaRecord, "Labels for " + EXAMPLE_SCHEMA_ID);
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());
 
@@ -270,7 +271,8 @@ public class SchemaRegistryControllerDocumentationTestV2 {
     //**************************************************************************
     // Get metadata schema
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
-            contextPath(contextPath)).
+            contextPath(contextPath).
+            accept(MediaType.APPLICATION_XML)).
             andDo(document("v2-get-schema-document")).
             andExpect(status().isOk()).
             andReturn().getResponse();

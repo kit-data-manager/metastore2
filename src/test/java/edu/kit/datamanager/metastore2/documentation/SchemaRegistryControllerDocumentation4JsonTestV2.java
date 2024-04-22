@@ -254,9 +254,9 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     //**************************************************************************
     schemaRecord.setId(EXAMPLE_SCHEMA_ID);
     SchemaRegistryControllerTestV2.setTitle(schemaRecord, "Title for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setComment(schemaRecord, "Comment for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setDefinition(schemaRecord, "Definition for " + EXAMPLE_SCHEMA_ID);
-    SchemaRegistryControllerTestV2.setLabel(schemaRecord, "Labels for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setComment(schemaRecord, "Comment for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setDefinition(schemaRecord, "Definition for " + EXAMPLE_SCHEMA_ID);
+//    SchemaRegistryControllerTestV2.setLabel(schemaRecord, "Labels for " + EXAMPLE_SCHEMA_ID);
 
     ObjectMapper mapper = new ObjectMapper();
     mapper.registerModule(new JavaTimeModule());

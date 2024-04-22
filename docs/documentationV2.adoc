@@ -35,14 +35,14 @@ All fields mandatory at creation time are explained in the resource creation exa
 === Building the URL
 The URL for accessing the MetaStore REST endpoints is constructed as follows:
 
-1. Protocol (e.g., http, https)
-2. Host name (e.g. localhost, www.example.org)
-3. Port (e.g. 8040) 
-4. Context path (e.g. /metastore)
-5. Endpoint (e.g. /api/v1/metadata)
+1. Protocol (e.g.: http, https)
+2. Host name (e.g.: localhost, www.example.org)
+3. Port (e.g.: 8040) 
+4. Context path (e.g.: /metastore)
+5. Endpoint (e.g.: /api/v2/metadata)
 
 For example, to list all the schema records in your local MetaStore, you need to
-run the following in your browser: http://localhost:8040/metastore/api/v1/schemas
+run the following in your browser: http://localhost:8040/metastore/api/v2/schemas/
 
 In former versions (< 1.3.0), no context path was provided by default. 
  
@@ -51,49 +51,75 @@ In former versions (< 1.3.0), no context path was provided by default.
 [[ChapterMetadataSchemaHandling4Xml]]
 === Schema Registration and Management
 
-In this first section, the handling of schema resources is explained. It all starts with creating your first xml schema resource. The model of a metadata schema record looks
+In this first section, the handling of schema resources is explained. It all starts with creating your first xml schema resource. The model of a datacite record looks
 like this:
 [source,options="nowrap"]
 ----
 {
-  "schemaId" : "...",
-  "schemaVersion" : 1,
-  "mimeType" : "...",
-  "type" : "...",
-  "createdAt" : "...",
+  "id" : "...",
+  "identifier" : {
+    "value" : "(:tba)",
+    "identifierType" : "DOI"
+  },
+  "creators" : [ {
+    "givenName" : "..."
+  } ],
+  "titles" : [ {
+    "value" : "..."
+  } ],
+  "publisher" : "...",
+  "publicationYear" : "...",
+  "resourceType" : {
+    "value" : "...",
+    "typeGeneral" : "..."
+  },
+  "dates" : [ {
+    "value" : "...",
+    "type" : "..."
+  } ],
+  "relatedIdentifiers" : [ {
+    "value" : "...",
+    "identifierType" : "...",
+    "relationType" : "..."
+  }} ],
+  "alternateIdentifiers" : [ {
+    "value" : "...",
+    "identifierType" : "..."
+  } ],
+  "version" : "...",
   "lastUpdate" : "...",
-  "acl" : [ {
-    "id" : 1,
+  "state" : "...",
+  "acls" : [ {
     "sid" : "...",
     "permission" : "..."
-  } ],
-  "licenseUri" : "...",
-  "schemaDocumentUri" : "...",
-  "schemaHash" : "...",
-  "locked" : false
+  } ]
 }
 ----
 At least the following elements are expected to be provided by the user: 
 
 [point]
-- schemaId: A unique label for the schema.
-- type: XML or JSON. For XSD schemas this should be 'XML'
+- id: A unique label for the schema.
+- title: Any title for the schema.
 
 In addition, ACL may be useful to make schema readable/editable by others.
 This will be of interest while accessing/updating an existing schema.(if authorization is enabled)
 
 [NOTE]
-License URI is optional. It's new since 1.5.0.
+License URI is optional. It's new since 1.4.2.
 
 === Registering a Metadata Schema Document
 
 The following example shows the creation of the first xsd schema only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
-schema-record.json:
+schema-record-v2.json:
 {
-  "schemaId" : "my_first_xsd",
-  "type" : "XML"
+  "id": "my_first_xsd",
+  "titles": [
+    {
+      "value": "Title for my_first_xsd",
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -116,7 +142,7 @@ schema.xsd:
 
 include::{snippets}/v2-register-schema/curl-request.adoc[]
 
-You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+You can see, that most of the sent datacite record is empty. Only (schema)Id and title are provided by the user. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-register-schema/http-request.adoc[]
 
@@ -125,16 +151,18 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-register-schema/http-response.adoc[]
 
-What you see is, that the metadata schema record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
 Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
+There are two possible values for DataResource: XML_Schema and JSON_Schema which depends on the format of the given schema document. (XML in our case.)
+
 ==== Getting a Metadata Schema Record
 
-For obtaining one metadata schema record you have to provide the value of the field 'schemaId'.
+For obtaining one datacite record you have to provide the value of the field 'Id'.
 [NOTE]
-As 'Accept' field you have to provide 'application/vnd.datamanager.schema-record+json' otherwise you will
-get the metadata schema instead.
+As 'Accept' field you have to provide 'application/vnd.datacite.org+json' otherwise you will
+get the landing page of the digital object schema instead.
 
 include::{snippets}/v2-get-schema-record/curl-request.adoc[]
 
@@ -143,7 +171,7 @@ Be aware that you also have to provide the 'Accept' field.
 
 include::{snippets}/v2-get-schema-record/http-request.adoc[]
 
-As a result, you receive the metadata schema record send before and again the corresponding ETag in the HTTP response header. 
+As a result, you receive the datacite record send before and again the corresponding ETag in the HTTP response header. 
 
 include::{snippets}/v2-get-schema-record/http-response.adoc[]
 
@@ -170,8 +198,8 @@ As every update results in a new version 'old' metadata schema documents are sti
 available.
 
 For updating an existing metadata schema (record) a valid ETag is needed. The actual ETag 
-is available via the HTTP GET call of the metadata schema record. (see above)
-Just send an HTTP POST with the updated metadata schema document and/or metadata schema record.
+is available via the HTTP GET call of the datacite record. (see above)
+Just send an HTTP POST with the updated metadata schema document and/or datacite record.
 
 [source,options="nowrap"]
 ----
@@ -206,7 +234,7 @@ include::{snippets}/v2-update-schema-v2/http-response.adoc[]
 ==== Updating a Metadata Schema Document (add optional 'note' field)
 
 For updating existing metadata schema document we have to provide the new ETag.
-Just send an HTTP POST with the updated metadata schema document and/or metadata schema record.
+Just send an HTTP POST with the updated metadata schema document and/or datacite record.
 
 [source,options="nowrap"]
 ----
@@ -284,7 +312,7 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 ==== Getting a List of Metadata Schema Records
 
-Obtaining all accessible metadata schema records. 
+Obtaining all accessible datacite records. 
 
 include::{snippets}/v2-get-all-schemas/curl-request.adoc[]
 
@@ -292,7 +320,7 @@ Same for HTTP request:
 
 include::{snippets}/v2-get-all-schemas/http-request.adoc[]
 
-As a result, you receive a list of metadata schema records. 
+As a result, you receive a list of datacite records. 
 
 include::{snippets}/v2-get-all-schemas/http-response.adoc[]
 
@@ -321,7 +349,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-all-versions-of-a-schema/http-request.adoc[]
 
-As a result, you receive a list of metadata schema records in descending order.
+As a result, you receive a list of datacite records in descending order.
 (current version first)
 
 include::{snippets}/v2-get-all-versions-of-a-schema/http-response.adoc[]
@@ -399,7 +427,7 @@ Everything should be fine now. As a result, you receive 204 as HTTP status and n
 include::{snippets}/v2-validate-document-v3/http-response.adoc[]
 
 ==== Update Metadata Schema Record
-In case of authorization it may be neccessary to update metadata record to be accessible
+In case of authorization it may be neccessary to update datacite record to be accessible
 by others. To do so an update has to be made. In this example we introduce a
 user called 'admin' and give him all rights.
 
@@ -430,7 +458,7 @@ Same for the HTTP request.
 
 include::{snippets}/v2-update-schema-record/http-request.adoc[]
 
-As a result, you receive 200 as HTTP status, the updated metadata schema record and the 
+As a result, you receive 200 as HTTP status, the updated datacite record and the 
 updated ETag and location in the HTTP response header.
 
 include::{snippets}/v2-update-schema-record/http-response.adoc[]
@@ -444,7 +472,7 @@ After the update the following fields has changed:
 === Metadata Management
 After registration of a schema metadata may be added to MetaStore.
 In this section, the handling of metadata resources is explained. 
-It all starts with creating your first metadata resource. The model of a metadata record looks
+It all starts with creating your first metadata resource. The model of a datacite record looks
 like this:
 [source,options="nowrap"]
 ----
@@ -488,7 +516,7 @@ License URI is optional. It's new since 1.5.0.
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
-The following example shows the creation of the first metadata record and its metadata only providing mandatory fields mentioned above:
+The following example shows the creation of the first datacite record and its metadata only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 metadata-record.json:
@@ -516,7 +544,7 @@ The schemaId used while registering metadata schema has to be used to link the m
 approbriate metadata schema.
 include::{snippets}/v2-ingest-metadata-document/curl-request.adoc[]
 
-You can see, that most of the sent metadata schema record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
+You can see, that most of the sent datacite record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-ingest-metadata-document/http-request.adoc[]
 
@@ -525,7 +553,7 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-ingest-metadata-document/http-response.adoc[]
 
-What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
 In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
@@ -545,8 +573,8 @@ include::{snippets}/v2-get-metadata-document/http-response.adoc[]
 What you see is, that the metadata is untouched.
 
 ==== Accessing Metadata Record
-For accessing the metadata record the same URL as before has to be used.
-The only difference is the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
+For accessing the datacite record the same URL as before has to be used.
+The only difference is the content type. It has to be set to "application/vnd.datacite.org+json".
 Then the command line looks like this:
 include::{snippets}/v2-get-metadata-record/curl-request.adoc[]
 
@@ -558,12 +586,12 @@ The linked metadata will be returned. The result is sent back to the user and wi
 
 include::{snippets}/v2-get-metadata-record/http-response.adoc[]
 
-You also get the metadata record seen before.
+You also get the datacite record seen before.
 
 
 ==== Updating a Metadata Record (edit ACL entries) & Metadata Document
 
-The following example shows the update of the metadata record and metadata document
+The following example shows the update of the datacite record and metadata document
 to a newer version of the schema. As mentioned before the
 ETag is needed:
 [source,options="nowrap"]
@@ -601,10 +629,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/v2-update-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
+You will get the new datacite record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
 include::{snippets}/v2-update-metadata-record-v2/http-response.adoc[]
 
-What you see is, that the metadata record looks different from the original document. 
+What you see is, that the datacite record looks different from the original document. 
 
 ==== Updating Metadata Record & Document
 Repeat the last step and update to the current version. As mentioned before the
@@ -616,7 +644,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the new ETag.
+You will get the new datacite record with the new ETag.
 include::{snippets}/v2-get-metadata-record-v2/http-response.adoc[]
 
 Now you can update metadata due to new version of schema using the new Etag.
@@ -652,7 +680,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-update-metadata-record-v3/http-request.adoc[]
 
-You will get the new metadata record.
+You will get the new datacite record.
 include::{snippets}/v2-update-metadata-record-v3/http-response.adoc[]
  
 
@@ -668,9 +696,9 @@ include::{snippets}/v2-get-metadata-document-v3/http-response.adoc[]
  
 
 ==== Find a Metadata Record 
-Search will find all current metadata records.
+Search will find all current datacite records.
 There are some filters available which may be combined.
-All filters for the metadata records are set via query parameters.
+All filters for the datacite records are set via query parameters.
 The following filters are allowed:
 
 - id
@@ -680,7 +708,7 @@ The following filters are allowed:
 
 [NOTE]
 The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
-If there are more than 20 metadata records registered you have to provide page and/or size as additional query parameters.
+If there are more than 20 datacite records registered you have to provide page and/or size as additional query parameters.
 
 - page: Number of the page you want to get **(starting with page 0)**
 - size: Number of entries per page.
@@ -696,7 +724,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-list-all-versions-of-metadata-document/http-request.adoc[]
 
-As a result, you receive a list of metadata records in descending order.
+As a result, you receive a list of datacite records in descending order.
 (current version first)
 
 include::{snippets}/v2-list-all-versions-of-metadata-document/http-response.adoc[]
@@ -713,11 +741,11 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-metadata-record-resource/http-request.adoc[]
 
-You will get the current version of the metadata record(s). 
+You will get the current version of the datacite record(s). 
 include::{snippets}/v2-find-metadata-record-resource/http-response.adoc[]
 
 ===== Find after a specific date
-If you want to find all metadata records updated after a specific date.
+If you want to find all datacite records updated after a specific date.
 
 Command line:
 include::{snippets}/v2-find-metadata-record-from/curl-request.adoc[]
@@ -726,11 +754,11 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-metadata-record-from/http-request.adoc[]
 
-You will get the current version metadata records updated ln the last 2 hours. 
+You will get the current version datacite records updated ln the last 2 hours. 
 include::{snippets}/v2-find-metadata-record-from/http-response.adoc[]
 
 ===== Find in a specific date range
-If you want to find all metadata records updated in a specific date range.
+If you want to find all datacite records updated in a specific date range.
 
 Command line:
 include::{snippets}/v2-find-metadata-record-from-to/curl-request.adoc[]
@@ -739,7 +767,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-metadata-record-from-to/http-request.adoc[]
 
-You will get an empty array as no metadata record exists in the given range:
+You will get an empty array as no datacite record exists in the given range:
 include::{snippets}/v2-find-metadata-record-from-to/http-response.adoc[]
 
 
@@ -748,7 +776,7 @@ include::{snippets}/v2-find-metadata-record-from-to/http-response.adoc[]
 [[ChapterMetadataSchemaHandling4Json]]
 === Schema Registration and Management
 
-In this section, the handling of json schema resources is explained. It all starts with creating your first json schema resource. The model of a metadata schema record looks
+In this section, the handling of json schema resources is explained. It all starts with creating your first json schema resource. The model of a datacite record looks
 like this:
 [source,options="nowrap"]
 ----
@@ -818,7 +846,7 @@ schema.json:
 
 include::{snippets}/v2-register-json-schema/curl-request.adoc[]
 
-You can see, that most of the sent metadata schema record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
+You can see, that most of the sent datacite record is empty. Only schemaId, mimeType and type are provided by the user. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-register-json-schema/http-request.adoc[]
 
@@ -827,16 +855,19 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-register-json-schema/http-response.adoc[]
 
-What you see is, that the metadata schema record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
 Furthermore, you'll find an ETag header with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
-==== Getting a Metadata Schema Record
+There are two possible values for DataResource: XML_Schema and JSON_Schema which depends on the format of the given schema document. (JSON in our case.) 
+As the metadata and the schema document has a defined structure "MODEL" is used as 'typeGeneral'.
 
-For obtaining one metadata schema record you have to provide the value of the field 'schemaId'.
+==== Getting a Datacite Schema Record
+
+For obtaining one datacite record you have to provide the value of the field 'schemaId'.
 [NOTE]
-As 'Accept' field you have to provide 'application/vnd.datamanager.schema-record+json' otherwise you will
-get the metadata schema instead.
+As 'Accept' field you have to provide 'application/vnd.datacite.org+json' otherwise you will
+get the landing page of the digital object instead.
 
 include::{snippets}/v2-get-json-schema-record/curl-request.adoc[]
 
@@ -845,14 +876,14 @@ Be aware that you also have to provide the 'Accept' field.
 
 include::{snippets}/v2-get-json-schema-record/http-request.adoc[]
 
-As a result, you receive the metadata schema record send before and again the corresponding ETag in the HTTP response header. 
+As a result, you receive the datacite record send before and again the corresponding ETag in the HTTP response header. 
 
 include::{snippets}/v2-get-json-schema-record/http-response.adoc[]
 
 ==== Getting a Metadata Schema Document
 
 For obtaining accessible metadata schemas you also have to provide the 'schemaId'.
-For accessing schema document you don't have to provide the 'Accept' header. 
+For accessing schema document you have to provide 'application/xml' as 'Accept' header. 
 
 include::{snippets}/v2-get-json-schema-document/curl-request.adoc[]
 
@@ -872,8 +903,8 @@ As every update results in a new version 'old' metadata schema documents are sti
 available.
 
 For updating an existing metadata schema (record) a valid ETag is needed. The actual ETag 
-is available via the HTTP GET call of the metadata schema record. (see above)
-Just send an HTTP POST with the updated metadata schema document and/or metadata schema record.
+is available via the HTTP GET call of the datacite record. (see above)
+Just send an HTTP POST with the updated metadata schema document and/or datacite record.
 
 [source,options="nowrap"]
 ----
@@ -919,7 +950,7 @@ include::{snippets}/v2-update-json-schema-v2/http-response.adoc[]
 ==== Updating a Metadata Schema Document (add optional 'note' field)
 
 For updating existing metadata schema document we have to provide the new ETag.
-Just send an HTTP POST with the updated metadata schema document and/or metadata schema record.
+Just send an HTTP POST with the updated metadata schema document and/or datacite record.
 
 [source,options="nowrap"]
 ----
@@ -1018,7 +1049,7 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 ==== Getting a List of Metadata Schema Records
 
-Obtaining all accessible metadata schema records. 
+Obtaining all accessible datacite records. 
 
 include::{snippets}/v2-get-all-json-schemas/curl-request.adoc[]
 
@@ -1026,7 +1057,7 @@ Same for HTTP request:
 
 include::{snippets}/v2-get-all-json-schemas/http-request.adoc[]
 
-As a result, you receive a list of metadata schema records. 
+As a result, you receive a list of datacite records. 
 
 include::{snippets}/v2-get-all-json-schemas/http-response.adoc[]
 
@@ -1055,7 +1086,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-all-versions-of-a-json-schema/http-request.adoc[]
 
-As a result, you receive a list of metadata schema records in descending order.
+As a result, you receive a list of datacite records in descending order.
 (current version first)
 
 include::{snippets}/v2-get-all-versions-of-a-json-schema/http-response.adoc[]
@@ -1132,7 +1163,7 @@ Everything should be fine now. As a result, you receive 204 as HTTP status and n
 include::{snippets}/v2-validate-json-document-v3/http-response.adoc[]
 
 ==== Update Metadata Schema Record
-In case of authorization it may be neccessary to update metadata record to be accessible
+In case of authorization it may be neccessary to update datacite record to be accessible
 by others. To do so an update has to be made. In this example we introduce a
 user called 'admin' and give him all rights.
 
@@ -1160,7 +1191,7 @@ Same for the HTTP request.
 
 include::{snippets}/v2-update-json-schema-record/http-request.adoc[]
 
-As a result, you receive 200 as HTTP status, the updated metadata schema record and the 
+As a result, you receive 200 as HTTP status, the updated datacite record and the 
 updated ETag and location in the HTTP response header.
 
 include::{snippets}/v2-update-json-schema-record/http-response.adoc[]
@@ -1174,7 +1205,7 @@ After the update the following fields has changed:
 === Metadata Management
 After registration of a schema metadata may be added to MetaStore.
 In this section, the handling of metadata resources is explained. 
-It all starts with creating your first metadata resource. The model of a metadata record looks
+It all starts with creating your first metadata resource. The model of a datacite record looks
 like this:
 [source,options="nowrap"]
 ----
@@ -1215,7 +1246,7 @@ License URI is optional. It's new since 1.5.0.
 
 ==== Register/Ingest a Metadata Record with Metadata Document
 
-The following example shows the creation of the first metadata record and its metadata only providing mandatory fields mentioned above:
+The following example shows the creation of the first datacite record and its metadata only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 metadata-record4json.json:
@@ -1242,7 +1273,7 @@ The schemaId used while registering metadata schema has to be used to link the m
 approbriate metadata schema.
 include::{snippets}/v2-ingest-json-metadata-document/curl-request.adoc[]
 
-You can see, that most of the sent metadata schema record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
+You can see, that most of the sent datacite record is empty. Only schemaId and relatedResource are provided by the user. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-ingest-json-metadata-document/http-request.adoc[]
 
@@ -1251,7 +1282,7 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-ingest-json-metadata-document/http-response.adoc[]
 
-What you see is, that the metadata record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
 In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
@@ -1271,8 +1302,8 @@ include::{snippets}/v2-get-json-metadata-document/http-response.adoc[]
 What you see is, that the metadata is untouched.
 
 ==== Accessing Metadata Record
-For accessing the metadata record the same URL as before has to be used.
-The only difference is the content type. It has to be set to "application/vnd.datamanager.metadata-record+json".
+For accessing the datacite record the same URL as before has to be used.
+The only difference is the content type. It has to be set to "application/vnd.datacite.org+json".
 Then the command line looks like this:
 include::{snippets}/v2-get-json-metadata-record/curl-request.adoc[]
 
@@ -1284,12 +1315,12 @@ The linked metadata will be returned. The result is sent back to the user and wi
 
 include::{snippets}/v2-get-json-metadata-record/http-response.adoc[]
 
-You also get the metadata record seen before.
+You also get the datacite record seen before.
 
 
 ==== Updating a Metadata Record (edit ACL entries)
 
-The following example shows the update of the metadata record. As mentioned before the
+The following example shows the update of the datacite record. As mentioned before the
 ETag is needed:
 [source,options="nowrap"]
 ----
@@ -1325,10 +1356,10 @@ You can see, that only the ACL entry for "guest" was added. All other properties
 
 include::{snippets}/v2-update-json-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
+You will get the new datacite record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
 include::{snippets}/v2-update-json-metadata-record-v2/http-response.adoc[]
 
-What you see is, that the metadata record looks different from the original document. 
+What you see is, that the datacite record looks different from the original document. 
 
 ==== Updating Metadata Record & Document
 Repeat the last step and update to the current version. As mentioned before the
@@ -1340,7 +1371,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-json-metadata-record-v2/http-request.adoc[]
 
-You will get the new metadata record with the new ETag.
+You will get the new datacite record with the new ETag.
 include::{snippets}/v2-get-json-metadata-record-v2/http-response.adoc[]
 
 Now you can update metadata due to new version of schema using the new Etag.
@@ -1375,7 +1406,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-update-json-metadata-record-v3/http-request.adoc[]
 
-You will get the new metadata record.
+You will get the new datacite record.
 include::{snippets}/v2-update-json-metadata-record-v3/http-response.adoc[]
  
 
@@ -1391,9 +1422,9 @@ include::{snippets}/v2-get-json-metadata-document-v3/http-response.adoc[]
 
 
 ==== Find a Metadata Record 
-Search will find all current metadata records.
+Search will find all current datacite records.
 There are some filters available which may be combined.
-All filters for the metadata records are set via query parameters.
+All filters for the datacite records are set via query parameters.
 The following filters are allowed:
 
 - id
@@ -1403,7 +1434,7 @@ The following filters are allowed:
 
 [NOTE]
 The header contains the field 'Content-Range" which displays delivered indices and the maximum number of available schema records. 
-If there are more than 20 metadata records registered you have to provide page and/or size as additional query parameters.
+If there are more than 20 datacite records registered you have to provide page and/or size as additional query parameters.
 
 - page: Number of the page you want to get **(starting with page 0)**
 - size: Number of entries per page.
@@ -1419,7 +1450,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-list-all-versions-of-json-metadata-document/http-request.adoc[]
 
-As a result, you receive a list of metadata records in descending order.
+As a result, you receive a list of datacite records in descending order.
 (current version first)
 
 include::{snippets}/v2-list-all-versions-of-json-metadata-document/http-response.adoc[]
@@ -1436,11 +1467,11 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-json-metadata-record-resource/http-request.adoc[]
 
-You will get the current version metadata record. 
+You will get the current version datacite record. 
 include::{snippets}/v2-find-json-metadata-record-resource/http-response.adoc[]
 
 ===== Find after a specific date
-If you want to find all metadata records updated after a specific date.
+If you want to find all datacite records updated after a specific date.
 
 Command line:
 include::{snippets}/v2-find-json-metadata-record-from/curl-request.adoc[]
@@ -1449,11 +1480,11 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-json-metadata-record-from/http-request.adoc[]
 
-You will get the current version metadata records updated ln the last 2 hours. 
+You will get the current version datacite records updated ln the last 2 hours. 
 include::{snippets}/v2-find-json-metadata-record-from/http-response.adoc[]
 
 ===== Find in a specific date range
-If you want to find all metadata records updated in a specific date range.
+If you want to find all datacite records updated in a specific date range.
 
 Command line:
 include::{snippets}/v2-find-json-metadata-record-from-to/curl-request.adoc[]
@@ -1462,7 +1493,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-find-json-metadata-record-from-to/http-request.adoc[]
 
-You will get an empty array as no metadata record exists in the given range:
+You will get an empty array as no datacite record exists in the given range:
 include::{snippets}/v2-find-json-metadata-record-from-to/http-response.adoc[]
 
 
