@@ -305,6 +305,7 @@ public class SchemaRegistryControllerDocumentationTestV2 {
     //  6. Registering another metadata schema
     //**************************************************************************
     schemaRecord.setId(ANOTHER_SCHEMA_ID);
+    SchemaRegistryControllerTestV2.setTitle(schemaRecord, "Title for " + ANOTHER_SCHEMA_ID);
 
     schemaFile = new MockMultipartFile("schema", "another-schema.xsd", "application/xml", ANOTHER_SCHEMA.getBytes());
     recordFile = new MockMultipartFile("record", "another-schema-record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
@@ -346,7 +347,8 @@ public class SchemaRegistryControllerDocumentationTestV2 {
     //  9. Getting current schema
     //**************************************************************************
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
-            contextPath(contextPath)).
+            contextPath(contextPath).
+            accept(MediaType.APPLICATION_XML)).
             andDo(document("v2-get-schema-v3")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -355,6 +357,7 @@ public class SchemaRegistryControllerDocumentationTestV2 {
     //**************************************************************************
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
             contextPath(contextPath).
+            accept(MediaType.APPLICATION_XML).
             param("version", "1")).
             andDo(document("v2-get-schema-v1")).
             andExpect(status().isOk()).

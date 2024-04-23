@@ -19,8 +19,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.test.SchemaRegistryControllerTestV2;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
@@ -45,6 +43,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
@@ -289,7 +288,8 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     //**************************************************************************
     // Get metadata schema
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
-            contextPath(contextPath)).
+            contextPath(contextPath).
+            accept(MediaType.APPLICATION_JSON)).
             andDo(document("v2-get-json-schema-document")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -322,6 +322,7 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     //  6. Registering another metadata schema
     //**************************************************************************
     schemaRecord.setId(ANOTHER_SCHEMA_ID);
+    SchemaRegistryControllerTestV2.setTitle(schemaRecord, "Title for " + ANOTHER_SCHEMA_ID);
 
     schemaFile = new MockMultipartFile("schema", "another-schema.json", "application/xml", ANOTHER_SCHEMA.getBytes());
     recordFile = new MockMultipartFile("record", "another-schema-record.json", "application/json", new ByteArrayInputStream(mapper.writeValueAsString(schemaRecord).getBytes()));
@@ -363,7 +364,8 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     //  9. Getting current schema
     //**************************************************************************
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
-            contextPath(contextPath)).
+            contextPath(contextPath).
+            accept(MediaType.APPLICATION_JSON)).
             andDo(document("v2-get-json-schema-v3")).
             andExpect(status().isOk()).
             andReturn().getResponse();
@@ -371,6 +373,8 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     // 10. Getting specific version of a schema
     //**************************************************************************
     this.mockMvc.perform(get(endpointSchema + "/" + EXAMPLE_SCHEMA_ID).
+            contextPath(contextPath).
+            accept(MediaType.APPLICATION_JSON).
             param("version", "1").
             contextPath(contextPath)).
             andDo(document("v2-get-json-schema-v1")).

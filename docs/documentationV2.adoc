@@ -115,7 +115,7 @@ License URI is optional. It's new since 1.4.2.
 
 === Registering a Metadata Schema Document
 
-The following example shows the creation of the first xsd schema only providing mandatory fields mentioned above:
+The following example shows the creation of the first XSD schema only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 schema-record-v2.json:
@@ -152,7 +152,7 @@ You can see, that most of the sent datacite record is empty. Only (schema)Id and
 
 include::{snippets}/v2-register-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-register-schema/http-response.adoc[]
@@ -278,13 +278,17 @@ The updated datacite record contains three modified fields: 'schemaVersion', 'la
 
 === Registering another Metadata Schema Document
 
-The following example shows the creation of another xsd schema only providing mandatory fields mentioned above:
+The following example shows the creation of another XSD schema only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 another-schema-record.json:
 {
-  "schemaId" : "another_xsd",
-  "type" : "XML"
+  "id": "another_xsd",
+  "titles": [
+    {
+      "value": "Title for another_xsd",
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -310,7 +314,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-register-another-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-register-another-schema/http-response.adoc[]
@@ -319,7 +323,7 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 ==== Getting a List of Metadata Schema Records
 
-Obtaining all accessible datacite records of schema documents. 
+For getting all accessible datacite records of schema documents type:
 
 include::{snippets}/v2-get-all-schemas/curl-request.adoc[]
 
@@ -372,7 +376,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-schema-v3/http-request.adoc[]
 
-As a result, you receive the XSD schema document sent before. 
+As a result, you receive the XSD schema document sent before:
 
 include::{snippets}/v2-get-schema-v3/http-response.adoc[]
 
@@ -442,6 +446,22 @@ user called 'admin' and give him all rights.
 ----
 schema-record-v4.json 
 {
+  "id": "my_first_xsd",
+  [...]
+  "acls": [
+    {
+      "id": 1,
+      "sid": "SELF",
+      "permission": "ADMINISTRATE"
+    },
+    {
+      "id": null,
+      "sid": "admin",
+      "permission": "ADMINISTRATE"
+    }
+  ]
+}
+{
   "schemaId":"my_first_xsd",
   "mimeType":"application/xml",
   "type":"XML",
@@ -472,7 +492,7 @@ include::{snippets}/v2-update-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
-- schemaVersion number increased by one.
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
 
@@ -529,7 +549,7 @@ like this:
   } ]
 }
 ----
-At least the following elements has to be provided by the user: 
+At least the following elements have to be provided by the user: 
 
 [point]
 - title: Any title for the metadata document
@@ -540,7 +560,7 @@ At least the following elements has to be provided by the user:
 In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
 
 [NOTE]
-If linked schema is identified by its schemaId the INTERNAL type has to be used. It's than
+If linked schema is identified by its schemaId the INTERNAL type has to be used. It's then
 linked to the current schema version at creation time.
 
 [NOTE]
@@ -625,7 +645,7 @@ You can see, that most of the sent datacite record is empty. Only schemaId and r
 
 include::{snippets}/v2-ingest-metadata-document/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-ingest-metadata-document/http-response.adoc[]
@@ -927,7 +947,7 @@ You can see, that most of the sent datacite record is empty. Only schemaId, mime
 
 include::{snippets}/v2-register-json-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-register-json-schema/http-response.adoc[]
@@ -1117,7 +1137,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-register-another-json-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-register-another-json-schema/http-response.adoc[]
@@ -1126,7 +1146,7 @@ Now there are two schemaIds registered in the metadata schema registry.
 
 ==== Getting a List of Metadata Schema Records
 
-Obtaining all accessible datacite records of schema documents. 
+For getting all accessible datacite records of schema documents type: 
 
 include::{snippets}/v2-get-all-json-schemas/curl-request.adoc[]
 
@@ -1179,7 +1199,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/v2-get-json-schema-v3/http-request.adoc[]
 
-As a result, you receive the XSD schema document sent before. 
+As a result, you receive the XSD schema document sent before:
 
 include::{snippets}/v2-get-json-schema-v3/http-response.adoc[]
 
@@ -1221,7 +1241,6 @@ Same for the HTTP request. The schemaVersion number is set by a query parameter.
 include::{snippets}/v2-validate-json-document-v1/http-request.adoc[]
 
 As a result, you receive 422 as HTTP status and an error message holding some information about the error.
-(Unfortunately not documented here due to technical reasons.)
 
 include::{snippets}/v2-validate-json-document-v1/http-response.adoc[]
 
@@ -1248,18 +1267,20 @@ user called 'admin' and give him all rights.
 ----
 schema-record4json-v4.json 
 {
-  "schemaId" : "my_first_json",
-  "mimeType" : "application/json",
-  "type" : "JSON",
-  "acl" : [ {
-    "id" : 1,
-    "sid" : "SELF",
-    "permission" : "ADMINISTRATE"
-  }, {
-    "id" : 3,
-    "sid" : "admin",
-    "permission" : "ADMINISTRATE"
-  } ]
+  "id": "my_first_json",
+  [...]
+  "acls": [
+    {
+      "id": 1,
+      "sid": "SELF",
+      "permission": "ADMINISTRATE"
+    },
+    {
+      "id": null,
+      "sid": "admin",
+      "permission": "ADMINISTRATE"
+    }
+  ]
 }
 ----
 include::{snippets}/v2-update-json-schema-record/curl-request.adoc[]
@@ -1275,7 +1296,7 @@ include::{snippets}/v2-update-json-schema-record/http-response.adoc[]
 
 After the update the following fields has changed:
 
-- schemaVersion number increased by one.
+- version number increased by one.
 - lastUpdate to the date of the last update (set by server)
 - acl additional ACL entry (set during update)
 
@@ -1332,7 +1353,7 @@ similar to the record of the schema document:
   } ]
 }
 ----
-At least the following elements has to be provided by the user: 
+At least the following elements have to be provided by the user: 
 
 [point]
 - title: Any title for the metadata document
@@ -1343,7 +1364,7 @@ At least the following elements has to be provided by the user:
 In addition, ACL may be useful to make metadata editable by others. (This will be of interest while updating an existing metadata)
 
 [NOTE]
-If linked schema is identified by its schemaId the INTERNAL type has to be used. It's than
+If linked schema is identified by its schemaId the INTERNAL type has to be used. It's then
 linked to the current schema version at creation time.
 
 [NOTE]
@@ -1382,7 +1403,7 @@ You can see, that most of the sent datacite record is empty. Only schemaId and r
 
 include::{snippets}/v2-ingest-json-metadata-document/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/v2-ingest-json-metadata-document/http-response.adoc[]
