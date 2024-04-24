@@ -466,6 +466,7 @@ public class SchemaRegistryControllerDocumentationTestV2 {
 
     mapper = new ObjectMapper();
     DataResource record = mapper.readValue(body, DataResource.class);
+    record.getAcls().add(new AclEntry("guest", PERMISSION.READ));
     SchemaRegistryControllerTestV2.setRelatedSchema(record, exampleSchemaV2);
     recordFile = new MockMultipartFile("record", "metadata-record-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v2.xml", "application/xml", DOCUMENT_V2.getBytes());
@@ -491,7 +492,7 @@ public class SchemaRegistryControllerDocumentationTestV2 {
             andDo(document("v2-get-metadata-record-v2")).
             andExpect(status().isOk()).
             andReturn().getResponse();
-    SchemaRegistryControllerTestV2.setRelatedSchema(record, exampleSchemaV3);
+    SchemaRegistryControllerTestV2.setRelatedSchema(record, EXAMPLE_SCHEMA_ID);
     recordFile = new MockMultipartFile("record", "metadata-record-v3.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v3.xml", "application/xml", DOCUMENT_V3.getBytes());
 

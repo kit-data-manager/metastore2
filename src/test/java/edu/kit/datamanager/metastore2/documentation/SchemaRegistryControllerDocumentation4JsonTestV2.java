@@ -434,7 +434,7 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
     //**************************************************************************
     // Create a metadata record.
     DataResource metadataRecord = new DataResource();
-    SchemaRegistryControllerTestV2.setTitle(metadataRecord, "Title of first metadata document");
+    SchemaRegistryControllerTestV2.setTitle(metadataRecord, "Title of first JSON metadata document");
     metadataRecord.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.JSON_METADATA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
 
 //    record.setId("my_id");
@@ -484,6 +484,7 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
 
     mapper = new ObjectMapper();
     DataResource record = mapper.readValue(body, DataResource.class);
+    record.getAcls().add(new AclEntry("guest", PERMISSION.READ));
     SchemaRegistryControllerTestV2.setRelatedSchema(record, exampleSchemaV2);
     recordFile = new MockMultipartFile("record", "metadata-record4json-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
     metadataFile = new MockMultipartFile("document", "metadata-v2.json", "application/xml", DOCUMENT_V2.getBytes());

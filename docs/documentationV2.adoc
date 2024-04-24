@@ -461,23 +461,6 @@ schema-record-v4.json
     }
   ]
 }
-{
-  "schemaId":"my_first_xsd",
-  "mimeType":"application/xml",
-  "type":"XML",
-  "acl":[ 
-    {
-      "id":33,
-      "sid":"SELF",
-      "permission":"ADMINISTRATE"
-    },
-    {
-      "id":null,
-      "sid":"admin",
-      "admin":"ADMINISTRATE"
-    }
-  ]
-}
 ----
 include::{snippets}/v2-update-schema-record/curl-request.adoc[]
 
@@ -494,7 +477,7 @@ After the update the following fields has changed:
 
 - version number increased by one.
 - lastUpdate to the date of the last update (set by server)
-- acl additional ACL entry (set during update)
+- acls additional ACL entry (set during update)
 
 === Metadata Management
 After registration of a schema metadata may be added to MetaStore.
@@ -582,51 +565,18 @@ metadata-record.json:
     "value": "XML_Metadata",
     "typeGeneral": "MODEL"
   },
-  "subjects": [],
-  "contributors": [],
-  "dates": [],
   "relatedIdentifiers": [
     {
-      "id": null,
       "identifierType": "URL",
       "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=1",
-      "relationType": "IS_DERIVED_FROM",
-      "scheme": null,
-      "relatedMetadataScheme": null
+      "relationType": "IS_DERIVED_FROM"
     },
     {
-      "id": null,
       "identifierType": "URL",
       "value": "https://repo/anyResourceId",
-      "relationType": "IS_METADATA_FOR",
-      "scheme": null,
-      "relatedMetadataScheme": null
+      "relationType": "IS_METADATA_FOR"
     }
-  ],
-  "descriptions": [],
-  "geoLocations": [],
-  "language": null,
-  "alternateIdentifiers": [],
-  "sizes": [],
-  "formats": [],
-  "version": null,
-  "rights": [],
-  "fundingReferences": [],
-  "lastUpdate": null,
-  "state": null,
-  "embargoDate": null,
-  "acls": []
-}
-{
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
-    },
-    "schema": {
-        "identifier": "my_first_xsd",
-        "identifierType": "INTERNAL"
-    },
-    "schemaVersion": 1
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -650,7 +600,7 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-ingest-metadata-document/http-response.adoc[]
 
-What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. Some of the elements received a value by the server. 
 In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
@@ -695,20 +645,25 @@ ETag is needed:
 ----
 metadata-record-v2.json:
 {
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
-    },
-    "schema": {
-        "identifier": "my_first_xsd",
-        "identifierType": "INTERNAL"
-    },
-    "schemaVersion": "2",
-    "acl": [ {
-      "id":null,
-      "sid":"guest",
-      "permission":"READ"
-    } ]
+  "id": "3efdd6fe-429d-40a6-acff-c7c40631d508",
+  [...]
+  "relatedIdentifiers": [
+    [...]
+    {
+      "id": 1,
+      "identifierType": "URL",
+      "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=2",
+      "relationType": "IS_DERIVED_FROM"
+    }
+  ],
+  [...]
+  "acls": [
+    [...]
+    {
+      "sid": "guest",
+      "permission": "READ"
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -722,14 +677,21 @@ metadata-v2.xml:
 ----
 include::{snippets}/v2-update-metadata-record-v2/curl-request.adoc[]
 
-You can see, that only the ACL entry for "guest" was added. All other properties are still the same. HTTP-wise the call looks as follows: 
+You can see, that the schema was set to version 2 (allowing additional field 
+for date) and the ACL entry for "guest" was added. All other properties are still 
+the same. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-update-metadata-record-v2/http-request.adoc[]
 
-You will get the new datacite record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
+The response provides the updated datacite record:
+
 include::{snippets}/v2-update-metadata-record-v2/http-response.adoc[]
 
-What you see is, that the datacite record looks different from the original document. 
+You will get the updated datacite record with the following changes:
+- new schema (version)
+- an additional ACL entry
+- 'version' of record was incremented by one
+- 'lastUpdate' was also modified by the server.
 
 ==== Updating Datacite Record & Document
 Repeat the last step and update to the current version. As mentioned before the
@@ -749,15 +711,18 @@ Now you can update metadata due to new version of schema using the new Etag.
 ----
 metadata-record-v3.json:
 {
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
-    },
-    "schema": {
-        "identifier": "my_first_xsd",
-        "identifierType": "INTERNAL"
-    },
-    "schemaVersion": "3"
+  "id": "3efdd6fe-429d-40a6-acff-c7c40631d508",
+  [...]
+  "relatedIdentifiers": [
+    [...]
+    {
+      "id": 1,
+      "identifierType": "INTERNAL",
+      "value": "my_first_xsd",
+      "relationType": "IS_DERIVED_FROM"
+    }
+  ],
+  [...]
 }
 ----
 [source,options="nowrap"]
@@ -1298,7 +1263,7 @@ After the update the following fields has changed:
 
 - version number increased by one.
 - lastUpdate to the date of the last update (set by server)
-- acl additional ACL entry (set during update)
+- acls additional ACL entry (set during update)
 
 === Metadata Management
 After registration of a schema metadata may be added to MetaStore.
@@ -1377,15 +1342,33 @@ The following example shows the creation of the first datacite record and its me
 ----
 metadata-record4json.json:
 {
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
+  "titles": [
+    {
+      "id": null,
+      "value": "Title of first metadata document",
+      "titleType": null,
+      "lang": null
+    }
+  ],
+  "publisher": null,
+  "publicationYear": null,
+  "resourceType": {
+    "id": null,
+    "value": "JSON_Metadata",
+    "typeGeneral": "MODEL"
+  },
+  "relatedIdentifiers": [
+    {
+      "identifierType": "URL",
+      "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=1",
+      "relationType": "IS_DERIVED_FROM"
     },
-    "schema": {
-        "identifier": "my_first_json",
-        "identifierType": "INTERNAL"
-    },
-    "schemaVersion": 1
+    {
+      "identifierType": "URL",
+      "value": "https://repo/anyResourceId",
+      "relationType": "IS_METADATA_FOR"
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -1408,7 +1391,7 @@ provided document, adding missing information where possible and persisting the 
 
 include::{snippets}/v2-ingest-json-metadata-document/http-response.adoc[]
 
-What you see is, that the datacite record looks different from the original document. All remaining elements received a value by the server. 
+What you see is, that the datacite record looks different from the original document. Some of the elements received a value by the server. 
 In the header you'll find a location URL to access the ingested metadata and an ETag with the current ETag of the resource. This value is returned by POST, GET and PUT calls and must be provided for 
 all calls modifying the resource, e.g. POST, PUT and DELETE, in order to avoid conflicts.
 
@@ -1452,20 +1435,25 @@ ETag is needed:
 ----
 metadata-record4json-v2.json:
 {
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
-    },
-    "schema": {
-        "identifier": "my_first_json",
-        "identifierType": "INTERNAL"
-    },
-    "schemaVersion": "2",
-    "acl": [ {
-      "id":null,
-      "sid":"guest",
-      "permission":"READ"
-    } ]
+  "id": "d5439ccf-af4c-4727-b45b-1aa8b949d60e",
+  [...]
+  "relatedIdentifiers": [
+    [...]
+    {
+      "id": 1,
+      "identifierType": "URL",
+      "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=2",
+      "relationType": "IS_DERIVED_FROM"
+    }
+  ],
+  [...]
+  "acls": [
+    [...]
+    {
+      "sid": "guest",
+      "permission": "READ"
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
@@ -1478,14 +1466,21 @@ metadata-v2.json:
 ----
 include::{snippets}/v2-update-json-metadata-record-v2/curl-request.adoc[]
 
-You can see, that only the ACL entry for "guest" was added. All other properties are still the same. HTTP-wise the call looks as follows: 
+You can see, that the schema was set to version 2 (allowing additional field 
+for date) and the ACL entry for "guest" was added. All other properties are still 
+the same. HTTP-wise the call looks as follows: 
 
 include::{snippets}/v2-update-json-metadata-record-v2/http-request.adoc[]
 
-You will get the new datacite record with the additional ACL entry. Version number of record was incremented by one and 'lastUpdate' was also modified by the server.
+The response provides the updated datacite record:
+
 include::{snippets}/v2-update-json-metadata-record-v2/http-response.adoc[]
 
-What you see is, that the datacite record looks different from the original document. 
+You will get the updated datacite record with the following changes:
+- new schema (version)
+- an additional ACL entry
+- 'version' of record was incremented by one
+- 'lastUpdate' was also modified by the server.
 
 ==== Updating Datacite Record of Metadata Document & Document
 Repeat the last step and update to the current version. As mentioned before the
@@ -1505,15 +1500,25 @@ Now you can update metadata due to new version of schema using the new Etag.
 ----
 metadata-record4json-v3.json:
 {
-    "relatedResource": {
-        "identifier": "anyResourceId",
-        "identifierType": "INTERNAL"
-    },
-    "schema": {
-        "identifier": "my_first_json",
-        "identifierType": "INTERNAL"
-    },
-  "schemaVersion": "3"
+  "id": "d5439ccf-af4c-4727-b45b-1aa8b949d60e",
+  [...]
+  "relatedIdentifiers": [
+    [...]
+    {
+      "id": 1,
+      "identifierType": "INTERNAL",
+      "value": "my_first_json",
+      "relationType": "IS_DERIVED_FROM"
+    }
+  ],
+  [...]
+  "acls": [
+    [...]
+    {
+      "sid": "guest",
+      "permission": "READ"
+    }
+  ]
 }
 ----
 [source,options="nowrap"]
