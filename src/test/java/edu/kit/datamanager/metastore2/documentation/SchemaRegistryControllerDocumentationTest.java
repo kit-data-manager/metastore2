@@ -448,6 +448,7 @@ public class SchemaRegistryControllerDocumentationTest {
 
     mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    record.getAcl().add(new AclEntry("guest", PERMISSION.READ));
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(EXAMPLE_SCHEMA_ID));
     record.setSchemaVersion(2l);
     recordFile = new MockMultipartFile("record", "metadata-record-v2.json", "application/json", mapper.writeValueAsString(record).getBytes());
