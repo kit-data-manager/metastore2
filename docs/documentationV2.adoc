@@ -380,6 +380,10 @@ As a result, you receive the XSD schema document sent before:
 
 include::{snippets}/v2-get-schema-v3/http-response.adoc[]
 
+[NOTE]
+For accessing schema document you have to provide 
+'application/xml' as 'Accept' header.
+
 ==== Getting a specific Version of Metadata Schema Document
 
 To get a specific version of the metadata schema document just send an HTTP GET with the linked
@@ -394,6 +398,9 @@ include::{snippets}/v2-get-schema-v1/http-request.adoc[]
 As a result, you receive the initial XSD schema document (version 1). 
 
 include::{snippets}/v2-get-schema-v1/http-response.adoc[]
+
+[NOTE]
+As before you have to provide 'application/XML' as 'Accept' header.
 
 ==== Validating Metadata Document
 
@@ -419,7 +426,6 @@ Same for the HTTP request. The schemaVersion number is set by a query parameter.
 include::{snippets}/v2-validate-document-v1/http-request.adoc[]
 
 As a result, you receive 422 as HTTP status and an error message holding some information about the error.
-(Unfortunately not documented here due to technical reasons.)
 
 include::{snippets}/v2-validate-document-v1/http-response.adoc[]
 
@@ -455,7 +461,6 @@ schema-record-v4.json
       "permission": "ADMINISTRATE"
     },
     {
-      "id": null,
       "sid": "admin",
       "permission": "ADMINISTRATE"
     }
@@ -551,7 +556,7 @@ License URI is optional. It's new since 1.4.2.
 
 ==== Register/Ingest a Datacite Record with Metadata Document
 
-The following example shows the creation of the first datacite record and its metadata only providing mandatory fields mentioned above:
+The following example shows the creation of the first metadata document and its datacite record only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 metadata-record.json:
@@ -618,6 +623,10 @@ The linked metadata will be returned. The result is sent back to the user and wi
 include::{snippets}/v2-get-metadata-document/http-response.adoc[]
 
 What you see is, that the metadata is untouched.
+
+[NOTE]
+For accessing metadata document you have to provide 
+'application/xml' as 'Accept' header.
 
 ==== Accessing Datacite Record of Metadata Document
 For accessing the datacite record the same URL as before has to be used.
@@ -693,7 +702,7 @@ You will get the updated datacite record with the following changes:
 - 'version' of record was incremented by one
 - 'lastUpdate' was also modified by the server.
 
-==== Updating Datacite Record & Document
+==== Updating Datacite Record of Metadata Document & Document
 Repeat the last step and update to the current version. As mentioned before the
 ETag is needed. As the ETag has changed in the meanwhile you first have to get the
 new ETag.
@@ -725,6 +734,11 @@ metadata-record-v3.json:
   [...]
 }
 ----
+
+[NOTE]
+In contrast to the previous update, the INTERNAL identifier is used. 
+This always refers to the latest version of the schema (in our case version 3).
+
 [source,options="nowrap"]
 ----
 metadata-v3.xml:
@@ -1168,6 +1182,10 @@ As a result, you receive the XSD schema document sent before:
 
 include::{snippets}/v2-get-json-schema-v3/http-response.adoc[]
 
+[NOTE]
+For accessing schema document you have to provide 
+'application/json' as 'Accept' header.
+
 ==== Getting a specific Version of Metadata Schema Document
 
 To get a specific version of the metadata schema document just send an HTTP GET with the linked
@@ -1182,6 +1200,9 @@ include::{snippets}/v2-get-json-schema-v1/http-request.adoc[]
 As a result, you receive the initial XSD schema document (version 1). 
 
 include::{snippets}/v2-get-json-schema-v1/http-response.adoc[]
+
+[NOTE]
+As before you have to provide 'application/json' as 'Accept' header.
 
 ==== Validating Metadata Document
 
@@ -1241,7 +1262,6 @@ schema-record4json-v4.json
       "permission": "ADMINISTRATE"
     },
     {
-      "id": null,
       "sid": "admin",
       "permission": "ADMINISTRATE"
     }
@@ -1337,23 +1357,19 @@ License URI is optional. It's new since 1.4.2.
 
 ==== Register/Ingest a Datacite Record with Metadata Document
 
-The following example shows the creation of the first datacite record and its metadata only providing mandatory fields mentioned above:
+The following example shows the creation of the first metadata document and its datacite record only providing mandatory fields mentioned above:
 [source,options="nowrap"]
 ----
 metadata-record4json.json:
 {
   "titles": [
     {
-      "id": null,
       "value": "Title of first metadata document",
-      "titleType": null,
-      "lang": null
     }
   ],
   "publisher": null,
   "publicationYear": null,
   "resourceType": {
-    "id": null,
     "value": "JSON_Metadata",
     "typeGeneral": "MODEL"
   },
@@ -1409,6 +1425,10 @@ The linked metadata will be returned. The result is sent back to the user and wi
 include::{snippets}/v2-get-json-metadata-document/http-response.adoc[]
 
 What you see is, that the metadata is untouched.
+
+[NOTE]
+For accessing metadata document you have to provide 
+'application/json' as 'Accept' header.
 
 ==== Accessing Datacite Record of Metadata Document
 For accessing the datacite record the same URL as before has to be used.
@@ -1521,6 +1541,11 @@ metadata-record4json-v3.json:
   ]
 }
 ----
+
+[NOTE]
+In contrast to the previous update, the INTERNAL identifier is used. 
+This always refers to the latest version of the schema (in our case version 3).
+
 [source,options="nowrap"]
 ----
 metadata-v3.json:
