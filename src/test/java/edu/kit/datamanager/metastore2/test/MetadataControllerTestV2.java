@@ -937,6 +937,27 @@ public class MetadataControllerTestV2 {
   }
 
   @Test
+  public void testGetRecords() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+
+    MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
+    ObjectMapper map = new ObjectMapper();
+    DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
+    Assert.assertNotNull(result);
+    String locationUri = res.getResponse().getHeader("Location");
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      Assert.assertTrue(schemaUrl.contains(SCHEMA_ID));
+      //Schema URI must not be the actual file URI but the link to the REST endpoint for downloading the schema
+      Assert.assertNotEquals("file:///tmp/dc.xml", locationUri);
+    }
+  }
+
+  @Test
   public void testGetRecordByIdWithVersion() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
 

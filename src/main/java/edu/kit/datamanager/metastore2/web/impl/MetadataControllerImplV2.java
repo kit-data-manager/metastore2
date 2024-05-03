@@ -30,18 +30,14 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
-import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataControllerV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.ContentInformation;
@@ -440,6 +436,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     LOG.trace("Transforming Dataresource to DataResource");
     List<DataResource> recordList = records.getContent();
+    for (DataResource item : recordList) {
+      DataResourceRecordUtil.fixSchemaUrl(item);
+    }
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), records.getTotalElements());
 
