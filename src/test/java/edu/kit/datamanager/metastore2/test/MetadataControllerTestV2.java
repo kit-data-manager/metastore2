@@ -1008,7 +1008,6 @@ public class MetadataControllerTestV2 {
 
     Assert.assertEquals(1, result.length);
   }
-// ToDo
 
   @Test
   public void testFindRecordsBySchemaId() throws Exception {
@@ -1018,6 +1017,14 @@ public class MetadataControllerTestV2 {
     DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      Assert.assertTrue(schemaUrl.contains(SCHEMA_ID));
+    }
   }
 
   @Test
@@ -1059,6 +1066,13 @@ public class MetadataControllerTestV2 {
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
     Assert.assertEquals(3, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+    }
   }
 
   @Test
@@ -1076,6 +1090,16 @@ public class MetadataControllerTestV2 {
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertEquals(RELATED_RESOURCE.getIdentifier(), resourceIdentifier.getValue());
+    }
   }
 
   @Test
@@ -1098,8 +1122,18 @@ public class MetadataControllerTestV2 {
             andReturn();
     ObjectMapper map = new ObjectMapper();
     DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
-    // Looking for second schema
     Assert.assertEquals(2, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
+    // Looking for second schema
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", secondSchemaId)).
             andDo(print()).
@@ -1107,6 +1141,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(2, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
     // Looking for first AND second schema
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1116,6 +1160,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(4, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
     // Looking for first, second AND invalid schema
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1126,6 +1180,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(4, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
     // Looking for first, second AND invalid schema AND resource1 and resource2
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1138,6 +1202,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(4, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1148,6 +1222,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(2, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1157,6 +1241,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertEquals(relatedResource, resourceIdentifier.getValue());
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", firstSchemaId).
@@ -1166,6 +1260,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertEquals(relatedResource2, resourceIdentifier.getValue());
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", secondSchemaId).
@@ -1176,6 +1280,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(2, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertTrue(resourceIdentifier.getValue().endsWith("ResourceId"));
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", secondSchemaId).
@@ -1185,6 +1299,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertEquals(relatedResource, resourceIdentifier.getValue());
+    }
 
     res = this.mockMvc.perform(get(API_METADATA_PATH).
             param("schemaId", secondSchemaId).
@@ -1194,6 +1318,16 @@ public class MetadataControllerTestV2 {
             andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
     Assert.assertEquals(1, result.length);
+    for (DataResource dataResource : result) {
+      RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
+      String schemaUrl = schemaIdentifier.getValue();
+      Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
+      Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
+      RelatedIdentifier resourceIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+      Assert.assertEquals(IDENTIFIER_TYPE.INTERNAL, resourceIdentifier.getIdentifierType());
+      Assert.assertEquals(relatedResource2, resourceIdentifier.getValue());
+    }
   }
 
   @Test
