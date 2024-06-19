@@ -220,6 +220,8 @@ public class DataResourceRecordUtil {
         throw new UnprocessableEntityException(message);
       }
     }
+    // reload data resource 
+    metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
 
     return metadataRecord;
   }
@@ -261,7 +263,8 @@ public class DataResourceRecordUtil {
     DataResource dataResource = metadataRecord;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
-    ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
+    ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
+    metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
 
     return metadataRecord;
   }
@@ -391,6 +394,8 @@ public class DataResourceRecordUtil {
 
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
+    LOG.trace("Get ETag of DataResource.");
+    LOG.trace("Get dataresource: '{}'", dataResource.toString());
     LOG.trace("ETag: '{}'", dataResource.getEtag());
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);

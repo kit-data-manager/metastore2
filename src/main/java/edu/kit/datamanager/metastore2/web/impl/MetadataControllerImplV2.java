@@ -231,7 +231,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 //      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
 //    }
     DataResource result = DataResourceRecordUtil.createDataResourceRecord4Metadata(metadataConfig, recordDocument, document);
+    LOG.trace("Get dataresource: '{}'", result.toString());
     String eTag = result.getEtag();
+    LOG.trace("Get ETag: ' {}'", eTag);
     // Successfully created metadata record.
 //    long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
@@ -266,7 +268,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of DataResource.");
+    LOG.trace("Get dataresource: '{}'", metadataRecord.toString());
     String etag = metadataRecord.getEtag();
+    LOG.trace("Get ETag: ' {}'", etag);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
     URI locationUri;
     locationUri = DataResourceRecordUtil.getMetadataDocumentUri(metadataRecord.getId(), metadataRecord.getVersion());
@@ -288,7 +292,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("ContentInformation record found. Prepare response...");
     DataResource minimalDataResource = DataResource.factoryNewDataResource(contentInformation.getParentResource().getId());
     URI locationUri;
-    locationUri = DataResourceRecordUtil.getMetadataDocumentUri(id, contentInformation.getFileVersion());
+    locationUri = DataResourceRecordUtil.getMetadataDocumentUri(id, contentInformation.getVersion().toString());
     contentInformation.setParentResource(minimalDataResource);
     contentInformation.setContentUri(locationUri.toString());
     contentInformation.setRelativePath(null);

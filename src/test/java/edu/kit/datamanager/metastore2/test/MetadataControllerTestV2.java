@@ -1445,7 +1445,8 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(contentInformation1.getVersion() + 1, contentInformation2.getVersion().longValue());
     Assert.assertNotEquals(contentInformation1, contentInformation2);
     Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
-    Assert.assertNotEquals(contentInformation1.getFileVersion(), contentInformation2.getFileVersion());
+    Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
+    Assert.assertEquals((long)(contentInformation1.getVersion() + 1), (long)contentInformation2.getVersion());
     Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
     Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
 
@@ -1637,10 +1638,10 @@ public class MetadataControllerTestV2 {
 
     ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
     Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
-    Assert.assertEquals(contentInformation1.getVersion() + 1, contentInformation2.getVersion().longValue());
     Assert.assertNotEquals(contentInformation1, contentInformation2);
     Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
-    Assert.assertNotEquals(contentInformation1.getFileVersion(), contentInformation2.getFileVersion());
+    Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
+    Assert.assertEquals((long)(contentInformation1.getVersion() + 1), contentInformation2.getVersion().longValue());
     Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
     Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
     Assert.assertEquals(DC_DOCUMENT.length(), contentInformation1.getSize());

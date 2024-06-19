@@ -1241,6 +1241,17 @@ public class SchemaRegistryControllerTestV2 {
 
     ObjectMapper mapper = new ObjectMapper();
     DataResource record = mapper.readValue(body, DataResource.class);
+    
+    // Get ContentInformation of first version
+    result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA_V2.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH + schemaId).
@@ -1249,7 +1260,7 @@ public class SchemaRegistryControllerTestV2 {
             with(putMultipart())).
             andDo(print()).
             andExpect(status().isOk()).
-            andExpect(redirectedUrlPattern("http://*:*/**/" + record.getId() + "?version=*")).
+            andExpect(redirectedUrlPattern("http://*:*/**/" + schemaId + "?version=*")).
             andReturn();
     body = result.getResponse().getContentAsString();
 
@@ -1270,6 +1281,23 @@ public class SchemaRegistryControllerTestV2 {
     String content = result.getResponse().getContentAsString();
 
     Assert.assertEquals(KIT_SCHEMA_V2, content);
+    // Test also contentInformation after update
+    result = this.mockMvc.perform(get(API_SCHEMA_PATH + schemaId).
+            accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+    
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, contentInformation2.getVersion().longValue());
+    Assert.assertNotEquals(contentInformation1, contentInformation2);
+    Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
+    Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
+    Assert.assertEquals((long)(contentInformation1.getVersion() + 1), (long)contentInformation2.getVersion());
+    Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
+    Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
   }
 
   @Test
