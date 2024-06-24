@@ -314,8 +314,7 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
             andDo(document("v2-update-json-schema-v3")).
             andExpect(status().isOk()).
             andReturn();
-    etag = result.getResponse().getHeader("ETag");
-    String exampleSchemaV3 = result.getResponse().getHeader("ETag");
+    String exampleSchemaV3 = result.getResponse().getHeader("Location");
     //  6. Registering another metadata schema
     //**************************************************************************
     schemaRecord.setId(ANOTHER_SCHEMA_ID);
@@ -504,7 +503,7 @@ public class SchemaRegistryControllerDocumentation4JsonTestV2 {
             andReturn().getResponse();
     SchemaRegistryControllerTestV2.setRelatedSchema(record, exampleSchemaV3);
     recordFile = new MockMultipartFile("record", "metadata-record4json-v3.json", "application/json", mapper.writeValueAsString(record).getBytes());
-    metadataFile = new MockMultipartFile("document", "metadata-v3.json", "application/xml", DOCUMENT_V3.getBytes());
+    metadataFile = new MockMultipartFile("document", "metadata-v3.json", "application/json", DOCUMENT_V3.getBytes());
 
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(newLocation).
             file(recordFile).
