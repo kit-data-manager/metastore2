@@ -371,35 +371,19 @@ public class DataResourceRecordUtil {
           MultipartFile document,
           UnaryOperator<String> supplier) {
     DataResource metadataRecord = null;
+    metadataRecord = checkParameters(recordDocument, document, false);
     DataResource updatedDataResource;
 
-    // Do some checks first.
-    if ((recordDocument == null || recordDocument.isEmpty()) && (document == null || document.isEmpty())) {
-      String message = "Neither metadata record nor metadata document provided.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-    if (!(recordDocument == null || recordDocument.isEmpty())) {
-      try {
-        metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), DataResource.class);
-      } catch (IOException ex) {
-        String message = "Can't map record document to MetadataRecord";
-        if (ex instanceof JsonParseException) {
-          message = message + " Reason: " + ex.getMessage();
-        }
-        LOG.error(ERROR_PARSING_JSON, ex);
-        throw new BadArgumentException(message);
-      }
-    }
 
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
-    LOG.trace("Get ETag of DataResource.");
-    LOG.trace("Get dataresource: '{}'", dataResource.toString());
-    LOG.trace("ETag: '{}'", dataResource.getEtag());
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, dataResource);
+    LOG.trace("ETag: '{}'", dataResource.getEtag());
     if (metadataRecord != null) {
+      LOG.trace("metadataRecord: '{}'", metadataRecord.toString());
+      metadataRecord.setVersion(dataResource.getVersion());
+      metadataRecord.setId(dataResource.getId());
       updatedDataResource = metadataRecord;
       if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
         updatedDataResource.setAcls(dataResource.getAcls());
@@ -410,8 +394,6 @@ public class DataResourceRecordUtil {
     } else {
       updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
     }
-
-    LOG.trace("ETag: '{}'", dataResource.getEtag());
 
     boolean noChanges = false;
     if (document != null) {
@@ -1710,6 +1692,8 @@ public class DataResourceRecordUtil {
     SchemaRecord schemaRecord = null;
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataResource);
     String schemaId = schemaIdentifier.getValue();
+    LOG.trace("getSchemaRecordFromDataResource: related identifier:  '{}'", schemaIdentifier.toString());
+    LOG.trace("getSchemaRecordFromDataResource: '{}'", schemaId);
     switch (schemaIdentifier.getIdentifierType()) {
       case URL:
         schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
