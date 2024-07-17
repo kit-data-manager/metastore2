@@ -1511,7 +1511,7 @@ public class DataResourceRecordUtil {
       try {
         metadataRecord = Json.mapper().readValue(dataResourceRecord.getInputStream(), DataResource.class);
       } catch (IOException ex) {
-        message = "Can't map record document to MetadataRecord";
+        message = "Can't map record document to DataResource";
         if (ex instanceof JsonParseException) {
           message = message + " Reason: " + ex.getMessage();
         }

@@ -13,7 +13,6 @@ import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
@@ -51,7 +50,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
-import net.bytebuddy.agent.VirtualMachine;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
@@ -1923,10 +1921,11 @@ public class SchemaRegistryControllerTestV2 {
   public static DataResource createDataResource4Schema(String id) {
     DataResource record = new DataResource();
     record.setId(id);
+    // mandatory element title has to be set
     setTitle(record, id);
+    // the following fields are optional
     setComment(record, COMMENT);
     setDefinition(record, DEFINITION);
-    // mandatory element title has to be set
     record.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.SCHEMA_TYPE.XML + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     record.getFormats().add(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -2569,6 +2568,54 @@ public class SchemaRegistryControllerTestV2 {
     }
     if (addDefinition) {
       record.getDescriptions().add(Description.factoryDescription(definition, Description.TYPE.TECHNICAL_INFO));
+    }
+  }
+
+  public static String getLabel(DataResource record) {
+    String returnValue = null;
+    for (Description item : record.getDescriptions()) {
+      if (item.getType() == Description.TYPE.ABSTRACT) {
+        returnValue = item.getDescription();
+        break;
+      }
+    }
+    return returnValue;
+  }
+
+  public static void setLabel(DataResource record, String label) {
+    boolean addDefinition = true;
+    for (Description item : record.getDescriptions()) {
+      if (item.getType() == Description.TYPE.ABSTRACT) {
+        item.setDescription(label);
+        addDefinition = false;
+        break;
+      }
+    }
+    if (addDefinition) {
+      record.getDescriptions().add(Description.factoryDescription(label, Description.TYPE.ABSTRACT));
+    }
+  }
+
+  public static String getRights(DataResource record) {
+    String returnValue = null;
+    for (Scheme item : record.getRights()) {
+        returnValue = item.getSchemeId();
+        break;
+    }
+    return returnValue;
+  }
+
+  public static void setRights(DataResource record, String schemeId) {
+    boolean addDefinition = true;
+    for (Scheme item : record.getRights()) {
+      if (item.getSchemeId().equals(schemeId)) {
+        addDefinition = false;
+        break;
+      }
+    }
+    if (addDefinition) {
+      Scheme scheme = Scheme.factoryScheme(schemeId, "https://spdx.org/licenses/" + schemeId + ".html");
+      record.getRights().add(scheme);
     }
   }
 

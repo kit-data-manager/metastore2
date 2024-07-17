@@ -124,6 +124,7 @@ public class MetadataControllerTestV2 {
   private static final String SCHEMA_ID = "my_dc";
   private static final String JSON_SCHEMA_ID = "my_json";
   private static final String JSON_HTTP_SCHEMA_ID = "my_json_with_http";
+  private static final String JSON_HTTP_SCHEMA_ID_URL = "http://localhost:41421/api/v2/schemas/my_json_with_http?version=1";
   private static final String JSON_HTTP_SCHEMA_ID_WITH_HASH = "my_json_with_hash";
   private static final String INVALID_SCHEMA = "invalid_dc";
   private static final String UNKNOWN_RELATED_RESOURCE = "unknownHResourceId";
@@ -292,7 +293,7 @@ public class MetadataControllerTestV2 {
   public void testCreateRecordWithHttpSchema() throws Exception {
     ingestHttpJsonSchemaRecord();
     String id = "testCreateRecordWithHttpSchema";
-    String schemaId = JSON_HTTP_SCHEMA_ID;
+    String schemaId = JSON_HTTP_SCHEMA_ID_URL;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4JsonDocument(id, schemaId);
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
