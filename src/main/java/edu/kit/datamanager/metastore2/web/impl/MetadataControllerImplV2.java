@@ -202,7 +202,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           SchemaRecord schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
           if (schemaRecord == null) {
             String message = "External URLs are not supported yet!\n"
-                    + "But '" + schemaIdentifier.getValue() + "' seems not to be an internal one!";
+                    + "But '" + schemaIdentifier.getValue() + "' seems not to be an internal one!\n"
+                    + "Hint: Maybe version number is missing (e.g.: [...]?version=1";
             LOG.error(message);
             throw new ResourceNotFoundException(message);
           }
