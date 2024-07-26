@@ -494,7 +494,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     Map<String, String> details = ActuatorUtil.testDirectory(basePath);
 
     if (!details.isEmpty()) {
-      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
+      details.put("No of metadata documents", Long.toString(DataResourceRecordUtil.getNoOfDocuments()));
       builder.withDetail("metadataRepo", details);
     }
   }

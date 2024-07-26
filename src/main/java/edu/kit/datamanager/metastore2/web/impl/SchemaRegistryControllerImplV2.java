@@ -374,7 +374,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     Map<String, String> details = ActuatorUtil.testDirectory(basePath);
     
     if (!details.isEmpty()) {
-      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
+      details.put("No of schema documents", Long.toString(DataResourceRecordUtil.getNoOfSchemaDocuments()));
       builder.withDetail("schemaRepo", details);
     }
   }

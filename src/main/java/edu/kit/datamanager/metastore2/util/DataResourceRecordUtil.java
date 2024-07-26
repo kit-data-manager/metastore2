@@ -49,13 +49,12 @@ import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Scheme;
-import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
@@ -1038,12 +1037,28 @@ public class DataResourceRecordUtil {
 
   /**
    * Return the number of ingested documents. If there are two versions of the
-   * same document this will be counted as two.
+   * same document this will be counted as one.
    *
    * @return Number of registered documents.
    */
   public static long getNoOfDocuments() {
-    return dataRecordDao.count();
+    // Search for resource type of MetadataSchemaRecord
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Pageable pgbl = PageRequest.of(0, 1);
+    return queryDataResources(spec, pgbl).getTotalElements();
+  }
+
+  /**
+   * Return the number of ingested schema documents. If there are two versions of the
+   * same document this will be counted as one.
+   *
+   * @return Number of registered documents.
+   */
+  public static long getNoOfSchemaDocuments() {
+    // Search for resource type of MetadataSchemaRecord
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Pageable pgbl = PageRequest.of(0, 1);
+    return queryDataResources(spec, pgbl).getTotalElements();
   }
 
   public static void setToken(String bearerToken) {
