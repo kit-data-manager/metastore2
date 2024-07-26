@@ -316,13 +316,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     spec = spec.and(StateSpecification.toSpecification(stateList));
     
     LOG.debug("Performing query for records.");
-    Page<DataResource> records = null;
-    try {
-      records = dataResourceDao.findAll(spec, pgbl);
-    } catch (Exception ex) {
-      LOG.error("Error find metadata records by specification!", ex);
-      throw ex;
-    }
+    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
     List<DataResource> recordList = records.getContent();
     if (LOG.isTraceEnabled()) {
       LOG.trace("Cleaning up schemaDocumentUri of query result.");

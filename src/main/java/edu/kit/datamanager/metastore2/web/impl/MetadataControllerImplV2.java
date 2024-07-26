@@ -417,6 +417,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     }
     spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
+
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
@@ -426,18 +427,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     List<DataResource.State> stateList = Arrays.asList(states);
     spec = spec.and(StateSpecification.toSpecification(stateList));
 
-    if (LOG.isTraceEnabled()) {
-      Page<DataResource> records = dataResourceDao.findAll(pgbl);
-      LOG.trace("List all data resources...");
-      LOG.trace("-----------------------------------------------");
-      for (DataResource item : records.getContent()) {
-        LOG.trace("- '{}'", item);
-      }
-      LOG.trace("-----------------------------------------------");
-      LOG.trace("Specification: '{}'", spec);
-    }
-    LOG.debug("Performing query for records.");
-    Page<DataResource> records = dataResourceDao.findAll(spec, pgbl);
+    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
+
 
     LOG.trace("Transforming Dataresource to DataResource");
     List<DataResource> recordList = records.getContent();
@@ -524,7 +515,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     }
     return relatedIdentifier;
   }
-
+ 
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();

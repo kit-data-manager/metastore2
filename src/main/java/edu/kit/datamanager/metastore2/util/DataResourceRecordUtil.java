@@ -374,7 +374,6 @@ public class DataResourceRecordUtil {
     metadataRecord = checkParameters(recordDocument, document, false);
     DataResource updatedDataResource;
 
-
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
     DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
@@ -390,6 +389,9 @@ public class DataResourceRecordUtil {
       }
       if (updatedDataResource.getRights() == null) {
         updatedDataResource.setRights(new HashSet<>());
+      }
+      if (updatedDataResource.getState() == null) {
+        updatedDataResource.setState(dataResource.getState());
       }
     } else {
       updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
@@ -1975,5 +1977,40 @@ public class DataResourceRecordUtil {
    */
   public static final URI getMetadataDocumentUri(String id, String version) {
     return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, Long.parseLong(version), null, null)).toUri();
+  }
+
+  /**
+   * Query for data resources with provided specification or all if no
+   * specification is provided.
+   *
+   * @param spec Specification of the data resources.
+   * @param pgbl The pageable object containing pagination information.
+   * @return Pageable Object holding all data resources fulfilling the
+   * specification.
+   */
+  public static Page<DataResource> queryDataResources(Specification spec, Pageable pgbl) {
+    Page<DataResource> records = null;
+    try {
+      records = spec != null ? dataResourceDao.findAll(spec, pgbl) : dataResourceDao.findAll(pgbl);
+      if (LOG.isTraceEnabled()) {
+        if (spec != null) {
+          LOG.trace("Query data resources with spec '{}'", spec.toString());
+        } else {
+          LOG.trace("Query all data resources...");
+        }
+         LOG.trace("-----------------------------------------------");
+         LOG.trace("List '{}' of '{}' data resources in total!", records.getContent().size(), records.getTotalElements());
+         LOG.trace("-----------------------------------------------");
+         int itemNo = 1;
+        for (DataResource item : records.getContent()) {
+          LOG.trace("#{} - '{}'", itemNo++, item);
+        }
+        LOG.trace("-----------------------------------------------");
+      }
+    } catch (Exception ex) {
+      LOG.error("Error finding data resource records by specification!", ex);
+      throw ex;
+    }
+    return records;
   }
 }
