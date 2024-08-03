@@ -485,7 +485,7 @@ public class MetadataRecordUtil {
       for (Identifier identifier : dataResource.getAlternateIdentifiers()) {
         if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
           if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().getValue()));
+            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().name()));
             LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
             metadataRecord.setPid(resourceIdentifier);
             break;
