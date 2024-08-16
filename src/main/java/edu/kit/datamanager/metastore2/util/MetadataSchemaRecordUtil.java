@@ -147,6 +147,14 @@ public class MetadataSchemaRecordUtil {
       throw new BadArgumentException(message);
     } else {
       try {
+        // test for lowercase
+        String schemaIDLowerCase = metadataRecord.getSchemaId().toLowerCase();
+        if (!metadataRecord.getSchemaId().equals(schemaIDLowerCase)) {
+          String message = "Invalid 'schemaID'! You may use '" + schemaIDLowerCase + "' instead.";
+          LOG.error(message);
+          throw new BadArgumentException(message);
+        }
+        // test if schemaID contains illegal characters.
         String value = URLEncoder.encode(metadataRecord.getSchemaId(), StandardCharsets.UTF_8.toString());
         if (!value.equals(metadataRecord.getSchemaId())) {
           String message = "Not a valid schema id! Encoded: " + value;
