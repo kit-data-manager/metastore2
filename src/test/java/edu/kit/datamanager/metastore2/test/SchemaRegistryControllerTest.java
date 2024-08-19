@@ -254,8 +254,9 @@ public class SchemaRegistryControllerTest {
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    // No longer valid, as capital letters are no longer allowed.
+/*    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertEquals(record.getType(), ms_record.getType());
     Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
     Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
@@ -273,15 +274,6 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
     Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
     Assert.assertEquals(schemaIDWithCapitalLetters.toLowerCase(), ms_record.getSchemaId());
-    List<DataResource> findAll = dataResourceDao.findAll();
-    ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-    for (DataResource item : findAll) {
-      for (Identifier ident : item.getAlternateIdentifiers()){
-        System.out.println("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
-        System.out.println(ident.toString());
-        System.out.println("yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy");
-      }
-    }
 
     result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaIDWithCapitalLetters).
             header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
@@ -294,14 +286,14 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
     Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
     Assert.assertEquals(schemaIDWithCapitalLetters.toLowerCase(), ms_record.getSchemaId());
-
+*/
   }
 
   @Test
   public void testCreateRegisterSchemaRecordWithSameIdButCapitalLetter() throws Exception {
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     String schemaIDWithCapitalLetters = "myFirstTest";
-    record.setSchemaId(schemaIDWithCapitalLetters);
+    record.setSchemaId(schemaIDWithCapitalLetters.toLowerCase(Locale.getDefault()));
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     Set<AclEntry> aclEntries = new HashSet<>();
@@ -328,7 +320,7 @@ public class SchemaRegistryControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
 
   @Test
