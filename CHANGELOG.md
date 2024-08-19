@@ -13,6 +13,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
+## [1.4.4]  2024-08-20
+
+### Changed
+- Bump gradle from 8.7 to 8.8. 
+- Forbid upper cases in schemaIDs.
+ 
+### Libs
+- Bump com.google.errorprone:error_prone_core from 2.26.1 to 2.30.0
+- Bump com.gorylenko.gradle-git-properties from 2.4.1 to 2.4.2 
+- Bump com.h2database:h2 from 2.2.224 to 2.3.230 
+- Bump com.networknt:json-schema-validator from 1.4.0 to 1.5.1
+- Bump io.spring.dependency-management from 1.1.4 to 1.1.6
+- Bump io.freefair.lombok from 8.6 to 8.7.1
+- Bump io.freefair.maven-publish-java from 8.6 to 8.7.1
+- Bump javersVersion from 7.4.2 to 7.6.1
+- Bump net.ltgt.errorprone from 3.1.0 to 4.0.1
+- Bump org.asciidoctor.jvm.convert from 4.0.2 to 4.0.3
+- Bump org.mockito:mockito-core from 5.11.0 to 5.12.0 
+- Bump org.owasp.dependencycheck from 9.1.0 to 10.0.3 
+- Bump org.springframework.boot from 3.2.5 to 3.3.2
+- Bump org.springframework.cloud:spring-cloud-gateway-mvc from 4.1.3 to 5.3.1.
+- Bump springDocVersion from 2.5.0 to 2.6.0
+
+### Github Actions
+- Bump docker/build-push-action from 5 to 6 
+
 ## [1.4.3] - 2024-04-19
 
 ### Deprecated
@@ -461,7 +487,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...HEAD
+[1.4.4]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/kit-data-manager/metastore2/compare/v1.4.0...v1.4.1
