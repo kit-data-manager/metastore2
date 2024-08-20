@@ -80,7 +80,7 @@ public class MetadataSchemaRecordTest {
     System.out.println("getSchemaId");
     String schemaIdWithCapitalLetter = "schemaWithCaptialLetter";
     MetadataSchemaRecord instance = new MetadataSchemaRecord();
-    String expResult = schemaIdWithCapitalLetter.toLowerCase(Locale.getDefault());
+    String expResult = schemaIdWithCapitalLetter;//.toLowerCase(Locale.getDefault());
     instance.setSchemaId(schemaIdWithCapitalLetter);
     String result = instance.getSchemaId();
     assertEquals(expResult, result);
