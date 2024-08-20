@@ -22,11 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Libs
 - Bump com.google.errorprone:error_prone_core from 2.26.1 to 2.30.0
 - Bump com.gorylenko.gradle-git-properties from 2.4.1 to 2.4.2 
-- Bump com.h2database:h2 from 2.2.224 to 2.3.230 
+- Bump com.h2database:h2 from 2.2.224 to 2.3.232 
 - Bump com.networknt:json-schema-validator from 1.4.0 to 1.5.1
 - Bump io.spring.dependency-management from 1.1.4 to 1.1.6
-- Bump io.freefair.lombok from 8.6 to 8.7.1
-- Bump io.freefair.maven-publish-java from 8.6 to 8.7.1
+- Bump io.freefair.lombok from 8.6 to 8.10
+- Bump io.freefair.maven-publish-java from 8.6 to 8.10
 - Bump javersVersion from 7.4.2 to 7.6.1
 - Bump net.ltgt.errorprone from 3.1.0 to 4.0.1
 - Bump org.asciidoctor.jvm.convert from 4.0.2 to 4.0.3
