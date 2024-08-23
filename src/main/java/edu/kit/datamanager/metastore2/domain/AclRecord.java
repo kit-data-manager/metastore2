@@ -21,11 +21,12 @@ import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.http.MediaType;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.Data;
-import org.springframework.http.MediaType;
 
 /**
  * Record holding metadata document + list of SIDs allowed to at least read the document.

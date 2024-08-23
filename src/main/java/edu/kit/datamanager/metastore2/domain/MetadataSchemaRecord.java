@@ -24,24 +24,18 @@ import edu.kit.datamanager.entities.EtagSupport;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.json.CustomInstantDeserializer;
 import edu.kit.datamanager.util.json.CustomInstantSerializer;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Transient;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.http.MediaType;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-import lombok.Data;
-import org.springframework.http.MediaType;
 
 /**
  * Record for a metadata document.

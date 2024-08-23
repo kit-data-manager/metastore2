@@ -15,7 +15,6 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import static co.elastic.clients.elasticsearch._types.mapping.PropertyBuilders.object;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -27,11 +26,13 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
+import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -40,17 +41,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.info.Info;
@@ -72,9 +62,19 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
-import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerV2;
-import edu.kit.datamanager.repo.domain.ContentInformation;
+
+import java.net.URI;
+import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 
 /**

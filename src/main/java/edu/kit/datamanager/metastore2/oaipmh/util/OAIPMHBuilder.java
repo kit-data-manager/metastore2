@@ -15,33 +15,16 @@
  */
 package edu.kit.datamanager.metastore2.oaipmh.util;
 
+import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
+import org.openarchives.oai._2.*;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import org.openarchives.oai._2.AboutType;
-import org.openarchives.oai._2.DescriptionType;
-import org.openarchives.oai._2.GetRecordType;
-import org.openarchives.oai._2.HeaderType;
-import org.openarchives.oai._2.IdentifyType;
-import org.openarchives.oai._2.ListIdentifiersType;
-import org.openarchives.oai._2.ListMetadataFormatsType;
-import org.openarchives.oai._2.ListRecordsType;
-import org.openarchives.oai._2.ListSetsType;
-import org.openarchives.oai._2.MetadataFormatType;
-import org.openarchives.oai._2.MetadataType;
-import org.openarchives.oai._2.OAIPMHerrorType;
-import org.openarchives.oai._2.OAIPMHerrorcodeType;
-import org.openarchives.oai._2.OAIPMHtype;
-import org.openarchives.oai._2.RecordType;
-import org.openarchives.oai._2.RequestType;
-import org.openarchives.oai._2.SetType;
-import org.openarchives.oai._2.VerbType;
-import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import org.openarchives.oai._2.ResumptionTokenType;
-import org.slf4j.LoggerFactory;
 
 /**
  * Helper class for collecting request parameters and building OAI-PMH response.

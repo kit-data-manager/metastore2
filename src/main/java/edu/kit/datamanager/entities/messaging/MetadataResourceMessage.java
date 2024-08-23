@@ -16,12 +16,12 @@
 package edu.kit.datamanager.entities.messaging;
 
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.domain.DataResource;
-import java.util.HashMap;
-import java.util.Map;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Handler for creating messages for metadata.

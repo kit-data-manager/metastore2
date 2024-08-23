@@ -17,12 +17,13 @@ package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.configuration.SearchConfiguration;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * Collect information about metadata document repository for health actuator.

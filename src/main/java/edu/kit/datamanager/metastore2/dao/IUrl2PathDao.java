@@ -6,10 +6,11 @@
 package edu.kit.datamanager.metastore2.dao;
 
 import edu.kit.datamanager.metastore2.domain.Url2Path;
-import java.util.List;
-import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Database linking URL to local path (if available)

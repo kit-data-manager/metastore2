@@ -18,8 +18,6 @@ package edu.kit.datamanager.metastore2.configuration;
 import edu.kit.datamanager.security.filter.KeycloakTokenFilter;
 import edu.kit.datamanager.security.filter.NoAuthenticationFilter;
 import edu.kit.datamanager.security.filter.PublicAuthenticationFilter;
-import java.util.Optional;
-import jakarta.servlet.Filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +25,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.autoconfigure.security.servlet.EndpointRequest;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.info.InfoEndpoint;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -44,6 +41,8 @@ import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+
+import java.util.Optional;
 
 /**
  * Configuration for web security.

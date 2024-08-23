@@ -16,8 +16,6 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.INTERNAL;
-
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
@@ -53,18 +51,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Path;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -88,6 +74,17 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.*;
+import java.util.function.UnaryOperator;
+
+import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.INTERNAL;
 
 /**
  * Controller for metadata documents.

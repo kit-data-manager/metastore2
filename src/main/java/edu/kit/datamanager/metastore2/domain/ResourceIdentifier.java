@@ -1,15 +1,16 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.HashMap;
-import java.util.Map;
 import com.google.gson.annotations.SerializedName;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Arrays;
-import lombok.Data;
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)

@@ -17,6 +17,12 @@ package edu.kit.datamanager.metastore2.util;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -27,11 +33,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 
 /**
  * Utility class for downloading resources from internet.

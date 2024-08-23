@@ -5,9 +5,10 @@
 package edu.kit.datamanager.metastore2.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.util.List;
 
 /**
  * Helper class for tabulator local pagination used by web frontend.

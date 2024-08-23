@@ -19,8 +19,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import java.time.Instant;
 import lombok.Data;
+
+import java.time.Instant;
 
 /**
  * Event for synchronization.

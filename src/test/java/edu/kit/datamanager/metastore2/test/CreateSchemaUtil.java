@@ -17,8 +17,6 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -30,8 +28,12 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 

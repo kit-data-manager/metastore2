@@ -21,21 +21,12 @@ import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
-import edu.kit.datamanager.metastore2.domain.DataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
-import edu.kit.datamanager.metastore2.domain.SchemaRecord;
-import edu.kit.datamanager.metastore2.domain.Url2Path;
+import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.ControllerUtils;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +34,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
+
+import java.util.*;
 
 /**
  * Class for indexing all metadata documents of given schemas Arguments have to

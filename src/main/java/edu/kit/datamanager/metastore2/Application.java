@@ -52,11 +52,6 @@ import edu.kit.datamanager.security.filter.KeycloakTokenValidator;
 import edu.kit.datamanager.service.IAuditService;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.RabbitMQMessagingService;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import org.javers.core.Javers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,6 +70,12 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.scheduling.annotation.EnableScheduling;
+
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * Main class starting spring boot service of MetaStore.
