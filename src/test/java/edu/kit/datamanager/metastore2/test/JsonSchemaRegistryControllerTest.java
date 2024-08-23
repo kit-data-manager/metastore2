@@ -527,7 +527,7 @@ public class JsonSchemaRegistryControllerTest {
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
     MetadataSchemaRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
-    Assert.assertEquals(result.getSchemaVersion(), Long.valueOf(1l));
+    Assert.assertEquals(result.getSchemaVersion(), Long.valueOf(1L));
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -835,7 +835,7 @@ public class JsonSchemaRegistryControllerTest {
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
-    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
+    Assert.assertEquals(record.getSchemaVersion() + 1L, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -868,7 +868,7 @@ public class JsonSchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
-    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
+    Assert.assertEquals(record.getSchemaVersion() + 1L, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -1016,7 +1016,7 @@ public class JsonSchemaRegistryControllerTest {
     // create should return conflict
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1039,7 +1039,7 @@ public class JsonSchemaRegistryControllerTest {
   private void ingestSchemaRecord(String schemaId) throws Exception {
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1090,7 +1090,7 @@ public class JsonSchemaRegistryControllerTest {
 
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId() + "/1");
-    schemaRecord.setVersion(1l);
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());
     schemaRecord.setDocumentHash(ci.getHash());

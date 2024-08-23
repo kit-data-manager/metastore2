@@ -775,7 +775,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -811,7 +811,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     record.setRelatedResource(RELATED_RESOURCE_2);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -824,7 +824,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
   }
 
   @Test
@@ -1084,7 +1084,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -1144,7 +1144,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     if (record.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(oldRecord.getAcl()));
       // There should be an additional entry
-      Assert.assertTrue(oldRecord.getAcl().size() + 1 == record2.getAcl().size());
+      Assert.assertEquals(oldRecord.getAcl().size() + 1, record2.getAcl().size());
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
   }
@@ -1330,7 +1330,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record2.getCreatedAt(), record3.getCreatedAt());
     Assert.assertEquals(record2.getMetadataDocumentUri().replace("version=1", "version=2"), record3.getMetadataDocumentUri());
     Assert.assertEquals(record2.getSchema().getIdentifier(), record3.getSchema().getIdentifier());
-    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1L);// version should be 1 higher
     if (record2.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
@@ -1424,7 +1424,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -1690,7 +1690,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }

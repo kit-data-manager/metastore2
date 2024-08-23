@@ -66,7 +66,7 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "409", description = "A Conflict is returned, if there is already a record for the provided schema id.")})
   @RequestMapping(value = {"", "/"}, method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE})
   @ResponseBody
-  public ResponseEntity<DataResource> createRecord(
+  ResponseEntity<DataResource> createRecord(
           @Parameter(description = "Json representation of the schema record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile schemaRecord,
           @Parameter(description = "The metadata schema document associated with the record.", required = true) @RequestPart(name = "schema", required = true) final MultipartFile document,
           final HttpServletRequest request,
@@ -83,10 +83,10 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datacite.org+json"})
   @ResponseBody
-  public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
-          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+                                             @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+                                             WebRequest wr,
+                                             HttpServletResponse hsr);
   @Operation(operationId = "getContentInformationRecordOfSchema",
           summary = "Get content information record by schema id (and version).", 
           description = "Obtain is single schema record by its schema id. "
@@ -97,10 +97,10 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.content-information+json"})
   @ResponseBody
-  public ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
-          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+                                                               @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+                                                               WebRequest wr,
+                                                               HttpServletResponse hsr);
 
   @Operation(summary = "Get landing page of schema by schema id (and version).", description = "Show landing page by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
@@ -109,10 +109,10 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "200", description = "OK and the landingpage is returned if the id exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"text/html"})
-  public ModelAndView getLandingPageById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
-          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ModelAndView getLandingPageById(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+                                  @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+                                  WebRequest wr,
+                                  HttpServletResponse hsr);
 
   @Operation(summary = "Validate a metadata document.", description = "Validate the provided metadata document using the addressed schema. If all parameters"
           + " are provided, the schema is identified uniquely by schemaId and version. If the version is omitted, the most recent version of the "
@@ -124,11 +124,11 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
           })
   @RequestMapping(value = {"/{schemaId}/validate"}, method = {RequestMethod.POST}, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
-  public ResponseEntity validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
-          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
-          @Parameter(description = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity validate(@Parameter(description = "The record identifier or schema identifier.", required = true) @PathVariable(value = "schemaId") String id,
+                          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+                          @Parameter(description = "The metadata file to validate against the addressed schema.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
+                          WebRequest wr,
+                          HttpServletResponse hsr);
 
   @Operation(summary = "Get a schema document by schema id.", description = "Obtain a single schema document identified by its schema id. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
@@ -138,10 +138,10 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/{schemaId}"}, method = {RequestMethod.GET}, produces = {"application/json", "application/xml"})
   @ResponseBody
-  public ResponseEntity getSchemaDocumentById(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "schemaId") String id,
-          @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity getSchemaDocumentById(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "schemaId") String id,
+                                       @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
+                                       WebRequest wr,
+                                       HttpServletResponse hsr);
 
   @Operation(summary = "Get all schema records.", description = "List all schema records in a paginated and/or sorted form. The result can be refined by providing schemaId, a list of one or more mimetypes and/or a date range. Returned schema record(s) must match. "
           + "if 'schemaId' is provided all other parameters were skipped and all versions of the given schemaId record will be returned. "
@@ -154,7 +154,7 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
   @RequestMapping(value = {"", "/"}, method = {RequestMethod.GET})
   @ResponseBody
   @PageableAsQueryParam
-  public ResponseEntity<List<DataResource>> getRecords(
+  ResponseEntity<List<DataResource>> getRecords(
           @Parameter(description = "SchemaId", required = false) @RequestParam(value = "schemaId", required = false) String schemaId,
           @Parameter(description = "A list of mime types returned schemas are associated with.", required = false) @RequestParam(value = "mimeType", required = false) List<String> mimeTypes,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
@@ -195,5 +195,5 @@ public interface ISchemaRegistryControllerV2 extends InfoContributor {
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
   @ResponseBody
-  public ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "schemaId") String id, @Header(name = "ETag", required = true) WebRequest wr, HttpServletResponse hsr);
+  ResponseEntity deleteRecord(@Parameter(description = "The schema id.", required = true) @PathVariable(value = "schemaId") String id, @Header(name = "ETag", required = true) WebRequest wr, HttpServletResponse hsr);
 }

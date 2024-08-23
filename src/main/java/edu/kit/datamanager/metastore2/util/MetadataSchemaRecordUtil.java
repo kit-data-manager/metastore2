@@ -130,17 +130,11 @@ public class MetadataSchemaRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     } else {
-      try {
-        String value = URLEncoder.encode(metadataRecord.getSchemaId(), StandardCharsets.UTF_8.toString());
-        if (!value.equals(metadataRecord.getSchemaId())) {
-          String message = "Not a valid schema id! Encoded: " + value;
-          LOG.error(message);
-          throw new BadArgumentException(message);
-        }
-      } catch (UnsupportedEncodingException ex) {
-        String message = "Error encoding schemaId " + metadataRecord.getSchemaId();
+      String value = URLEncoder.encode(metadataRecord.getSchemaId(), StandardCharsets.UTF_8);
+      if (!value.equals(metadataRecord.getSchemaId())) {
+        String message = "Not a valid schema id! Encoded: " + value;
         LOG.error(message);
-        throw new CustomInternalServerError(message);
+        throw new BadArgumentException(message);
       }
     }
     // Create schema record
@@ -172,7 +166,7 @@ public class MetadataSchemaRecordUtil {
         }
       }
     }
-    metadataRecord.setSchemaVersion(1l);
+    metadataRecord.setSchemaVersion(1L);
     // create record.
     DataResource dataResource = migrateToDataResource(applicationProperties, metadataRecord);
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
@@ -292,7 +286,7 @@ public class MetadataSchemaRecordUtil {
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
       } else {
@@ -587,7 +581,7 @@ public class MetadataSchemaRecordUtil {
         }
       }
 
-      Long schemaVersion = 1l;
+      Long schemaVersion = 1L;
       if (dataResource.getVersion() != null) {
         schemaVersion = Long.valueOf(dataResource.getVersion());
       }
@@ -1199,7 +1193,7 @@ public class MetadataSchemaRecordUtil {
     } else {
       msr = new MetadataSchemaRecord();
       Optional<Url2Path> url2path = url2PathDao.findByUrl(schema.getIdentifier());
-      Long version = 1l;
+      Long version = 1L;
       if (url2path.isPresent()) {
         version = url2path.get().getVersion();
       }

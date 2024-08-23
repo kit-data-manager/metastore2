@@ -80,26 +80,26 @@ public class ISchemaRecordDaoTest {
   public void testExistsSchemaRecordBySchemaIdAndVersion() {
     System.out.println("existsSchemaRecordBySchemaIdAndVersion");
     String schemaId = "schemaId";
-    Long version = 1l;
+    Long version = 1L;
     ISchemaRecordDao instance = schemaRecordDao;
     boolean expResult = false;
     boolean result = instance.existsSchemaRecordBySchemaIdAndVersion(schemaId, version);
     assertEquals(expResult, result);
     schemaId = "schemaId1";
-    version = 4l;
+    version = 4L;
     result = instance.existsSchemaRecordBySchemaIdAndVersion(schemaId, version);
     assertEquals(expResult, result);
     schemaId = "schemaId1";
-    version = 3l;
+    version = 3L;
     result = instance.existsSchemaRecordBySchemaIdAndVersion(schemaId, version);
     assertEquals(expResult, result);    // TODO review the generated test code and remove the default call to fail.
     schemaId = "schemaId1/3";
-    version = 2l;
+    version = 2L;
     result = instance.existsSchemaRecordBySchemaIdAndVersion(schemaId, version);
     assertEquals(expResult, result);    // TODO review the generated test code and remove the default call to fail.
     expResult = true;
     schemaId = "schemaId1/3";
-    version = 3l;
+    version = 3L;
     result = instance.existsSchemaRecordBySchemaIdAndVersion(schemaId, version);
     assertEquals(expResult, result);    // TODO review the generated test code and remove the default call to fail.
   }
@@ -112,17 +112,17 @@ public class ISchemaRecordDaoTest {
   public void testExistsSchemaRecordBySchemaIdStartWithAndVersion() {
     System.out.println("existsSchemaRecordBySchemaIdStartsWithAndVersion");
     String schemaId = "schemaId/";
-    Long version = 1l;
+    Long version = 1L;
     ISchemaRecordDao instance = schemaRecordDao;
     boolean expResult = false;
     boolean result = instance.existsSchemaRecordBySchemaIdStartsWithAndVersion(schemaId, version);
     assertEquals(expResult, result);
     schemaId = "schemaId1";
-    version = 4l;
+    version = 4L;
     result = instance.existsSchemaRecordBySchemaIdStartsWithAndVersion(schemaId, version);
     expResult = true;
     schemaId = "schemaId1";
-    version = 3l;
+    version = 3L;
     result = instance.existsSchemaRecordBySchemaIdStartsWithAndVersion(schemaId, version);
     assertEquals(expResult, result);   
   }
@@ -149,7 +149,7 @@ public class ISchemaRecordDaoTest {
     schemaIdWithVersion = "schemaId3/1";
     result = instance.findBySchemaId(schemaIdWithVersion);
     assertNotNull(result);
-    System.out.println(result.toString());
+    System.out.println(result);
 
   }
 

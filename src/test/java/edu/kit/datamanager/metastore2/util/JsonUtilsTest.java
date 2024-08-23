@@ -142,7 +142,7 @@ public class JsonUtilsTest {
     String schemaDocument = null;
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("argument \"content\" is null"));
@@ -158,7 +158,7 @@ public class JsonUtilsTest {
     InputStream schemaDocument = null;
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_READING_INPUT_STREAM));
@@ -174,7 +174,7 @@ public class JsonUtilsTest {
     String schemaDocument = "";
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
@@ -192,7 +192,7 @@ public class JsonUtilsTest {
     InputStream schemaDocument = IOUtils.toInputStream("", ENCODING);
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
@@ -208,7 +208,7 @@ public class JsonUtilsTest {
     String schemaDocument = "{}";
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
@@ -226,7 +226,7 @@ public class JsonUtilsTest {
     InputStream schemaDocument = IOUtils.toInputStream("{}", ENCODING);
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
@@ -304,7 +304,7 @@ public class JsonUtilsTest {
     String schemaDocument = jsonSchemaWithversiondraft201909;
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V4);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
@@ -320,7 +320,7 @@ public class JsonUtilsTest {
     String schemaDocument = invalidJsonSchemaDocumentWithversiondraft201909;
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
@@ -338,7 +338,7 @@ public class JsonUtilsTest {
     InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft201909, ENCODING);
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V4);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
@@ -354,7 +354,7 @@ public class JsonUtilsTest {
     String schemaDocument = jsonSchemaWithversiondraft04;
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V201909);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
@@ -372,7 +372,7 @@ public class JsonUtilsTest {
     InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft04, ENCODING);
     try {
       JsonUtils.validateJsonSchemaDocument(schemaDocument, SpecVersion.VersionFlag.V201909);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
@@ -389,7 +389,7 @@ public class JsonUtilsTest {
       String schemaDocument = jsonSchemaWithversiondraft04;
       SpecVersion.VersionFlag version = null;
       JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-      assertTrue(false); //should not executed.
+      fail(); //should not executed.
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.MISSING_SCHEMA_VERSION));
@@ -408,7 +408,7 @@ public class JsonUtilsTest {
       InputStream schemaDocument = IOUtils.toInputStream(jsonSchemaWithversiondraft04, ENCODING);
       SpecVersion.VersionFlag version = null;
       JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-      assertTrue(false); //should not executed.
+      fail(); //should not executed.
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.MISSING_SCHEMA_VERSION));
@@ -425,7 +425,7 @@ public class JsonUtilsTest {
       String schemaDocument = null;
       SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
       JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-      assertTrue(false); //should not executed.
+      fail(); //should not executed.
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("argument \"content\" is null"));
@@ -442,7 +442,7 @@ public class JsonUtilsTest {
       InputStream schemaDocument = null;
       SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
       JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-      assertTrue(false); //should not executed.
+      fail(); //should not executed.
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_READING_INPUT_STREAM));
@@ -587,7 +587,7 @@ public class JsonUtilsTest {
     SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
     try {
       JsonUtils.validateJson(jsonDocument, jsonSchema, version);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
@@ -607,7 +607,7 @@ public class JsonUtilsTest {
     SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V201909;
     try {
       JsonUtils.validateJson(jsonDocument, jsonSchema, version);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.EMPTY_SCHEMA_DETECTED));
@@ -625,7 +625,7 @@ public class JsonUtilsTest {
     SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V7;
     try {
       JsonUtils.validateJson(jsonDocument, jsonSchema, version);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));
@@ -645,7 +645,7 @@ public class JsonUtilsTest {
     SpecVersion.VersionFlag version = SpecVersion.VersionFlag.V7;
     try {
       JsonUtils.validateJson(jsonDocument, jsonSchema, version);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains("Unknown MetaSchema"));

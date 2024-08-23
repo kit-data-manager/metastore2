@@ -157,7 +157,7 @@ public class IUrl2PathDaoTest {
     String metadataId = "metadataId";
     Optional<Url2Path> result;
     long noOfDataSets = dataRecordDao.count();
-    assertEquals(7l, noOfDataSets);
+    assertEquals(7L, noOfDataSets);
     for (int i = 1; i < 7; i++) {
       result = instance.findByUrl(metadataId + i);
       assertNotNull(result);

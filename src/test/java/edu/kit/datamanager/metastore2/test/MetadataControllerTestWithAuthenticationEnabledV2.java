@@ -817,7 +817,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andReturn();
 
     DataResource result = mapper.readValue(res.getResponse().getContentAsString(), DataResource.class);
-    Assert.assertEquals(Long.valueOf(1l).toString(), result.getVersion());
+    Assert.assertEquals(Long.valueOf(1L).toString(), result.getVersion());
 
     record = SchemaRegistryControllerTestV2.createDataResource4Document(id + "_2", schemaId);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -850,7 +850,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andReturn();
 
     DataResource result = mapper.readValue(res.getResponse().getContentAsString(), DataResource.class);
-    Assert.assertEquals(Long.valueOf(1l).toString(), result.getVersion());
+    Assert.assertEquals(Long.valueOf(1L).toString(), result.getVersion());
 
     RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(record);
     Set<RelatedIdentifier> relatedIdentifiers = record.getRelatedIdentifiers();
@@ -876,7 +876,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andReturn();
 
     result = mapper.readValue(res.getResponse().getContentAsString(), DataResource.class);
-    Assert.assertEquals(Long.valueOf(1l).toString(), result.getVersion());
+    Assert.assertEquals(Long.valueOf(1L).toString(), result.getVersion());
   }
 
   @Test
@@ -1152,7 +1152,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
     SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
     Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1l);// version should be 1 higher
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
 
@@ -1169,7 +1169,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     Assert.assertNotEquals(contentInformation1, contentInformation2);
     Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
     Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
-    Assert.assertEquals((long)(contentInformation1.getVersion() + 1), (long)contentInformation2.getVersion());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, (long)contentInformation2.getVersion());
     Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
     Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
 
@@ -1465,7 +1465,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     DataResource record3 = mapper.readValue(body, DataResource.class);
     SchemaRegistryControllerTestV2.validateCreateDates(record2.getDates(), record3.getDates());
     SchemaRegistryControllerTestV2.validateRelatedIdentifierSets(record2.getRelatedIdentifiers(), record2.getRelatedIdentifiers());
-    Assert.assertEquals(Long.parseLong(record2.getVersion()), Long.parseLong(record3.getVersion()) - 1l);// version should be 1 higher
+    Assert.assertEquals(Long.parseLong(record2.getVersion()), Long.parseLong(record3.getVersion()) - 1L);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record2.getAcls(), record3.getAcls());
     Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
   }
@@ -1566,7 +1566,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     DataResource record2 = mapper.readValue(body, DataResource.class);
     SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
     Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1l);// version should be 1 higher
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check ContentInformation of second version
@@ -1582,7 +1582,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     Assert.assertNotEquals(contentInformation1, contentInformation2);
     Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
     Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
-    Assert.assertEquals((long)(contentInformation1.getVersion() + 1), (long)contentInformation2.getVersion());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, (long)contentInformation2.getVersion());
     Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
     Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
 
@@ -1899,7 +1899,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     DataResource record2 = mapper.readValue(body, DataResource.class);
     SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
     Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
-    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1l);// version should be 1 higher
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
     SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
 
@@ -2032,7 +2032,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             param("version", "1")).
             andDo(print()).andExpect(status().isOk()).
             andReturn();
-    String result = res.getRequest().getRequestURL().toString() + "?version=1";
+    String result = res.getRequest().getRequestURL() + "?version=1";
     System.out.println("result " + result);
     return result.replaceFirst("8080", "41428");
   }

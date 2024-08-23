@@ -65,7 +65,7 @@ public interface IMetadataControllerV2 extends InfoContributor {
 
   @RequestMapping(value = {"/"}, method = RequestMethod.POST, consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
   @ResponseBody
-  public ResponseEntity createRecord(
+  ResponseEntity createRecord(
           @Parameter(description = "Json representation of the datacite record.", required = true) @RequestPart(name = "record", required = true) final MultipartFile dataciteRecord,
           @Parameter(description = "The metadata document associated with the record. The document must match the schema selected by the record.", required = true) @RequestPart(name = "document", required = true) final MultipartFile document,
           final HttpServletRequest request,
@@ -80,10 +80,10 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datacite.org+json"})
-  public ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity<DataResource> getRecordById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+                                             @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+                                             WebRequest wr,
+                                             HttpServletResponse hsr);
 
   @Operation(summary = "Get a content information record by id.", description = "Obtain a single record by its resource identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
@@ -93,10 +93,10 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.content-information+json"})
-  public ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity<ContentInformation> getContentInformationById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+                                                               @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+                                                               WebRequest wr,
+                                                               HttpServletResponse hsr);
 
   @Operation(summary = "Get a metadata record by id.", description = "Obtain a single record by its resource identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
@@ -106,10 +106,10 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.acl+json"})
-  public ResponseEntity<AclRecord> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity<AclRecord> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+                                       @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+                                       WebRequest wr,
+                                       HttpServletResponse hsr);
 
   @Operation(summary = "Get a landing page by id.", description = "Obtain a single record by its resource identifier. "
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. Furthermore, a specific version of the record can be returned "
@@ -119,10 +119,10 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"text/html"})
-  public ModelAndView getLandingpageById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @Parameter(description = "The version of the metadata document. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ModelAndView getLandingpageById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+                                  @Parameter(description = "The version of the metadata document. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+                                  WebRequest wr,
+                                  HttpServletResponse hsr);
   @Operation(summary = "Get a metadata document by record identifier.", description = "Obtain a single metadata document identified by its resource identifier."
           + "Depending on a user's role, accessing a specific record may be allowed or forbidden. "
           + "Furthermore, a specific version of the metadata document can be returned by providing a version number as request parameter.",
@@ -132,10 +132,10 @@ public interface IMetadataControllerV2 extends InfoContributor {
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/xml", "application/json"})
   @ResponseBody
-  public ResponseEntity getMetadataDocumentById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
-          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
-          WebRequest wr,
-          HttpServletResponse hsr);
+  ResponseEntity getMetadataDocumentById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+                                         @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
+                                         WebRequest wr,
+                                         HttpServletResponse hsr);
 
   @Operation(summary = "Get all records.", description = "List all records in a paginated and sorted form. The result can be refined by providing id, specific related resource id(s) and/or metadata schema id(s) valid records must match. "
           + "If 'id' is provided all available versions for given 'id' will be returned and all other parameters will be ignored."
@@ -148,13 +148,13 @@ public interface IMetadataControllerV2 extends InfoContributor {
   @RequestMapping(value = {"", "/"}, method = {RequestMethod.GET})
   @PageableAsQueryParam
   @ResponseBody
-  public ResponseEntity<List<DataResource>> getRecords(
+  ResponseEntity<List<DataResource>> getRecords(
           @Parameter(description = "ID of the metadata document.", required = false) @RequestParam(value = "id", required = false) String id,
           @Parameter(description = "A list of related resource identifiers.", required = false) @RequestParam(value = "resourceId", required = false) List<String> relatedIds,
           @Parameter(description = "A list of metadata schema identifiers.", required = false) @RequestParam(value = "schemaId", required = false) List<String> schemaIds,
           @Parameter(description = "The UTC time of the earliest update of a returned record.", required = false) @RequestParam(name = "from", required = false) Instant updateFrom,
           @Parameter(description = "The UTC time of the latest update of a returned record.", required = false) @RequestParam(name = "until", required = false) Instant updateUntil,
-          @Parameter(hidden = true)@PageableDefault(sort = {"lastUpdate"}, direction = Sort.Direction.DESC) Pageable pgbl,
+          @Parameter(hidden = true) @PageableDefault(sort = {"lastUpdate"}, direction = Sort.Direction.DESC) Pageable pgbl,
           WebRequest wr,
           HttpServletResponse hsr,
           UriComponentsBuilder ucb);
@@ -189,5 +189,5 @@ public interface IMetadataControllerV2 extends InfoContributor {
     @Parameter(name = "If-Match", description = "ETag of the object. Please use quotation marks!", required = true, in = ParameterIn.HEADER)
   })
   @ResponseBody
-  public ResponseEntity deleteRecord(@Parameter(description = "The resource identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
+  ResponseEntity deleteRecord(@Parameter(description = "The resource identifier.", required = true) @PathVariable(value = "id") String id, WebRequest wr, HttpServletResponse hsr);
 }

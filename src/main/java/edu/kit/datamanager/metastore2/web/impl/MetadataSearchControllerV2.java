@@ -49,7 +49,7 @@ public class MetadataSearchControllerV2 {
   private static final String SEARCH_PATH_POSTFIX = "/_search";
 
   @Autowired
-  private SearchConfiguration searchConfiguration;
+  private final SearchConfiguration searchConfiguration;
 
   /**
    * Constructor with configuration.

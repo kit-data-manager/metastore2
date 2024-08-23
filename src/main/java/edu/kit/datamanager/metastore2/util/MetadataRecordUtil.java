@@ -146,7 +146,7 @@ public class MetadataRecordUtil {
     // validate schema document
     validateMetadataDocument(applicationProperties, metadataRecord, document);
     // set internal parameters
-    metadataRecord.setRecordVersion(1l);
+    metadataRecord.setRecordVersion(1L);
 
     long nano3 = System.nanoTime() / 1000000;
     // create record.
@@ -156,18 +156,12 @@ public class MetadataRecordUtil {
     // id will be set to alternate identifier if exists. 
     if (dataResource.getId() != null) {
       // check for valid identifier without any chars which may be encoded
-      try {
-        String originalId = dataResource.getId();
-        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
-        if (!value.equals(originalId)) {
-          String message = "Not a valid id! Encoded: " + value;
-          LOG.error(message);
-          throw new BadArgumentException(message);
-        }
-      } catch (UnsupportedEncodingException ex) {
-        String message = "Error encoding id " + metadataRecord.getSchemaId();
+      String originalId = dataResource.getId();
+      String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8);
+      if (!value.equals(originalId)) {
+        String message = "Not a valid id! Encoded: " + value;
         LOG.error(message);
-        throw new CustomInternalServerError(message);
+        throw new BadArgumentException(message);
       }
 
       dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
@@ -282,7 +276,7 @@ public class MetadataRecordUtil {
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
       }
@@ -478,7 +472,7 @@ public class MetadataRecordUtil {
         }
       }
 
-      Long recordVersion = 1l;
+      Long recordVersion = 1L;
       if (dataResource.getVersion() != null) {
         recordVersion = Long.parseLong(dataResource.getVersion());
       }
@@ -504,7 +498,7 @@ public class MetadataRecordUtil {
               metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
             }
           } else {
-            metadataRecord.setSchemaVersion(1l);
+            metadataRecord.setSchemaVersion(1L);
           }
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }

@@ -29,18 +29,17 @@ public class ResourceIdentifier implements Serializable {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ResourceIdentifier.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-    sb.append("resourceIdentifier");
-    sb.append('=');
-    sb.append(((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()));
-    sb.append(',');
-    sb.append("resourceIdentifierType");
-    sb.append('=');
-    sb.append(((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()));
-    sb.append(']');
+    String sb = ResourceIdentifier.class.getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + '[' +
+            "resourceIdentifier" +
+            '=' +
+            ((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()) +
+            ',' +
+            "resourceIdentifierType" +
+            '=' +
+            ((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()) +
+            ']';
 
-    return sb.toString();
+    return sb;
   }
 
   @Override
@@ -56,8 +55,7 @@ public class ResourceIdentifier implements Serializable {
     boolean returnValue = true;
     if (other != this) {
       returnValue = false;
-      if (other instanceof ResourceIdentifier) {
-        ResourceIdentifier rhs = ((ResourceIdentifier) other);
+      if (other instanceof ResourceIdentifier rhs) {
         // check for id
         if ((((this.getId() == null) && (rhs.getId() == null))
                 || ((this.getId() != null) && this.getId().equals(rhs.getId())))

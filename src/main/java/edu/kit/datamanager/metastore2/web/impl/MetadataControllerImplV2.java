@@ -229,7 +229,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 //      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
 //    }
     DataResource result = DataResourceRecordUtil.createDataResourceRecord4Metadata(metadataConfig, recordDocument, document);
-    LOG.trace("Get dataresource: '{}'", result.toString());
+    LOG.trace("Get dataresource: '{}'", result);
     String eTag = result.getEtag();
     LOG.trace("Get ETag: ' {}'", eTag);
     // Successfully created metadata record.
@@ -266,7 +266,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of DataResource.");
-    LOG.trace("Get dataresource: '{}'", metadataRecord.toString());
+    LOG.trace("Get dataresource: '{}'", metadataRecord);
     String etag = metadataRecord.getEtag();
     LOG.trace("Get ETag: ' {}'", etag);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);

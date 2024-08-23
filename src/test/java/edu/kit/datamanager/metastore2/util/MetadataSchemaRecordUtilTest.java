@@ -148,8 +148,8 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     String resourceId = "any";
     String eTag = "neverMind";
-    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
     MetadataSchemaRecordUtil.createMetadataSchemaRecord(conf, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
@@ -159,8 +159,8 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     String resourceId = "any";
     String eTag = "neverMind";
-    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("{something really strange}").getBytes());
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", "{something really strange}".getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
     MetadataSchemaRecordUtil.createMetadataSchemaRecord(conf, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
@@ -181,8 +181,8 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     String resourceId = "any";
     String eTag = "neverMind";
-    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
     MetadataSchemaRecordUtil.updateMetadataSchemaRecord(conf, resourceId, eTag, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
@@ -192,8 +192,8 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     String resourceId = "any";
     String eTag = "neverMind";
-    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("{something really strange}").getBytes());
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MultipartFile recordDocument = new MockMultipartFile("schema", "schema.json", "application/json", "{something really strange}".getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
     MetadataSchemaRecordUtil.updateMetadataSchemaRecord(conf, resourceId, eTag, recordDocument, schemaDocument, null);
     fail("Don't reach this line!");
   }
@@ -201,14 +201,14 @@ public class MetadataSchemaRecordUtilTest {
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (ResourceIdentifier) null, 1l);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (ResourceIdentifier) null, 1L);
     fail("Don't reach this line!");
   }
 
   @Test(expected = edu.kit.datamanager.exceptions.BadArgumentException.class)
   public void testValidateResourceIdentifierNull_2() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String) null, 1l);
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, null, (String) null, 1L);
     fail("Don't reach this line!");
   }
 
@@ -216,8 +216,8 @@ public class MetadataSchemaRecordUtilTest {
   public void testValidateResourceIdentifierNoValue() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     ResourceIdentifier identifier = ResourceIdentifier.factoryInternalResourceIdentifier(null);
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
-    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, identifier, 1l);
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
+    MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, identifier, 1L);
     fail("Don't reach this line!");
   }
 
@@ -242,7 +242,7 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaDocumentUri("any");
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String().getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "".getBytes());
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
@@ -251,7 +251,7 @@ public class MetadataSchemaRecordUtilTest {
   public void testValidateMetadataDocumentSchemaRecordNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = null;
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "any content".getBytes());
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
@@ -260,7 +260,7 @@ public class MetadataSchemaRecordUtilTest {
   public void testValidateMetadataDocumentSchemaRecordUriNull() {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "any content".getBytes());
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
@@ -270,7 +270,7 @@ public class MetadataSchemaRecordUtilTest {
     MetastoreConfiguration conf = new MetastoreConfiguration();
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaDocumentUri("   ");
-    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", new String("any content").getBytes());
+    MultipartFile schemaDocument = new MockMultipartFile("schema", "schema.json", "application/json", "any content".getBytes());
     MetadataSchemaRecordUtil.validateMetadataDocument(conf, schemaDocument, schemaRecord);
     fail("Don't reach this line!");
   }
@@ -312,12 +312,12 @@ public class MetadataSchemaRecordUtilTest {
   public MetadataSchemaRecord createSchemaRecord(int... skipped) {
     Set<AclEntry> aclEntries = new HashSet<>();
     AclEntry entry = new AclEntry();
-    entry.setId(1l);
+    entry.setId(1L);
     entry.setPermission(PERMISSION.WRITE);
     entry.setSid("write");
-    aclEntries.add(createEntry(1l, PERMISSION.NONE, "none"));
-    aclEntries.add(createEntry(2l, PERMISSION.READ, "read"));
-    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now().truncatedTo(ChronoUnit.SECONDS), "definition", "eTag", "label", Instant.MAX.truncatedTo(ChronoUnit.SECONDS), true, "mimetype", "pid", "schemadocument", "hash", "schemaId", 1l, SCHEMA_TYPE.XML);
+    aclEntries.add(createEntry(1L, PERMISSION.NONE, "none"));
+    aclEntries.add(createEntry(2L, PERMISSION.READ, "read"));
+    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now().truncatedTo(ChronoUnit.SECONDS), "definition", "eTag", "label", Instant.MAX.truncatedTo(ChronoUnit.SECONDS), true, "mimetype", "pid", "schemadocument", "hash", "schemaId", 1L, SCHEMA_TYPE.XML);
     for (int remove : skipped) {
       switch (remove) {
         case 1:

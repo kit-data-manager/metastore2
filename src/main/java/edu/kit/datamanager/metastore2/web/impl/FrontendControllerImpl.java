@@ -91,7 +91,7 @@ public class FrontendControllerImpl implements IFrontendController {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
     LOG.trace(SHOW_PAGE, pageable);
-    List<String> metadataDocumentId = id == null ? null : Arrays.asList(id);
+    List<String> metadataDocumentId = id == null ? null : List.of(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, metadataDocumentId, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
@@ -145,7 +145,7 @@ public class FrontendControllerImpl implements IFrontendController {
     }
     LOG.trace(SHOW_PAGE, pageable);
 
-    List<String> schemaIds = id == null ? null : Arrays.asList(id);
+    List<String> schemaIds = id == null ? null : List.of(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords;
     List<MetadataRecord> metadataRecords = null;
     String pageSize = null;

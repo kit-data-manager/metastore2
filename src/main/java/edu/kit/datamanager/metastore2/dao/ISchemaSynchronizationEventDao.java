@@ -27,5 +27,5 @@ import java.util.Optional;
  */
 public interface ISchemaSynchronizationEventDao extends JpaRepository<SchemaSynchronizationEvent, Long> {
 
-  public Optional<SchemaSynchronizationEvent> findBySourceName(String sourceName);
+  Optional<SchemaSynchronizationEvent> findBySourceName(String sourceName);
 }

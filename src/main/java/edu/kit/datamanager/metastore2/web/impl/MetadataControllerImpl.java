@@ -375,7 +375,7 @@ public class MetadataControllerImpl implements IMetadataController {
         } catch (Exception rnfe) {
           //  schemaID not found set version to 1
           currentSchemaRecord = new MetadataSchemaRecord();
-          currentSchemaRecord.setSchemaVersion(1l);
+          currentSchemaRecord.setSchemaVersion(1L);
           allRelatedIdentifiersSchema.add("UNKNOWN_SCHEMA_ID");
         }
         for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {

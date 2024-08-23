@@ -49,7 +49,7 @@ public class IdentifyTypeTest {
         String expResult = value;
         String result = instance.getRepositoryName();
         assertEquals(expResult, result);
-        value = new String("repoName");
+        value = "repoName";
         expResult = value;
         instance.setRepositoryName(value);
         result = instance.getRepositoryName();
@@ -66,7 +66,7 @@ public class IdentifyTypeTest {
         String expResult = value;
         String result = instance.getBaseURL();
         assertEquals(expResult, result);
-        value = new String("baseUrl");
+        value = "baseUrl";
         expResult = value;
         instance.setBaseURL(value);
         result = instance.getBaseURL();
@@ -84,7 +84,7 @@ public class IdentifyTypeTest {
         String expResult = value;
         String result = instance.getProtocolVersion();
         assertEquals(expResult, result);
-        value = new String("protocolVersion");
+        value = "protocolVersion";
         expResult = value;
         instance.setProtocolVersion(value);
         result = instance.getProtocolVersion();
@@ -119,7 +119,7 @@ public class IdentifyTypeTest {
         String expResult = value;
         String result = instance.getEarliestDatestamp();
         assertEquals(expResult, result);
-        value = new String("firstDateStamp");
+        value = "firstDateStamp";
         expResult = value;
         instance.setEarliestDatestamp(value);
         result = instance.getEarliestDatestamp();
@@ -174,7 +174,7 @@ public class IdentifyTypeTest {
         List<String> result = instance.getCompression();
         assertTrue(result.isEmpty());
         expResult = result;
-        expResult.add(new String("gzip"));
+        expResult.add("gzip");
         result = instance.getCompression();
         assertEquals(expResult, result);
     }

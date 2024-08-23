@@ -48,7 +48,7 @@ public class OAIPMHerrorTypeTest {
         String expResult = value;
         String result = instance.getValue();
         assertEquals(expResult, result);
-        value = new String("value");
+        value = "value";
         expResult = value;
         instance.setValue(value);
         result = instance.getValue();

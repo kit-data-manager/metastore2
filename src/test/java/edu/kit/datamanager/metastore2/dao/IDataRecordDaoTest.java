@@ -94,15 +94,15 @@ public class IDataRecordDaoTest {
     System.out.println("findByMetadataIdAndVersion");
     String metadataId = "metadataId1";
 //    IDataRecordDao instance = new IDataRecordDaoImpl();
-    Optional<DataRecord> result = instance.findByMetadataIdAndVersion(metadataId, 3l);
+    Optional<DataRecord> result = instance.findByMetadataIdAndVersion(metadataId, 3L);
     assertNotNull(result);
     assertTrue(result.isPresent());
 
-    result = instance.findByMetadataIdAndVersion(metadataId, 1l);
+    result = instance.findByMetadataIdAndVersion(metadataId, 1L);
     assertNotNull(result);
     assertFalse(result.isPresent());
     
-    result = instance.findByMetadataIdAndVersion("unknownId", 1l);
+    result = instance.findByMetadataIdAndVersion("unknownId", 1L);
     assertNotNull(result);
     assertFalse(result.isPresent());
   }
@@ -298,7 +298,7 @@ public class IDataRecordDaoTest {
     dataRecord.setDocumentHash(documentHash);
     dataRecord.setMetadataId(metadataId);
     dataRecord.setVersion(Long.valueOf(version));
-    dataRecord.setSchemaVersion(1l);
+    dataRecord.setSchemaVersion(1L);
     dataRecord.setSchemaId(schemaId);
     dataRecord.setLastUpdate(instant);
     dataRecord.setMetadataDocumentUri(metadataDocumentUri);

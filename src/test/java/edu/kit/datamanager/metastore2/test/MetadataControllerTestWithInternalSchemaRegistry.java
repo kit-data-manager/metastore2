@@ -635,7 +635,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -663,7 +663,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     record.setRelatedResource(RELATED_RESOURCE_2);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -672,7 +672,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
     result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
   }
 
   @Test
@@ -739,18 +739,18 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     ObjectMapper map = new ObjectMapper();
     String[] multipleVersions = {"1", "2", "3"};
     // Ingest 1st version of document.
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 1l, multipleVersions[0], XML_DOCUMENT_V1, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 1L, multipleVersions[0], XML_DOCUMENT_V1, metadataConfig.getJwtSecret());
     MvcResult res = this.mockMvc.perform(get("/api/v1/metadata/").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
     Assert.assertEquals(1, result.length);
     // Ingest 2nd version of document
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 2l, multipleVersions[1], XML_DOCUMENT_V2, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 2L, multipleVersions[1], XML_DOCUMENT_V2, metadataConfig.getJwtSecret());
     res = this.mockMvc.perform(get("/api/v1/metadata/").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
     Assert.assertEquals(2, result.length);
     // Ingest 3rd version of document
-    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 3l, multipleVersions[2], XML_DOCUMENT_V3, metadataConfig.getJwtSecret());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, schemaId, 3L, multipleVersions[2], XML_DOCUMENT_V3, metadataConfig.getJwtSecret());
     res = this.mockMvc.perform(get("/api/v1/metadata/").param("schemaId", schemaId)).andDo(print()).andExpect(status().isOk()).andReturn();
     result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
@@ -850,7 +850,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -903,7 +903,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     Assert.assertEquals(record2.getCreatedAt(), record3.getCreatedAt());
     Assert.assertEquals(record2.getMetadataDocumentUri().replace("version=1", "version=2"), record3.getMetadataDocumentUri());
     Assert.assertEquals(record2.getSchema().getIdentifier(), record3.getSchema().getIdentifier());
-    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1L);// version should be 1 higher
     if (record2.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
@@ -965,7 +965,7 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }

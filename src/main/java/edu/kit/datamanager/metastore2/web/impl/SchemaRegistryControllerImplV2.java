@@ -141,7 +141,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     LOG.trace("Schema record successfully persisted.");
     URI locationUri;
     locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(dataResourceRecord);
-    LOG.trace("Set locationUri to '{}'", locationUri.toString());
+    LOG.trace("Set locationUri to '{}'", locationUri);
     return ResponseEntity.created(locationUri).eTag("\"" + etag + "\"").body(dataResourceRecord);
   }
   
@@ -348,7 +348,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
 
     URI locationUri;
     locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(updatedSchemaRecord);
-    LOG.trace("Set locationUri to '{}'", locationUri.toString());
+    LOG.trace("Set locationUri to '{}'", locationUri);
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedSchemaRecord);
   }
   

@@ -97,10 +97,10 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetastoreOAIPMHRepository.class);
 
-  private MetadataFormatType DC_SCHEMA;
-  private MetadataFormatType DATACITE_SCHEMA;
+  private final MetadataFormatType DC_SCHEMA;
+  private final MetadataFormatType DATACITE_SCHEMA;
 
-  private OaiPmhConfiguration pluginConfiguration;
+  private final OaiPmhConfiguration pluginConfiguration;
 
   @Autowired
   private IDataRecordDao dataRecordDao;
@@ -148,12 +148,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   @Override
   public List<String> getAdminEmail() {
-    return Arrays.asList(pluginConfiguration.getAdminEmail());
+    return Collections.singletonList(pluginConfiguration.getAdminEmail());
   }
 
   @Override
   public String getEarliestDatestamp() {
-    return getDateFormat().format(new Date(0l));
+    return getDateFormat().format(new Date(0L));
   }
 
   @Override
@@ -237,12 +237,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     LOGGER.trace("Adding {} records to result.", results.size());
     results.stream().forEach(result -> {
       //TODO get proper date
-      Date changeDate = new Date(0l);
+      Date changeDate = new Date(0L);
       if (result.getLastUpdate() != null) {
         changeDate = Date.from(result.getLastUpdate());
       }
 
-      builder.addRecord(result.getMetadataId(), changeDate, Arrays.asList("default"));
+      builder.addRecord(result.getMetadataId(), changeDate, List.of("default"));
     });
   }
 
@@ -376,11 +376,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     Document doc = getMetadataDocument(result, builder.getMetadataPrefix());
     if (doc != null) {
       LOGGER.trace("Adding record using obtained metadata document.");
-      Date resourceDate = new Date(0l);
+      Date resourceDate = new Date(0L);
       if (result.getLastUpdate() != null) {
         resourceDate = Date.from(result.getLastUpdate());
       }
-      builder.addRecord(result.getMetadataId(), resourceDate, Arrays.asList("default"), doc.getDocumentElement());
+      builder.addRecord(result.getMetadataId(), resourceDate, List.of("default"), doc.getDocumentElement());
     } else {
       LOGGER.error("No metadata document found for prefix {} and object identifier {}. Returning OAI-PMH error CANNOT_DISSEMINATE_FORMAT.", builder.getMetadataPrefix(), result.getId());
       builder.addError(OAIPMHerrorcodeType.CANNOT_DISSEMINATE_FORMAT, null);

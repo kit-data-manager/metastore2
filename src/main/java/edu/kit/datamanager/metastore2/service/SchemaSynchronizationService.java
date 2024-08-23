@@ -39,6 +39,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -106,7 +107,7 @@ public class SchemaSynchronizationService {
       }
 
       HttpHeaders headers = new HttpHeaders();
-      headers.setAccept(Arrays.asList(MediaType.parseMediaType("application/vnd.datamanager.schema-record+json")));
+      headers.setAccept(List.of(MediaType.parseMediaType("application/vnd.datamanager.schema-record+json")));
 
       HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(headers);
 

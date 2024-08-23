@@ -288,7 +288,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       MetadataSchemaRecordUtil.fixSchemaDocumentUri(item);
       schemaList.add(item);
       if (LOG.isTraceEnabled()) {
-        LOG.trace("===> " + item.toString());
+        LOG.trace("===> " + item);
       }
     });
 
@@ -316,7 +316,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     URI locationUri;
     locationUri = MetadataSchemaRecordUtil.getSchemaDocumentUri(updatedSchemaRecord);
-    LOG.trace("Set locationUri to '{}'", locationUri.toString());
+    LOG.trace("Set locationUri to '{}'", locationUri);
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedSchemaRecord);
   }
 

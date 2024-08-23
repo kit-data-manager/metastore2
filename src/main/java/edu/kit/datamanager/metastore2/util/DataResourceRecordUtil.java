@@ -348,7 +348,7 @@ public class DataResourceRecordUtil {
     ControllerUtils.checkEtag(eTag, dataResource);
     LOG.trace("ETag: '{}'", dataResource.getEtag());
     if (metadataRecord != null) {
-      LOG.trace("metadataRecord: '{}'", metadataRecord.toString());
+      LOG.trace("metadataRecord: '{}'", metadataRecord);
       metadataRecord.setVersion(dataResource.getVersion());
       metadataRecord.setId(dataResource.getId());
       updatedDataResource = metadataRecord;
@@ -403,7 +403,7 @@ public class DataResourceRecordUtil {
         if (version == null) {
           version = "0";
         }
-        updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+        updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
       }
 
@@ -548,7 +548,7 @@ public class DataResourceRecordUtil {
         }
       }
 
-      Long recordVersion = 1l;
+      Long recordVersion = 1L;
       if (dataResource.getVersion() != null) {
         recordVersion = Long.parseLong(dataResource.getVersion());
       }
@@ -574,7 +574,7 @@ public class DataResourceRecordUtil {
               metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
             }
           } else {
-            metadataRecord.setSchemaVersion(1l);
+            metadataRecord.setSchemaVersion(1L);
           }
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
@@ -1346,17 +1346,11 @@ public class DataResourceRecordUtil {
       metadataRecord.getAlternateIdentifiers().add(Identifier.factoryIdentifier(id, Identifier.IDENTIFIER_TYPE.OTHER));
     }
 
-    try {
-      String value = URLEncoder.encode(metadataRecord.getId(), StandardCharsets.UTF_8.toString());
-      if (!value.equals(metadataRecord.getId())) {
-        String message = "Not a valid ID! Encoded: " + value;
-        LOG.error(message);
-        throw new BadArgumentException(message);
-      }
-    } catch (UnsupportedEncodingException ex) {
-      String message = "Error encoding schemaId " + metadataRecord.getId();
+    String value = URLEncoder.encode(metadataRecord.getId(), StandardCharsets.UTF_8);
+    if (!value.equals(metadataRecord.getId())) {
+      String message = "Not a valid ID! Encoded: " + value;
       LOG.error(message);
-      throw new CustomInternalServerError(message);
+      throw new BadArgumentException(message);
     }
 
   }
@@ -1683,7 +1677,7 @@ public class DataResourceRecordUtil {
     SchemaRecord schemaRecord = null;
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataResource);
     String schemaId = schemaIdentifier.getValue();
-    LOG.trace("getSchemaRecordFromDataResource: related identifier:  '{}'", schemaIdentifier.toString());
+    LOG.trace("getSchemaRecordFromDataResource: related identifier:  '{}'", schemaIdentifier);
     LOG.trace("getSchemaRecordFromDataResource: '{}'", schemaId);
     switch (schemaIdentifier.getIdentifierType()) {
       case URL:
@@ -1830,7 +1824,7 @@ public class DataResourceRecordUtil {
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
         ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
         SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
@@ -1988,7 +1982,7 @@ public class DataResourceRecordUtil {
       records = spec != null ? dataResourceDao.findAll(spec, pgbl) : dataResourceDao.findAll(pgbl);
       if (LOG.isTraceEnabled()) {
         if (spec != null) {
-          LOG.trace("Query data resources with spec '{}'", spec.toString());
+          LOG.trace("Query data resources with spec '{}'", spec);
         } else {
           LOG.trace("Query all data resources...");
         }

@@ -102,7 +102,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.createMessage(metadataRecord, null, DataResourceMessage.SUB_CATEGORY.DATA, uri, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -127,7 +127,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.factoryCreateMetadataMessage(metadataRecord, caller, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -147,7 +147,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.factoryCreateMetadataMessage(metadataRecord, caller, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -307,8 +307,8 @@ public class MetadataResourceMessageTest {
     } else {
       assertFalse(jsonString.contains("\"" + MetadataResourceMessage.DOCUMENT_TYPE_PROPERTY + "\":\""));
     }
-    
-    assertTrue(mdrm.getEntityName().equals("metadata"));
+
+    assertEquals("metadata", mdrm.getEntityName());
     assertTrue(mdrm.getRoutingKey().startsWith("metadata"));
     
   }

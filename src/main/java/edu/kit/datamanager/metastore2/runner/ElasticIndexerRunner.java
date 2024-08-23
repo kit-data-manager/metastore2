@@ -164,7 +164,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * @return MetadataRecord of metadata document.
    */
   private MetadataRecord toMetadataRecord(DataRecord dataRecord, String baseUrl) {
-    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri().toString();
+    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri();
     MetadataRecord returnValue = new MetadataRecord();
     returnValue.setId(dataRecord.getMetadataId());
     returnValue.setSchemaVersion(dataRecord.getSchemaVersion());

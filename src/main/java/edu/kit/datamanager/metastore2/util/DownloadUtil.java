@@ -92,8 +92,8 @@ public class DownloadUtil {
         }
       }
     } catch (Throwable tw) {
-      LOGGER.error("Error reading URI '" + resourceURL.toString() + "'", tw);
-      throw new CustomInternalServerError("Error downloading resource from '" + resourceURL.toString() + "'!");
+      LOGGER.error("Error reading URI '" + resourceURL + "'", tw);
+      throw new CustomInternalServerError("Error downloading resource from '" + resourceURL + "'!");
     }
     downloadedFile = fixFileExtension(downloadedFile);
 
@@ -114,13 +114,13 @@ public class DownloadUtil {
         String contentOfFile = FileUtils.readFileToString(pathToFile.toFile(), StandardCharsets.UTF_8);
         String newExtension = guessFileExtension(contentOfFile.getBytes(StandardCharsets.UTF_8));
         if ((newExtension != null) && !pathToFile.toString().endsWith(newExtension)) {
-          renamedFile = Paths.get(pathToFile.toString() + newExtension);
+          renamedFile = Paths.get(pathToFile + newExtension);
           FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
           returnFile = renamedFile;
         }
       }
     } catch (IOException ex) {
-      LOGGER.error("Error moving file '{}' to '{}'.", pathToFile.toString(), renamedFile.toString());
+      LOGGER.error("Error moving file '{}' to '{}'.", pathToFile, renamedFile);
     }
     return returnFile;
   }
@@ -156,7 +156,7 @@ public class DownloadUtil {
     try {
       Files.deleteIfExists(tempFile);
     } catch (IOException ioe) {
-      throw new CustomInternalServerError("Error removing file '" + tempFile.toString() + "'!");
+      throw new CustomInternalServerError("Error removing file '" + tempFile + "'!");
     }
   }
 

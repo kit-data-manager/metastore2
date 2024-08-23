@@ -45,7 +45,7 @@ public interface ILandingPageController {
             @ApiResponse(responseCode = "200", description = "OK and the landingpage is returned if the id exists and the user has sufficient permission.", content = @Content(schema = @Schema(implementation = MetadataSchemaRecord.class))),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id and version was found.")})
   @RequestMapping(value = {"/schema-landing-page"}, method = {RequestMethod.GET}, produces = {"text/html"})
-  public String getLandingPageOfSchemaWithId(
+  String getLandingPageOfSchemaWithId(
           @Parameter(description = "The record identifier or schema identifier.", required = true) @RequestParam(value = "schemaId") String id,
           @Parameter(description = "The version of the record.", required = false) @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
@@ -60,10 +60,10 @@ public interface ILandingPageController {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/metadata-landing-page"}, method = {RequestMethod.GET}, produces = {"text/html"})
-  public String getLandingPageOfMetadataDocumentWithId(
+  String getLandingPageOfMetadataDocumentWithId(
           @Parameter(description = "The identifier of the metadata document.", required = true) @RequestParam(value = "id") String id,
           @Parameter(description = "The version of the digital object. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
           WebRequest wr,
-          HttpServletResponse hsr, 
+          HttpServletResponse hsr,
           Model model);
 }

@@ -173,7 +173,7 @@ public class ResourceIdentifierTest {
     assertEquals(expResult, result);
     try {
       ResourceIdentifier.IdentifierType.fromValue("wrongType");
-      assertTrue(false);
+      fail();
     } catch (IllegalArgumentException iae) {
       assertTrue(true);
     }
@@ -230,7 +230,7 @@ public class ResourceIdentifierTest {
   public void testSetAndGetId() {
     System.out.println("getId");
     ResourceIdentifier instance = new ResourceIdentifier();
-    Long expResult = 123l;
+    Long expResult = 123L;
     instance.setId(expResult);
     Long result = instance.getId();
     assertEquals(expResult, result);

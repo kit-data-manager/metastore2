@@ -242,7 +242,7 @@ public class ElasticIndexerRunnerTest {
     Date now = new Date();
     Date oneHourBack = new Date(now.getTime() - 3600000);
     String date = new SimpleDateFormat("yyyy-MM-dd").format(oneHourBack);
-    System.out.println(oneHourBack.toString());
+    System.out.println(oneHourBack);
     System.out.println(date);
     eir.run("-u", date);
     Assert.assertTrue(true);
@@ -279,7 +279,7 @@ public class ElasticIndexerRunnerTest {
   private String ingestSchemaRecord(String schemaId) throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setSchemaVersion(1l);
+    schemaRecord.setSchemaVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));

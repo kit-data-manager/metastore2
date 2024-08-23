@@ -78,7 +78,7 @@ public class AclRecordTest {
     newAclList.add(new AclEntry(sid, PERMISSION.ADMINISTRATE));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getRead().size() == 1);
+    assertEquals(1, instance.getRead().size());
     assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
@@ -95,7 +95,7 @@ public class AclRecordTest {
     newAclList.add(new AclEntry(sid, PERMISSION.WRITE));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getRead().size() == 1);
+    assertEquals(1, instance.getRead().size());
     assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
@@ -112,7 +112,7 @@ public class AclRecordTest {
     newAclList.add(new AclEntry(sid, PERMISSION.READ));
     AclRecord instance = new AclRecord();
     instance.setAcl(newAclList);
-    assertTrue(instance.getRead().size() == 1);
+    assertEquals(1, instance.getRead().size());
     assertTrue(instance.getRead().contains(sid));
     assertNull(instance.getMetadataDocument());
     assertNull(instance.getMetadataRecord());
