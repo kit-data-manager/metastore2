@@ -33,12 +33,12 @@ import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
+
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
+
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
-import static edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType.INTERNAL;
-import static edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType.URL;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.domain.Url2Path;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -62,6 +62,7 @@ import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -87,6 +88,7 @@ import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,9 +178,9 @@ public class DataResourceRecordUtil {
       LOG.error(message);
       throw new BadArgumentException(message);
     }
-    // Check if id is lower case and URL encodable. 
-    // and save as alternate identifier. (In case of 
-    // upper letters in both versions (with and without 
+    // Check if id is lower case and URL encodable.
+    // and save as alternate identifier. (In case of
+    // upper letters in both versions (with and without
     // upper letters)
     DataResourceRecordUtil.check4validSchemaId(metadataRecord);
     // End of parameter checks
@@ -219,7 +221,7 @@ public class DataResourceRecordUtil {
         throw new UnprocessableEntityException(message);
       }
     }
-    // reload data resource 
+    // reload data resource
     metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
 
     return metadataRecord;
@@ -247,16 +249,9 @@ public class DataResourceRecordUtil {
       check4validId(metadataRecord, true);
     }
     // End of parameter checks
-    // validate schema document / determine type if not given
+    // validate schema document / determine or correct resource type
     validateMetadataDocument(applicationProperties, metadataRecord, document);
-    // set internal parameters
-    if (metadataRecord.getResourceType() == null) {
-      LOG.trace("No mimetype set! Try to determine...");
-      if (document.getContentType() != null) {
-        LOG.trace("Set mimetype determined from document: '{}'", document.getContentType());
-        metadataRecord.getFormats().add(document.getContentType());
-      }
-    }
+
     metadataRecord.setVersion(Long.toString(1));
     // create record.
     DataResource dataResource = metadataRecord;
@@ -989,10 +984,10 @@ public class DataResourceRecordUtil {
     provided = (provided == null) ? new HashSet<>() : provided;
     if (!provided.isEmpty()) {
       if (!provided.equals(managed)) {
-        // check for special access rights 
+        // check for special access rights
         // - only administrators are allowed to change ACL
         checkAccessRights(managed, true);
-        // - at least principal has to remain as ADMIN 
+        // - at least principal has to remain as ADMIN
         checkAccessRights(provided, false);
         LOG.trace("Updating record acl from {} to {}.", managed, provided);
         managed = provided;
@@ -1041,7 +1036,7 @@ public class DataResourceRecordUtil {
    *
    * @return Number of registered documents.
    */
-  public static long getNoOfDocuments() {
+  public static long getNoOfMetadataDocuments() {
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
     Pageable pgbl = PageRequest.of(0, 1);
@@ -1049,8 +1044,8 @@ public class DataResourceRecordUtil {
   }
 
   /**
-   * Return the number of ingested schema documents. If there are two versions of the
-   * same document this will be counted as one.
+   * Return the number of ingested schema documents. If there are two versions
+   * of the same document this will be counted as one.
    *
    * @return Number of registered documents.
    */
@@ -1152,7 +1147,6 @@ public class DataResourceRecordUtil {
    *
    * @param aclEntries AclEntries of resource.
    * @param currentAcl Check current ACL (true) or new one (false).
-   *
    * @return Allowed (true) or not.
    */
   public static boolean checkAccessRights(Set<AclEntry> aclEntries, boolean currentAcl) {
@@ -1276,6 +1270,13 @@ public class DataResourceRecordUtil {
     }
   }
 
+  /**
+   * Test if exactly one schema and one related resource exists. This method
+   * does NOT check the correctness of the references.
+   *
+   * @param dataResource Data resource of a metadata document.
+   * @throws BadArgumentException Related resources are not defined as expected.
+   */
   public static void validateRelatedResources4MetadataDocuments(DataResource dataResource) throws BadArgumentException {
     int noOfRelatedData = 0;
     int noOfRelatedSchemas = 0;
@@ -1662,12 +1663,11 @@ public class DataResourceRecordUtil {
   /**
    * Gets SchemaRecord from identifier. Afterwards there should be a clean up.
    *
-   * @see #cleanUp(edu.kit.datamanager.metastore2.domain.ResourceIdentifier,
-   * edu.kit.datamanager.metastore2.domain.SchemaRecord)
-   *
    * @param identifier ResourceIdentifier of type INTERNAL or URL.
    * @param version Version (may be null)
    * @return schema record.
+   * @see #cleanUp(edu.kit.datamanager.metastore2.domain.ResourceIdentifier,
+   * edu.kit.datamanager.metastore2.domain.SchemaRecord)
    */
   public static SchemaRecord getSchemaRecord(ResourceIdentifier identifier, Long version) {
     LOG.trace("getSchemaRecord {},{}", identifier, version);
@@ -1889,7 +1889,8 @@ public class DataResourceRecordUtil {
   }
 
   /**
-   * Validate metadata document with given schema.
+   * Validate metadata document with given schema. Determine type if not already
+   * given or check type.
    *
    * @param metastoreProperties Configuration for accessing services
    * @param metadataRecord metadata of the document.
@@ -1925,6 +1926,10 @@ public class DataResourceRecordUtil {
         try {
           validateMetadataDocument(metastoreProperties, document, findByAlternateId);
           validationSuccess = true;
+          // After successful validation set type for metadata document resource.
+          MetadataSchemaRecord.SCHEMA_TYPE type = findByAlternateId.getType();
+          metadataRecord.setResourceType(ResourceType.createResourceType(type + METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+          //
         } catch (Exception ex) {
           String message = "Error validating document!";
           LOG.error(message, ex);
@@ -2013,10 +2018,10 @@ public class DataResourceRecordUtil {
         } else {
           LOG.trace("Query all data resources...");
         }
-         LOG.trace("-----------------------------------------------");
-         LOG.trace("List '{}' of '{}' data resources in total!", records.getContent().size(), records.getTotalElements());
-         LOG.trace("-----------------------------------------------");
-         int itemNo = 1;
+        LOG.trace("-----------------------------------------------");
+        LOG.trace("List '{}' of '{}' data resources in total!", records.getContent().size(), records.getTotalElements());
+        LOG.trace("-----------------------------------------------");
+        int itemNo = 1;
         for (DataResource item : records.getContent()) {
           LOG.trace("#{} - '{}'", itemNo++, item);
         }

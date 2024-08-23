@@ -78,6 +78,7 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
+import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Scheme;
 import java.util.Locale;
 import java.util.UUID;
@@ -770,6 +771,47 @@ public class MetadataControllerTestV2 {
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isUnprocessableEntity()).andReturn();
+  }
+
+  @Test
+  public void testCreateRecordWithInvalidorEmptyResource() throws Exception {
+    String id = "testCreateRecordWithInvalidorEmptyResource";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    ObjectMapper mapper = new ObjectMapper();
+    // empty resource type
+    record.setResourceType(null);
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    
+    // wrong resource type
+    id = "testCreateRecordWithWrongType";
+    record.setId(id);
+    record.getAlternateIdentifiers().clear();
+    record.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.XML_METADATA_TYPE));
+
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+    
+    // wrong resource value
+    id = "testCreateRecordWithWrongValue";
+    record.setId(id);
+    record.getAlternateIdentifiers().clear();
+    record.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.XML_METADATA_TYPE + "invalid", ResourceType.TYPE_GENERAL.MODEL));
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
+            file(recordFile).
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
   }
 
   @Test

@@ -17,7 +17,7 @@ package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.INTERNAL;
-import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.URL;
+
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
@@ -494,7 +494,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     Map<String, String> details = ActuatorUtil.testDirectory(basePath);
 
     if (!details.isEmpty()) {
-      details.put("No of metadata documents", Long.toString(DataResourceRecordUtil.getNoOfDocuments()));
+      details.put("No of metadata documents", Long.toString(DataResourceRecordUtil.getNoOfMetadataDocuments()));
       builder.withDetail("metadataRepo", details);
     }
   }
