@@ -336,15 +336,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public void contribute(Info.Builder builder) {
-    LOG.trace("Check for SchemaRepo actuator information...");
-
-    URL basePath = schemaConfig.getBasepath();
-    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
-
-    if (!details.isEmpty()) {
-      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
-      builder.withDetail("schemaRepo", details);
-    }
+    LOG.trace("Check for SchemaRepo actuator information (v1)...");
+    LOG.trace("Check for SchemaRepo actuator information (v1) disabled!");
   }
 
   private Specification<DataResource> addAuthenticationSpecification(Specification<DataResource> spec) {

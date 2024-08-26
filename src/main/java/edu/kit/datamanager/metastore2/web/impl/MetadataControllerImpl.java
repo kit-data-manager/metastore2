@@ -479,15 +479,8 @@ public class MetadataControllerImpl implements IMetadataController {
 
   @Override
   public void contribute(Info.Builder builder) {
-    LOG.trace("Check for MetadataRepo actuator information...");
-
-    URL basePath = metadataConfig.getBasepath();
-    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
-
-    if (!details.isEmpty()) {
-      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
-      builder.withDetail("metadataRepo", details);
-    }
+    LOG.trace("Check for MetadataRepo actuator information (v1)...");
+    LOG.trace("Check for MetadataRepo actuator information (v1) disabled!");
   }
 
   @Bean

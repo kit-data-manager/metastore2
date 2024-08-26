@@ -1991,7 +1991,7 @@ public class DataResourceRecordUtil {
         LOG.trace("-----------------------------------------------");
         int itemNo = 1;
         for (DataResource item : records.getContent()) {
-          LOG.trace("#{} - '{}'", itemNo++, item);
+          LOG.trace("#{} - '{}'- Version: '{}'", itemNo++, item.getId(), item.getVersion());
         }
         LOG.trace("-----------------------------------------------");
       }
