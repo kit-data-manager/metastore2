@@ -403,13 +403,13 @@ public class MetadataSchemaRecordUtil {
       String defaultTitle = metadataSchemaRecord.getMimeType();
       boolean titleExists = false;
       for (Title title : dataResource.getTitles()) {
-        if (title.getTitleType() == Title.TYPE.OTHER) {
+        if (title.getTitleType() == null) {
           title.setValue(defaultTitle);
           titleExists = true;
         }
       }
       if (!titleExists) {
-        dataResource.getTitles().add(Title.factoryTitle(defaultTitle, Title.TYPE.OTHER));
+        dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
       }
       dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
       dataResource.getFormats().clear();
