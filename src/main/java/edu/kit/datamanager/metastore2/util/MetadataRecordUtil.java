@@ -415,14 +415,20 @@ public class MetadataRecordUtil {
     String defaultTitle = "Metadata 4 metastore";
     boolean titleExists = false;
     for (Title title : dataResource.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER && title.getValue().equals(defaultTitle)) {
+      if (title.getTitleType() == null && title.getValue().equals(defaultTitle)) {
         titleExists = true;
       }
     }
     if (!titleExists) {
-      dataResource.getTitles().add(Title.factoryTitle(defaultTitle, Title.TYPE.OTHER));
+      dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
     }
-    dataResource.setResourceType(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
+
+    // Set ResourceType due to new version
+    ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
+    String prefixDocument = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, schemaIdentifier).getType().name();
+    ResourceType resourceType = ResourceType.createResourceType(prefixDocument + DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+    dataResource.setResourceType(resourceType);
+
     checkLicense(dataResource, metadataRecord.getLicenseUri());
 
     return dataResource;
