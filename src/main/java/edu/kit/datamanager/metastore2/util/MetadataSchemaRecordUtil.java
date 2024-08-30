@@ -1179,7 +1179,7 @@ public class MetadataSchemaRecordUtil {
   }
 
   /**
-   * Returns schema record with the current version.
+   * Returns schema record with the current version and type.
    *
    * @param metastoreProperties Configuration for accessing services
    * @param schema Identifier of the schema.
@@ -1196,6 +1196,7 @@ public class MetadataSchemaRecordUtil {
       Long version = 1L;
       if (url2path.isPresent()) {
         version = url2path.get().getVersion();
+        msr.setType(url2path.get().getType());
       }
       msr.setSchemaVersion(version);
     }
