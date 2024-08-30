@@ -411,7 +411,7 @@ public class MetadataSchemaRecordUtil {
       if (!titleExists) {
         dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
       }
-      dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+      dataResource.setResourceType(ResourceType.createResourceType(metadataSchemaRecord.getType().name() + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
       dataResource.getFormats().clear();
       dataResource.getFormats().add(metadataSchemaRecord.getType().name());
     }

@@ -11,6 +11,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -1058,7 +1059,7 @@ public class JsonSchemaRegistryControllerTest {
     dataResource.setPublisher("SELF");
     Instant now = Instant.now();
     dataResource.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
-    dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    dataResource.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
     dataResource.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
     dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.JSON.name());
     dataResource.setLastUpdate(now);

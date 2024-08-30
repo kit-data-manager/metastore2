@@ -22,6 +22,7 @@ import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -252,7 +253,29 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+    if (mimeTypes != null) {
+      boolean searchForJson = false;
+      boolean searchForXml = false;
+      for (String mimeType : mimeTypes) {
+        if (mimeType.contains("json")) {
+          searchForJson = true;
+        }
+        if (mimeType.contains("xml")) {
+          searchForXml = true;
+        }
+      }
+      if (searchForJson && !searchForXml) {
+        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      }      
+      if (!searchForJson && searchForXml) {
+        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      }
+      if (!searchForJson && !searchForXml) {
+        resourceType = ResourceType.createResourceType("unknown");
+      }
+    }
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
     // Add authentication if enabled
     spec = addAuthenticationSpecification(spec);
     //one of given mimetypes.
