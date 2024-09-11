@@ -308,6 +308,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
       // Save migrated version
       dataResourceDao.save(recordByIdAndVersion);
+      schemaConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
     }
   }
 
@@ -360,6 +361,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       resourceType.setValue(format + DataResourceRecordUtil.METADATA_SUFFIX);
       // Save migrated version
       dataResourceDao.save(recordByIdAndVersion);
+      metadataConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
     }
   }
 }

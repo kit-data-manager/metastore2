@@ -828,6 +828,11 @@ public class DataResourceRecordUtil {
     Page<DataResource> dataResource;
     try {
       dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
+      if (LOG.isTraceEnabled()) {
+        for (DataResource item : dataResource.getContent()) {
+          LOG.trace("Id: '{}' - Version: '{}' -> Type: '{}'", item.getId(), item.getVersion(), item.getResourceType().toString());
+        }
+      }
     } catch (ResourceNotFoundException ex) {
       ex.setDetail("Document with ID '" + recordId + "' doesn't exist!");
       throw ex;
