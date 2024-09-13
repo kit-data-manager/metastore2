@@ -36,6 +36,7 @@ import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
@@ -50,6 +51,7 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import org.javers.core.Javers;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -57,9 +59,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Class for indexing all metadata documents of given schemas Arguments have to
+ * This class contains 2 runners:
+ * <ul><li>Runner for indexing all metadata documents of given schemas Arguments have to
  * start with at least 'reindex' followed by all indices which have to be
- * reindexed. If no indices are given all indices will be reindexed.
+ * reindexed. If no indices are given all indices will be reindexed.</li>
+ * <li>Runner for migrating dataresources from version 1 to version2.
  */
 @Component
 @Transactional
@@ -71,6 +75,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * executed only once.
    * ***************************************************************************
    */
+  /**
+   * Start migration to version 2
+   */
   @Parameter(names = {"--migrate2DataCite"}, description = "Migrate database from version 1.X to 2.X.")
   boolean doMigration2DataCite;
 
@@ -79,27 +86,61 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * Parameters for reindexing elasticsearch. This should be executed only once.
    * ***************************************************************************
    */
+  /**
+   * Start reindexing...
+   */
   @Parameter(names = {"--reindex"}, description = "Elasticsearch index should be build from existing documents.")
   boolean updateIndex;
+  /**
+   * Restrict reindexing to provided indices only.
+   */
   @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
   Set<String> indices;
+  /** 
+   * Restrict reindexing to dataresources new than given date.
+   */
   @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
-
+  /** 
+   * Logger.
+   */
   private static final Logger LOG = LoggerFactory.getLogger(ElasticIndexerRunner.class);
+  /**
+   * DAO for all data resources.
+   */
   @Autowired
   private IDataResourceDao dataResourceDao;
+  /** 
+   * DAO for all schema records.
+   */
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
+  /** 
+   * DAO for all data records.
+   */
   @Autowired
   private IDataRecordDao dataRecordDao;
-  @Autowired
-  private MetastoreConfiguration schemaConfig;
-  @Autowired
-  private MetastoreConfiguration metadataConfig;
+  /**
+   * DAO for linking URLS to files and format.
+   */
   @Autowired
   private IUrl2PathDao url2PathDao;
-
+  /**
+   * Instance for managing versions.
+   */
+  @Autowired
+  private Javers javers;
+  /** 
+   * Instance of schema repository.
+   */
+  @Autowired
+  private MetastoreConfiguration schemaConfig;
+  /**
+   * Instande of metadata reository.
+   * 
+   */
+  @Autowired
+  private MetastoreConfiguration metadataConfig;
   /**
    * Optional messagingService bean may or may not be available, depending on a
    * service's configuration. If messaging capabilities are disabled, this bean
@@ -107,7 +148,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Autowired
   private Optional<IMessagingService> messagingService;
-
+  /**
+   * Start runner for actions before starting service.
+   * @param args Arguments for the runner.
+   * @throws Exception Something went wrong. 
+   */
   @Override
   @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
@@ -129,7 +174,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         // Set adminitrative rights for reading.
         JwtAuthenticationToken jwtAuthenticationToken = JwtBuilder.createServiceToken("migrationTool", RepoServiceRole.SERVICE_READ).getJwtAuthenticationToken(schemaConfig.getJwtSecret());
         SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
-        
+
         migrateToVersion2();
       }
     } catch (Exception ex) {
@@ -138,7 +183,10 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       System.exit(0);
     }
   }
-
+  /**
+   * Start runner to reindex dataresources according to the given parameters.
+   * @throws InterruptedException Something went wrong.
+   */
   private void updateElasticsearchIndex() throws InterruptedException {
     LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
     LOG.info("No of schemas: '{}'", schemaRecordDao.count());
@@ -172,7 +220,12 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
     LOG.trace("Finished ElasticIndexerRunner!");
   }
-
+  
+  /**
+   * Determine all indices if an empty set is provided.
+   * Otherwise return provided set without any change.
+   * @param indices Indices which should be reindexed.
+   */
   private void determineIndices(Set<String> indices) {
     if (indices.isEmpty()) {
       LOG.info("Reindex all indices!");
@@ -250,7 +303,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(dataRecord.getSchemaId(), dataRecord.getVersion(), null, null)).toUri();
     return schemaUrl;
   }
-
+  
+  /**
+   * Migrate all data resources from version 1 to version 2.
+   * @throws InterruptedException 
+   */
   private void migrateToVersion2() throws InterruptedException {
     LOG.info("Start Migrate2DataCite Runner for migrating database from version 1 to version 2.");
     // Try to determine URL of repository
@@ -289,31 +346,50 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
   /**
    * Migrate dataresources of schemas using version 1 to version 2.
+   * @param schema Current version of schema document.
    */
   private void migrateSchemaToDataciteVersion2(DataResource schema) {
     long version = Long.parseLong(schema.getVersion());
     String id = schema.getId();
-    for (int versionNo = 1; versionNo <= version; versionNo++) {
-      DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-      // Remove type from first title with type 'OTHER'
-      for (Title title : recordByIdAndVersion.getTitles()) {
-        if (title.getTitleType() == Title.TYPE.OTHER) {
-          title.setTitleType(null);
-          break;
-        }
-      }
-      // Set resource type to  new definition of version 2 ('...'_Schema)
-      ResourceType resourceType = recordByIdAndVersion.getResourceType();
-      resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
-      resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
-      // Save migrated version
-      dataResourceDao.save(recordByIdAndVersion);
-      schemaConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
+    // Migrate all versions of schema.
+    for (long versionNo = 1; versionNo <= version; versionNo++) {
+      saveSchema(id, versionNo);
     }
   }
 
+
   /**
-   * Migrate dataresources of schemas using version 1 to version 2.
+   * Migrate metadata of schema document from version 1 to version 2 and store new version in the database.
+   * @param id ID of the schema document.
+   * @param version Version of the schema document.
+   * @param format Format of the schema document. (XML/JSON)
+   */
+  private void saveSchema(String id, long version) {
+    DataResource currentVersion = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentVersion);
+    // Remove type from first title with type 'OTHER'
+    for (Title title : recordByIdAndVersion.getTitles()) {
+      if (title.getTitleType() == Title.TYPE.OTHER) {
+        title.setTitleType(null);
+        break;
+      }
+    }
+    // Set resource type to  new definition of version 2 ('...'_Schema)
+    ResourceType resourceType = recordByIdAndVersion.getResourceType();
+    resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
+    resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
+    // Save migrated version
+    LOG.trace("Persisting created resource.");
+    dataResourceDao.save(recordByIdAndVersion);
+
+    //Capture state change
+    LOG.trace("Capturing audit information.");
+    schemaConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
+
+  }
+
+  /**
+   * Migrate dataresources of metadata documents from version 1 to version 2.
    */
   private void migrateAllMetadataDocumentsToDataciteVersion2() {
     Specification spec;
@@ -331,14 +407,18 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   }
 
   /**
-   * Migrate dataresources of schemas using version 1 to version 2.
+   * Migrate all versions of a dataresource of metadata documents from version 1
+   * to version 2.
+   *
+   * @param metadataDocument Current version of metadata document.
    */
-  private void migrateMetadataDocumentsToDataciteVersion2(DataResource schema) {
-    long version = Long.parseLong(schema.getVersion());
-    String id = schema.getId();
+  private void migrateMetadataDocumentsToDataciteVersion2(DataResource metadataDocument) {
+    long version = Long.parseLong(metadataDocument.getVersion());
+    String id = metadataDocument.getId();
+
     // Get resource type of schema....
     String format = null;
-    for (RelatedIdentifier identifier : schema.getRelatedIdentifiers()) {
+    for (RelatedIdentifier identifier : metadataDocument.getRelatedIdentifiers()) {
       if (identifier.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
         String schemaUrl = identifier.getValue();
         Optional<Url2Path> findByUrl = url2PathDao.findByUrl(schemaUrl);
@@ -346,22 +426,41 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         format = findByUrl.get().getType().toString();
       }
     }
+    // Migrate all versions of data resource.
     for (int versionNo = 1; versionNo <= version; versionNo++) {
-      DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-      // Remove type from first title with type 'OTHER'
-      for (Title title : recordByIdAndVersion.getTitles()) {
-        if (title.getTitleType() == Title.TYPE.OTHER) {
-          title.setTitleType(null);
-          break;
-        }
-      }
-      // Set resource type to  new definition of version 2 ('...'_Schema)
-      ResourceType resourceType = recordByIdAndVersion.getResourceType();
-      resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
-      resourceType.setValue(format + DataResourceRecordUtil.METADATA_SUFFIX);
-      // Save migrated version
-      dataResourceDao.save(recordByIdAndVersion);
-      metadataConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
+      saveMetadata(id, versionNo, format);
     }
+  }
+
+  /**
+   * Migrate metadata of metadata document from version 1 to version 2 and store
+   * new version in the database.
+   * @param id ID of the metadata document.
+   * @param version Version of the metadata document.
+   * @param format Format of the metadata document. (XML/JSON)
+   */
+  private void saveMetadata(String id, long version, String format) {
+    DataResource currentVersion = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentVersion);
+    // Remove type from first title with type 'OTHER'
+    for (Title title : recordByIdAndVersion.getTitles()) {
+      if (title.getTitleType() == Title.TYPE.OTHER) {
+        title.setTitleType(null);
+        break;
+      }
+    }
+    // Set resource type to  new definition of version 2 ('...'_Schema)
+    ResourceType resourceType = recordByIdAndVersion.getResourceType();
+    resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
+    resourceType.setValue(format + DataResourceRecordUtil.METADATA_SUFFIX);
+
+    // Save migrated version
+    LOG.trace("Persisting created resource.");
+    dataResourceDao.save(recordByIdAndVersion);
+
+    //capture state change
+    LOG.trace("Capturing audit information.");
+    metadataConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
+
   }
 }
