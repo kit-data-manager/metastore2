@@ -99,7 +99,7 @@ dependencies {
     implementation "com.h2database:h2:2.3.232"
     
     // apache
-    implementation "commons-io:commons-io:2.16.1"
+    implementation "commons-io:commons-io:2.17.0"
     implementation "org.apache.tika:tika-core:2.9.2"
 
     // JSON validator
