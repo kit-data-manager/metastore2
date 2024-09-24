@@ -27,7 +27,6 @@ import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import edu.kit.datamanager.metastore2.domain.AclRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
@@ -85,6 +84,7 @@ import java.util.*;
 import java.util.function.UnaryOperator;
 
 import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.INTERNAL;
+import edu.kit.datamanager.metastore2.domain.ElasticWrapper;
 
 /**
  * Controller for metadata documents.
@@ -300,7 +300,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
   }
 
   @Override
-  public ResponseEntity<AclRecord> getAclById(
+  public ResponseEntity<ElasticWrapper> getAclById(
           @PathVariable(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
@@ -313,9 +313,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
-    AclRecord aclRecord = new AclRecord();
-    aclRecord.setAcl(metadataRecord.getAcls());
-//    aclRecord.setDataResource(metadataRecord);
+    ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 
     return ResponseEntity.ok().body(aclRecord);
   }

@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.web;
 
-import edu.kit.datamanager.metastore2.domain.AclRecord;
+import edu.kit.datamanager.metastore2.domain.ElasticWrapper;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -94,7 +94,7 @@ public interface IMetadataController extends InfoContributor {
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
   @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/vnd.datamanager.acl+json"})
-  ResponseEntity<AclRecord> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
+  ResponseEntity<ElasticWrapper> getAclById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
                                        @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
                                        WebRequest wr,
                                        HttpServletResponse hsr);

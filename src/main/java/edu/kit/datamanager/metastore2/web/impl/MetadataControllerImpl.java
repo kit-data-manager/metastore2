@@ -238,8 +238,9 @@ public class MetadataControllerImpl implements IMetadataController {
     return ResponseEntity.ok().eTag("\"" + etag + "\"").body(metadataRecord);
   }
 
+
   @Override
-  public ResponseEntity<AclRecord> getAclById(
+  public ResponseEntity<ElasticWrapper> getAclById(
           @PathVariable(value = "id") String id,
           @RequestParam(value = "version", required = false) Long version,
           WebRequest wr,
@@ -250,11 +251,9 @@ public class MetadataControllerImpl implements IMetadataController {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    MetadataRecord metadataRecord = MetadataRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version, true);
-    MetadataRecordUtil.fixMetadataDocumentUri(metadataRecord);
-    AclRecord aclRecord = new AclRecord();
-    aclRecord.setAcl(metadataRecord.getAcl());
-    aclRecord.setMetadataRecord(metadataRecord);
+    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
+    ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 
     return ResponseEntity.ok().body(aclRecord);
   }
