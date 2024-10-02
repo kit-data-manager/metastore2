@@ -200,7 +200,7 @@ public class MetadataControllerFilterTest {
         Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, item.getSchema().getIdentifierType());
         String schemaUrl = item.getSchema().getIdentifier();
         Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
-        Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
+        Assert.assertTrue(schemaUrl.contains("/api/v2/schemas/"));
         Assert.assertTrue(schemaUrl.contains(schemaId));
       }
     }

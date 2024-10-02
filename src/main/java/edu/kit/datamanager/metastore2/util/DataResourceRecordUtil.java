@@ -1176,7 +1176,7 @@ public class DataResourceRecordUtil {
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
     metadataRecord
-            .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class
+            .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class
             ).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
     LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }

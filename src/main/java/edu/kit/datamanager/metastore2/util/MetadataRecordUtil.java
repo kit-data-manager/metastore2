@@ -25,7 +25,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
-import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
+import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.*;
@@ -54,7 +54,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -1041,7 +1040,7 @@ public class MetadataRecordUtil {
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
     metadataRecord
-            .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class
+            .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class
             ).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
     LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
   }

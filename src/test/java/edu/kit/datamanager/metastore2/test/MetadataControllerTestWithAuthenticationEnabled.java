@@ -898,7 +898,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, result.getSchema().getIdentifierType());
     String schemaUrl = result.getSchema().getIdentifier();
     Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
-    Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
+    Assert.assertTrue(schemaUrl.contains("/api/v2/schemas/"));
     Assert.assertTrue(schemaUrl.contains(SCHEMA_ID));
     Assert.assertNotEquals("file:///tmp/dc.xml", result.getMetadataDocumentUri());
   }

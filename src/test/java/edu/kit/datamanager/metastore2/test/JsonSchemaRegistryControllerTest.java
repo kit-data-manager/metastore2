@@ -298,10 +298,8 @@ public class JsonSchemaRegistryControllerTest {
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
 
-    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String content2 = result2.getResponse().getContentAsString();
-
-    Assert.assertEquals(content, content2);
+    // URL should point to API v2. Therefor accept header is not allowed. 
+    this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotAcceptable());
   }
 
   @Test

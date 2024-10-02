@@ -28,8 +28,8 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.METADATA_SUFFIX;
 import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.SCHEMA_SUFFIX;
 import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.queryDataResources;
-import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
-import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
+import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -280,7 +280,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * @return MetadataRecord of metadata document.
    */
   private MetadataRecord toMetadataRecord(DataRecord dataRecord, String baseUrl) {
-    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri();
+    String metadataIdWithVersion = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(dataRecord.getMetadataId(), dataRecord.getVersion(), null, null)).toUri();
     MetadataRecord returnValue = new MetadataRecord();
     returnValue.setId(dataRecord.getMetadataId());
     returnValue.setSchemaVersion(dataRecord.getSchemaVersion());
@@ -300,7 +300,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   private String toSchemaUrl(DataRecord dataRecord, String baseUrl) {
     String schemaUrl;
-    schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(dataRecord.getSchemaId(), dataRecord.getVersion(), null, null)).toUri();
+    schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(dataRecord.getSchemaId(), dataRecord.getVersion(), null, null)).toUri();
     return schemaUrl;
   }
   

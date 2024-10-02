@@ -31,7 +31,6 @@ import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
-import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.*;
@@ -67,6 +66,7 @@ import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
+import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 
 /**
  * Utility class for handling json documents
@@ -1291,7 +1291,7 @@ public class MetadataSchemaRecordUtil {
    * @return URI for accessing schema document.
    */
   public static final URI getSchemaDocumentUri(MetadataSchemaRecord schemaRecord) {
-    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImpl.class).getSchemaDocumentById(schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), null, null)).toUri();
+    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(schemaRecord.getSchemaId(), schemaRecord.getSchemaVersion(), null, null)).toUri();
   }
 
 }

@@ -318,11 +318,8 @@ public class SchemaRegistryControllerTest {
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/" + record.getSchemaId() + "?version=1")).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
-
-    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String content2 = result2.getResponse().getContentAsString();
-
-    Assert.assertEquals(content, content2);
+    // Location Uri should point to API v2. Therefor accept header is not valid.
+    this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotAcceptable());
   }
 
   @Test
