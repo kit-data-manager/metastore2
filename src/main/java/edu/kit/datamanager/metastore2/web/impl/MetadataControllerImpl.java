@@ -27,7 +27,6 @@ import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.domain.*;
-import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
@@ -72,7 +71,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
@@ -85,6 +83,7 @@ import java.util.function.UnaryOperator;
 @RequestMapping(value = "/api/v1/metadata")
 @Tag(name = "Metadata Repository")
 @Schema(description = "Metadata Resource Management")
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class MetadataControllerImpl implements IMetadataController {
 
   public static final String POST_FILTER = "post_filter";

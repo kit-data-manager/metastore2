@@ -21,7 +21,6 @@ import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
@@ -59,7 +58,6 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -67,7 +65,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
 
@@ -78,6 +75,7 @@ import java.util.function.UnaryOperator;
 @RequestMapping(value = "/api/v1/schemas")
 @Tag(name = "Schema Registry")
 @Schema(description = "Schema Registry")
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl.class);
