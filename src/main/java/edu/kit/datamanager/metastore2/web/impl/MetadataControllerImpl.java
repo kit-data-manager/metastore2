@@ -206,7 +206,7 @@ public class MetadataControllerImpl implements IMetadataController {
     long nano6 = System.nanoTime() / 1000000;
 
     URI locationUri;
-    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
+    locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getRecordById(result.getId(), result.getRecordVersion(), null, null)).toUri();
     long nano7 = System.nanoTime() / 1000000;
     LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
