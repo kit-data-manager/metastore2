@@ -361,6 +361,9 @@ public class DataResourceRecordUtil {
       if (updatedDataResource.getState() == null) {
         updatedDataResource.setState(dataResource.getState());
       }
+      if (updatedDataResource.getResourceType() == null) {
+        updatedDataResource.setResourceType(dataResource.getResourceType());
+      }
     } else {
       updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
     }
@@ -758,7 +761,7 @@ public class DataResourceRecordUtil {
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           MultipartFile document,
           SchemaRecord schemaRecord) {
-    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, schemaRecord, document);
+    LOG.trace("validateMetadataDocument (schemaRecord) {},{}, {}", metastoreProperties, schemaRecord, document);
     if (document == null || document.isEmpty()) {
       String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
       LOG.error(message);
@@ -1526,7 +1529,7 @@ public class DataResourceRecordUtil {
           MultipartFile document,
           String schemaId,
           Long version) {
-    LOG.trace("validateMetadataDocument {},SchemaID {}, Version {}, {}", metastoreProperties, schemaId, version, document);
+    LOG.trace("validateMetadataDocument (schemaId) {},SchemaID {}, Version {}, {}", metastoreProperties, schemaId, version, document);
     SchemaRecord schemaRecord;
     DataResource dataResource = DataResourceRecordUtil.getRecordById(metastoreProperties, schemaId);
     if (dataResource == null) {
@@ -1872,7 +1875,7 @@ public class DataResourceRecordUtil {
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           DataResource metadataRecord,
           MultipartFile document) {
-    LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, metadataRecord, document);
+    LOG.trace("validateMetadataDocument (dataresource) {},{}, {}", metastoreProperties, metadataRecord, document);
     if (document == null || document.isEmpty()) {
       String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
       LOG.error(message);

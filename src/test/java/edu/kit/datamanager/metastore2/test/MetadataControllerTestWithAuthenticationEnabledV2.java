@@ -398,6 +398,33 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
   }
 
   @Test
+  public void testCreateRecordWithoutResourceType() throws Exception {
+    String id = "testCreateRecordWithoutResourceType";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    // Empty resource type
+    record.setResourceType(null);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+
+    MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
+            file(recordFile).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
+
+    ObjectMapper map = new ObjectMapper();
+    DataResource result = map.readValue(mvcResult.getResponse().getContentAsString(), DataResource.class);
+    Assert.assertNotNull(result);  
+    Assert.assertNotNull(result.getResourceType());  
+  }
+
+  @Test
   public void testCreateRecordWithAnyValidUrl() throws Exception {
     String id = "testCreateRecordWithAnyValidUrl";
     String schemaId = SCHEMA_ID;
@@ -1717,6 +1744,51 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andExpect(status().isUnauthorized()).
             andReturn();
   }
+
+  @Test
+  public void testUpdateRecordWithoutResourceType() throws Exception {
+    String id = "testCreateRecordWithoutResourceType";
+    String schemaId = SCHEMA_ID;
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    // Empty resource type
+    record.setResourceType(null);
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
+
+    MvcResult mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
+            file(recordFile).
+            file(metadataFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isCreated()).
+            andReturn();
+
+    String locationUri = mvcResult.getResponse().getHeader("Location");
+    String etag = mvcResult.getResponse().getHeader("ETag");
+    ObjectMapper map = new ObjectMapper();
+    DataResource result = map.readValue(mvcResult.getResponse().getContentAsString(), DataResource.class);
+    Assert.assertNotNull(result);  
+    Assert.assertNotNull(result.getResourceType());  
+    
+    result.setResourceType(null);
+
+    recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(result).getBytes());
+    
+    mvcResult = this.mockMvc.perform(MockMvcRequestBuilders.multipart(locationUri).
+            file(recordFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = map.readValue(mvcResult.getResponse().getContentAsString(), DataResource.class);
+    Assert.assertNotNull(result);  
+    Assert.assertNotNull(result.getResourceType());   }
+
 
   @Test
   public void testDeleteRecord() throws Exception {
