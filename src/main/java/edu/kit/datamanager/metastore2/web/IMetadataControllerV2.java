@@ -130,7 +130,7 @@ public interface IMetadataControllerV2 extends InfoContributor {
             @ApiResponse(responseCode = "200", description = "OK and the metadata document is returned if the record exists and the user has sufficient permission."),
             @ApiResponse(responseCode = "404", description = "Not found is returned, if no record for the provided id or version was found.")})
 
-  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET}, produces = {"application/xml", "application/json"})
+  @RequestMapping(value = {"/{id}"}, method = {RequestMethod.GET})
   @ResponseBody
   ResponseEntity getMetadataDocumentById(@Parameter(description = "The record identifier or related resource identifier.", required = true) @PathVariable(value = "id") String id,
                                          @Parameter(description = "The version of the record. This parameter only has an effect if versioning  is enabled.", required = false) @RequestParam(value = "version") Long version,
