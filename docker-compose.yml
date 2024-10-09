@@ -20,7 +20,7 @@ services:
       - dps
   elasticsearch:
     image: elasticsearch:${ELASTICSEARCH_VERSION}
-    container_name: elastic4indexing
+    container_name: elastic.docker
     hostname: elastic.docker
     environment:
       - discovery.type=single-node
