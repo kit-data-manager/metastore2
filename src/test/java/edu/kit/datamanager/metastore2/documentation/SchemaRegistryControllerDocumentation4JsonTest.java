@@ -433,6 +433,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
             andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
             andReturn().getResponse().getHeader("Location");
     // Get URL
+    location = location.replace("/v2/", "/v1/");
     String newLocation = location.split("[?]")[0];
 
     // 2. Accessing metadata document
@@ -481,6 +482,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
             andReturn();
     etag = result.getResponse().getHeader("ETag");
     location = result.getResponse().getHeader("Location");
+    location = location.replace("/v2/", "/v1/");
     // 5. Update metadata record
     //**************************************************************************
     // update once more to newest version of schema
@@ -506,6 +508,7 @@ public class SchemaRegistryControllerDocumentation4JsonTest {
             andExpect(status().isOk()).
             andReturn();
     location = result.getResponse().getHeader("Location");
+    location = location.replace("/v2/", "/v1/");
     this.mockMvc.perform(get(location).
             contextPath(contextPath)).
             andDo(document("get-json-metadata-document-v3")).
