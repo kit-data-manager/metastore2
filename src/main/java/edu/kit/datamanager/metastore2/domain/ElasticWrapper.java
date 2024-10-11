@@ -63,7 +63,7 @@ public class ElasticWrapper {
   private final Set<String> read;
 
   @NotBlank(message = "The metadata record.")
-  private DataResource metadata;
+  private DataResource metadataRecord;
 
   @NotBlank(message = "The metadata document.")
   private Object metadataDocument;
@@ -72,7 +72,7 @@ public class ElasticWrapper {
   public ElasticWrapper(DataResource resource) {
     id = resource.getId();
     pid = (resource.getIdentifier() != null) ? resource.getIdentifier().getValue() : null;
-    metadata = resource;
+    metadataRecord = resource;
     read = new HashSet<String>();
     resource.getAcls().forEach(entry -> {
       String sid = entry.getSid();
