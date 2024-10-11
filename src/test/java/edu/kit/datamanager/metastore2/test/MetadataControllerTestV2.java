@@ -388,7 +388,7 @@ public class MetadataControllerTestV2 {
     String schemaId = null;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.HAS_METADATA)) {
         item.setValue(null);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       }
@@ -413,7 +413,7 @@ public class MetadataControllerTestV2 {
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.HAS_METADATA)) {
         item.setValue(invalidSchemaUrl);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       }
@@ -438,7 +438,7 @@ public class MetadataControllerTestV2 {
     String urlWithInvalidSchema = getSchemaUrl(SCHEMA_ID).replace(SCHEMA_ID, INVALID_SCHEMA);
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.HAS_METADATA)) {
         item.setValue(urlWithInvalidSchema);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       }
@@ -473,7 +473,7 @@ public class MetadataControllerTestV2 {
     String schemaUrl = "http://anyurl.example.org/shouldNotExist";
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     for (RelatedIdentifier item : record.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.HAS_METADATA)) {
         item.setValue(schemaUrl);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       }
@@ -859,7 +859,7 @@ public class MetadataControllerTestV2 {
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
     //remove related resource
-    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
     record.getRelatedIdentifiers().remove(relatedIdentifier);
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());

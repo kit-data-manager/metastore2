@@ -567,7 +567,7 @@ public class DataResourceRecordUtil {
           LOG.trace("Set relation to '{}'", resourceIdentifier);
           metadataRecord.setRelatedResource(resourceIdentifier);
         }
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
           metadataRecord.setSchema(resourceIdentifier);
           if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
@@ -741,7 +741,7 @@ public class DataResourceRecordUtil {
    */
   private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
     if (relatedIdentifier == null) {
-      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, null, null, null);
+      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, null, null, null);
     }
     ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
@@ -1271,7 +1271,7 @@ public class DataResourceRecordUtil {
         if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR)) {
           noOfRelatedData++;
         }
-        if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+        if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.HAS_METADATA)) {
           noOfRelatedSchemas++;
         }
       }
@@ -1285,10 +1285,10 @@ public class DataResourceRecordUtil {
         errorMessage = "Mandatory attribute relatedIdentifier of type 'isMetadataFor' was provided more than once in record. \n";
       }
       if (noOfRelatedSchemas == 0) {
-        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'isDerivedFrom' was not found in record. \n";
+        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'hasMetadata' was not found in record. \n";
       }
       if (noOfRelatedSchemas > 1) {
-        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'isDerivedFrom' was provided more than once in record. \n";
+        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'hasMetadata' was provided more than once in record. \n";
       }
       errorMessage = errorMessage + "Returning HTTP BAD_REQUEST.";
       LOG.error(message);
@@ -1304,7 +1304,7 @@ public class DataResourceRecordUtil {
    */
   public static RelatedIdentifier getSchemaIdentifier(DataResource dataResourceRecord) {
     LOG.trace("Get schema identifier for '{}'.", dataResourceRecord.getId());
-    RelatedIdentifier relatedIdentifier = getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    RelatedIdentifier relatedIdentifier = getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
     return relatedIdentifier;
   }
 

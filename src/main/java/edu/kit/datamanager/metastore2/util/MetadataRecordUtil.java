@@ -397,7 +397,7 @@ public class MetadataRecordUtil {
         relatedIds.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
         relationFound = true;
       }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
         updateRelatedIdentifierForSchema(relatedIds, metadataRecord);
         schemaIdFound = true;
       }
@@ -493,7 +493,7 @@ public class MetadataRecordUtil {
           LOG.trace("Set relation to '{}'", resourceIdentifier);
           metadataRecord.setRelatedResource(resourceIdentifier);
         }
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
           ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
           metadataRecord.setSchema(resourceIdentifier);
           if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
@@ -692,7 +692,7 @@ public class MetadataRecordUtil {
    */
   private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
     if (relatedIdentifier == null) {
-      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, null, null, null);
+      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, null, null, null);
     }
     ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));

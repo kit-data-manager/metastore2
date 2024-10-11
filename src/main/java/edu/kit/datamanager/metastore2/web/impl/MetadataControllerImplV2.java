@@ -217,7 +217,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     //Can't test this 
 //    boolean recordAlreadyExists = metadataRecordDao.existsDataResourceByRelatedResourceAndSchemaId(
 //            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue(), 
-//            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM).getValue());
+//            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA).getValue());
 //    long nano3 = System.nanoTime() / 1000000;
 //
 //    if (recordAlreadyExists) {

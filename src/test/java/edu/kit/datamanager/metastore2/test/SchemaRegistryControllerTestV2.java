@@ -1952,7 +1952,7 @@ public class SchemaRegistryControllerTestV2 {
     RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     record.getRelatedIdentifiers().add(relatedResource);
-    relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaId, null, null);
+    relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, schemaId, null, null);
     if ((schemaId != null) && schemaId.startsWith("http")) {
       relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     } else {
@@ -1986,11 +1986,11 @@ public class SchemaRegistryControllerTestV2 {
  
   }
   public static void setRelatedSchema(DataResource dataResource, String relatedSchema) {
-    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
     if (relatedIdentifier != null) { 
       relatedIdentifier.setValue(relatedSchema);
     } else {
-       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, relatedSchema, null, null);
+       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, relatedSchema, null, null);
     dataResource.getRelatedIdentifiers().add(relatedIdentifier);
     }
     if (relatedSchema.startsWith("http"))   {
