@@ -568,6 +568,9 @@ public class MetadataControllerTest {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
+    // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
+
     String content = result.getResponse().getContentAsString();
 
     ObjectMapper map = new ObjectMapper();
@@ -1336,6 +1339,8 @@ public class MetadataControllerTest {
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
+    // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
@@ -1676,7 +1681,7 @@ public class MetadataControllerTest {
     Assert.assertEquals(record2.getDocumentHash(), record3.getDocumentHash());
     Assert.assertEquals(record2.getCreatedAt(), record3.getCreatedAt());
     Assert.assertEquals(record2.getSchema().getIdentifier(), record3.getSchema().getIdentifier());
-    Assert.assertEquals((long) record2.getRecordVersion(), (long)record3.getRecordVersion());// version should be the same
+    Assert.assertEquals((long) record2.getRecordVersion(), (long) record3.getRecordVersion());// version should be the same
     if (record.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
@@ -1710,7 +1715,7 @@ public class MetadataControllerTest {
     Assert.assertEquals(record2.getDocumentHash(), record4.getDocumentHash());
     Assert.assertEquals(record2.getCreatedAt(), record4.getCreatedAt());
     Assert.assertEquals(record2.getSchema().getIdentifier(), record4.getSchema().getIdentifier());
-    Assert.assertEquals((long) record2.getRecordVersion(), (long)record4.getRecordVersion());// version should be the same
+    Assert.assertEquals((long) record2.getRecordVersion(), (long) record4.getRecordVersion());// version should be the same
     if (record.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(record4.getAcl()));
     }

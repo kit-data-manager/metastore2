@@ -394,6 +394,7 @@ public class RestDocumentation4WebpageTest {
             andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
             andReturn().getResponse().getHeader("Location");
     // Get URL
+    location = location.replace("/v2/", "/v1/");
     String newLocation = location.split("[?]")[0];
 
     // 2. Accessing metadata document
@@ -436,6 +437,7 @@ public class RestDocumentation4WebpageTest {
             andReturn();
     etag = result.getResponse().getHeader("ETag");
     location = result.getResponse().getHeader("Location");
+    location = location.replace("/v2/", "/v1/");
     // 5. Update metadata record
     //**************************************************************************
     // update once more to newest version of schema

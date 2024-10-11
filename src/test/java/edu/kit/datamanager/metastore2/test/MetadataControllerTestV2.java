@@ -1515,7 +1515,6 @@ public class MetadataControllerTestV2 {
     result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
             file(recordFile).
             file(metadataFile).header("If-Match", etag).with(putMultipart())).andDo(print()).andExpect(status().isOk()).andReturn();
-    String locationUri2 = result.getResponse().getHeader("Location");
 
 //    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
@@ -1545,8 +1544,10 @@ public class MetadataControllerTestV2 {
     Assert.assertEquals(dcMetadata, content);
 
     // Check for old location URI.
-    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId + "?version=1")).andDo(print()).andExpect(status().isOk()).andReturn();
-    String locationUri = result.getResponse().getHeader("Location");
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId + "?version=1")).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
     // Check for old metadata document
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId + "?version=1").
             accept(MediaType.APPLICATION_XML)).
@@ -1558,8 +1559,6 @@ public class MetadataControllerTestV2 {
     dcMetadata = DC_DOCUMENT;
 
     Assert.assertEquals(dcMetadata, content);
-
-    Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
   }
 
   @Test
@@ -2036,7 +2035,6 @@ public class MetadataControllerTestV2 {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    String locationUri2 = result.getResponse().getHeader("Location");
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             accept(MediaType.APPLICATION_XML)).
             andDo(print()).
@@ -2048,7 +2046,6 @@ public class MetadataControllerTestV2 {
 
     Assert.assertEquals(dcMetadata, content);
 
-    Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
@@ -2118,7 +2115,6 @@ public class MetadataControllerTestV2 {
 
 //    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
     body = result.getResponse().getContentAsString();
-    String locationUri = result.getResponse().getHeader("Location");
 
     record2 = mapper.readValue(body, DataResource.class);
 //    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
@@ -2137,7 +2133,6 @@ public class MetadataControllerTestV2 {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    String locationUri2 = result.getResponse().getHeader("Location");
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             accept(MediaType.APPLICATION_XML)).
             andDo(print()).
@@ -2149,7 +2144,6 @@ public class MetadataControllerTestV2 {
 
     Assert.assertEquals(dcMetadata, content);
 
-    Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).

@@ -234,7 +234,7 @@ public class SchemaRegistryControllerTestV2 {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(ALTERNATE_API_SCHEMA_PATH).
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+            file(schemaFile)).andDo(print()).andExpect(status().isNotFound()).andReturn();
   }
 
   @Test
@@ -627,11 +627,8 @@ public class SchemaRegistryControllerTestV2 {
   public void testFindRecordsBySchemaIdWithAlternateEndpoint() throws Exception {
     String schemaId = "testFindRecordsBySchemaIdWithAlternateEndpoint".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);
-    MvcResult res = this.mockMvc.perform(get(ALTERNATE_API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    ObjectMapper map = new ObjectMapper();
-    DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
-
-    Assert.assertTrue(result.length > 0);
+    // alternate endpoint is no longer available!
+    MvcResult res = this.mockMvc.perform(get(ALTERNATE_API_SCHEMA_PATH).param("schemaId", schemaId).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotFound()).andReturn();
   }
 
   @Test

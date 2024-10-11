@@ -392,7 +392,9 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
             file(recordFile).
             file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
     String locationUri = result.getResponse().getHeader("Location");
-    String content = result.getResponse().getContentAsString();
+     // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
+   String content = result.getResponse().getContentAsString();
 
     ObjectMapper map = new ObjectMapper();
     MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
@@ -886,6 +888,8 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
+    // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
