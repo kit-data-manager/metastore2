@@ -69,6 +69,7 @@ import java.util.*;
 import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.test.CreateSchemaUtil.*;
+import edu.kit.datamanager.repo.domain.Date;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -2079,6 +2080,67 @@ public class MetadataControllerTestV2 {
     Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
     Assert.assertTrue("Set of rights should be 'empty'", record3.getRights().isEmpty());
 
+  }
+
+  @Test
+  public void testUpdateRecordWithoutCreateDate() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    DataResource record = mapper.readValue(body, DataResource.class);
+    DataResource record2 = mapper.readValue(body, DataResource.class);
+    Assert.assertTrue(record.getRights().isEmpty());
+    Date createDate = null;
+    for (Date date : record2.getDates()) {
+      if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
+        createDate = date;
+      }
+    }
+    record2.getDates().remove(createDate);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
+            file(recordFile).
+            file(metadataFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+    record2 = mapper.readValue(body, DataResource.class);
+//    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
+    SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
+    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
+    SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            accept(MediaType.APPLICATION_XML)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = DC_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
   }
 
   @Test

@@ -30,7 +30,6 @@ import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
-import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
@@ -78,6 +77,7 @@ import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
+import edu.kit.datamanager.repo.domain.Date;
 
 /**
  * Utility class for handling json documents
@@ -338,34 +338,51 @@ public class DataResourceRecordUtil {
           MultipartFile recordDocument,
           MultipartFile document,
           UnaryOperator<String> supplier) {
-    DataResource metadataRecord = null;
-    metadataRecord = checkParameters(recordDocument, document, false);
+    DataResource givenDataResource = null;
+    givenDataResource = checkParameters(recordDocument, document, false);
     DataResource updatedDataResource;
 
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
-    DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
+    DataResource oldDataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
-    ControllerUtils.checkEtag(eTag, dataResource);
-    LOG.trace("ETag: '{}'", dataResource.getEtag());
-    if (metadataRecord != null) {
-      LOG.trace("metadataRecord: '{}'", metadataRecord);
-      metadataRecord.setVersion(dataResource.getVersion());
-      metadataRecord.setId(dataResource.getId());
-      updatedDataResource = metadataRecord;
+    ControllerUtils.checkEtag(eTag, oldDataResource);
+    LOG.trace("ETag: '{}'", oldDataResource.getEtag());
+    if (givenDataResource != null) {
+      LOG.trace("metadataRecord: '{}'", givenDataResource);
+      givenDataResource.setVersion(oldDataResource.getVersion());
+      givenDataResource.setId(oldDataResource.getId());
+      updatedDataResource = givenDataResource;
       if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
-        updatedDataResource.setAcls(dataResource.getAcls());
+        updatedDataResource.setAcls(oldDataResource.getAcls());
       }
       if (updatedDataResource.getRights() == null) {
         updatedDataResource.setRights(new HashSet<>());
       }
       if (updatedDataResource.getState() == null) {
-        updatedDataResource.setState(dataResource.getState());
+        updatedDataResource.setState(oldDataResource.getState());
       }
       if (updatedDataResource.getResourceType() == null) {
-        updatedDataResource.setResourceType(dataResource.getResourceType());
+        updatedDataResource.setResourceType(oldDataResource.getResourceType());
       }
+      // Set create date
+      Date createDate = null;
+      for (Date date : oldDataResource.getDates()) {
+        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
+          createDate = date;
+        }
+      }
+      Date newCreateDate = null;
+      for (Date date : updatedDataResource.getDates()) {
+        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
+          newCreateDate = date;
+        }
+      }
+      if (newCreateDate != null) {
+        updatedDataResource.getDates().remove(newCreateDate);
+      }
+      updatedDataResource.getDates().add(createDate);
     } else {
-      updatedDataResource = DataResourceUtils.copyDataResource(dataResource);
+      updatedDataResource = DataResourceUtils.copyDataResource(oldDataResource);
     }
 
     boolean noChanges = false;
@@ -402,7 +419,7 @@ public class DataResourceRecordUtil {
       if (!noChanges) {
         // Everything seems to be fine update document and increment version
         LOG.trace("Updating schema document (and increment version)...");
-        String version = dataResource.getVersion();
+        String version = oldDataResource.getVersion();
         if (version == null) {
           version = "0";
         }
@@ -433,14 +450,14 @@ public class DataResourceRecordUtil {
 
     }
     if (noChanges) {
-      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
+      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(oldDataResource.getId());
       if (dataRecord.isPresent()) {
         dataRecordDao.delete(dataRecord.get());
       }
     }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, updatedDataResource, eTag, supplier);
+    oldDataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, updatedDataResource, eTag, supplier);
 
-    return dataResource;
+    return oldDataResource;
   }
 
   /**

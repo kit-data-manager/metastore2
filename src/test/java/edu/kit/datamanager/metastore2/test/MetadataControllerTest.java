@@ -1724,6 +1724,60 @@ public class MetadataControllerTest {
 
   }
 
+
+  @Test
+  public void testUpdateRecordWithoutCreateDate() throws Exception {
+    String metadataRecordId = createDCMetadataRecord();
+    MvcResult result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    Instant createDate = record.getCreatedAt();
+    record.setCreatedAt(null);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/" + record.getId()).
+            file(recordFile).
+            file(metadataFile).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
+    Assert.assertEquals(createDate, record2.getCreatedAt());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+    }
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = DC_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
+
+    Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+  }
+
   @Test
   public void testDeleteRecordWithoutAuthentication() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
