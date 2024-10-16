@@ -720,7 +720,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -748,6 +749,7 @@ public class JsonSchemaRegistryControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record.getMimeType();
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
@@ -756,7 +758,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertEquals(record.getMimeType(), record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -829,7 +832,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -912,7 +916,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record1.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
