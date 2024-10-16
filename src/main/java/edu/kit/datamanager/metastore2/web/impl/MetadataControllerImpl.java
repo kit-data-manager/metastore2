@@ -266,7 +266,7 @@ public class MetadataControllerImpl implements IMetadataController {
   ) {
     LOG.trace("Performing getMetadataDocumentById({}, {}).", id, version);
 
-    Path metadataDocumentPath = MetadataRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
+    Path metadataDocumentPath = DataResourceRecordUtil.getMetadataDocumentByIdAndVersion(metadataConfig, id, version);
 
     return ResponseEntity.
             ok().

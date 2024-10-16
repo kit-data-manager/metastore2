@@ -13,6 +13,7 @@ import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
@@ -1224,6 +1225,34 @@ public class MetadataControllerTest {
     Assert.assertEquals(dcMetadata, content);
 
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
+
+    // Get old version...
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + record.getId() + "?version=1").header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).andExpect(status().isOk()).andReturn();
+
+//    result = this.mockMvc.perform(put("/api/v1/metadata/dc").header("If-Match", etag).contentType(MetadataRecord.METADATA_RECORD_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    body = result.getResponse().getContentAsString();
+
+    MetadataRecord record1 = mapper.readValue(body, MetadataRecord.class);
+    Assert.assertEquals(record.getDocumentHash(), record1.getDocumentHash());
+    Assert.assertNotEquals(record2.getDocumentHash(), record1.getDocumentHash());
+    Assert.assertEquals(record.getCreatedAt(), record1.getCreatedAt());
+    Assert.assertEquals(record.getSchema().getIdentifier(), record1.getSchema().getIdentifier());
+    Assert.assertEquals(record.getRecordVersion(), record1.getRecordVersion());// version should be 1 higher
+    if (record.getAcl() != null) {
+      Assert.assertTrue(record.getAcl().containsAll(record1.getAcl()));
+    }
+    Assert.assertEquals(record.getLastUpdate(), record1.getLastUpdate());
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId + "?version=1")).andDo(print()).andExpect(status().isOk()).andReturn();
+    content = result.getResponse().getContentAsString();
+
+    String dcMetadata1 = DC_DOCUMENT;
+
+    Assert.assertEquals(dcMetadata1, content);
+
+    Assert.assertEquals(record.getMetadataDocumentUri(), record1.getMetadataDocumentUri());
+
   }
 
   @Test

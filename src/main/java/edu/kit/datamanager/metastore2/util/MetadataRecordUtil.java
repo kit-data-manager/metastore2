@@ -226,88 +226,49 @@ public class MetadataRecordUtil {
         throw new BadArgumentException(message);
       }
     }
-
-    LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
-    DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
-    LOG.trace("Checking provided ETag.");
-    ControllerUtils.checkEtag(eTag, dataResource);
+    DataResource givenRecord = null;
     if (metadataRecord != null) {
-      existingRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      existingRecord = mergeRecords(existingRecord, metadataRecord);
-      dataResource = migrateToDataResource(applicationProperties, existingRecord);
-    } else {
-      dataResource = DataResourceUtils.copyDataResource(dataResource);
+      givenRecord = migrateToDataResource(applicationProperties, metadataRecord);
     }
+    DataResource dataResource = DataResourceRecordUtil.updateDataResource4MetadataDocument(applicationProperties, resourceId, eTag, givenRecord, document, supplier);
 
-    boolean noChanges = false;
-    if (document != null) {
-      metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      validateMetadataDocument(applicationProperties, metadataRecord, document);
-
-      ContentInformation info;
-      String fileName = document.getOriginalFilename();
-      info = getContentInformationOfResource(applicationProperties, dataResource);
-      if (info != null) {
-        fileName = info.getRelativePath();
-        noChanges = true;
-        // Check for changes...
-        try {
-          byte[] currentFileContent;
-          File file = new File(URI.create(info.getContentUri()));
-          if (document.getSize() == Files.size(file.toPath())) {
-            currentFileContent = FileUtils.readFileToByteArray(file);
-            byte[] newFileContent = document.getBytes();
-            for (int index = 0; index < currentFileContent.length; index++) {
-              if (currentFileContent[index] != newFileContent[index]) {
-                noChanges = false;
-                break;
-              }
-            }
-          } else {
-            noChanges = false;
-          }
-        } catch (IOException ex) {
-          LOG.error("Error reading current file!", ex);
-        }
-      }
-      if (!noChanges) {
-        // Everything seems to be fine update document and increment version
-        LOG.trace("Updating schema document (and increment version)...");
-        String version = dataResource.getVersion();
-        if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
-        }
-        ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
-      }
-
-    } else {
-      // validate if document is still valid due to changed record settings.
-      metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
-
-      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-      }
-
-      try {
-        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
-        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
-      } catch (IOException ex) {
-        LOG.error("Error validating file!", ex);
-      }
-
-    }
-    if (noChanges) {
-      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
-      if (dataRecord.isPresent()) {
-        dataRecordDao.delete(dataRecord.get());
-      }
-    }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
-
+//      if (!noChanges) {
+//        // Everything seems to be fine update document and increment version
+//        LOG.trace("Updating schema document (and increment version)...");
+//        String version = dataResource.getVersion();
+//        if (version != null) {
+//          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
+//        }
+//        ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
+//      }
+//
+//    } else {
+//      // validate if document is still valid due to changed record settings.
+//      metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
+//      URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
+//
+//      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
+//      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+//        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+//        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+//      }
+//
+//      try {
+//        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
+//        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
+//        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
+//      } catch (IOException ex) {
+//        LOG.error("Error validating file!", ex);
+//      }
+//
+//    }
+//    if (noChanges) {
+//      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
+//      if (dataRecord.isPresent()) {
+//        dataRecordDao.delete(dataRecord.get());
+//      }
+//    }
+//    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
@@ -441,7 +402,7 @@ public class MetadataRecordUtil {
     long nano1 = System.nanoTime() / 1000000;
     MetadataRecord metadataRecord = DataResourceRecordUtil.migrateToMetadataRecordV2(applicationProperties, dataResource);
     if ((metadataRecord != null) && provideETag) {
-        metadataRecord.setETag(dataResource.getEtag());
+      metadataRecord.setETag(dataResource.getEtag());
       DataRecord dataRecord = null;
       long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), metadataRecord.getRecordVersion());
@@ -735,26 +696,6 @@ public class MetadataRecordUtil {
     long nano3 = System.nanoTime() / 1000000;
     LOG.info("getRecordByIdAndVersion {}, {}, {}", nano, (nano2 - nano), (nano3 - nano));
     return result;
-  }
-
-  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
-    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
-  }
-
-  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version) throws ResourceNotFoundException {
-    LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
-    MetadataRecord metadataRecord = getRecordByIdAndVersion(metastoreProperties, recordId, version);
-
-    URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
-
-    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-    }
-    return metadataDocumentPath;
   }
 
   /**

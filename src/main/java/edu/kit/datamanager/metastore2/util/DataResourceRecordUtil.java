@@ -340,6 +340,16 @@ public class DataResourceRecordUtil {
           UnaryOperator<String> supplier) {
     DataResource givenDataResource = null;
     givenDataResource = checkParameters(recordDocument, document, false);
+
+    return updateDataResource4MetadataDocument(applicationProperties, resourceId, eTag, givenDataResource, document, supplier);
+  }
+
+  public static DataResource updateDataResource4MetadataDocument(MetastoreConfiguration applicationProperties,
+          String resourceId,
+          String eTag,
+          DataResource givenDataResource,
+          MultipartFile document,
+          UnaryOperator<String> supplier) {
     DataResource updatedDataResource;
 
     LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
