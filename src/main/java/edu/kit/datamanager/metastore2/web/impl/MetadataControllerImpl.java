@@ -449,7 +449,7 @@ public class MetadataControllerImpl implements IMetadataController {
 
     LOG.trace("Metadata record successfully persisted. Updating document URI and returning result.");
     String etag = updateMetadataRecord.getEtag();
-    MetadataRecordUtil.fixMetadataDocumentUri(updateMetadataRecord);
+    DataResourceRecordUtil.fixMetadataDocumentUri(updateMetadataRecord);
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(updateMetadataRecord.getId(), updateMetadataRecord.getRecordVersion(), null, null)).toUri();

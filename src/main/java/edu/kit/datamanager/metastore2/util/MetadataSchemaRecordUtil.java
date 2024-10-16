@@ -28,6 +28,8 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE;
+import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
+import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
 import edu.kit.datamanager.metastore2.validation.IValidator;
@@ -67,6 +69,7 @@ import java.util.stream.Stream;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
+import org.springframework.util.MimeType;
 
 /**
  * Utility class for handling json documents
@@ -388,17 +391,14 @@ public class MetadataSchemaRecordUtil {
           dataResource.getDates().add(Date.factoryDate(metadataSchemaRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
         }
       }
-      Set<Identifier> identifiers = dataResource.getAlternateIdentifiers();
       if (metadataSchemaRecord.getPid() != null) {
-        ResourceIdentifier identifier = metadataSchemaRecord.getPid();
-        checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
+        PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
+        pid.setIdentifierType(metadataSchemaRecord.getPid().getIdentifierType().value());
+        pid.setValue(metadataSchemaRecord.getPid().getIdentifier());
+        dataResource.setIdentifier(pid);
       } else {
-        LOG.trace("Remove existing identifiers (others than INTERNAL)...");
-        for (Identifier item : identifiers) {
-          if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-            LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
-          }
-        }
+        LOG.trace("Remove existing identifier");
+        dataResource.setIdentifier(null);
       }
       String defaultTitle = metadataSchemaRecord.getMimeType();
       boolean titleExists = false;
@@ -527,32 +527,40 @@ public class MetadataSchemaRecordUtil {
         MetadataSchemaRecord.SCHEMA_TYPE schemaType = MetadataSchemaRecord.SCHEMA_TYPE.valueOf(type);
         metadataSchemaRecord.setType(schemaType);
       } catch (Exception ex) {
-          message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
+        message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
         // Test for new schema version
         ResourceType resourceType = dataResource.getResourceType();
-        if (resourceType.getTypeGeneral().equals(ResourceType.TYPE_GENERAL.MODEL) &&
-                resourceType.getValue().endsWith(DataResourceRecordUtil.SCHEMA_SUFFIX)) {
+        if (resourceType.getTypeGeneral().equals(ResourceType.TYPE_GENERAL.MODEL)
+                && resourceType.getValue().endsWith(DataResourceRecordUtil.SCHEMA_SUFFIX)) {
           type = resourceType.getValue().replace(DataResourceRecordUtil.SCHEMA_SUFFIX, "");
           try {
-          metadataSchemaRecord.setType(SCHEMA_TYPE.valueOf(type));
-          // new 
-          message = null;
+            metadataSchemaRecord.setType(SCHEMA_TYPE.valueOf(type));
+            // new 
+            message = null;
           } catch (Exception ex2) {
-          message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
+            message = "Format '" + type + "' is not a valid schema type. Returning HTTP BAD_REQUEST.";
           }
-          
-        } 
-        
+
+        }
+
       } finally {
-      if (message != null) {
-        LOG.error(message);
-        throw new BadArgumentException(message);
-        
+        if (message != null) {
+          LOG.error(message);
+          throw new BadArgumentException(message);
+        }
       }
-    }
-      nano3 = System.nanoTime() / 1000000;
-      metadataSchemaRecord.setMimeType(dataResource.getTitles().iterator().next().getValue());
-      nano4 = System.nanoTime() / 1000000;
+      SCHEMA_TYPE schemaType = metadataSchemaRecord.getType();
+      switch (schemaType) {
+        case JSON:
+          metadataSchemaRecord.setMimeType(MediaType.APPLICATION_JSON_VALUE);
+          break;
+        case XML:
+          metadataSchemaRecord.setMimeType(MediaType.APPLICATION_XML_VALUE);
+          break;
+        default:
+          throw new BadArgumentException("Schema type '" + schemaType + "is not implemented yet!");
+
+      }
       metadataSchemaRecord.setAcl(dataResource.getAcls());
       nano5 = System.nanoTime() / 1000000;
       for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
@@ -566,19 +574,9 @@ public class MetadataSchemaRecordUtil {
       if (dataResource.getLastUpdate() != null) {
         metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
       }
-      Iterator<Identifier> iterator = dataResource.getAlternateIdentifiers().iterator();
-      while (iterator.hasNext()) {
-        Identifier identifier = iterator.next();
-        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().name()));
-            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-            metadataSchemaRecord.setPid(resourceIdentifier);
-            break;
-          } else {
-            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
-          }
-        }
+      PrimaryIdentifier pid = dataResource.getIdentifier();
+      if ((pid != null) && pid.hasDoi()) {
+        metadataSchemaRecord.setPid(ResourceIdentifier.factoryResourceIdentifier(pid.getValue(), IdentifierType.valueOf(pid.getIdentifierType())));
       }
 
       Long schemaVersion = 1L;

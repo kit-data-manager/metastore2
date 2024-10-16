@@ -373,20 +373,14 @@ public class MetadataRecordUtil {
         dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
       }
     }
-    Set<Identifier> identifiers = dataResource.getAlternateIdentifiers();
     if (metadataRecord.getPid() != null) {
-      ResourceIdentifier identifier = metadataRecord.getPid();
-      MetadataSchemaRecordUtil.checkAlternateIdentifier(identifiers, identifier.getIdentifier(), Identifier.IDENTIFIER_TYPE.valueOf(identifier.getIdentifierType().name()));
+      PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
+      pid.setIdentifierType(metadataRecord.getPid().getIdentifierType().value());
+      pid.setValue(metadataRecord.getPid().getIdentifier());
+      dataResource.setIdentifier(pid);
     } else {
-      LOG.trace("Remove existing identifiers (others than URL)...");
-      Set<Identifier> removeItems = new HashSet<>();
-      for (Identifier item : identifiers) {
-        if (item.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          LOG.trace("... {},  {}", item.getValue(), item.getIdentifierType());
-          removeItems.add(item);
-        }
-      }
-      identifiers.removeAll(removeItems);
+      LOG.trace("Remove existing identifier");
+      dataResource.setIdentifier(null);
     }
     boolean relationFound = false;
     boolean schemaIdFound = false;
@@ -445,77 +439,12 @@ public class MetadataRecordUtil {
           DataResource dataResource,
           boolean provideETag) {
     long nano1 = System.nanoTime() / 1000000;
-    MetadataRecord metadataRecord = new MetadataRecord();
-    if (dataResource != null) {
-      metadataRecord.setId(dataResource.getId());
-      if (provideETag) {
+    MetadataRecord metadataRecord = DataResourceRecordUtil.migrateToMetadataRecordV2(applicationProperties, dataResource);
+    if ((metadataRecord != null) && provideETag) {
         metadataRecord.setETag(dataResource.getEtag());
-      }
-      metadataRecord.setAcl(dataResource.getAcls());
-
-      for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
-        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-          LOG.trace("Creation date entry found.");
-          metadataRecord.setCreatedAt(d.getValue());
-          break;
-        }
-      }
-      if (dataResource.getLastUpdate() != null) {
-        metadataRecord.setLastUpdate(dataResource.getLastUpdate());
-      }
-
-      for (Identifier identifier : dataResource.getAlternateIdentifiers()) {
-        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().name()));
-            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-            metadataRecord.setPid(resourceIdentifier);
-            break;
-          } else {
-            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
-          }
-        }
-      }
-
-      Long recordVersion = 1L;
-      if (dataResource.getVersion() != null) {
-        recordVersion = Long.parseLong(dataResource.getVersion());
-      }
-      metadataRecord.setRecordVersion(recordVersion);
-
-      for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-        LOG.trace("Found related Identifier: '{}'", relatedIds);
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue());
-          if (relatedIds.getIdentifierType() != null) {
-            resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
-          }
-          LOG.trace("Set relation to '{}'", resourceIdentifier);
-          metadataRecord.setRelatedResource(resourceIdentifier);
-        }
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
-          metadataRecord.setSchema(resourceIdentifier);
-          if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
-            //Try to fetch version from URL (only works with URLs including the version as query parameter.
-            Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
-            while (matcher.find()) {
-              metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
-            }
-          } else {
-            metadataRecord.setSchemaVersion(1L);
-          }
-          LOG.trace("Set schema to '{}'", resourceIdentifier);
-        }
-      }
-      if (metadataRecord.getSchema() == null) {
-        String message = "Missing schema identifier for metadata document. Not a valid metadata document ID. Returning HTTP BAD_REQUEST.";
-        LOG.error(message);
-        throw new BadArgumentException(message);
-      }
       DataRecord dataRecord = null;
       long nano2 = System.nanoTime() / 1000000;
-      Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), recordVersion);
+      Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), metadataRecord.getRecordVersion());
       long nano3 = System.nanoTime() / 1000000;
       long nano4 = nano3;
       boolean isAvailable = false;

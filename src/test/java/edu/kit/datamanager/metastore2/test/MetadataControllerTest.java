@@ -1602,6 +1602,17 @@ public class MetadataControllerTest {
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocument(mockMvc, SCHEMA_ID, 1L, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
   }
 
+
+  @Test
+  public void testUpdateRecordAndDocument2NewSchemaVersion() throws Exception {
+    String alternativeSchemaId = "testupdatealsoschema";
+    CreateSchemaUtil.ingestXmlSchemaRecord(mockMvc, alternativeSchemaId, CreateSchemaUtil.XML_SCHEMA_V1, schemaConfig.getJwtSecret());
+    CreateSchemaUtil.ingestOrUpdateXmlSchemaRecord(mockMvc, alternativeSchemaId, CreateSchemaUtil.XML_SCHEMA_V2, schemaConfig.getJwtSecret(), true, status().isOk());
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, alternativeSchemaId, 1L, "document", CreateSchemaUtil.XML_DOCUMENT_V1, schemaConfig.getJwtSecret());
+    // Change version of schema to a higher version whith additional fields.
+    CreateSchemaUtil.ingestXmlMetadataDocument(mockMvc, alternativeSchemaId, 2L, "document", CreateSchemaUtil.XML_DOCUMENT_V2, schemaConfig.getJwtSecret());
+  }
+
   @Test
   public void testUpdateRecordWithLicense() throws Exception {
     String metadataRecordId = createDCMetadataRecord();

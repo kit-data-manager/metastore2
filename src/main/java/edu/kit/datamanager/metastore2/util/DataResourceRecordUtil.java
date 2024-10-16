@@ -226,7 +226,7 @@ public class DataResourceRecordUtil {
     // validate schema document / determine or correct resource type
     validateMetadataDocument(applicationProperties, metadataRecord, document);
 
-    metadataRecord.setVersion(Long.toString(1));
+    metadataRecord.setVersion(getSchemaRecordFromDataResource(metadataRecord).getVersion().toString());
     // create record.
     DataResource dataResource = metadataRecord;
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
@@ -352,6 +352,15 @@ public class DataResourceRecordUtil {
       givenDataResource.setVersion(oldDataResource.getVersion());
       givenDataResource.setId(oldDataResource.getId());
       updatedDataResource = givenDataResource;
+      if ((updatedDataResource.getCreators() == null) || updatedDataResource.getCreators().isEmpty()) {
+        updatedDataResource.setCreators(oldDataResource.getCreators());
+      }
+      if (updatedDataResource.getPublicationYear() == null) {
+        updatedDataResource.setPublicationYear(oldDataResource.getPublicationYear());
+      }
+      if (updatedDataResource.getPublisher() == null) {
+        updatedDataResource.setPublisher(oldDataResource.getPublisher());
+      }
       if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
         updatedDataResource.setAcls(oldDataResource.getAcls());
       }
@@ -555,22 +564,13 @@ public class DataResourceRecordUtil {
         metadataRecord.setLastUpdate(dataResource.getLastUpdate());
       }
 
-      for (Identifier identifier : dataResource.getAlternateIdentifiers()) {
-        if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.URL) {
-          if (identifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-            ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(identifier.getValue(), ResourceIdentifier.IdentifierType.valueOf(identifier.getIdentifierType().name()));
-            LOG.trace("Set PID to '{}' of type '{}'", resourceIdentifier.getIdentifier(), resourceIdentifier.getIdentifierType());
-            metadataRecord.setPid(resourceIdentifier);
-            break;
-          } else {
-            LOG.debug("'INTERNAL' identifier shouldn't be used! Migrate them to 'URL' if possible.");
-          }
-        }
+      PrimaryIdentifier pid = dataResource.getIdentifier();
+      if ((pid != null) && pid.hasDoi()) {
+        metadataRecord.setPid(ResourceIdentifier.factoryResourceIdentifier(pid.getValue(), IdentifierType.valueOf(pid.getIdentifierType())));
       }
-
       Long recordVersion = 1L;
       if (dataResource.getVersion() != null) {
-        recordVersion = Long.parseLong(dataResource.getVersion());
+        recordVersion = Long.valueOf(dataResource.getVersion());
       }
       metadataRecord.setRecordVersion(recordVersion);
 
@@ -591,10 +591,13 @@ public class DataResourceRecordUtil {
             //Try to fetch version from URL (only works with URLs including the version as query parameter.
             Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
             while (matcher.find()) {
-              metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
+              metadataRecord.setSchemaVersion(Long.valueOf(matcher.group(1)));
             }
           } else {
-            metadataRecord.setSchemaVersion(1L);
+            // set to current version of schema
+            SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
+
+            metadataRecord.setSchemaVersion(currentSchema.getVersion());
           }
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
@@ -604,15 +607,12 @@ public class DataResourceRecordUtil {
         LOG.error(message);
         throw new BadArgumentException(message);
       }
-      DataRecord dataRecord = null;
       LOG.trace("Get document URI from ContentInformation.");
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, dataResource);
       if (info != null) {
         metadataRecord.setDocumentHash(info.getHash());
         metadataRecord.setMetadataDocumentUri(info.getContentUri());
-        MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
-        metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
       }
       // Only one license allowed. So don't worry about size of set.
       if (!dataResource.getRights().isEmpty()) {
@@ -1701,25 +1701,27 @@ public class DataResourceRecordUtil {
   private static SchemaRecord getSchemaRecordFromDataResource(DataResource dataResource) {
     SchemaRecord schemaRecord = null;
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataResource);
-    String schemaId = schemaIdentifier.getValue();
-    LOG.trace("getSchemaRecordFromDataResource: related identifier:  '{}'", schemaIdentifier);
-    LOG.trace("getSchemaRecordFromDataResource: '{}'", schemaId);
-    switch (schemaIdentifier.getIdentifierType()) {
-      case URL:
-        schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
-        break;
-      case INTERNAL:
-        String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
-        if (split.length == 1) {
-          schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
-        } else {
-          schemaRecord = schemaRecordDao.findBySchemaId(schemaId);
-        }
-        break;
-      default:
-        String message = "Unsupported identifier type: '" + schemaIdentifier.getIdentifierType() + "'!";
-        LOG.error(message);
-        throw new ResourceNotFoundException(message);
+    if ((schemaIdentifier != null) && (schemaIdentifier.getValue() != null)) {
+      String schemaId = schemaIdentifier.getValue();
+      LOG.trace("getSchemaRecordFromDataResource: related identifier:  '{}'", schemaIdentifier);
+      LOG.trace("getSchemaRecordFromDataResource: '{}'", schemaId);
+      switch (schemaIdentifier.getIdentifierType()) {
+        case URL:
+          schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
+          break;
+        case INTERNAL:
+          String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
+          if (split.length == 1) {
+            schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
+          } else {
+            schemaRecord = schemaRecordDao.findBySchemaId(schemaId);
+          }
+          break;
+        default:
+          String message = "Unsupported identifier type: '" + schemaIdentifier.getIdentifierType() + "'!";
+          LOG.error(message);
+          throw new ResourceNotFoundException(message);
+      }
     }
     return schemaRecord;
   }
@@ -1900,37 +1902,22 @@ public class DataResourceRecordUtil {
     }
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
-    RelatedIdentifier schemaIdentifier = getSchemaIdentifier(metadataRecord);
-    SchemaRecord findByAlternateId;
-    if ((schemaIdentifier != null) && (schemaIdentifier.getValue() != null)) {
-      if (schemaIdentifier.getIdentifierType() != Identifier.IDENTIFIER_TYPE.INTERNAL) {
-        findByAlternateId = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
-      } else {
-        String schemaId = schemaIdentifier.getValue();
-        String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
-
-        if (split.length > 1) {
-          findByAlternateId = schemaRecordDao.findBySchemaId(schemaId);
-        } else {
-          findByAlternateId = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(split[0] + SCHEMA_VERSION_SEPARATOR);
-        }
+    SchemaRecord findByAlternateId = getSchemaRecordFromDataResource(metadataRecord);
+    if (findByAlternateId != null) {
+      try {
+        validateMetadataDocument(metastoreProperties, document, findByAlternateId);
+        validationSuccess = true;
+        // After successful validation set type for metadata document resource.
+        MetadataSchemaRecord.SCHEMA_TYPE type = findByAlternateId.getType();
+        metadataRecord.setResourceType(ResourceType.createResourceType(type + METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+        //
+      } catch (Exception ex) {
+        String message = "Error validating document!";
+        LOG.error(message, ex);
+        errorMessage.append(ex.getMessage()).append("\n");
       }
-      if (findByAlternateId != null) {
-        try {
-          validateMetadataDocument(metastoreProperties, document, findByAlternateId);
-          validationSuccess = true;
-          // After successful validation set type for metadata document resource.
-          MetadataSchemaRecord.SCHEMA_TYPE type = findByAlternateId.getType();
-          metadataRecord.setResourceType(ResourceType.createResourceType(type + METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
-          //
-        } catch (Exception ex) {
-          String message = "Error validating document!";
-          LOG.error(message, ex);
-          errorMessage.append(ex.getMessage()).append("\n");
-        }
-      } else {
-        errorMessage.append("No matching schema found for '" + schemaIdentifier.getValue() + "'!");
-      }
+    } else {
+      errorMessage.append("No matching schema found for '" + findByAlternateId.getSchemaId() + "'!");
     }
     if (!validationSuccess) {
       LOG.error(errorMessage.toString());
