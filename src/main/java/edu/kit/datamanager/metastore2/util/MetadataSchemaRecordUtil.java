@@ -393,7 +393,7 @@ public class MetadataSchemaRecordUtil {
       }
       if (metadataSchemaRecord.getPid() != null) {
         PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
-        pid.setIdentifierType(metadataSchemaRecord.getPid().getIdentifierType().value());
+        pid.setIdentifierType(metadataSchemaRecord.getPid().getIdentifierType().name());
         pid.setValue(metadataSchemaRecord.getPid().getIdentifier());
         dataResource.setIdentifier(pid);
       } else {

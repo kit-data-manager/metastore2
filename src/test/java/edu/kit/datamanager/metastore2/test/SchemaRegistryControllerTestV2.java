@@ -1554,7 +1554,6 @@ public class SchemaRegistryControllerTestV2 {
     MetadataSchemaRecord expResult = null;
     DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
     expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
-    metadataSchemaRecord.setPid(null);
     assertEquals(metadataSchemaRecord, expResult);
     // Test with all possible values containing valid PID.
     metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5, 7, 11, 12);

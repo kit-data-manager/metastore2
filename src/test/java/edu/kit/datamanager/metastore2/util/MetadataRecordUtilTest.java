@@ -20,6 +20,7 @@ import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
+import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.Scheme;
 import java.time.Instant;
@@ -691,7 +692,10 @@ public class MetadataRecordUtilTest {
     assertNull("Last update date should be empty!", result.getLastUpdate());
 
     // Test migration of PID with two alternate identifiers (internal & UPC)
-    dataResource.getAlternateIdentifiers().add(Identifier.factoryIdentifier(PID, Identifier.IDENTIFIER_TYPE.UPC));
+    PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
+    pid.setValue(PID);
+    pid.setIdentifierType(Identifier.IDENTIFIER_TYPE.UPC.name());
+    dataResource.setIdentifier(pid);
     result = MetadataRecordUtil.migrateToMetadataRecord(applicationProperties, dataResource, false);
     assertNotNull(result.getId());
     assertEquals("Id should be the same!", result.getId(), dataResource.getId());

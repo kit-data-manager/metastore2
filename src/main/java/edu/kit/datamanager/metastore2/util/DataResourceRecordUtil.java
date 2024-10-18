@@ -373,7 +373,13 @@ public class DataResourceRecordUtil {
       }
       if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
         updatedDataResource.setAcls(oldDataResource.getAcls());
+      } else {
+        // Check for access rights for changing ACL (need ADMINISTRATION rights!)
+        MetadataRecordUtil.checkAccessRights(oldDataResource.getAcls(), true);
+        // Check if access rights still valid afterwards (at least one user with ADMINISTRATION rights should be available!)
+        MetadataRecordUtil.checkAccessRights(updatedDataResource.getAcls(), false);
       }
+
       if (updatedDataResource.getRights() == null) {
         updatedDataResource.setRights(new HashSet<>());
       }
@@ -606,8 +612,11 @@ public class DataResourceRecordUtil {
           } else {
             // set to current version of schema
             SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
-
-            metadataRecord.setSchemaVersion(currentSchema.getVersion());
+            if (currentSchema != null ) {
+              metadataRecord.setSchemaVersion(currentSchema.getVersion());
+            } else {
+              metadataRecord.setSchemaVersion(1L);
+            }
           }
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
@@ -1213,6 +1222,10 @@ public class DataResourceRecordUtil {
 
   public static final void fixSchemaUrl(DataResource dataresource) {
     RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataresource);
+    fixSchemaUrl(schemaIdentifier);
+  }
+
+  public static final void fixSchemaUrl(RelatedIdentifier schemaIdentifier) {
     if ((schemaIdentifier != null) && (schemaIdentifier.getIdentifierType().equals(Identifier.IDENTIFIER_TYPE.INTERNAL))) {
       String value = schemaIdentifier.getValue();
       StringTokenizer tokenizer = new StringTokenizer(schemaIdentifier.getValue(), SCHEMA_VERSION_SEPARATOR);
@@ -1927,7 +1940,7 @@ public class DataResourceRecordUtil {
         errorMessage.append(ex.getMessage()).append("\n");
       }
     } else {
-      errorMessage.append("No matching schema found for '" + findByAlternateId.getSchemaId() + "'!");
+      errorMessage.append("No matching schema found for '" + getSchemaIdentifier(metadataRecord).getValue() + "'!");
     }
     if (!validationSuccess) {
       LOG.error(errorMessage.toString());

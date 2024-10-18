@@ -958,7 +958,7 @@ public class SchemaRegistryControllerTest {
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
     String mimeTypeBefore = record.getMimeType();
-    record.setMimeType(MediaType.APPLICATION_JSON.toString());
+    record.setMimeType(MediaType.APPLICATION_JSON_VALUE);
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA_V2.getBytes());
 
@@ -969,7 +969,7 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
     Assert.assertNull(record2.getLicenseUri());
     Assert.assertEquals(record.getLicenseUri(), record2.getLicenseUri());
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type depends on document and can't be changed
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
@@ -1022,7 +1022,7 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
     Assert.assertNotNull(record2.getLicenseUri());
     Assert.assertEquals(record.getLicenseUri(), record2.getLicenseUri());
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type depends on document and can't be changed
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
@@ -1088,7 +1088,7 @@ public class SchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type depends on document and can't be changed
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri().replace("version=1", "version=2"), record2.getSchemaDocumentUri());
@@ -1211,7 +1211,7 @@ public class SchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type depends on document and can't be changed
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -1437,7 +1437,6 @@ public class SchemaRegistryControllerTest {
     MetadataSchemaRecord expResult = null;
     DataResource result = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataSchemaRecord);
     expResult = MetadataSchemaRecordUtil.migrateToMetadataSchemaRecord(applicationProperties, result, false);
-    metadataSchemaRecord.setPid(null);
     assertEquals(metadataSchemaRecord, expResult);
     // Test with all possible values containing valid PID.
     metadataSchemaRecord = new MetadataSchemaRecordUtilTest().createSchemaRecord(5, 7, 11, 12);

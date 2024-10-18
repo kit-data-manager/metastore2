@@ -1306,11 +1306,19 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
             file(recordFile).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("If-Match", etag).
+            with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isBadRequest());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
+            file(recordFile).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserPrincipal).
             header("If-Match", etag).
             with(putMultipart())).
             andDo(print()).
-            andExpect(status().isUnauthorized());
+            andExpect(status().isForbidden());
   }
 
   @Test

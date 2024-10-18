@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -317,7 +318,7 @@ public class MetadataSchemaRecordUtilTest {
     entry.setSid("write");
     aclEntries.add(createEntry(1L, PERMISSION.NONE, "none"));
     aclEntries.add(createEntry(2L, PERMISSION.READ, "read"));
-    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now().truncatedTo(ChronoUnit.SECONDS), "definition", "eTag", "label", Instant.MAX.truncatedTo(ChronoUnit.SECONDS), true, "mimetype", "pid", "schemadocument", "hash", "schemaId", 1L, SCHEMA_TYPE.XML);
+    MetadataSchemaRecord msr = buildMSR(aclEntries, "comment", Instant.now().truncatedTo(ChronoUnit.SECONDS), "definition", "eTag", "label", Instant.MAX.truncatedTo(ChronoUnit.SECONDS), true, MediaType.APPLICATION_XML_VALUE, "pid", "schemadocument", "hash", "schemaId", 1L, SCHEMA_TYPE.XML);
     for (int remove : skipped) {
       switch (remove) {
         case 1:

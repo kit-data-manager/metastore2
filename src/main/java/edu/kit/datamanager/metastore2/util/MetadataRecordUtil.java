@@ -308,7 +308,7 @@ public class MetadataRecordUtil {
     DataResource dataResource;
     if (metadataRecord.getId() != null) {
       try {
-        dataResource = applicationProperties.getDataResourceService().findById(metadataRecord.getId(), metadataRecord.getRecordVersion());
+        dataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, metadataRecord.getId(), metadataRecord.getRecordVersion());
         dataResource = DataResourceUtils.copyDataResource(dataResource);
       } catch (ResourceNotFoundException rnfe) {
         LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
