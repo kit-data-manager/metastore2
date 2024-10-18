@@ -449,6 +449,7 @@ public class DataResourceRecordUtil {
           version = "0";
         }
         updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
+        addProvenance(updatedDataResource);
         ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
       }
 
@@ -483,6 +484,40 @@ public class DataResourceRecordUtil {
     oldDataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, updatedDataResource, eTag, supplier);
 
     return oldDataResource;
+  }
+  /** Add or replace link to predecessor.
+   * 
+   * @param newDataResource Data resource holding the new version.
+   */
+  public static void addProvenance(DataResource newDataResource) {
+    if (Long.parseLong(newDataResource.getVersion()) > 1L) {
+      replaceIsDerivedFrom(newDataResource);
+    }
+  }
+  /** Replace outdated link to predecessor with new one.
+   * 
+   * @param newDataResource Data resource holding the new version.
+   */
+  public static void replaceIsDerivedFrom(DataResource newDataResource) {
+    boolean foundOldIdentifier = false;
+    long oldVersion = Long.parseLong(newDataResource.getVersion()) - 1L;
+    String urlToPredecessor = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).
+            getMetadataDocumentById(newDataResource.getId(), oldVersion, null, null)).
+            toUri().
+            toString();
+    for (RelatedIdentifier item : newDataResource.getRelatedIdentifiers()) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+        String oldUrl = item.getValue();
+        item.setValue(urlToPredecessor);
+        item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+        LOG.trace("Fix related identifier 'isDerivedFrom' : '{}' -> '{}'", oldUrl, urlToPredecessor);
+        foundOldIdentifier = true;
+      }
+    }
+    if (!foundOldIdentifier) {
+      RelatedIdentifier newRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, urlToPredecessor, null, null);
+      newDataResource.getRelatedIdentifiers().add(newRelatedIdentifier);
+    }
   }
 
   /**
@@ -612,7 +647,7 @@ public class DataResourceRecordUtil {
           } else {
             // set to current version of schema
             SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
-            if (currentSchema != null ) {
+            if (currentSchema != null) {
               metadataRecord.setSchemaVersion(currentSchema.getVersion());
             } else {
               metadataRecord.setSchemaVersion(1L);
