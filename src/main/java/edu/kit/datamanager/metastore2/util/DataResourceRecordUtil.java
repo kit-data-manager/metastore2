@@ -1851,7 +1851,7 @@ public class DataResourceRecordUtil {
    * @param supplier Method for creating access URL.
    * @return Record of updated schema document.
    */
-  public static DataResource updateMetadataSchemaRecord(MetastoreConfiguration applicationProperties,
+  public static DataResource updateDataResource4SchemaDocument(MetastoreConfiguration applicationProperties,
           String resourceId,
           String eTag,
           MultipartFile recordDocument,
@@ -1871,6 +1871,26 @@ public class DataResourceRecordUtil {
     } else {
       dataResource = DataResourceUtils.copyDataResource(dataResource);
     }
+    return updateDataResource4SchemaDocument(applicationProperties, resourceId, eTag, dataResource, schemaDocument, supplier);
+  }
+
+  /**
+   * Update schema document.
+   *
+   * @param applicationProperties Settings of repository.
+   * @param resourceId ID of the schema document.
+   * @param eTag E-Tag of the current schema document.
+   * @param recordDocument Record of the schema.
+   * @param schemaDocument Schema document.
+   * @param supplier Method for creating access URL.
+   * @return Record of updated schema document.
+   */
+  public static DataResource updateDataResource4SchemaDocument(MetastoreConfiguration applicationProperties,
+          String resourceId,
+          String eTag,
+          DataResource dataResource,
+          MultipartFile schemaDocument,
+          UnaryOperator<String> supplier) {
 
     ContentInformation info;
     info = getContentInformationOfResource(applicationProperties, dataResource);
@@ -1911,6 +1931,7 @@ public class DataResourceRecordUtil {
         if (version != null) {
           dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
+        addProvenance(dataResource);
         ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
         SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
         MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);

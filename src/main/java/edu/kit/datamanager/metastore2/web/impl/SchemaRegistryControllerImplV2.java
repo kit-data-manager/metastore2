@@ -339,7 +339,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     UnaryOperator<String> getById;
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, request, response)).toString();
     String eTag = ControllerUtils.getEtagFromHeader(request);
-    DataResource updatedSchemaRecord = DataResourceRecordUtil.updateMetadataSchemaRecord(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
+    DataResource updatedSchemaRecord = DataResourceRecordUtil.updateDataResource4SchemaDocument(schemaConfig, schemaId, eTag, schemaRecord, document, getById);
     
     LOG.trace("DataResource record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
