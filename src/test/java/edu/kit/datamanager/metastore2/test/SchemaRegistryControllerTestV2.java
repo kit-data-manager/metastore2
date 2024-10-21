@@ -9,6 +9,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import edu.kit.datamanager.entities.Identifier;
+import edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -76,6 +77,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Stream;
+import org.apache.commons.lang.StringUtils;
 
 import static org.junit.Assert.assertEquals;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
@@ -2243,23 +2245,51 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   public static void validateRelatedIdentifierSets(Set<RelatedIdentifier> first, Set<RelatedIdentifier> second) {
-    if (first == second) {
-      return;
+    // Check for provenance first...
+    RelatedIdentifier provenanceFirstRelatedIdentifier = null;
+    RelatedIdentifier provenanceSecondRelatedIdentifier = null;
+    Set<RelatedIdentifier> copyFirst = new HashSet<>();
+    Set<RelatedIdentifier> copySecond = new HashSet<>();
+    copyFirst.addAll(first);
+    copySecond.addAll(second);
+    for (RelatedIdentifier item : copyFirst) {
+      if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+        provenanceFirstRelatedIdentifier = item;
+        Assert.assertEquals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, item.getRelationType());
+        Assert.assertEquals(IDENTIFIER_TYPE.URL, item.getIdentifierType());
+        break;
+      }
     }
-    Assert.assertEquals(first.size(), second.size());
-    Set<RelatedIdentifier> copy = new HashSet<>();
-    copy.addAll(second);
+    for (RelatedIdentifier item : copySecond) {
+      if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+       Assert.assertEquals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, item.getRelationType());
+      Assert.assertEquals(IDENTIFIER_TYPE.URL, item.getIdentifierType());
+       provenanceSecondRelatedIdentifier = item;
+       if (provenanceFirstRelatedIdentifier != null) {
+         int indexOfDifference = StringUtils.indexOfDifference(provenanceFirstRelatedIdentifier.getValue(), provenanceSecondRelatedIdentifier.getValue());
+         Assert.assertTrue("Provenance differ to much : " + provenanceFirstRelatedIdentifier + " <-> " + provenanceSecondRelatedIdentifier, indexOfDifference > "http://localhost:41112/metastore".length());
+       }
+        break;
+      }
+    }
+    if (provenanceFirstRelatedIdentifier != null) {
+      copyFirst.remove(provenanceFirstRelatedIdentifier);
+    }
+    if (provenanceSecondRelatedIdentifier != null) {
+      copySecond.remove(provenanceSecondRelatedIdentifier);
+    }
+ 
+    Assert.assertEquals(copyFirst.size(), copySecond.size());
     boolean identical;
-    for (RelatedIdentifier item : first) {
+    for (RelatedIdentifier item : copyFirst) {
       identical = false;
-      for (RelatedIdentifier item2 : copy) {
+      for (RelatedIdentifier item2 : copySecond) {
         identical = (item.getIdentifierType() == item2.getIdentifierType())
                 && ((item.getValue() == item2.getValue()) || item.getValue().equals(item2.getValue()))
                 && (item.getRelationType() == item2.getRelationType())
                 && ((item.getScheme() == item2.getScheme()) || (item.getScheme().getSchemeId().equals(item2.getScheme().getSchemeId())
                 && item.getScheme().getSchemeUri().equals(item2.getScheme().getSchemeUri())));
         if (identical) {
-          copy.remove(item2);
           break;
         }
       }

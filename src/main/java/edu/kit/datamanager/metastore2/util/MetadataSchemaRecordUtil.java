@@ -236,88 +236,91 @@ public class MetadataSchemaRecordUtil {
       }
     }
 
-    LOG.trace("Obtaining most recent metadata schema record with id {}.", resourceId);
-    DataResource dataResource = applicationProperties.getDataResourceService().findById(resourceId);
-    LOG.trace("Checking provided ETag.");
-    ControllerUtils.checkEtag(eTag, dataResource);
-    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(dataResource.getId() + "/");
+    DataResource givenRecord = null;
     if (metadataRecord != null) {
-      metadataRecord.setSchemaVersion(schemaRecord.getVersion());
-      MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
-      existingRecord = mergeRecords(existingRecord, metadataRecord);
-      mergeSchemaRecord(schemaRecord, existingRecord);
-      dataResource = migrateToDataResource(applicationProperties, existingRecord);
-    } else {
-      dataResource = DataResourceUtils.copyDataResource(dataResource);
-    }
+      givenRecord = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataRecord);
+    } 
+    DataResource updateDataResource = DataResourceRecordUtil.updateDataResource4SchemaDocument(applicationProperties, resourceId, eTag, givenRecord, schemaDocument, supplier);
+//    LOG.trace("Checking provided ETag.");
+//    ControllerUtils.checkEtag(eTag, dataResource);
+//    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(dataResource.getId() + "/");
+//    if (metadataRecord != null) {
+//      metadataRecord.setSchemaVersion(schemaRecord.getVersion());
+//      MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+//      existingRecord = mergeRecords(existingRecord, metadataRecord);
+//      mergeSchemaRecord(schemaRecord, existingRecord);
+//      dataResource = migrateToDataResource(applicationProperties, existingRecord);
+//    } else {
+//      dataResource = DataResourceUtils.copyDataResource(dataResource);
+//    }
+//
+//    if (schemaDocument != null) {
+//      // Get schema record for this schema
+//      validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
+//
+//      ContentInformation info;
+//      info = getContentInformationOfResource(applicationProperties, dataResource);
+//
+//      boolean noChanges = false;
+//      String fileName = schemaDocument.getOriginalFilename();
+//      if (info != null) {
+//        noChanges = true;
+//        fileName = info.getRelativePath();
+//        // Check for changes...
+//        try {
+//          byte[] currentFileContent;
+//          File file = new File(URI.create(info.getContentUri()));
+//          if (schemaDocument.getSize() == Files.size(file.toPath())) {
+//            currentFileContent = FileUtils.readFileToByteArray(file);
+//            byte[] newFileContent = schemaDocument.getBytes();
+//            for (int index = 0; index < currentFileContent.length; index++) {
+//              if (currentFileContent[index] != newFileContent[index]) {
+//                noChanges = false;
+//                break;
+//              }
+//            }
+//          } else {
+//            noChanges = false;
+//          }
+//        } catch (IOException ex) {
+//          LOG.error("Error reading current file!", ex);
+//          throw new BadArgumentException("Error reading schema document!");
+//        }
+//      }
+//      if (!noChanges) {
+//        // Everything seems to be fine update document and increment version
+//        LOG.trace("Updating schema document (and increment version)...");
+//        String version = dataResource.getVersion();
+//        if (version != null) {
+//          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
+//        }
+//        ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
+//      } else {
+//        schemaRecordDao.delete(schemaRecord);
+//      }
+//    } else {
+//      schemaRecordDao.delete(schemaRecord);
+//      // validate if document is still valid due to changed record settings.
+//      metadataRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
+//      URI schemaDocumentUri = URI.create(metadataRecord.getSchemaDocumentUri());
+//
+//      Path schemaDocumentPath = Paths.get(schemaDocumentUri);
+//      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
+//        LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
+//        throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
+//      }
+//
+//      try {
+//        byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
+//        MetadataSchemaRecordUtil.validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDoc);
+//      } catch (IOException ex) {
+//        LOG.error("Error validating file!", ex);
+//      }
+//
+//    }
+//    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
-    if (schemaDocument != null) {
-      // Get schema record for this schema
-      validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
-
-      ContentInformation info;
-      info = getContentInformationOfResource(applicationProperties, dataResource);
-
-      boolean noChanges = false;
-      String fileName = schemaDocument.getOriginalFilename();
-      if (info != null) {
-        noChanges = true;
-        fileName = info.getRelativePath();
-        // Check for changes...
-        try {
-          byte[] currentFileContent;
-          File file = new File(URI.create(info.getContentUri()));
-          if (schemaDocument.getSize() == Files.size(file.toPath())) {
-            currentFileContent = FileUtils.readFileToByteArray(file);
-            byte[] newFileContent = schemaDocument.getBytes();
-            for (int index = 0; index < currentFileContent.length; index++) {
-              if (currentFileContent[index] != newFileContent[index]) {
-                noChanges = false;
-                break;
-              }
-            }
-          } else {
-            noChanges = false;
-          }
-        } catch (IOException ex) {
-          LOG.error("Error reading current file!", ex);
-          throw new BadArgumentException("Error reading schema document!");
-        }
-      }
-      if (!noChanges) {
-        // Everything seems to be fine update document and increment version
-        LOG.trace("Updating schema document (and increment version)...");
-        String version = dataResource.getVersion();
-        if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
-        }
-        ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
-      } else {
-        schemaRecordDao.delete(schemaRecord);
-      }
-    } else {
-      schemaRecordDao.delete(schemaRecord);
-      // validate if document is still valid due to changed record settings.
-      metadataRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
-      URI schemaDocumentUri = URI.create(metadataRecord.getSchemaDocumentUri());
-
-      Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-        LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-        throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-      }
-
-      try {
-        byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
-        MetadataSchemaRecordUtil.validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDoc);
-      } catch (IOException ex) {
-        LOG.error("Error validating file!", ex);
-      }
-
-    }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
-
-    return migrateToMetadataSchemaRecord(applicationProperties, dataResource, true);
+    return migrateToMetadataSchemaRecord(applicationProperties, updateDataResource, true);
   }
 
   /**

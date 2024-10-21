@@ -352,63 +352,12 @@ public class DataResourceRecordUtil {
           UnaryOperator<String> supplier) {
     DataResource updatedDataResource;
 
-    LOG.trace("Obtaining most recent metadata record with id {}.", resourceId);
+    LOG.trace("Obtaining most recent datacite record with id {}.", resourceId);
     DataResource oldDataResource = applicationProperties.getDataResourceService().findById(resourceId);
     LOG.trace("Checking provided ETag.");
     ControllerUtils.checkEtag(eTag, oldDataResource);
     LOG.trace("ETag: '{}'", oldDataResource.getEtag());
-    if (givenDataResource != null) {
-      LOG.trace("metadataRecord: '{}'", givenDataResource);
-      givenDataResource.setVersion(oldDataResource.getVersion());
-      givenDataResource.setId(oldDataResource.getId());
-      updatedDataResource = givenDataResource;
-      if ((updatedDataResource.getCreators() == null) || updatedDataResource.getCreators().isEmpty()) {
-        updatedDataResource.setCreators(oldDataResource.getCreators());
-      }
-      if (updatedDataResource.getPublicationYear() == null) {
-        updatedDataResource.setPublicationYear(oldDataResource.getPublicationYear());
-      }
-      if (updatedDataResource.getPublisher() == null) {
-        updatedDataResource.setPublisher(oldDataResource.getPublisher());
-      }
-      if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
-        updatedDataResource.setAcls(oldDataResource.getAcls());
-      } else {
-        // Check for access rights for changing ACL (need ADMINISTRATION rights!)
-        MetadataRecordUtil.checkAccessRights(oldDataResource.getAcls(), true);
-        // Check if access rights still valid afterwards (at least one user with ADMINISTRATION rights should be available!)
-        MetadataRecordUtil.checkAccessRights(updatedDataResource.getAcls(), false);
-      }
-
-      if (updatedDataResource.getRights() == null) {
-        updatedDataResource.setRights(new HashSet<>());
-      }
-      if (updatedDataResource.getState() == null) {
-        updatedDataResource.setState(oldDataResource.getState());
-      }
-      if (updatedDataResource.getResourceType() == null) {
-        updatedDataResource.setResourceType(oldDataResource.getResourceType());
-      }
-      // Set create date
-      Date createDate = null;
-      for (Date date : oldDataResource.getDates()) {
-        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
-          createDate = date;
-        }
-      }
-      Date newCreateDate = null;
-      for (Date date : updatedDataResource.getDates()) {
-        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
-          newCreateDate = date;
-        }
-      }
-      if (newCreateDate != null) {
-        updatedDataResource.getDates().remove(newCreateDate);
-      }
-      updatedDataResource.getDates().add(createDate);
-    } else {
-      updatedDataResource = DataResourceUtils.copyDataResource(oldDataResource);
-    }
+    updatedDataResource = mergeDataResource(oldDataResource, givenDataResource);
 
     boolean noChanges = false;
     if (document != null) {
@@ -485,8 +434,10 @@ public class DataResourceRecordUtil {
 
     return oldDataResource;
   }
-  /** Add or replace link to predecessor.
-   * 
+
+  /**
+   * Add or replace link to predecessor.
+   *
    * @param newDataResource Data resource holding the new version.
    */
   public static void addProvenance(DataResource newDataResource) {
@@ -494,8 +445,10 @@ public class DataResourceRecordUtil {
       replaceIsDerivedFrom(newDataResource);
     }
   }
-  /** Replace outdated link to predecessor with new one.
-   * 
+
+  /**
+   * Replace outdated link to predecessor with new one.
+   *
    * @param newDataResource Data resource holding the new version.
    */
   public static void replaceIsDerivedFrom(DataResource newDataResource) {
@@ -516,6 +469,7 @@ public class DataResourceRecordUtil {
     }
     if (!foundOldIdentifier) {
       RelatedIdentifier newRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, urlToPredecessor, null, null);
+      newRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       newDataResource.getRelatedIdentifiers().add(newRelatedIdentifier);
     }
   }
@@ -1880,7 +1834,7 @@ public class DataResourceRecordUtil {
    * @param applicationProperties Settings of repository.
    * @param resourceId ID of the schema document.
    * @param eTag E-Tag of the current schema document.
-   * @param recordDocument Record of the schema.
+   * @param givenDataResource Record of the schema.
    * @param schemaDocument Schema document.
    * @param supplier Method for creating access URL.
    * @return Record of updated schema document.
@@ -1888,15 +1842,21 @@ public class DataResourceRecordUtil {
   public static DataResource updateDataResource4SchemaDocument(MetastoreConfiguration applicationProperties,
           String resourceId,
           String eTag,
-          DataResource dataResource,
+          DataResource givenDataResource,
           MultipartFile schemaDocument,
           UnaryOperator<String> supplier) {
-
+    DataResource updatedDataResource;
+    LOG.trace("Obtaining most recent datacite record with id {}.", resourceId);
+    DataResource oldDataResource = applicationProperties.getDataResourceService().findById(resourceId);
+    LOG.trace("Checking provided ETag.");
+    ControllerUtils.checkEtag(eTag, oldDataResource);
+    LOG.trace("ETag: '{}'", oldDataResource.getEtag());
+    updatedDataResource = mergeDataResource(oldDataResource, givenDataResource);
     ContentInformation info;
-    info = getContentInformationOfResource(applicationProperties, dataResource);
+    info = getContentInformationOfResource(applicationProperties, updatedDataResource);
     if (schemaDocument != null) {
       // Get schema record for this schema
-      validateMetadataSchemaDocument(applicationProperties, dataResource, schemaDocument);
+      validateMetadataSchemaDocument(applicationProperties, updatedDataResource, schemaDocument);
 
       boolean noChanges = false;
       String fileName = schemaDocument.getOriginalFilename();
@@ -1927,13 +1887,13 @@ public class DataResourceRecordUtil {
       if (!noChanges) {
         // Everything seems to be fine update document and increment version
         LOG.trace("Updating schema document (and increment version)...");
-        String version = dataResource.getVersion();
+        String version = updatedDataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
+          updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
-        addProvenance(dataResource);
-        ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
-        SchemaRecord schemaRecord = createSchemaRecord(dataResource, contentInformation);
+        addProvenance(updatedDataResource);
+        ContentInformation contentInformation = ContentDataUtils.addFile(applicationProperties, updatedDataResource, schemaDocument, fileName, null, true, supplier);
+        SchemaRecord schemaRecord = createSchemaRecord(updatedDataResource, contentInformation);
         MetadataSchemaRecordUtil.saveNewSchemaRecord(schemaRecord);
       }
     } else {
@@ -1951,15 +1911,73 @@ public class DataResourceRecordUtil {
 
       try {
         byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
-        DataResourceRecordUtil.validateMetadataSchemaDocument(applicationProperties, dataResource, schemaDoc);
+        DataResourceRecordUtil.validateMetadataSchemaDocument(applicationProperties, updatedDataResource, schemaDoc);
       } catch (IOException ex) {
         LOG.error("Error validating file!", ex);
       }
 
     }
-    dataResource = DataResourceUtils.updateResource(applicationProperties, dataResource.getId(), dataResource, eTag, supplier);
+    updatedDataResource = DataResourceUtils.updateResource(applicationProperties, updatedDataResource.getId(), updatedDataResource, eTag, supplier);
 
-    return dataResource;
+    return updatedDataResource;
+  }
+
+  private static DataResource mergeDataResource(DataResource oldDataResource, DataResource givenDataResource) {
+    DataResource updatedDataResource;
+
+    if (givenDataResource != null) {
+      LOG.trace("new DataResource: '{}'", givenDataResource);
+      givenDataResource.setVersion(oldDataResource.getVersion());
+      givenDataResource.setId(oldDataResource.getId());
+      updatedDataResource = givenDataResource;
+      if ((updatedDataResource.getCreators() == null) || updatedDataResource.getCreators().isEmpty()) {
+        updatedDataResource.setCreators(oldDataResource.getCreators());
+      }
+      if (updatedDataResource.getPublicationYear() == null) {
+        updatedDataResource.setPublicationYear(oldDataResource.getPublicationYear());
+      }
+      if (updatedDataResource.getPublisher() == null) {
+        updatedDataResource.setPublisher(oldDataResource.getPublisher());
+      }
+      if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
+        updatedDataResource.setAcls(oldDataResource.getAcls());
+      } else {
+        // Check for access rights for changing ACL (need ADMINISTRATION rights!)
+        MetadataRecordUtil.checkAccessRights(oldDataResource.getAcls(), true);
+        // Check if access rights still valid afterwards (at least one user with ADMINISTRATION rights should be available!)
+        MetadataRecordUtil.checkAccessRights(updatedDataResource.getAcls(), false);
+      }
+
+      if (updatedDataResource.getRights() == null) {
+        updatedDataResource.setRights(new HashSet<>());
+      }
+      if (updatedDataResource.getState() == null) {
+        updatedDataResource.setState(oldDataResource.getState());
+      }
+      if (updatedDataResource.getResourceType() == null) {
+        updatedDataResource.setResourceType(oldDataResource.getResourceType());
+      }
+      // Set create date
+      Date createDate = null;
+      for (Date date : oldDataResource.getDates()) {
+        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
+          createDate = date;
+        }
+      }
+      Date newCreateDate = null;
+      for (Date date : updatedDataResource.getDates()) {
+        if (date.getType().equals(Date.DATE_TYPE.CREATED)) {
+          newCreateDate = date;
+        }
+      }
+      if (newCreateDate != null) {
+        updatedDataResource.getDates().remove(newCreateDate);
+      }
+      updatedDataResource.getDates().add(createDate);
+    } else {
+      updatedDataResource = DataResourceUtils.copyDataResource(oldDataResource);
+    }
+    return updatedDataResource;
   }
 
   /**
