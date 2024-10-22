@@ -60,9 +60,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * This class contains 2 runners:
- * <ul><li>Runner for indexing all metadata documents of given schemas Arguments have to
- * start with at least 'reindex' followed by all indices which have to be
- * reindexed. If no indices are given all indices will be reindexed.</li>
+ * <ul><li>Runner for indexing all metadata documents of given schemas Arguments
+ * have to start with at least 'reindex' followed by all indices which have to
+ * be reindexed. If no indices are given all indices will be reindexed.</li>
  * <li>Runner for migrating dataresources from version 1 to version2.
  */
 @Component
@@ -96,12 +96,16 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
   Set<String> indices;
-  /** 
+  /**
    * Restrict reindexing to dataresources new than given date.
    */
   @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
-  /** 
+  /**
+   * Determine the baseUrl of the service.
+   */
+  private String baseUrl;
+  /**
    * Logger.
    */
   private static final Logger LOG = LoggerFactory.getLogger(ElasticIndexerRunner.class);
@@ -110,12 +114,12 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Autowired
   private IDataResourceDao dataResourceDao;
-  /** 
+  /**
    * DAO for all schema records.
    */
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
-  /** 
+  /**
    * DAO for all data records.
    */
   @Autowired
@@ -130,14 +134,14 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Autowired
   private Javers javers;
-  /** 
+  /**
    * Instance of schema repository.
    */
   @Autowired
   private MetastoreConfiguration schemaConfig;
   /**
    * Instande of metadata reository.
-   * 
+   *
    */
   @Autowired
   private MetastoreConfiguration metadataConfig;
@@ -148,10 +152,12 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Autowired
   private Optional<IMessagingService> messagingService;
+
   /**
    * Start runner for actions before starting service.
+   *
    * @param args Arguments for the runner.
-   * @throws Exception Something went wrong. 
+   * @throws Exception Something went wrong.
    */
   @Override
   @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
@@ -161,6 +167,15 @@ public class ElasticIndexerRunner implements CommandLineRunner {
             .build();
     try {
       argueParser.parse(args);
+      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
+      if (!findAllSchemas.isEmpty()) {
+        // There is at least one schema.
+        // Try to fetch baseURL from this
+        SchemaRecord get = findAllSchemas.get(0);
+        Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
+        baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
+        LOG.trace("Found baseUrl: '{}'", baseUrl);
+      }
       if (updateIndex) {
         if (updateDate == null) {
           updateDate = new Date(0);
@@ -171,10 +186,6 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         updateElasticsearchIndex();
       }
       if (doMigration2DataCite) {
-        // Set adminitrative rights for reading.
-        JwtAuthenticationToken jwtAuthenticationToken = JwtBuilder.createServiceToken("migrationTool", RepoServiceRole.SERVICE_READ).getJwtAuthenticationToken(schemaConfig.getJwtSecret());
-        SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
-
         migrateToVersion2();
       }
     } catch (Exception ex) {
@@ -183,8 +194,10 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       System.exit(0);
     }
   }
+
   /**
    * Start runner to reindex dataresources according to the given parameters.
+   *
    * @throws InterruptedException Something went wrong.
    */
   private void updateElasticsearchIndex() throws InterruptedException {
@@ -197,8 +210,6 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       // Try to fetch baseURL from this
       SchemaRecord get = findAllSchemas.get(0);
       Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
-      String baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
-      LOG.trace("Found baseUrl: '{}'", baseUrl);
 
       determineIndices(indices);
 
@@ -220,10 +231,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
     LOG.trace("Finished ElasticIndexerRunner!");
   }
-  
+
   /**
-   * Determine all indices if an empty set is provided.
-   * Otherwise return provided set without any change.
+   * Determine all indices if an empty set is provided. Otherwise return
+   * provided set without any change.
+   *
    * @param indices Indices which should be reindexed.
    */
   private void determineIndices(Set<String> indices) {
@@ -303,13 +315,17 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(dataRecord.getSchemaId(), dataRecord.getVersion(), null, null)).toUri();
     return schemaUrl;
   }
-  
+
   /**
    * Migrate all data resources from version 1 to version 2.
-   * @throws InterruptedException 
+   *
+   * @throws InterruptedException
    */
   private void migrateToVersion2() throws InterruptedException {
     LOG.info("Start Migrate2DataCite Runner for migrating database from version 1 to version 2.");
+    // Set adminitrative rights for reading.
+    JwtAuthenticationToken jwtAuthenticationToken = JwtBuilder.createServiceToken("migrationTool", RepoServiceRole.SERVICE_READ).getJwtAuthenticationToken(schemaConfig.getJwtSecret());
+    SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
     // Try to determine URL of repository
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
@@ -346,6 +362,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
   /**
    * Migrate dataresources of schemas using version 1 to version 2.
+   *
    * @param schema Current version of schema document.
    */
   private void migrateSchemaToDataciteVersion2(DataResource schema) {
@@ -355,18 +372,21 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     for (long versionNo = 1; versionNo <= version; versionNo++) {
       saveSchema(id, versionNo);
     }
+    LOG.info("Migration for schema document with ID: '{}', finished! No of versions: '{}'", id, version);
   }
 
-
   /**
-   * Migrate metadata of schema document from version 1 to version 2 and store new version in the database.
+   * Migrate metadata of schema document from version 1 to version 2 and store
+   * new version in the database.
+   *
    * @param id ID of the schema document.
    * @param version Version of the schema document.
    * @param format Format of the schema document. (XML/JSON)
    */
   private void saveSchema(String id, long version) {
-    DataResource currentVersion = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentVersion);
+    LOG.info("Migrate datacite for schema document with id: '{}' / version: '{}'", id, version);
+    DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
     // Remove type from first title with type 'OTHER'
     for (Title title : recordByIdAndVersion.getTitles()) {
       if (title.getTitleType() == Title.TYPE.OTHER) {
@@ -378,13 +398,33 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     ResourceType resourceType = recordByIdAndVersion.getResourceType();
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
     resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
+    // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
+    for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+      }
+    }
+    // Add provenance
+    if (version > 1) {
+      String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(id, version - 1l, null, null)).toString();
+      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
+      recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
+      LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
+    } else {
+      long currentVersion = metadataConfig.getAuditService().getCurrentVersion(id);
+      if (currentVersion == 1l) {
+        // Create an additional version for JaVers if only one version exists.
+        currentDataResource.setPublisher("migrationTool");
+        metadataConfig.getAuditService().captureAuditInformation(currentDataResource, "Just4fun");
+      }
+    }
     // Save migrated version
-    LOG.trace("Persisting created resource.");
-    dataResourceDao.save(recordByIdAndVersion);
+    LOG.trace("Persisting created schema document resource.");
+    DataResource migratedDataResource = dataResourceDao.save(recordByIdAndVersion);
 
     //Capture state change
     LOG.trace("Capturing audit information.");
-    schemaConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
+    schemaConfig.getAuditService().captureAuditInformation(migratedDataResource, "migration2version2");
 
   }
 
@@ -395,7 +435,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     Specification spec;
     spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE, ResourceType.TYPE_GENERAL.DATASET));
     int pageNumber = 0;
-    int pageSize = 1;
+    int pageSize = 10;
     Pageable pgbl = PageRequest.of(pageNumber, pageSize);
     Page<DataResource> queryDataResources;
     do {
@@ -430,18 +470,21 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     for (int versionNo = 1; versionNo <= version; versionNo++) {
       saveMetadata(id, versionNo, format);
     }
+    LOG.info("Migration for metadata document with ID: '{}', finished! No of versions: '{}'", id, version);
   }
 
   /**
    * Migrate metadata of metadata document from version 1 to version 2 and store
    * new version in the database.
+   *
    * @param id ID of the metadata document.
    * @param version Version of the metadata document.
    * @param format Format of the metadata document. (XML/JSON)
    */
   private void saveMetadata(String id, long version, String format) {
-    DataResource currentVersion = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentVersion);
+    LOG.trace("Migrate datacite for metadata document with id: '{}' / version: '{}' and format: '{}'", id, version, format);
+    DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
     // Remove type from first title with type 'OTHER'
     for (Title title : recordByIdAndVersion.getTitles()) {
       if (title.getTitleType() == Title.TYPE.OTHER) {
@@ -449,18 +492,38 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         break;
       }
     }
-    // Set resource type to  new definition of version 2 ('...'_Schema)
+    // Set resource type to  new definition of version 2 ('...'_Metadata)
     ResourceType resourceType = recordByIdAndVersion.getResourceType();
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
     resourceType.setValue(format + DataResourceRecordUtil.METADATA_SUFFIX);
-
+    // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
+    for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
+      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+        String replaceFirst = item.getValue().replaceFirst("/api/v1/schemas/", "/api/v2/schemas/");
+        item.setValue(replaceFirst);
+      }
+    }
+    // Add provenance
+    if (version > 1) {
+      String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, version - 1l, null, null)).toString();
+      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
+      recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
+      LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
+    } else {
+      long currentVersion = metadataConfig.getAuditService().getCurrentVersion(id);
+      if (currentVersion == 1l) {
+        // Create an additional version for JaVers if only one version exists.
+        currentDataResource.setPublisher("migrationTool");
+        metadataConfig.getAuditService().captureAuditInformation(currentDataResource, "Just4fun");
+      }
+    }
     // Save migrated version
-    LOG.trace("Persisting created resource.");
-    dataResourceDao.save(recordByIdAndVersion);
+    LOG.trace("Persisting created metadata document resource.");
+    DataResource migratedDataResource = dataResourceDao.save(recordByIdAndVersion);
 
     //capture state change
     LOG.trace("Capturing audit information.");
-    metadataConfig.getAuditService().captureAuditInformation(recordByIdAndVersion, "migration2version2");
-
+    metadataConfig.getAuditService().captureAuditInformation(migratedDataResource, "migration2version2");
   }
 }
