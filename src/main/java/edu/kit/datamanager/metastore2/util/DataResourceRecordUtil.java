@@ -126,6 +126,8 @@ public class DataResourceRecordUtil {
   public static final String XML_METADATA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + METADATA_SUFFIX;
   public static final String JSON_METADATA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.JSON + METADATA_SUFFIX;
 
+  private static String baseUrl;
+
   DataResourceRecordUtil() {
     //Utility class
   }
@@ -920,6 +922,7 @@ public class DataResourceRecordUtil {
    * @return Specification with schemaIds added.
    */
   public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
+    ToDo....
     Specification<DataResource> specWithSchema = specification;
     if (schemaIds != null) {
       List<String> allSchemaIds = new ArrayList<>();
@@ -2073,7 +2076,11 @@ public class DataResourceRecordUtil {
    * @return URI for accessing schema document.
    */
   public static final URI getMetadataDocumentUri(String id, String version) {
-    return WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, Long.parseLong(version), null, null)).toUri();
+    URI toUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, Long.valueOf(version), null, null)).toUri();
+    if (toUri.getScheme() == null) {
+      toUri = URI.create(baseUrl + toUri.toString());
+    }
+    return toUri;
   }
 
   /**
@@ -2109,5 +2116,12 @@ public class DataResourceRecordUtil {
       throw ex;
     }
     return records;
+  }
+
+  /**
+   * @param aBaseUrl the baseUrl to set
+   */
+  public static void setBaseUrl(String aBaseUrl) {
+    baseUrl = aBaseUrl;
   }
 }
