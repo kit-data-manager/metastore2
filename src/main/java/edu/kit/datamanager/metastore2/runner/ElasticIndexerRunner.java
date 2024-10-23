@@ -31,7 +31,9 @@ import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.queryDa
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
@@ -201,18 +203,35 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * @throws InterruptedException Something went wrong.
    */
   private void updateElasticsearchIndex() throws InterruptedException {
+    int entriesPerPage = 20;
+      int page = 0;
     LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
     LOG.info("No of schemas: '{}'", schemaRecordDao.count());
     // Try to determine URL of repository
-    List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 3)).getContent();
-    if (!findAllSchemas.isEmpty()) {
-      // There is at least one schema.
-      // Try to fetch baseURL from this
-      SchemaRecord get = findAllSchemas.get(0);
-      Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
+    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
+    // Add authentication if enabled
+    if (updateDate != null) {
+      spec = spec.and(LastUpdateSpecification.toSpecification(updateDate.toInstant(), null));
+    }
+    // Hide revoked and gone data resources. 
+    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
+    List<DataResource.State> stateList = Arrays.asList(states);
+    spec = spec.and(StateSpecification.toSpecification(stateList));
+    
+    LOG.debug("Performing query for records.");
+    Pageable pgbl = PageRequest.of(page, entriesPerPage);
+    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
+    int noOfEntries = records.getNumberOfElements();
+int noOfPages = records.getTotalPages();
 
-      determineIndices(indices);
-
+    LOG.debug( "Find '{}' schemas!", noOfEntries);
+      // add also the schema registered in the schema registry
+      for (page = 0; page < noOfPages; page++) {
+        for (DataResource schema : records.getContent()) {
+          indices.add(schema.getId());
+        }
+      }
       for (String index : indices) {
         LOG.info("Reindex '{}'", index);
         List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
@@ -227,7 +246,6 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         indexAlternativeSchemaIds(index, baseUrl);
       }
       Thread.sleep(5000);
-    }
 
     LOG.trace("Finished ElasticIndexerRunner!");
   }
