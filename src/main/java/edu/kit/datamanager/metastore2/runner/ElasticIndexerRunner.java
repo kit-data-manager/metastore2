@@ -203,49 +203,25 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * @throws InterruptedException Something went wrong.
    */
   private void updateElasticsearchIndex() throws InterruptedException {
-    int entriesPerPage = 20;
-      int page = 0;
     LOG.info("Start ElasticIndexer Runner for indices '{}' and update date '{}'", indices, updateDate);
     LOG.info("No of schemas: '{}'", schemaRecordDao.count());
     // Try to determine URL of repository
-    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
-    // Add authentication if enabled
-    if (updateDate != null) {
-      spec = spec.and(LastUpdateSpecification.toSpecification(updateDate.toInstant(), null));
-    }
-    // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
-    
-    LOG.debug("Performing query for records.");
-    Pageable pgbl = PageRequest.of(page, entriesPerPage);
-    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
-    int noOfEntries = records.getNumberOfElements();
-int noOfPages = records.getTotalPages();
 
-    LOG.debug( "Find '{}' schemas!", noOfEntries);
-      // add also the schema registered in the schema registry
-      for (page = 0; page < noOfPages; page++) {
-        for (DataResource schema : records.getContent()) {
-          indices.add(schema.getId());
-        }
+    determineIndices(indices);
+    for (String index : indices) {
+      LOG.info("Reindex '{}'", index);
+      List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
+      LOG.trace("Search for documents for schema '{}' and update date '{}'", index, updateDate);
+      LOG.trace("No of documents: '{}'", findBySchemaId.size());
+      for (DataRecord item : findBySchemaId) {
+        MetadataRecord result = toMetadataRecord(item, baseUrl);
+        LOG.trace("Sending CREATE event.");
+        messagingService.orElse(new LogfileMessagingService()).
+                send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
       }
-      for (String index : indices) {
-        LOG.info("Reindex '{}'", index);
-        List<DataRecord> findBySchemaId = dataRecordDao.findBySchemaIdAndLastUpdateAfter(index, updateDate.toInstant());
-        LOG.trace("Search for documents for schema '{}' and update date '{}'", index, updateDate);
-        LOG.trace("No of documents: '{}'", findBySchemaId.size());
-        for (DataRecord item : findBySchemaId) {
-          MetadataRecord result = toMetadataRecord(item, baseUrl);
-          LOG.trace("Sending CREATE event.");
-          messagingService.orElse(new LogfileMessagingService()).
-                  send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
-        }
-        indexAlternativeSchemaIds(index, baseUrl);
-      }
-      Thread.sleep(5000);
+      indexAlternativeSchemaIds(index, baseUrl);
+    }
+    Thread.sleep(5000);
 
     LOG.trace("Finished ElasticIndexerRunner!");
   }
@@ -259,20 +235,34 @@ int noOfPages = records.getTotalPages();
   private void determineIndices(Set<String> indices) {
     if (indices.isEmpty()) {
       LOG.info("Reindex all indices!");
-      long noOfEntries = url2PathDao.count();
-      long entriesPerPage = 50;
-      long page = 0;
-      // add also the schema registered in the schema registry
-      do {
-        List<SchemaRecord> allSchemas = schemaRecordDao.findAll(PageRequest.of((int) page, (int) entriesPerPage)).getContent();
-        LOG.trace("Add '{}' schemas of '{}'", allSchemas.size(), noOfEntries);
-        for (SchemaRecord item : allSchemas) {
-          indices.add(item.getSchemaIdWithoutVersion());
-        }
-        page++;
-      } while (page * entriesPerPage < noOfEntries);
-    }
+      // Search for all indices...
+      // Build Specification
+      ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+      Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
+      // Add authentication if enabled
+      if (updateDate != null) {
+        spec = spec.and(LastUpdateSpecification.toSpecification(updateDate.toInstant(), null));
+      }
+      // Hide revoked and gone data resources. 
+      DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
+      List<DataResource.State> stateList = Arrays.asList(states);
+      spec = spec.and(StateSpecification.toSpecification(stateList));
+      int entriesPerPage = 20;
+      int page = 0;
+      LOG.debug("Performing query for records.");
+      Pageable pgbl = PageRequest.of(page, entriesPerPage);
+      Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
+      int noOfEntries = records.getNumberOfElements();
+      int noOfPages = records.getTotalPages();
 
+      LOG.debug("Find '{}' schemas!", noOfEntries);
+      // add also the schema registered in the schema registry
+      for (page = 0; page < noOfPages; page++) {
+        for (DataResource schema : records.getContent()) {
+          indices.add(schema.getId());
+        }
+      }
+    }
   }
 
   private void indexAlternativeSchemaIds(String index, String baseUrl) {
