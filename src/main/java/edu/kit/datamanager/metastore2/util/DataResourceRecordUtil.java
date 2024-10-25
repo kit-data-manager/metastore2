@@ -922,7 +922,7 @@ public class DataResourceRecordUtil {
    * @return Specification with schemaIds added.
    */
   public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
-    ToDo....
+//    ToDo....
     Specification<DataResource> specWithSchema = specification;
     if (schemaIds != null) {
       List<String> allSchemaIds = new ArrayList<>();

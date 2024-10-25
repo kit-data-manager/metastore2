@@ -17,6 +17,8 @@ package edu.kit.datamanager.metastore2.runner;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import edu.kit.datamanager.clients.SimpleServiceClient;
+import edu.kit.datamanager.configuration.SearchConfiguration;
 import edu.kit.datamanager.entities.RepoServiceRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -37,11 +39,10 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
-import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
+import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.JwtBuilder;
 import org.slf4j.Logger;
@@ -53,12 +54,15 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.javers.core.Javers;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpClientErrorException;
 
 /**
  * This class contains 2 runners:
@@ -68,7 +72,6 @@ import org.springframework.transaction.annotation.Transactional;
  * <li>Runner for migrating dataresources from version 1 to version2.
  */
 @Component
-@Transactional
 public class ElasticIndexerRunner implements CommandLineRunner {
 
   /**
@@ -154,6 +157,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Autowired
   private Optional<IMessagingService> messagingService;
+  @Autowired
+  private Migration2V2Runner migrationTool;
+
+  @Autowired
+  private SearchConfiguration searchConfiguration;
 
   /**
    * Start runner for actions before starting service.
@@ -168,7 +176,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
             .addObject(this)
             .build();
     try {
+      LOG.trace("Parse arguments: '{}'", args);
       argueParser.parse(args);
+      LOG.trace("Find all schemas...");
       List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
       if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
@@ -177,6 +187,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
         baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
+        migrationTool.setBaseUrl(baseUrl);
+        DataResourceRecordUtil.setBaseUrl(baseUrl);
       }
       if (updateIndex) {
         if (updateDate == null) {
@@ -364,8 +376,46 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       queryDataResources = queryDataResources(spec, pgbl);
       for (DataResource schema : queryDataResources.getContent()) {
         migrateSchemaToDataciteVersion2(schema);
+        removeAllIndexedEntries(schema.getId());
       }
     } while (queryDataResources.getTotalPages() > 1);
+  }
+
+  /**
+   * Remove all indexed entries for given schema. (If search is enabled)
+   *
+   * @param schemaId schema
+   */
+  private void removeAllIndexedEntries(String schemaId) {
+    // Delete all entries in elastic (if available)
+    // POST /my-index-000001/_delete_by_query
+    //{
+    //  "query": {
+    //    "match": {
+    //      "user.id": "elkbee"
+    //    }
+    //  }
+    LOG.trace("Remove all indexed entries...");
+    if (searchConfiguration.isSearchEnabled()) {
+      String prefix4Indices = searchConfiguration.getIndex();
+      Pattern pattern = Pattern.compile("(.*?)(\\*.*)");
+      Matcher matcher = pattern.matcher(prefix4Indices);
+      if (matcher.find()) {
+        prefix4Indices = matcher.group(1);
+      }
+
+      LOG.trace(searchConfiguration.toString());
+      LOG.trace("Remove all entries for index: '{}'", prefix4Indices + schemaId);
+      SimpleServiceClient client = SimpleServiceClient.create(searchConfiguration.getUrl() + "/" + prefix4Indices + schemaId + "/_delete_by_query");
+      String query = "{ \"query\": { \"range\" : { \"metadataRecord.schemaVersion\" : { \"gte\" : 1} } } }";
+      client.withContentType(MediaType.APPLICATION_JSON);
+      try {
+        String postResource = client.postResource(query, String.class);
+        LOG.trace(postResource);
+      } catch (HttpClientErrorException hcee) {
+        LOG.error(hcee.getMessage());
+      }
+    }
   }
 
   /**
@@ -378,62 +428,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     String id = schema.getId();
     // Migrate all versions of schema.
     for (long versionNo = 1; versionNo <= version; versionNo++) {
-      saveSchema(id, versionNo);
+      migrationTool.saveSchema(id, versionNo);
     }
     LOG.info("Migration for schema document with ID: '{}', finished! No of versions: '{}'", id, version);
-  }
-
-  /**
-   * Migrate metadata of schema document from version 1 to version 2 and store
-   * new version in the database.
-   *
-   * @param id ID of the schema document.
-   * @param version Version of the schema document.
-   * @param format Format of the schema document. (XML/JSON)
-   */
-  private void saveSchema(String id, long version) {
-    LOG.info("Migrate datacite for schema document with id: '{}' / version: '{}'", id, version);
-    DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
-    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
-    // Remove type from first title with type 'OTHER'
-    for (Title title : recordByIdAndVersion.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER) {
-        title.setTitleType(null);
-        break;
-      }
-    }
-    // Set resource type to  new definition of version 2 ('...'_Schema)
-    ResourceType resourceType = recordByIdAndVersion.getResourceType();
-    resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
-    resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
-    // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
-    for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
-      }
-    }
-    // Add provenance
-    if (version > 1) {
-      String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(id, version - 1l, null, null)).toString();
-      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
-      recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
-      LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
-    } else {
-      long currentVersion = metadataConfig.getAuditService().getCurrentVersion(id);
-      if (currentVersion == 1l) {
-        // Create an additional version for JaVers if only one version exists.
-        currentDataResource.setPublisher("migrationTool");
-        metadataConfig.getAuditService().captureAuditInformation(currentDataResource, "Just4fun");
-      }
-    }
-    // Save migrated version
-    LOG.trace("Persisting created schema document resource.");
-    DataResource migratedDataResource = dataResourceDao.save(recordByIdAndVersion);
-
-    //Capture state change
-    LOG.trace("Capturing audit information.");
-    schemaConfig.getAuditService().captureAuditInformation(migratedDataResource, "migration2version2");
-
   }
 
   /**
@@ -464,74 +461,30 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     long version = Long.parseLong(metadataDocument.getVersion());
     String id = metadataDocument.getId();
 
+    DataResource copy = migrationTool.getCopyOfDataResource(metadataDocument);
+
     // Get resource type of schema....
     String format = null;
-    for (RelatedIdentifier identifier : metadataDocument.getRelatedIdentifiers()) {
-      if (identifier.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-        String schemaUrl = identifier.getValue();
-        Optional<Url2Path> findByUrl = url2PathDao.findByUrl(schemaUrl);
-        LOG.trace("Found entry for schema:  {}", findByUrl.get().toString());
-        format = findByUrl.get().getType().toString();
-      }
+    RelatedIdentifier identifier = DataResourceRecordUtil.getRelatedIdentifier(copy, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
+    if (identifier != null) {
+      String schemaUrl = identifier.getValue();
+      Optional<Url2Path> findByUrl = url2PathDao.findByUrl(schemaUrl);
+      LOG.trace("Found entry for schema:  {}", findByUrl.get().toString());
+      format = findByUrl.get().getType().toString();
     }
     // Migrate all versions of data resource.
     for (int versionNo = 1; versionNo <= version; versionNo++) {
-      saveMetadata(id, versionNo, format);
+      DataResource saveMetadata = migrationTool.saveMetadata(id, versionNo, format);
+      if (versionNo == 1) {
+        LOG.trace("Sending CREATE event.");
+        messagingService.orElse(new LogfileMessagingService()).
+                send(MetadataResourceMessage.factoryCreateMetadataMessage(saveMetadata, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+      } else {
+        LOG.trace("Sending UPDATE event.");
+        messagingService.orElse(new LogfileMessagingService()).
+                send(MetadataResourceMessage.factoryUpdateMetadataMessage(saveMetadata, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+      }
     }
     LOG.info("Migration for metadata document with ID: '{}', finished! No of versions: '{}'", id, version);
-  }
-
-  /**
-   * Migrate metadata of metadata document from version 1 to version 2 and store
-   * new version in the database.
-   *
-   * @param id ID of the metadata document.
-   * @param version Version of the metadata document.
-   * @param format Format of the metadata document. (XML/JSON)
-   */
-  private void saveMetadata(String id, long version, String format) {
-    LOG.trace("Migrate datacite for metadata document with id: '{}' / version: '{}' and format: '{}'", id, version, format);
-    DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
-    DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
-    // Remove type from first title with type 'OTHER'
-    for (Title title : recordByIdAndVersion.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER) {
-        title.setTitleType(null);
-        break;
-      }
-    }
-    // Set resource type to  new definition of version 2 ('...'_Metadata)
-    ResourceType resourceType = recordByIdAndVersion.getResourceType();
-    resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
-    resourceType.setValue(format + DataResourceRecordUtil.METADATA_SUFFIX);
-    // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
-    for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
-        String replaceFirst = item.getValue().replaceFirst("/api/v1/schemas/", "/api/v2/schemas/");
-        item.setValue(replaceFirst);
-      }
-    }
-    // Add provenance
-    if (version > 1) {
-      String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, version - 1l, null, null)).toString();
-      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
-      recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
-      LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
-    } else {
-      long currentVersion = metadataConfig.getAuditService().getCurrentVersion(id);
-      if (currentVersion == 1l) {
-        // Create an additional version for JaVers if only one version exists.
-        currentDataResource.setPublisher("migrationTool");
-        metadataConfig.getAuditService().captureAuditInformation(currentDataResource, "Just4fun");
-      }
-    }
-    // Save migrated version
-    LOG.trace("Persisting created metadata document resource.");
-    DataResource migratedDataResource = dataResourceDao.save(recordByIdAndVersion);
-
-    //capture state change
-    LOG.trace("Capturing audit information.");
-    metadataConfig.getAuditService().captureAuditInformation(migratedDataResource, "migration2version2");
   }
 }
