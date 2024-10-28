@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.exceptions.BadArgumentException;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
@@ -39,7 +38,6 @@ import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
-import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -69,7 +67,6 @@ import java.util.stream.Stream;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
-import org.springframework.util.MimeType;
 
 /**
  * Utility class for handling json documents
@@ -241,84 +238,6 @@ public class MetadataSchemaRecordUtil {
       givenRecord = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataRecord);
     } 
     DataResource updateDataResource = DataResourceRecordUtil.updateDataResource4SchemaDocument(applicationProperties, resourceId, eTag, givenRecord, schemaDocument, supplier);
-//    LOG.trace("Checking provided ETag.");
-//    ControllerUtils.checkEtag(eTag, dataResource);
-//    SchemaRecord schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(dataResource.getId() + "/");
-//    if (metadataRecord != null) {
-//      metadataRecord.setSchemaVersion(schemaRecord.getVersion());
-//      MetadataSchemaRecord existingRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
-//      existingRecord = mergeRecords(existingRecord, metadataRecord);
-//      mergeSchemaRecord(schemaRecord, existingRecord);
-//      dataResource = migrateToDataResource(applicationProperties, existingRecord);
-//    } else {
-//      dataResource = DataResourceUtils.copyDataResource(dataResource);
-//    }
-//
-//    if (schemaDocument != null) {
-//      // Get schema record for this schema
-//      validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDocument);
-//
-//      ContentInformation info;
-//      info = getContentInformationOfResource(applicationProperties, dataResource);
-//
-//      boolean noChanges = false;
-//      String fileName = schemaDocument.getOriginalFilename();
-//      if (info != null) {
-//        noChanges = true;
-//        fileName = info.getRelativePath();
-//        // Check for changes...
-//        try {
-//          byte[] currentFileContent;
-//          File file = new File(URI.create(info.getContentUri()));
-//          if (schemaDocument.getSize() == Files.size(file.toPath())) {
-//            currentFileContent = FileUtils.readFileToByteArray(file);
-//            byte[] newFileContent = schemaDocument.getBytes();
-//            for (int index = 0; index < currentFileContent.length; index++) {
-//              if (currentFileContent[index] != newFileContent[index]) {
-//                noChanges = false;
-//                break;
-//              }
-//            }
-//          } else {
-//            noChanges = false;
-//          }
-//        } catch (IOException ex) {
-//          LOG.error("Error reading current file!", ex);
-//          throw new BadArgumentException("Error reading schema document!");
-//        }
-//      }
-//      if (!noChanges) {
-//        // Everything seems to be fine update document and increment version
-//        LOG.trace("Updating schema document (and increment version)...");
-//        String version = dataResource.getVersion();
-//        if (version != null) {
-//          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
-//        }
-//        ContentDataUtils.addFile(applicationProperties, dataResource, schemaDocument, fileName, null, true, supplier);
-//      } else {
-//        schemaRecordDao.delete(schemaRecord);
-//      }
-//    } else {
-//      schemaRecordDao.delete(schemaRecord);
-//      // validate if document is still valid due to changed record settings.
-//      metadataRecord = migrateToMetadataSchemaRecord(applicationProperties, dataResource, false);
-//      URI schemaDocumentUri = URI.create(metadataRecord.getSchemaDocumentUri());
-//
-//      Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-//      if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-//        LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-//        throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-//      }
-//
-//      try {
-//        byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
-//        MetadataSchemaRecordUtil.validateMetadataSchemaDocument(applicationProperties, schemaRecord, schemaDoc);
-//      } catch (IOException ex) {
-//        LOG.error("Error validating file!", ex);
-//      }
-//
-//    }
-//    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
 
     return migrateToMetadataSchemaRecord(applicationProperties, updateDataResource, true);
   }
@@ -426,7 +345,7 @@ public class MetadataSchemaRecordUtil {
     checkDescription(descriptions, metadataSchemaRecord.getLabel(), Description.TYPE.OTHER);
     checkDescription(descriptions, metadataSchemaRecord.getDefinition(), Description.TYPE.TECHNICAL_INFO);
     checkDescription(descriptions, metadataSchemaRecord.getComment(), Description.TYPE.ABSTRACT);
-    MetadataRecordUtil.checkLicense(dataResource, metadataSchemaRecord.getLicenseUri());
+    DataResourceRecordUtil.checkLicense(dataResource, metadataSchemaRecord.getLicenseUri());
 
     return dataResource;
   }
@@ -463,42 +382,6 @@ public class MetadataSchemaRecordUtil {
       if (description != null) {
         item = Description.factoryDescription(description, type);
         descriptions.add(item);
-      }
-    }
-  }
-
-  /**
-   * Test if alternate identifier exists. If alternate identifier is null remove
-   * existing alternate identifier type. if alternate identifier added/changed
-   * add/change alternate identifier with given type.
-   *
-   * @param identifiers all alternate identifiers
-   * @param identifier Content of (new) alternate identifier
-   * @param type Type of the alternate identifier
-   */
-  public static void checkAlternateIdentifier(Set<Identifier> identifiers, String identifier, Identifier.IDENTIFIER_TYPE type) {
-    Iterator<Identifier> iterator = identifiers.iterator();
-    Identifier item = null;
-    while (iterator.hasNext()) {
-      Identifier next = iterator.next();
-
-      if (next.getIdentifierType().compareTo(type) == 0) {
-        item = next;
-        break;
-      }
-    }
-    if (item != null) {
-      if (identifier != null) {
-        if (!identifier.equals(item.getValue())) {
-          item.setValue(identifier);
-        }
-      } else {
-        identifiers.remove(item);
-      }
-    } else {
-      if (identifier != null) {
-        item = Identifier.factoryIdentifier(identifier, type);
-        identifiers.add(item);
       }
     }
   }

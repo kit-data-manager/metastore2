@@ -18,8 +18,6 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.core.JsonParseException;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
-import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.*;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
@@ -33,10 +31,7 @@ import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
-import edu.kit.datamanager.util.AuthenticationHelper;
-import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -44,26 +39,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -383,7 +369,7 @@ public class MetadataRecordUtil {
     ResourceType resourceType = ResourceType.createResourceType(prefixDocument + DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
     dataResource.setResourceType(resourceType);
 
-    checkLicense(dataResource, metadataRecord.getLicenseUri());
+    DataResourceRecordUtil.checkLicense(dataResource, metadataRecord.getLicenseUri());
 
     return dataResource;
   }
@@ -734,25 +720,7 @@ public class MetadataRecordUtil {
    * @return Merged list
    */
   public static Set<AclEntry> mergeAcl(Set<AclEntry> managed, Set<AclEntry> provided) {
-    // Check for null parameters (which shouldn't happen)
-    managed = (managed == null) ? new HashSet<>() : managed;
-    provided = (provided == null) ? new HashSet<>() : provided;
-    if (!provided.isEmpty()) {
-      if (!provided.equals(managed)) {
-        // check for special access rights 
-        // - only administrators are allowed to change ACL
-        checkAccessRights(managed, true);
-        // - at least principal has to remain as ADMIN 
-        checkAccessRights(provided, false);
-        LOG.trace("Updating record acl from {} to {}.", managed, provided);
-        managed = provided;
-      } else {
-        LOG.trace("Provided ACL is still the same -> Continue using old one.");
-      }
-    } else {
-      LOG.trace("Provided ACL is empty -> Continue using old one.");
-    }
-    return managed;
+    return DataResourceRecordUtil.mergeAcl(managed, provided);
   }
 
   /**
@@ -764,7 +732,7 @@ public class MetadataRecordUtil {
    * @return Merged record
    */
   public static <T> T mergeEntry(String description, T managed, T provided) {
-    return mergeEntry(description, managed, provided, false);
+    return DataResourceRecordUtil.mergeEntry(description, managed, provided);
   }
 
   /**
@@ -777,12 +745,7 @@ public class MetadataRecordUtil {
    * @return Merged record
    */
   public static <T> T mergeEntry(String description, T managed, T provided, boolean overwriteWithNull) {
-    if ((provided != null && !provided.equals(managed))
-            || overwriteWithNull) {
-      LOG.trace(description + " from '{}' to '{}'", managed, provided);
-      managed = provided;
-    }
-    return managed;
+    return DataResourceRecordUtil.mergeEntry(description, managed, provided, overwriteWithNull);
   }
 
   /**
@@ -854,58 +817,6 @@ public class MetadataRecordUtil {
     }
   }
 
-  /**
-   * Checks if current user is allowed to access with given AclEntries.
-   *
-   * @param aclEntries AclEntries of resource.
-   * @param currentAcl Check current ACL (true) or new one (false).
-   *
-   * @return Allowed (true) or not.
-   */
-  public static boolean checkAccessRights(Set<AclEntry> aclEntries, boolean currentAcl) {
-    boolean isAllowed = false;
-    String errorMessage1 = "Error invalid ACL! Reason: Only ADMINISTRATORS are allowed to change ACL entries.";
-    String errorMessage2 = "Error invalid ACL! Reason: You are not allowed to revoke your own administrator rights.";
-    Authentication authentication = AuthenticationHelper.getAuthentication();
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    for (GrantedAuthority authority : authentication.getAuthorities()) {
-      authorizationIdentities.add(authority.getAuthority());
-    }
-    if (authorizationIdentities.contains(RepoUserRole.ADMINISTRATOR.getValue())) {
-      //ROLE_ADMINISTRATOR detected -> no further permission check necessary.
-      return true;
-    }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Check access rights for changing ACL list!");
-      for (String authority : authorizationIdentities) {
-        LOG.trace("Indentity/Authority: '{}'", authority);
-      }
-    }
-    // Check if authorized user still has ADMINISTRATOR rights
-    Iterator<AclEntry> iterator = aclEntries.iterator();
-    while (iterator.hasNext()) {
-      AclEntry aclEntry = iterator.next();
-      LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
-      if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)
-              && authorizationIdentities.contains(aclEntry.getSid())) {
-        isAllowed = true;
-        LOG.trace("Confirm permission for updating ACL: '{}' has ’{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
-        break;
-      }
-    }
-    if (!isAllowed) {
-      String errorMessage = currentAcl ? errorMessage1 : errorMessage2;
-      LOG.warn(errorMessage);
-      if (schemaConfig.isAuthEnabled()) {
-        if (currentAcl) {
-          throw new AccessForbiddenException(errorMessage1);
-        } else {
-          throw new BadArgumentException(errorMessage2);
-        }
-      }
-    }
-    return isAllowed;
-  }
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
@@ -913,25 +824,5 @@ public class MetadataRecordUtil {
             .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class
             ).getMetadataDocumentById(metadataRecord.getId(), metadataRecord.getRecordVersion(), null, null)).toUri().toString());
     LOG.trace("Fix metadata document Uri '{}' -> '{}'", metadataDocumentUri, metadataRecord.getMetadataDocumentUri());
-  }
-
-  public static void checkLicense(DataResource dataResource, String licenseUri) {
-    if (licenseUri != null) {
-      Set<Scheme> rights = dataResource.getRights();
-      String licenseId = licenseUri.substring(licenseUri.lastIndexOf("/"));
-      Scheme license = Scheme.factoryScheme(licenseId, licenseUri);
-      if (rights.isEmpty()) {
-        rights.add(license);
-      } else {
-        // Check if license already exists (only one license allowed)
-        if (!rights.contains(license)) {
-          rights.clear();
-          rights.add(license);
-        }
-      }
-    } else {
-      // Remove license
-      dataResource.getRights().clear();
-    }
   }
 }

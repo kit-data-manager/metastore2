@@ -6,18 +6,19 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
+import edu.kit.datamanager.entities.repo.RelatedIdentifier;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
-import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.entities.repo.RelatedIdentifier;
+import edu.kit.datamanager.repo.domain.ResourceType;
+import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import org.junit.Assert;
 import org.junit.Before;
@@ -186,7 +187,7 @@ public class MetadataControllerFilterTestV2 {
       DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
       Assert.assertEquals("No of records for schema '" + i + "'", 1, result.length);
-      Assert.assertEquals("SchemaID '" + schemaId + "'", schemaId, result[0].getSchemaId());
+      Assert.assertEquals("SchemaID '" + schemaId + "'", schemaId, result[0].getId());
     }
   }
 
@@ -205,9 +206,9 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals("No of records for schema '" + i + "'", i, result.length);
       for (DataResource item : result) {
-        RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(item);
-        Assert.assertEquals(RelatedIdentifier.RELATED_IDENTIFIER_TYPE.URL, schemaIdentifier.getIdentifierType());
-        String schemaUrl = item.getSchema().getIdentifier();
+        edu.kit.datamanager.repo.domain.RelatedIdentifier schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(item);
+        Assert.assertEquals(schemaIdentifier.getIdentifierType().URL, schemaIdentifier.getIdentifierType());
+        String schemaUrl = DataResourceRecordUtil.getSchemaIdentifier(item).getValue();
         Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
         Assert.assertTrue(schemaUrl.contains(API_SCHEMA_PATH));
         Assert.assertTrue(schemaUrl.contains(schemaId));
@@ -291,7 +292,7 @@ public class MetadataControllerFilterTestV2 {
 
     Assert.assertEquals(MAX_NO_OF_SCHEMAS, result.length);
     for (DataResource item : result) {
-      Assert.assertEquals(mimeType, item.getMimeType());
+      Assert.assertTrue(item.getFormats().contains(mimeType));
     }
     mimeType = MediaType.APPLICATION_XML.toString();
     res = this.mockMvc.perform(get(API_SCHEMA_PATH)
@@ -303,7 +304,7 @@ public class MetadataControllerFilterTestV2 {
 
     Assert.assertEquals(MAX_NO_OF_SCHEMAS, result.length);
     for (DataResource item : result) {
-      Assert.assertEquals(mimeType, item.getMimeType());
+      Assert.assertTrue(item.getFormats().contains(mimeType));
     }
   }
 
@@ -341,9 +342,10 @@ public class MetadataControllerFilterTestV2 {
   @Test
   public void testFindRecordsByResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
+      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE + i, null, null);
+      relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH)
-              .param("resourceId", relatedResource.getIdentifier()))
+              .param("resourceId", relatedIdentifier.getValue()))
               .andDo(print())
               .andExpect(status().isOk())
               .andReturn();
@@ -352,7 +354,9 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals((MAX_NO_OF_SCHEMAS - i + 1) * 2, result.length);
       for (DataResource item : result) {
-        Assert.assertEquals(relatedResource, item.getRelatedResource());
+        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue());
+        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getIdentifierType());
+        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getRelationType());
       }
     }
   }
@@ -399,9 +403,10 @@ public class MetadataControllerFilterTestV2 {
   @Test
   public void testFindRecordsByMultipleResourceIdsIncludingInvalidResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      ResourceIdentifier relatedResource = ResourceIdentifier.factoryInternalResourceIdentifier(RELATED_RESOURCE + i);
+      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE + i, null, null);
+      relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH)
-              .param("resourceId", relatedResource.getIdentifier())
+              .param("resourceId", relatedIdentifier.getValue())
               .param("resourceId", INVALID_MIMETYPE))
               .andDo(print())
               .andExpect(status().isOk())
@@ -411,7 +416,9 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals((MAX_NO_OF_SCHEMAS - i + 1) * 2, result.length);
       for (DataResource item : result) {
-        Assert.assertEquals(relatedResource, item.getRelatedResource());
+        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue());
+        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getIdentifierType());
+        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getRelationType());
       }
     }
   }
@@ -431,24 +438,25 @@ public class MetadataControllerFilterTestV2 {
     Assert.assertEquals("No of records for schema '" + schemaId + "'", 0, result.length);
   }
 
-  public void registerSchemaDocument(DataResource.SCHEMA_TYPE schemaType, String schemaId) throws Exception {
+  public void registerSchemaDocument(String schemaType, String schemaId) throws Exception {
     DataResource record = new DataResource();
-    record.setSchemaId(schemaId);
-    record.setType(schemaType);
+    record.getTitles().add(Title.factoryTitle("Title for " + schemaId));
+    record.setResourceType(ResourceType.createResourceType(schemaType + "_Schema", ResourceType.TYPE_GENERAL.MODEL));
+    record.setId(schemaId);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry("test", PERMISSION.READ));
     aclEntries.add(new AclEntry("SELF", PERMISSION.ADMINISTRATE));
-    record.setAcl(aclEntries);
+    record.setAcls(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile schemaFile;
     switch (schemaType) {
-      case JSON:
-        record.setMimeType(MediaType.APPLICATION_JSON.toString());
+      case "JSON":
+        record.getFormats().add(MediaType.APPLICATION_JSON_VALUE);
         schemaFile = new MockMultipartFile("schema", "schema.json", "application/json", JSON_SCHEMA.getBytes());
         break;
-      case XML:
-        record.setMimeType(MediaType.APPLICATION_XML.toString());
+      case "XML":
+        record.getFormats().add(MediaType.APPLICATION_XML_VALUE);
         schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", XML_SCHEMA.getBytes());
         break;
       default:
@@ -469,12 +477,17 @@ public class MetadataControllerFilterTestV2 {
    */
   public void ingestMetadataDocument(String schemaId, String resource) throws Exception {
     DataResource record = new DataResource();
-    record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
-    record.setRelatedResource(ResourceIdentifier.factoryInternalResourceIdentifier(resource));
+    edu.kit.datamanager.repo.domain.RelatedIdentifier schemaIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.HAS_METADATA, schemaId, null, null);
+    schemaIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, resource, null, null);
+    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+    record.getRelatedIdentifiers().add(schemaIdentifier);
+    record.getRelatedIdentifiers().add(relatedIdentifier);
+    record.getTitles().add(Title.factoryTitle("Document for schemaID: " + schemaId));
     Set<AclEntry> aclEntries = new HashSet<>();
-//    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-//    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
-//    record.setAcl(aclEntries);
+    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+    record.setAcls(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -541,8 +554,8 @@ public class MetadataControllerFilterTestV2 {
   private void prepareSchemas() throws Exception {
     // Prepare 5 different schemas
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      registerSchemaDocument(DataResource.SCHEMA_TYPE.JSON, JSON_SCHEMA_ID + i);
-      registerSchemaDocument(DataResource.SCHEMA_TYPE.XML, XML_SCHEMA_ID + i);
+      registerSchemaDocument("JSON", JSON_SCHEMA_ID + i);
+      registerSchemaDocument("XML", XML_SCHEMA_ID + i);
     }
 
   }

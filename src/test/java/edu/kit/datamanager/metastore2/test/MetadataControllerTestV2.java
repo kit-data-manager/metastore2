@@ -1978,7 +1978,7 @@ public class MetadataControllerTestV2 {
     // Change only version of schema to a version which is not valid.
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, alternativeSchemaId, 1L, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
     // Change to a nonexistent version of schema.
-    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isBadRequest());
+    CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, alternativeSchemaId, Long.MAX_VALUE, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
     // Change to another schema
     CreateSchemaUtil.ingestOrUpdateXmlMetadataDocumentV2(mockMvc, SCHEMA_ID, 1L, "document", null, schemaConfig.getJwtSecret(), true, status().isUnprocessableEntity());
   }

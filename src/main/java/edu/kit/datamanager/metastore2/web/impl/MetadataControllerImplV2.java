@@ -190,26 +190,26 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.debug("Test for existing metadata record for given schema and resource");
     RelatedIdentifier schemaIdentifier;
 //    try {
-      schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(metadataRecord);
-      switch (schemaIdentifier.getIdentifierType()) {
-        case INTERNAL:
-          // nothing to do
-          break;
-        case URL:
-          SchemaRecord schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
-          if (schemaRecord == null) {
-            String message = "External URLs are not supported yet!\n"
-                    + "But '" + schemaIdentifier.getValue() + "' seems not to be an internal one!\n"
-                    + "Hint: Maybe version number is missing (e.g.: [...]?version=1";
-            LOG.error(message);
-            throw new ResourceNotFoundException(message);
-          }
-          schemaIdentifier.setValue(schemaRecord.getSchemaId());
-          schemaIdentifier.setIdentifierType(INTERNAL);
-          break;
-        default: 
-          throw new UnprocessableEntityException("Schema referenced by '" + schemaIdentifier.getIdentifierType().toString() + "' is not supported yet!");
-      }
+    schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(metadataRecord);
+    switch (schemaIdentifier.getIdentifierType()) {
+      case INTERNAL:
+        // nothing to do
+        break;
+      case URL:
+        SchemaRecord schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
+        if (schemaRecord == null) {
+          String message = "External URLs are not supported yet!\n"
+                  + "But '" + schemaIdentifier.getValue() + "' seems not to be an internal one!\n"
+                  + "Hint: Maybe version number is missing (e.g.: [...]?version=1";
+          LOG.error(message);
+          throw new ResourceNotFoundException(message);
+        }
+        schemaIdentifier.setValue(schemaRecord.getSchemaId());
+        schemaIdentifier.setIdentifierType(INTERNAL);
+        break;
+      default:
+        throw new UnprocessableEntityException("Schema referenced by '" + schemaIdentifier.getIdentifierType().toString() + "' is not supported yet!");
+    }
 //    } catch (ResourceNotFoundException rnfe) {
 //      LOG.debug("Error checking for existing relations.", rnfe);
 //      throw new UnprocessableEntityException("Schema ID seems to be invalid");
@@ -295,7 +295,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     contentInformation.setContentUri(locationUri.toString());
     contentInformation.setRelativePath(null);
     contentInformation.setVersioningService(null);
- 
+
     return ResponseEntity.ok().body(contentInformation);
   }
 
@@ -306,7 +306,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           WebRequest wr,
           HttpServletResponse hsr
   ) {
-    LOG.trace("Performing getAclById({}, {}).", id, version);
+    LOG.info("Performing getAclById({}, {}).", id, version);
     if (!AuthenticationHelper.isAuthenticatedAsService()) {
       throw new AccessForbiddenException("Only for services!");
     }
@@ -424,7 +424,6 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
 
-
     LOG.trace("Transforming Dataresource to DataResource");
     List<DataResource> recordList = records.getContent();
     for (DataResource item : recordList) {
@@ -493,16 +492,17 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       builder.withDetail("metadataRepo", details);
     }
   }
+
   /**
    * Get value of relatedIdentitier with given relation type.
-   * 
+   *
    * @param result data resource.
    * @param relationType type of related identifier.
    * @return related identifier.
    */
   private RelatedIdentifier getRelatedIdentifier(DataResource result, RelatedIdentifier.RELATION_TYPES relationType) {
     RelatedIdentifier relatedIdentifier = null;
-    for (RelatedIdentifier item: result.getRelatedIdentifiers()) {
+    for (RelatedIdentifier item : result.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(relationType)) {
         relatedIdentifier = item;
         break;
@@ -510,7 +510,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     }
     return relatedIdentifier;
   }
- 
+
   @Bean
   public RestTemplate restTemplate() {
     return new RestTemplate();
