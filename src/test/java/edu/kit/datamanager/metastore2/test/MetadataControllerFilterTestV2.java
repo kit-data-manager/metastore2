@@ -241,6 +241,31 @@ public class MetadataControllerFilterTestV2 {
   }
 
   @Test
+  public void testFindRecordsByMultipleButWrongSchemaIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get(API_METADATA_PATH);
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += (MAX_NO_OF_SCHEMAS - j + 1) * 2;
+        String relatedResource = RELATED_RESOURCE + j;
+        get.param("schemaId", relatedResource);
+      }
+      get.param("size", Integer.toString(noOfResults * 2));
+      get.header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
+
+      Assert.assertEquals("No of records for schema should be always '0'!", 0, result.length);
+    }
+  }
+
+  @Test
   public void testFindRecordsByMultipleSchemaIdsPlusInvalidSchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
@@ -383,6 +408,30 @@ public class MetadataControllerFilterTestV2 {
       DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
 
       Assert.assertEquals("No of records for schema '1 - " + i + "'", noOfResults, result.length);
+    }
+  }
+
+  @Test
+  public void testFindRecordsByMultipleButWronResourceIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get(API_METADATA_PATH);
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += j;
+        String schemaId = JSON_SCHEMA_ID + j;
+        get.param("resourceId", schemaId);
+      }
+      get.header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
+
+      Assert.assertEquals("No of records for resourceIDs should be always '0'!", 0, result.length);
     }
   }
 
