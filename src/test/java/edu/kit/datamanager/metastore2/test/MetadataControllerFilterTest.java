@@ -231,6 +231,31 @@ public class MetadataControllerFilterTest {
   }
 
   @Test
+  public void testFindRecordsByMultipleButWrongSchemaIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += (MAX_NO_OF_SCHEMAS - j + 1) * 2;
+        String relatedResource = RELATED_RESOURCE + j;
+        get.param("schemaId", relatedResource);
+      }
+      get.param("size", Integer.toString(noOfResults * 2));
+      get.header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+      Assert.assertEquals("No of records for schema '1 - " + i + "'", 0, result.length);
+    }
+  }
+
+  @Test
   public void testFindRecordsByMultipleSchemaIdsPlusInvalidSchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     int noOfResults;
@@ -370,6 +395,30 @@ public class MetadataControllerFilterTest {
       MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
       Assert.assertEquals("No of records for schema '1 - " + i + "'", noOfResults, result.length);
+    }
+  }
+
+  @Test
+  public void testFindRecordsByMultipleButWrongResourceIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += j;
+        String schemaId = JSON_SCHEMA_ID + j;
+        get.param("resourceId", schemaId);
+      }
+      get.header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+      Assert.assertEquals("No of records for schema '1 - " + i + "'", 0, result.length);
     }
   }
 
