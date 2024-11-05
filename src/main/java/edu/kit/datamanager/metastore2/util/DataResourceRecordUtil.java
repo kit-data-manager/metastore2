@@ -24,6 +24,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.spec.RelatedIdentifierWithTypeSpec;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -32,7 +33,6 @@ import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
@@ -732,7 +732,7 @@ public class DataResourceRecordUtil {
         }
       }
       if (!allSchemaIds.isEmpty()) {
-        specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(allSchemaIds.toArray(String[]::new)));
+        specWithSchema = specWithSchema.and(RelatedIdentifierWithTypeSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, allSchemaIds.toArray(String[]::new)));
       }
     }
     return specWithSchema;
@@ -748,7 +748,7 @@ public class DataResourceRecordUtil {
   public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
     Specification<DataResource> specWithSchema = specification;
     if ((relatedIds != null) && !relatedIds.isEmpty()) {
-      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(relatedIds.toArray(String[]::new)));
+         specWithSchema = specWithSchema.and(RelatedIdentifierWithTypeSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedIds.toArray(String[]::new)));
     }
     return specWithSchema;
   }
