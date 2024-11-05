@@ -65,12 +65,12 @@ dependencies {
     implementation "org.springframework.boot:spring-boot-starter-mail"
     
     // JSON Parser for Metadata Editor
-    implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+    implementation "com.googlecode.json-simple:json-simple:1.1.1"
 
     
     // cloud support
     implementation "org.springframework.cloud:spring-cloud-starter-config:4.1.3"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.1.2"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.1.3"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
@@ -106,7 +106,7 @@ dependencies {
     implementation "com.networknt:json-schema-validator:1.5.3"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
-    implementation 'xerces:xercesImpl:2.12.2'
+    implementation "xerces:xercesImpl:2.12.2"
 
     // datamanager
     implementation "edu.kit.datamanager:repo-core:1.2.2"
@@ -121,6 +121,7 @@ dependencies {
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
+    testImplementation "com.google.guava:guava:33.3.1-jre"
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.2"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
