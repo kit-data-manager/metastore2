@@ -265,7 +265,7 @@ public class SchemaRegistryControllerTest {
   @Test
   public void testCreateRegisterSchemaRecordWithSameIdButCapitalLetter() throws Exception {
     String schemaIDWithCapitalLetters = "mySecondTest";
-    MetadataSchemaRecord record = createMetadataRecord(schemaIDWithCapitalLetters);
+    MetadataSchemaRecord record = createMetadataRecord(schemaIDWithCapitalLetters.toLowerCase(Locale.getDefault()));
     ObjectMapper mapper = new ObjectMapper();
 
     MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());

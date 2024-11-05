@@ -136,6 +136,13 @@ public class MetadataSchemaRecordUtil {
         LOG.error(message);
         throw new BadArgumentException(message);
       }
+      String toLowerCase;
+      toLowerCase = metadataRecord.getSchemaId().toLowerCase(Locale.getDefault());
+      if (!toLowerCase.equals(metadataRecord.getSchemaId())) {
+        String message = "Not a valid schema id! Please try '" + toLowerCase + "' instead!";
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
     }
     // Create schema record
     SchemaRecord schemaRecord = new SchemaRecord();
