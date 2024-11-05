@@ -969,9 +969,10 @@ public class JsonSchemaRegistryControllerTest {
 
   @Test
   public void testCreateSchemaRecordWithUpdateWithoutChanges() throws Exception {
+    String schemaId = "updateWithoutChanges_json";
     // Test with a schema missing schema property.
     MetadataSchemaRecord record = new MetadataSchemaRecord();
-    record.setSchemaId("updateWithoutChanges_json");
+    record.setSchemaId(schemaId.toLowerCase(Locale.getDefault()));
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     record.setMimeType(MediaType.APPLICATION_JSON.toString());
     Set<AclEntry> aclEntries = new HashSet<>();

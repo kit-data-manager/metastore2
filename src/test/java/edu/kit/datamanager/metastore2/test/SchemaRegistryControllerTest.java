@@ -6,7 +6,9 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.type.CollectionType;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
@@ -225,12 +227,39 @@ public class SchemaRegistryControllerTest {
 
     MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
-    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
+    // No longer valid, as capital letters are no longer allowed.
+/*    MetadataSchemaRecord ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
     Assert.assertEquals(record.getType(), ms_record.getType());
     Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
     Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
     Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
+    Assert.assertEquals(schemaIDWithCapitalLetters.toLowerCase(), ms_record.getSchemaId());
+    // Test getting record and schema
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaIDWithCapitalLetters.toLowerCase()).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertEquals(record.getType(), ms_record.getType());
+    Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
+    Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
+    Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
+    Assert.assertEquals(schemaIDWithCapitalLetters.toLowerCase(), ms_record.getSchemaId());
+
+    result = this.mockMvc.perform(get("/api/v1/schemas/" + schemaIDWithCapitalLetters).
+            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    ms_record = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord.class);
+    Assert.assertEquals(record.getType(), ms_record.getType());
+    Assert.assertEquals(record.getMimeType(), ms_record.getMimeType());
+    Assert.assertEquals(record.getSchemaId(), ms_record.getSchemaId());
+    Assert.assertNotEquals(schemaIDWithCapitalLetters, ms_record.getSchemaId());
+    Assert.assertEquals(schemaIDWithCapitalLetters.toLowerCase(), ms_record.getSchemaId());
+*/
   }
 
   @Test
@@ -257,7 +286,7 @@ public class SchemaRegistryControllerTest {
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
             file(recordFile).
-            file(schemaFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
+            file(schemaFile)).andDo(print()).andExpect(status().isBadRequest()).andReturn();
   }
 
   @Test
@@ -987,7 +1016,6 @@ public class SchemaRegistryControllerTest {
     Assert.assertEquals(KIT_SCHEMA_V2, content);
   }
 
-
   @Test
   public void testUpdateRecordAndDocumentWithLicense() throws Exception {
     String schemaId = "updateRecordAndDocumentWithLicense".toLowerCase(Locale.getDefault());
@@ -1065,7 +1093,7 @@ public class SchemaRegistryControllerTest {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
     Assert.assertTrue(record2.getLastUpdate().isBefore(record3.getLastUpdate()));
- }
+  }
 
   @Test
   public void testUpdateRecordAndDocumentWithWrongVersion() throws Exception {

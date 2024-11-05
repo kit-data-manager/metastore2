@@ -143,19 +143,6 @@ public class MetadataSchemaRecord implements EtagSupport, Serializable {
     }
   }
 
-  /**
-   * Set schema ID (transform to lower case).
-   *
-   * @param schemaId update date
-   */
-  public void setSchemaId(String schemaId) {
-    if (schemaId != null) {
-      this.schemaId = schemaId.toLowerCase(Locale.getDefault());
-    } else {
-      this.schemaId = null;
-    }
-  }
-
   @Override
   @JsonIgnore
   public String getEtag() {

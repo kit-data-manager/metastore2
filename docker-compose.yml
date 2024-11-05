@@ -39,7 +39,7 @@ services:
     networks:
       - dps
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     depends_on:
       - elasticsearch
     container_name: rabbitmq4indexing

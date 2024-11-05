@@ -356,7 +356,7 @@ public class OaiPmhControllerTest {
     Assert.assertEquals(0, result.getError().size());
     Assert.assertEquals(5, result.getListMetadataFormats().getMetadataFormat().size());
     // ADD ANOTHER JSON SCHEMA *******************************************************
-    ingestSchemaRecord("jsonSchema", MetadataSchemaRecord.SCHEMA_TYPE.JSON, JSON_SCHEMA);
+    ingestSchemaRecord("json_schema", MetadataSchemaRecord.SCHEMA_TYPE.JSON, JSON_SCHEMA);
     res = this.mockMvc.perform(get("/oaipmh").param("verb", VerbType.LIST_METADATA_FORMATS.value())).andDo(print()).andExpect(status().isOk()).andReturn();
     result = getResponse(res);
     Assert.assertNotNull(result);
