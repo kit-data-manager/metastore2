@@ -1,11 +1,11 @@
 plugins { 
-    id 'org.springframework.boot' version '3.3.4'
+    id 'org.springframework.boot' version '3.3.5'
     id 'io.spring.dependency-management' version '1.1.6'
     id 'io.freefair.lombok' version '8.10.2'
     id 'io.freefair.maven-publish-java' version '8.10.2'
-    id 'org.owasp.dependencycheck' version '10.0.4'
+    id 'org.owasp.dependencycheck' version '11.1.0'
     id 'org.asciidoctor.jvm.convert' version '4.0.3'
-    id 'net.ltgt.errorprone' version '4.0.1'
+    id 'net.ltgt.errorprone' version '4.1.0'
     id 'net.researchgate.release' version '3.0.2'
     id 'com.gorylenko.gradle-git-properties' version '2.4.2'
     id 'java'
@@ -20,7 +20,7 @@ ext {
     springDocVersion  = '2.6.0'
     javersVersion     = '7.6.3'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.33.0'
+    errorproneVersion = '2.35.1'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -49,8 +49,8 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation "org.springframework:spring-messaging:6.1.1"
-    implementation "org.springframework.cloud:spring-cloud-gateway-mvc:4.1.5"
+    implementation 'org.springframework:spring-messaging:6.1.14'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.1.5'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -100,10 +100,10 @@ dependencies {
     
     // apache
     implementation "commons-io:commons-io:2.17.0"
-    implementation "org.apache.tika:tika-core:2.9.2"
+    implementation "org.apache.tika:tika-core:3.0.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.5.2"
+    implementation "com.networknt:json-schema-validator:1.5.3"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation "xerces:xercesImpl:2.12.2"
@@ -113,7 +113,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.3.1"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.3.4"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.3.5"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
@@ -122,13 +122,13 @@ dependencies {
     
     // Additional libraries for tests
     testImplementation "com.google.guava:guava:33.3.1-jre"
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.0"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.2"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.14.1"
+    testImplementation "org.mockito:mockito-core:5.14.2"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
