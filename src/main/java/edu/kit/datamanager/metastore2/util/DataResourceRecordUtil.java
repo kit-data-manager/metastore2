@@ -24,7 +24,6 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import edu.kit.datamanager.metastore2.dao.spec.RelatedIdentifierWithTypeSpec;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -71,7 +70,9 @@ import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
+import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.Date;
+import java.time.Instant;
 
 /**
  * Utility class for handling json documents
@@ -477,58 +478,18 @@ public class DataResourceRecordUtil {
       metadataRecord.setId(dataResource.getId());
       metadataRecord.setAcl(dataResource.getAcls());
 
-      for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
-        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-          LOG.trace("Creation date entry found.");
-          metadataRecord.setCreatedAt(d.getValue());
-          break;
-        }
-      }
-      if (dataResource.getLastUpdate() != null) {
-        metadataRecord.setLastUpdate(dataResource.getLastUpdate());
-      }
+      metadataRecord.setCreatedAt(getCreationDate(dataResource));
+      metadataRecord.setLastUpdate(dataResource.getLastUpdate());
 
       PrimaryIdentifier pid = dataResource.getIdentifier();
       if ((pid != null) && pid.hasDoi()) {
         metadataRecord.setPid(ResourceIdentifier.factoryResourceIdentifier(pid.getValue(), IdentifierType.valueOf(pid.getIdentifierType())));
       }
-      Long recordVersion = 1L;
-      if (dataResource.getVersion() != null) {
-        recordVersion = Long.valueOf(dataResource.getVersion());
-      }
-      metadataRecord.setRecordVersion(recordVersion);
+      metadataRecord.setRecordVersion(getVersion(dataResource));
 
-      for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-        LOG.trace("Found related Identifier: '{}'", relatedIds);
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedIds.getValue());
-          if (relatedIds.getIdentifierType() != null) {
-            resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
-          }
-          LOG.trace("Set relation to '{}'", resourceIdentifier);
-          metadataRecord.setRelatedResource(resourceIdentifier);
-        }
-        if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
-          ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedIds.getValue(), IdentifierType.valueOf(relatedIds.getIdentifierType().name()));
-          metadataRecord.setSchema(resourceIdentifier);
-          if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
-            //Try to fetch version from URL (only works with URLs including the version as query parameter.
-            Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
-            while (matcher.find()) {
-              metadataRecord.setSchemaVersion(Long.valueOf(matcher.group(1)));
-            }
-          } else {
-            // set to current version of schema
-            SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
-            if (currentSchema != null) {
-              metadataRecord.setSchemaVersion(currentSchema.getVersion());
-            } else {
-              metadataRecord.setSchemaVersion(1L);
-            }
-          }
-          LOG.trace("Set schema to '{}'", resourceIdentifier);
-        }
-      }
+      setSchemaAndVersion(metadataRecord, dataResource);
+      setRelatedResource(metadataRecord, dataResource);
+
       if (metadataRecord.getSchema() == null) {
         String message = "Missing schema identifier for metadata document. Not a valid metadata document ID. Returning HTTP BAD_REQUEST.";
         LOG.error(message);
@@ -548,6 +509,45 @@ public class DataResourceRecordUtil {
     }
 
     return metadataRecord;
+  }
+
+  /**
+   * Migrate data resource to metadata record.
+   *
+   * @param applicationProperties Configuration settings of repository.
+   * @param dataResource Data resource to migrate.
+   * @return Metadata record of data resource.
+   */
+  public static MetadataSchemaRecord migrateToMetadataSchemaRecordV2(RepoBaseConfiguration applicationProperties,
+          DataResource dataResource) {
+    MetadataSchemaRecord metadataSchemaRecord = new MetadataSchemaRecord();
+    if (dataResource != null) {
+      metadataSchemaRecord.setSchemaId(dataResource.getId());
+      metadataSchemaRecord.setAcl(dataResource.getAcls());
+
+      metadataSchemaRecord.setCreatedAt(getCreationDate(dataResource));
+      metadataSchemaRecord.setLastUpdate(dataResource.getLastUpdate());
+
+      PrimaryIdentifier pid = dataResource.getIdentifier();
+      if ((pid != null) && pid.hasDoi()) {
+        metadataSchemaRecord.setPid(ResourceIdentifier.factoryResourceIdentifier(pid.getValue(), IdentifierType.valueOf(pid.getIdentifierType())));
+      }
+      metadataSchemaRecord.setSchemaVersion(getVersion(dataResource));
+
+      LOG.trace("Get document URI from ContentInformation.");
+      ContentInformation info;
+      info = getContentInformationOfResource(applicationProperties, dataResource);
+      if (info != null) {
+        metadataSchemaRecord.setSchemaHash(info.getHash());
+        metadataSchemaRecord.setSchemaDocumentUri(info.getContentUri());
+      }
+      // Only one license allowed. So don't worry about size of set.
+      if (!dataResource.getRights().isEmpty()) {
+        metadataSchemaRecord.setLicenseUri(dataResource.getRights().iterator().next().getSchemeUri());
+      }
+    }
+
+    return metadataSchemaRecord;
   }
 
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
@@ -732,7 +732,7 @@ public class DataResourceRecordUtil {
         }
       }
       if (!allSchemaIds.isEmpty()) {
-        specWithSchema = specWithSchema.and(RelatedIdentifierWithTypeSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, allSchemaIds.toArray(String[]::new)));
+        specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, allSchemaIds.toArray(String[]::new)));
       }
     }
     return specWithSchema;
@@ -748,7 +748,7 @@ public class DataResourceRecordUtil {
   public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
     Specification<DataResource> specWithSchema = specification;
     if ((relatedIds != null) && !relatedIds.isEmpty()) {
-         specWithSchema = specWithSchema.and(RelatedIdentifierWithTypeSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedIds.toArray(String[]::new)));
+      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedIds.toArray(String[]::new)));
     }
     return specWithSchema;
   }
@@ -1553,6 +1553,74 @@ public class DataResourceRecordUtil {
     schemaRecord.setAlternateId(schemaUrl);
 
     return schemaRecord;
+  }
+
+  /**
+   * Get creation date of data resource.
+   *
+   * @param dataResource data resource.
+   * @return creation date.
+   */
+  public static final Instant getCreationDate(DataResource dataResource) {
+    Instant creationDate = null;
+    for (edu.kit.datamanager.repo.domain.Date d : dataResource.getDates()) {
+      if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
+        LOG.trace("Creation date entry found.");
+        creationDate = d.getValue();
+        break;
+      }
+    }
+    return creationDate;
+  }
+
+  /**
+   * Get version of data resource.
+   *
+   * @param dataResource data resource.
+   * @return version or 1 if no version is available.
+   */
+  public static final Long getVersion(DataResource dataResource) {
+    Long recordVersion = 1L;
+    if (dataResource.getVersion() != null) {
+      recordVersion = Long.valueOf(dataResource.getVersion());
+    }
+    return recordVersion;
+  }
+
+  public static final void setSchemaAndVersion(MetadataRecord metadataRecord, DataResource dataResource) {
+    RelatedIdentifier relatedId = getSchemaIdentifier(dataResource);
+    if (relatedId != null) {
+      ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedId.getValue(), IdentifierType.valueOf(relatedId.getIdentifierType().name()));
+      metadataRecord.setSchema(resourceIdentifier);
+      if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
+        //Try to fetch version from URL (only works with URLs including the version as query parameter.
+        Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
+        while (matcher.find()) {
+          metadataRecord.setSchemaVersion(Long.valueOf(matcher.group(1)));
+        }
+      } else {
+        // set to current version of schema
+        SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
+        if (currentSchema != null) {
+          metadataRecord.setSchemaVersion(currentSchema.getVersion());
+        } else {
+          metadataRecord.setSchemaVersion(1L);
+        }
+      }
+      LOG.trace("Set schema to '{}'", resourceIdentifier);
+    }
+  }
+
+  public static final void setRelatedResource(MetadataRecord metadataRecord, DataResource dataResource) {
+    RelatedIdentifier relatedId = getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    if (relatedId != null) {
+      ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedId.getValue());
+      if (relatedId.getIdentifierType() != null) {
+        resourceIdentifier = ResourceIdentifier.factoryResourceIdentifier(relatedId.getValue(), IdentifierType.valueOf(relatedId.getIdentifierType().name()));
+      }
+      LOG.trace("Set relation to '{}'", resourceIdentifier);
+      metadataRecord.setRelatedResource(resourceIdentifier);
+    }
   }
 
   /**

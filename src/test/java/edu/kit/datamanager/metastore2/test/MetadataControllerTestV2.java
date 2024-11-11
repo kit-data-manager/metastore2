@@ -101,6 +101,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/v2/md/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"metastore.metadata.landingpage=/metadata-landing-page-v2?id=$(id)&version=$(version)"})
+@TestPropertySource(properties = {"metastore.schema.landingpage=/schema-landing-page-v2?schemaId=$(id)&version=$(version)"})
 @TestPropertySource(properties = {"repo.search.url=http://localhost:41421"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MetadataControllerTestV2 {
@@ -2575,6 +2576,46 @@ public class MetadataControllerTestV2 {
             .andDo(print())
             .andExpect(status().isOk());
   }
+
+  @Test
+  public void testLandingPage4Schema() throws Exception {
+
+    MvcResult andReturn = this.mockMvc.perform(get(API_SCHEMA_PATH + SCHEMA_ID)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page-v2?schemaId=" + SCHEMA_ID + "&version="))
+            .andReturn();
+    String redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get(API_SCHEMA_PATH + SCHEMA_ID)
+            .queryParam("version", "1")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page-v2?schemaId=" + SCHEMA_ID + "&version=1"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isOk());
+    andReturn = this.mockMvc.perform(get(API_SCHEMA_PATH + SCHEMA_ID)
+            .queryParam("version", "2")
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/schema-landing-page-v2?schemaId=" + SCHEMA_ID + "&version=2"))
+            .andReturn();
+    redirectedUrl = andReturn.getResponse().getRedirectedUrl();
+    this.mockMvc.perform(get(redirectedUrl)
+            .accept("text/html"))
+            .andDo(print())
+            .andExpect(status().isNotFound());
+   }
 
   @Test
   public void testDeleteSchemaWithLinkedDocument() throws Exception {

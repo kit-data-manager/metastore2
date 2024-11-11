@@ -18,7 +18,9 @@ package edu.kit.datamanager.metastore2.web.impl;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
+import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
+import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.fixSchemaUrl;
 import edu.kit.datamanager.metastore2.web.ILandingPageControllerV2;
 import edu.kit.datamanager.repo.domain.DataResource;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -89,10 +91,11 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
     }
 
     LOG.trace("Fix URL for all schema records");
-    List<DataResource> metadataList = new ArrayList<>();
+    List<MetadataSchemaRecord> metadataList = new ArrayList<>();
     recordList.forEach(metadataRecord -> {
-      DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
-      metadataList.add(metadataRecord);
+      MetadataSchemaRecord metadataSchemaRecord = DataResourceRecordUtil.migrateToMetadataSchemaRecordV2(schemaConfig, metadataRecord);
+      metadataSchemaRecord.setSchemaDocumentUri(DataResourceRecordUtil.getSchemaDocumentUri(id, metadataSchemaRecord.getSchemaVersion()));
+      metadataList.add(metadataSchemaRecord);
     });
 
     model.addAttribute("records", metadataList);
