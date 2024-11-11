@@ -15,8 +15,6 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -275,7 +273,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     }
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
     // Add authentication if enabled
-    spec = addAuthenticationSpecification(spec);
+    spec = DataResourceRecordUtil.findByAccessRights(spec);
     //one of given mimetypes.
     if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
       spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
@@ -359,24 +357,5 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
   public void contribute(Info.Builder builder) {
     LOG.trace("Check for SchemaRepo actuator information (v1)...");
     LOG.trace("Check for SchemaRepo actuator information (v1) disabled!");
-  }
-
-  private Specification<DataResource> addAuthenticationSpecification(Specification<DataResource> spec) {
-    if (schemaConfig.isAuthEnabled()) {
-      boolean isAdmin;
-      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
-      // Add authorization for non administrators
-      if (!isAdmin) {
-        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-        if (authorizationIdentities != null) {
-          LOG.trace("Creating (READ) permission specification.");
-          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
-        } else {
-          LOG.trace("No permission information provided. Skip creating permission specification.");
-        }
-      }
-    }
-    return spec;
   }
 }

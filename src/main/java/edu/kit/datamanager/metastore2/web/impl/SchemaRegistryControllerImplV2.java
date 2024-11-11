@@ -306,7 +306,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     }
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
     // Add authentication if enabled
-    spec = addAuthenticationSpecification(spec);
+    spec = DataResourceRecordUtil.findByAccessRights(spec);
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
@@ -379,25 +379,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     }
   }
   
-  private Specification<DataResource> addAuthenticationSpecification(Specification<DataResource> spec) {
-    if (schemaConfig.isAuthEnabled()) {
-      boolean isAdmin;
-      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
-      // Add authorization for non administrators
-      if (!isAdmin) {
-        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-        if (authorizationIdentities != null) {
-          LOG.trace("Creating (READ) permission specification.");
-          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
-        } else {
-          LOG.trace("No permission information provided. Skip creating permission specification.");
-        }
-      }
-    }
-    return spec;
-  }
-
   /**
    * Get URI for accessing schema document via schemaId and version.
    *
