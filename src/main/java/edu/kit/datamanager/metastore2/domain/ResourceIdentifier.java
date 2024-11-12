@@ -29,7 +29,7 @@ public class ResourceIdentifier implements Serializable {
 
   @Override
   public String toString() {
-    String sb = ResourceIdentifier.class.getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + '[' +
+    return ResourceIdentifier.class.getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + '[' +
             "resourceIdentifier" +
             '=' +
             ((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()) +
@@ -38,8 +38,6 @@ public class ResourceIdentifier implements Serializable {
             '=' +
             ((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()) +
             ']';
-
-    return sb;
   }
 
   @Override

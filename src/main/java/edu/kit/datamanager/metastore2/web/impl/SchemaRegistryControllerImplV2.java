@@ -107,7 +107,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     this.applicationProperties = applicationProperties;
     this.schemaConfig = schemaConfig;
     this.dataResourceDao = dataResourceDao;
-    DataResourceRecordUtil.setDataResourceDao(dataResourceDao);
+    DataResourceRecordUtil.setDataResourceDao(this.dataResourceDao);
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", schemaConfig);
     LOG.info("------------------------------------------------------");
@@ -121,9 +121,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) {
     LOG.trace("Performing createRecord({},....", recordDocument);
-    BiFunction<String, Long, String> getSchemaDocumentById;
-    getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
-    
     DataResource dataResourceRecord = DataResourceRecordUtil.createDataResourceRecord4Schema(schemaConfig, recordDocument, document);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = dataResourceRecord.getEtag();
@@ -153,7 +150,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse hsr) {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
     
-    LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
     DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
     String etag = schemaRecord.getEtag();
     
@@ -169,7 +165,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse hsr) {
     LOG.trace("Performing getContentInformationById({}, {}).", schemaId, version);
     
-    LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
     ContentInformation contentInformation = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaId, version);
     DataResource minimalDataResource = DataResource.factoryNewDataResource(contentInformation.getParentResource().getId());
     URI locationUri;
@@ -208,7 +203,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse hsr) {
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
     
-    LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
     DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
     ContentInformation contentInfo = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaRecord.getId(), Long.valueOf(schemaRecord.getVersion()));
     MediaType contentType = MediaType.valueOf(contentInfo.getMediaType());
@@ -280,31 +274,8 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    boolean searchForJson = true;
-    boolean searchForXml = true;
-    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
-    if (mimeTypes != null) {
-      searchForJson = false;
-      searchForXml = false;
-      for (String mimeType : mimeTypes) {
-        if (mimeType.contains("json")) {
-          searchForJson = true;
-        }
-        if (mimeType.contains("xml")) {
-          searchForXml = true;
-        }
-      }
-      if (searchForJson && !searchForXml) {
-        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-      }      
-      if (!searchForJson && searchForXml) {
-        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-      }
-      if (!searchForJson && !searchForXml) {
-        resourceType = ResourceType.createResourceType("unknown");
-      }
-    }
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(mimeTypes);
+
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
     if ((updateFrom != null) || (updateUntil != null)) {
@@ -343,8 +314,6 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
     
     LOG.trace("DataResource record successfully persisted. Updating document URI and returning result.");
     String etag = updatedSchemaRecord.getEtag();
-    // Fix Url for OAI PMH entry
-//    MetadataSchemaRecordUtil.updateMetadataFormat(updatedSchemaRecord);
 
     URI locationUri;
     locationUri = SchemaRegistryControllerImplV2.getSchemaDocumentUri(updatedSchemaRecord);

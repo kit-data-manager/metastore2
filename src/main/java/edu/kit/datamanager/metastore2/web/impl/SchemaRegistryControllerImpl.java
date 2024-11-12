@@ -68,6 +68,7 @@ import java.util.function.UnaryOperator;
 
 /**
  * Controller for schema documents.
+ * @deprecated Should be replaced by API v2 (api/v2/schemas/...)
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
@@ -249,35 +250,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
-    if (mimeTypes != null) {
-      boolean searchForJson = false;
-      boolean searchForXml = false;
-      for (String mimeType : mimeTypes) {
-        if (mimeType.contains("json")) {
-          searchForJson = true;
-        }
-        if (mimeType.contains("xml")) {
-          searchForXml = true;
-        }
-      }
-      if (searchForJson && !searchForXml) {
-        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-      }      
-      if (!searchForJson && searchForXml) {
-        resourceType = ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-      }
-      if (!searchForJson && !searchForXml) {
-        resourceType = ResourceType.createResourceType("unknown");
-      }
-    }
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(mimeTypes);
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
-    //one of given mimetypes.
-    if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
-      spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
-    }
+
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }

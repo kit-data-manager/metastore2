@@ -222,7 +222,28 @@ public class OAIPMHBuilder {
     }
     switch (verb) {
       case GET_RECORD:
-      case LIST_RECORDS: {
+      case LIST_RECORDS: 
+        getOrListRecords(identifier, recordDatestamp, setSpecs, metadata, about);
+        break;
+      case LIST_IDENTIFIERS: {
+        HeaderType header = new HeaderType();
+        if (identifier == null || recordDatestamp == null) {
+          throw new IllegalArgumentException("Arguments identifier and recordDatestamp must not be null.");
+        }
+        header.setIdentifier(identifier);
+        header.setDatestamp(repository.getDateFormat().format(recordDatestamp));
+        // header.setStatus(StatusType.DELETED); --> not supported yet
+        header.getSetSpec().addAll(setSpecs);
+        listIdentifiers.getHeader().add(header);
+        break;
+      }
+      default: 
+        // no action required
+    }
+    return this;
+  }
+  
+  private void getOrListRecords(String identifier, Date recordDatestamp, List<String> setSpecs, Object metadata, Object about) {
         RecordType recordType = new RecordType();
         HeaderType header = new HeaderType();
         if (identifier == null || recordDatestamp == null) {
@@ -252,25 +273,6 @@ public class OAIPMHBuilder {
         } else {
           listRecordsType.getRecord().add(recordType);
         }
-
-        break;
-      }
-      case LIST_IDENTIFIERS: {
-        HeaderType header = new HeaderType();
-        if (identifier == null || recordDatestamp == null) {
-          throw new IllegalArgumentException("Arguments identifier and recordDatestamp must not be null.");
-        }
-        header.setIdentifier(identifier);
-        header.setDatestamp(repository.getDateFormat().format(recordDatestamp));
-        // header.setStatus(StatusType.DELETED); --> not supported yet
-        header.getSetSpec().addAll(setSpecs);
-        listIdentifiers.getHeader().add(header);
-        break;
-      }
-      default: 
-        // no action required
-    }
-    return this;
   }
 
   public OAIPMHBuilder addError(OAIPMHerrorcodeType code, String message) {

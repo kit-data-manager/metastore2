@@ -73,6 +73,7 @@ import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.Date;
+import java.nio.charset.Charset;
 import java.time.Instant;
 
 /**
@@ -96,12 +97,6 @@ public class DataResourceRecordUtil {
   private static final Logger LOG = LoggerFactory.getLogger(DataResourceRecordUtil.class);
 
   private static final String LOG_ERROR_READ_METADATA_DOCUMENT = "Failed to read metadata document from input stream.";
-  private static final String LOG_SEPARATOR = "-----------------------------------------";
-  private static final String LOG_SCHEMA_REGISTRY = "No external schema registries defined. Try to use internal one...";
-  private static final String LOG_FETCH_SCHEMA = "Try to fetch schema from '{}'.";
-  private static final String PATH_SCHEMA = "schemas";
-  private static final String LOG_ERROR_ACCESS = "Failed to access schema registry at '%s'. Proceeding with next registry.";
-  private static final String LOG_SCHEMA_RECORD = "Found schema record: '{}'";
   private static final String ERROR_PARSING_JSON = "Error parsing json: ";
 
   private static MetastoreConfiguration schemaConfig;
@@ -135,42 +130,31 @@ public class DataResourceRecordUtil {
    * @return Allowed (true) or not.
    */
   public static boolean checkAccessRights(Set<AclEntry> aclEntries, boolean currentAcl) {
-    boolean isAllowed = false;
+    boolean isAllowed = true;
     String errorMessage1 = "Error invalid ACL! Reason: Only ADMINISTRATORS are allowed to change ACL entries.";
     String errorMessage2 = "Error invalid ACL! Reason: You are not allowed to revoke your own administrator rights.";
-    Authentication authentication = AuthenticationHelper.getAuthentication();
-    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-    for (GrantedAuthority authority : authentication.getAuthorities()) {
-      authorizationIdentities.add(authority.getAuthority());
-    }
-    if (authorizationIdentities.contains(RepoUserRole.ADMINISTRATOR.getValue())) {
-      //ROLE_ADMINISTRATOR detected -> no further permission check necessary.
-      return true;
-    }
-    if (LOG.isTraceEnabled()) {
-      LOG.trace("Check access rights for changing ACL list!");
-      for (String authority : authorizationIdentities) {
-        LOG.trace("Indentity/Authority: '{}'", authority);
+    List<String> authorizationIdentities = getAllAuthorizationIdentities();
+    // No authentication enabled or 
+    //ROLE_ADMINISTRATOR detected -> no further permission check necessary.
+    if (schemaConfig.isAuthEnabled() && !authorizationIdentities.contains(RepoUserRole.ADMINISTRATOR.getValue())) {
+      isAllowed = false;
+      // Check if authorized user still has ADMINISTRATOR rights
+      Iterator<AclEntry> iterator = aclEntries.iterator();
+      while (iterator.hasNext()) {
+        AclEntry aclEntry = iterator.next();
+        LOG.trace("'{}' has '{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
+        if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE) && authorizationIdentities.contains(aclEntry.getSid())) {
+          isAllowed = true;
+          LOG.trace("Confirm permission for updating ACL: '{}' has '{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
+          break;
+        }
       }
-    }
-    // Check if authorized user still has ADMINISTRATOR rights
-    Iterator<AclEntry> iterator = aclEntries.iterator();
-    while (iterator.hasNext()) {
-      AclEntry aclEntry = iterator.next();
-      LOG.trace("'{}' has '{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
-      if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE) && authorizationIdentities.contains(aclEntry.getSid())) {
-        isAllowed = true;
-        LOG.trace("Confirm permission for updating ACL: '{}' has '{}' rights!", aclEntry.getSid(), PERMISSION.ADMINISTRATE);
-        break;
-      }
-    }
-    if (!isAllowed) {
-      String errorMessage = currentAcl ? errorMessage1 : errorMessage2;
-      LOG.warn(errorMessage);
-      if (schemaConfig.isAuthEnabled()) {
+      if (!isAllowed) {
         if (currentAcl) {
+          LOG.warn(errorMessage1);
           throw new AccessForbiddenException(errorMessage1);
         } else {
+          LOG.warn(errorMessage2);
           throw new BadArgumentException(errorMessage2);
         }
       }
@@ -232,7 +216,7 @@ public class DataResourceRecordUtil {
         MetadataFormat metadataFormat = new MetadataFormat();
         metadataFormat.setMetadataPrefix(schemaRecord.getSchemaIdWithoutVersion());
         metadataFormat.setSchema(schemaRecord.getAlternateId());
-        String documentString = new String(document.getBytes());
+        String documentString = new String(document.getBytes(), Charset.defaultCharset());
         LOG.trace(documentString);
         String metadataNamespace = SchemaUtils.getTargetNamespaceFromSchema(document.getBytes());
         metadataFormat.setMetadataNamespace(metadataNamespace);
@@ -255,7 +239,6 @@ public class DataResourceRecordUtil {
    * @param applicationProperties Settings of repository.
    * @param recordDocument Record of the metadata.
    * @param document Schema document.
-   * @param getSchemaDocumentById Method for creating access URL.
    * @return Record of registered schema document.
    */
   public static DataResource createDataResourceRecord4Metadata(MetastoreConfiguration applicationProperties,
@@ -272,7 +255,7 @@ public class DataResourceRecordUtil {
     }
     // End of parameter checks
     // Fix internal references, of necessary
-    dataResource = fixRelatedSchemaIfNeeded(dataResource);
+    fixRelatedSchemaIfNeeded(dataResource);
     // validate schema document / determine or correct resource type
     validateMetadataDocument(applicationProperties, dataResource, document);
 
@@ -327,46 +310,28 @@ public class DataResourceRecordUtil {
 
     boolean noChanges = false;
     if (document != null) {
-      SchemaRecord schemaRecord = getSchemaRecordFromDataResource(updatedDataResource);
-      validateMetadataDocument(applicationProperties, document, schemaRecord);
-
-      ContentInformation info;
-      String fileName;
-      info = getContentInformationOfResource(applicationProperties, updatedDataResource);
-      fileName = (info != null) ? info.getRelativePath() : document.getOriginalFilename();
-      noChanges = checkDocumentForChanges(info, document);
-
-      if (!noChanges) {
-        // Everything seems to be fine update document and increment version
-        LOG.trace("Updating schema document (and increment version)...");
-        String version = oldDataResource.getVersion();
-        if (version == null) {
-          version = "0";
-        }
-        updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
-        addProvenance(updatedDataResource);
-        ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
-      }
-
+      updateMetadataDocument(applicationProperties, updatedDataResource, document, supplier);
     } else {
       ContentInformation info;
       info = getContentInformationOfResource(applicationProperties, updatedDataResource);
       // validate if document is still valid due to changed record settings.
-      //    metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-      String metadataDocumentUri = info.getContentUri();
-
-      Path metadataDocumentPath = Paths.get(URI.create(metadataDocumentUri));
-      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-      }
-      // test if document is still valid for updated(?) schema.
-      try {
-        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-        SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecordFromDataResource(updatedDataResource);
-        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
-      } catch (IOException ex) {
-        LOG.error("Error validating file!", ex);
+      if (info != null) {
+        String metadataDocumentUri = info.getContentUri();
+        Path metadataDocumentPath = Paths.get(URI.create(metadataDocumentUri));
+        if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
+          LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
+          throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+        }
+        // test if document is still valid for updated(?) schema.
+        try {
+          InputStream inputStream = Files.newInputStream(metadataDocumentPath);
+          SchemaRecord schemaRecord = DataResourceRecordUtil.getSchemaRecordFromDataResource(updatedDataResource);
+          MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
+        } catch (IOException ex) {
+          LOG.error("Error validating file!", ex);
+        }
+      } else {
+        throw new CustomInternalServerError("Metadata document on server does not exist!");
       }
 
     }
@@ -530,22 +495,6 @@ public class DataResourceRecordUtil {
     return metadataSchemaRecord;
   }
 
-  private static Long determineVersionFromResourceIdentifier(ResourceIdentifier resourceIdentifier) {
-    Long version = 1L;
-    if (resourceIdentifier.getIdentifierType().equals(IdentifierType.URL)) {
-      //Try to fetch version from URL (only works with URLs including the version as query parameter.
-      Matcher matcher = Pattern.compile(".*[&?]version=(\\d*).*").matcher(resourceIdentifier.getIdentifier());
-      while (matcher.find()) {
-        version = Long.valueOf(matcher.group(1));
-      }
-    } else {
-      // set to current version of schema
-      SchemaRecord currentSchema = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(resourceIdentifier.getIdentifier());
-      version = (currentSchema != null) ? currentSchema.getVersion() : 1L;
-    }
-    return version;
-  }
-
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     ContentInformation returnValue = null;
@@ -645,7 +594,7 @@ public class DataResourceRecordUtil {
 
   public static DataResource getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
-    LOG.trace("Obtaining schema record with id {} and version {}.", recordId, version);
+    LOG.trace("Obtaining record with id {} and version {}.", recordId, version);
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
     long nano2;
@@ -752,6 +701,38 @@ public class DataResourceRecordUtil {
       }
     }
     return specWithSchema;
+  }
+
+  public static final Specification<DataResource> findByMimetypes(List<String> mimeTypes) {
+    // Search for both mimetypes (xml & json)
+    ResourceType resourceType = null;
+    // 
+    if (mimeTypes != null) {
+      int searchFor = 0; // 1 - JSON, 2 - XML, 3 - both
+      for (String mimeType : mimeTypes) {
+        if (mimeType.contains("json")) {
+          searchFor += 1;
+        }
+        if (mimeType.contains("xml")) {
+          searchFor += 2;
+        }
+      }
+      resourceType = switch (searchFor) {
+        // 1 -> search for JSON only
+        case 1 ->
+          ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+        // 2 -> search for XML only
+        case 2 ->
+          ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+        // 3 -> Search for both mimetypes (xml & json)
+        case 3 ->
+          ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+        // 0 -> Unknown mimetype
+        default ->
+          ResourceType.createResourceType("unknown");
+      };
+    }
+    return ResourceTypeSpec.toSpecification(resourceType);
   }
 
   /**
@@ -1024,8 +1005,7 @@ public class DataResourceRecordUtil {
    */
   public static RelatedIdentifier getSchemaIdentifier(DataResource dataResourceRecord) {
     LOG.trace("Get schema identifier for '{}'.", dataResourceRecord.getId());
-    RelatedIdentifier relatedIdentifier = getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
-    return relatedIdentifier;
+    return getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
   }
 
   /**
@@ -1373,6 +1353,32 @@ public class DataResourceRecordUtil {
     return updatedDataResource;
   }
 
+  private static void updateMetadataDocument(MetastoreConfiguration applicationProperties,
+          DataResource updatedDataResource,
+          MultipartFile document,
+          UnaryOperator<String> supplier) {
+    SchemaRecord schemaRecord = getSchemaRecordFromDataResource(updatedDataResource);
+    validateMetadataDocument(applicationProperties, document, schemaRecord);
+
+    ContentInformation info;
+    String fileName;
+    info = getContentInformationOfResource(applicationProperties, updatedDataResource);
+    fileName = (info != null) ? info.getRelativePath() : document.getOriginalFilename();
+    boolean noChanges = checkDocumentForChanges(info, document);
+
+    if (!noChanges) {
+      // Everything seems to be fine update document and increment version
+      LOG.trace("Updating schema document (and increment version)...");
+      String version = updatedDataResource.getVersion();
+      if (version == null) {
+        version = "0";
+      }
+      updatedDataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
+      addProvenance(updatedDataResource);
+      ContentDataUtils.addFile(applicationProperties, updatedDataResource, document, fileName, null, true, supplier);
+    }
+  }
+
   private static void updateSchemaDocument(MetastoreConfiguration applicationProperties,
           DataResource updatedDataResource,
           MultipartFile schemaDocument,
@@ -1492,28 +1498,22 @@ public class DataResourceRecordUtil {
   }
 
   private static DataResource mergeRights(DataResource oldDataResource, DataResource updatedDataResource) {
-    if (updatedDataResource != null) {
-      if (updatedDataResource.getRights() == null) {
+    if (updatedDataResource != null && updatedDataResource.getRights() == null) {
         updatedDataResource.setRights(new HashSet<>());
-      }
     }
     return updatedDataResource;
   }
 
   private static DataResource mergeState(DataResource oldDataResource, DataResource updatedDataResource) {
-    if (updatedDataResource != null) {
-      if (updatedDataResource.getState() == null) {
+    if (updatedDataResource != null && updatedDataResource.getState() == null) {
         updatedDataResource.setState(oldDataResource.getState());
-      }
     }
     return updatedDataResource;
   }
 
   private static DataResource mergeResourceType(DataResource oldDataResource, DataResource updatedDataResource) {
-    if (updatedDataResource != null) {
-      if (updatedDataResource.getResourceType() == null) {
+    if (updatedDataResource != null && updatedDataResource.getResourceType() == null) {
         updatedDataResource.setResourceType(oldDataResource.getResourceType());
-      }
     }
     return updatedDataResource;
   }
@@ -1579,13 +1579,14 @@ public class DataResourceRecordUtil {
     RelatedIdentifier relatedIdentifier = getSchemaIdentifier(dataResource);
     SchemaRecord schemaRecord = getSchemaRecordFromDataResource(dataResource);
     if (schemaRecord != null) {
-      if (relatedIdentifier.getIdentifierType() == Identifier.IDENTIFIER_TYPE.INTERNAL) {
+      if (relatedIdentifier != null && relatedIdentifier.getIdentifierType() == Identifier.IDENTIFIER_TYPE.INTERNAL) {
         relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
         // schemaRecord should never be null for internal schema!
         relatedIdentifier.setValue(schemaRecord.getAlternateId());
       }
     } else {
-      throw new UnprocessableEntityException("Schema '" + relatedIdentifier.getValue() + "' is not known!");
+      String identifier = relatedIdentifier != null ? relatedIdentifier.getValue() : "is not defined and therefor";
+      throw new UnprocessableEntityException("Schema '" + identifier + "' is not known!");
     }
     return dataResource;
   }
@@ -1683,6 +1684,30 @@ public class DataResourceRecordUtil {
   }
 
   /**
+   * Set creation date for data resource if and only if creation date doesn't
+   * exist.
+   *
+   * @param dataResource data resource.
+   * @param creationDate creation date
+   */
+  public static final void setCreationDate(DataResource dataResource, Instant creationDate) {
+    if (creationDate != null) {
+      boolean createDateExists = false;
+      Set<Date> dates = dataResource.getDates();
+      for (edu.kit.datamanager.repo.domain.Date d : dates) {
+        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
+          LOG.trace("Creation date entry found.");
+          createDateExists = true;
+          break;
+        }
+      }
+      if (!createDateExists) {
+        dataResource.getDates().add(Date.factoryDate(creationDate, Date.DATE_TYPE.CREATED));
+      }
+    }
+  }
+
+  /**
    * Get version of data resource.
    *
    * @param dataResource data resource.
@@ -1776,6 +1801,20 @@ public class DataResourceRecordUtil {
       throw ex;
     }
     return records;
+  }
+
+  /**
+   * Get all authorization identities.
+   *
+   * @return List with all identities.
+   */
+  private static List<String> getAllAuthorizationIdentities() {
+    Authentication authentication = AuthenticationHelper.getAuthentication();
+    List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
+    for (GrantedAuthority authority : authentication.getAuthorities()) {
+      authorizationIdentities.add(authority.getAuthority());
+    }
+    return authorizationIdentities;
   }
 
   /**

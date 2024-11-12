@@ -294,7 +294,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
           templateRecord.setMetadataId(item.getMetadataId());
           templateRecord.setVersion(item.getVersion());
           MetadataRecord result = toMetadataRecord(templateRecord, baseUrl);
-          LOG.trace("Sending CREATE event.");
+          LOG.trace("Sending CREATE event (alternativeSchemaId: '{}').", index);
           messagingService.orElse(new LogfileMessagingService()).
                   send(MetadataResourceMessage.factoryCreateMetadataMessage(result, this.getClass().toString(), ControllerUtils.getLocalHostname()));
         }

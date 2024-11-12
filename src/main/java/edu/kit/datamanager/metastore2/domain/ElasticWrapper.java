@@ -73,7 +73,7 @@ public class ElasticWrapper {
     id = resource.getId();
     pid = (resource.getIdentifier() != null) ? resource.getIdentifier().getValue() : null;
     metadataRecord = resource;
-    read = new HashSet<String>();
+    read = new HashSet<>();
     resource.getAcls().forEach(entry -> {
       String sid = entry.getSid();
       if (entry.getPermission().atLeast(PERMISSION.READ)) {

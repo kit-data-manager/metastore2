@@ -77,6 +77,7 @@ import java.util.function.UnaryOperator;
 
 /**
  * Controller for metadata documents.
+ * @deprecated Should be replaced by API v2 (api/v2/metadata/...)
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
@@ -339,48 +340,12 @@ public class MetadataControllerImpl implements IMetadataController {
     }
     // Search for resource type of MetadataSchemaRecord
     Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
-//    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE));
+
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
-    List<String> allRelatedIdentifiersSchema = new ArrayList<>();
-    List<String> allRelatedIdentifiersResource = new ArrayList<>();
 
-//    File file = new File(new URIoa)
-    if (schemaIds != null) {
-      for (String schemaId : schemaIds) {
-        MetadataSchemaRecord currentSchemaRecord;
-        try {
-          currentSchemaRecord = MetadataRecordUtil.getCurrentInternalSchemaRecord(metadataConfig, schemaId);
-          // Test for internal URI -> Transform to global URI.
-          if (currentSchemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(currentSchemaRecord);
-            currentSchemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
-          }
-          allRelatedIdentifiersSchema.add(currentSchemaRecord.getSchemaDocumentUri());
-        } catch (Exception rnfe) {
-          //  schemaID not found set version to 1
-          currentSchemaRecord = new MetadataSchemaRecord();
-          currentSchemaRecord.setSchemaVersion(1L);
-          allRelatedIdentifiersSchema.add("UNKNOWN_SCHEMA_ID");
-        }
-        for (long versionNumber = 1; versionNumber < currentSchemaRecord.getSchemaVersion(); versionNumber++) {
-          MetadataSchemaRecord schemaRecord = MetadataRecordUtil.getInternalSchemaRecord(metadataConfig, schemaId, versionNumber);
-          // Test for internal URI -> Transform to global URI.
-          if (schemaRecord.getSchemaDocumentUri().startsWith("file:")) {
-            ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaRecord);
-            schemaRecord.setSchemaDocumentUri(schemaIdentifier.getIdentifier());
-          }
-          allRelatedIdentifiersSchema.add(schemaRecord.getSchemaDocumentUri());
-        }
-      }
-      Specification<DataResource> schemaSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersSchema.toArray(new String[allRelatedIdentifiersSchema.size()]));
-      spec = spec.and(schemaSpecification);
-    }
-    if (relatedIds != null) {
-      allRelatedIdentifiersResource.addAll(relatedIds);
-      Specification<DataResource> relResourceSpecification = RelatedIdentifierSpec.toSpecification(allRelatedIdentifiersResource.toArray(new String[allRelatedIdentifiersResource.size()]));
-      spec = spec.and(relResourceSpecification);
-    }
+    spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
+    spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }

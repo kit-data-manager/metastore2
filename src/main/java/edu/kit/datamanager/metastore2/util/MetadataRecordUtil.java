@@ -192,7 +192,6 @@ public class MetadataRecordUtil {
           MultipartFile document,
           UnaryOperator<String> supplier) {
     MetadataRecord metadataRecord = null;
-    MetadataRecord existingRecord;
 
     // Do some checks first.
     if ((recordDocument == null || recordDocument.isEmpty()) && (document == null || document.isEmpty())) {
@@ -218,43 +217,6 @@ public class MetadataRecordUtil {
     }
     DataResource dataResource = DataResourceRecordUtil.updateDataResource4MetadataDocument(applicationProperties, resourceId, eTag, givenRecord, document, supplier);
 
-//      if (!noChanges) {
-//        // Everything seems to be fine update document and increment version
-//        LOG.trace("Updating schema document (and increment version)...");
-//        String version = dataResource.getVersion();
-//        if (version != null) {
-//          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
-//        }
-//        ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
-//      }
-//
-//    } else {
-//      // validate if document is still valid due to changed record settings.
-//      metadataRecord = migrateToMetadataRecord(applicationProperties, dataResource, false);
-//      URI metadataDocumentUri = URI.create(metadataRecord.getMetadataDocumentUri());
-//
-//      Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-//      if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-//        LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-//        throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-//      }
-//
-//      try {
-//        InputStream inputStream = Files.newInputStream(metadataDocumentPath);
-//        SchemaRecord schemaRecord = MetadataSchemaRecordUtil.getSchemaRecord(metadataRecord.getSchema(), metadataRecord.getSchemaVersion());
-//        MetadataSchemaRecordUtil.validateMetadataDocument(applicationProperties, inputStream, schemaRecord);
-//      } catch (IOException ex) {
-//        LOG.error("Error validating file!", ex);
-//      }
-//
-//    }
-//    if (noChanges) {
-//      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(dataResource.getId());
-//      if (dataRecord.isPresent()) {
-//        dataRecordDao.delete(dataRecord.get());
-//      }
-//    }
-//    dataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, dataResource, eTag, supplier);
     return migrateToMetadataRecord(applicationProperties, dataResource, true);
   }
 
@@ -292,34 +254,9 @@ public class MetadataRecordUtil {
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
           MetadataRecord metadataRecord) {
     DataResource dataResource;
-    if (metadataRecord.getId() != null) {
-      try {
-        dataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, metadataRecord.getId(), metadataRecord.getRecordVersion());
-        dataResource = DataResourceUtils.copyDataResource(dataResource);
-      } catch (ResourceNotFoundException rnfe) {
-        LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
-        dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
-        dataResource.setVersion("1");
-      }
-    } else {
-      dataResource = new DataResource();
-      dataResource.setVersion("1");
-    }
+    dataResource = getDataResource(metadataRecord);
     dataResource.setAcls(metadataRecord.getAcl());
-    if (metadataRecord.getCreatedAt() != null) {
-      boolean createDateExists = false;
-      Set<Date> dates = dataResource.getDates();
-      for (edu.kit.datamanager.repo.domain.Date d : dates) {
-        if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-          LOG.trace("Creation date entry found.");
-          createDateExists = true;
-          break;
-        }
-      }
-      if (!createDateExists) {
-        dataResource.getDates().add(Date.factoryDate(metadataRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
-      }
-    }
+    DataResourceRecordUtil.setCreationDate(dataResource, metadataRecord.getCreatedAt());
     if (metadataRecord.getPid() != null) {
       PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
       pid.setIdentifierType(metadataRecord.getPid().getIdentifierType().value());
@@ -329,39 +266,9 @@ public class MetadataRecordUtil {
       LOG.trace("Remove existing identifier");
       dataResource.setIdentifier(null);
     }
-    boolean relationFound = false;
-    boolean schemaIdFound = false;
-    for (RelatedIdentifier relatedIds : dataResource.getRelatedIdentifiers()) {
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
-        LOG.trace("Set relation to '{}'", metadataRecord.getRelatedResource());
-        relatedIds.setValue(metadataRecord.getRelatedResource().getIdentifier());
-        relatedIds.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
-        relationFound = true;
-      }
-      if (relatedIds.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
-        updateRelatedIdentifierForSchema(relatedIds, metadataRecord);
-        schemaIdFound = true;
-      }
-    }
-    if (!relationFound) {
-      RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, metadataRecord.getRelatedResource().getIdentifier(), null, null);
-      relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(metadataRecord.getRelatedResource().getIdentifierType().name()));
-      dataResource.getRelatedIdentifiers().add(relatedResource);
-    }
-    if (!schemaIdFound) {
-      RelatedIdentifier schemaId = updateRelatedIdentifierForSchema(null, metadataRecord);
-      dataResource.getRelatedIdentifiers().add(schemaId);
-    }
-    String defaultTitle = "Metadata 4 metastore";
-    boolean titleExists = false;
-    for (Title title : dataResource.getTitles()) {
-      if (title.getTitleType() == null && title.getValue().equals(defaultTitle)) {
-        titleExists = true;
-      }
-    }
-    if (!titleExists) {
-      dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
-    }
+    updateRelatedIdentifierForSchema(dataResource, metadataRecord);
+    updateRelatedIdentifierForResource(dataResource, metadataRecord);
+    setTitle(dataResource);
 
     // Set ResourceType due to new version
     ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
@@ -385,49 +292,33 @@ public class MetadataRecordUtil {
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
           DataResource dataResource,
           boolean provideETag) {
-    long nano1 = System.nanoTime() / 1000000;
     MetadataRecord metadataRecord = DataResourceRecordUtil.migrateToMetadataRecordV2(applicationProperties, dataResource);
     if ((metadataRecord != null) && provideETag) {
       metadataRecord.setETag(dataResource.getEtag());
       DataRecord dataRecord = null;
-      long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), metadataRecord.getRecordVersion());
-      long nano3 = System.nanoTime() / 1000000;
-      long nano4 = nano3;
-      boolean isAvailable = false;
-      boolean saveDataRecord = false;
       if (dataRecordResult.isPresent()) {
         LOG.trace("Get document URI from DataRecord.");
         dataRecord = dataRecordResult.get();
-        nano4 = System.nanoTime() / 1000000;
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
         metadataRecord.setSchemaVersion(dataRecord.getSchemaVersion());
-        isAvailable = true;
       } else {
-        saveDataRecord = true;
-      }
-      if (!isAvailable) {
         LOG.trace("Get document URI from ContentInformation.");
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
-        nano4 = System.nanoTime() / 1000000;
         if (info != null) {
           metadataRecord.setDocumentHash(info.getHash());
           metadataRecord.setMetadataDocumentUri(info.getContentUri());
           MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
           metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
-          if (saveDataRecord) {
-            saveNewDataRecord(metadataRecord);
-          }
+          saveNewDataRecord(metadataRecord);
         }
       }
       // Only one license allowed. So don't worry about size of set.
       if (!dataResource.getRights().isEmpty()) {
         metadataRecord.setLicenseUri(dataResource.getRights().iterator().next().getSchemeUri());
       }
-      long nano5 = System.nanoTime() / 1000000;
-      LOG.info("Migrate to MetadataRecord, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, provideETag);
     }
 
     return metadataRecord;
@@ -436,13 +327,10 @@ public class MetadataRecordUtil {
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
           DataResource dataResource) {
     ContentInformation returnValue = null;
-    long nano1 = System.nanoTime() / 1000000;
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
     ContentInformation info = new ContentInformation();
     info.setParentResource(dataResource);
-    long nano2 = System.nanoTime() / 1000000;
     List<ContentInformation> listOfFiles = contentInformationService.findAll(info, PageRequest.of(0, 100)).getContent();
-    long nano3 = System.nanoTime() / 1000000;
     if (LOG.isTraceEnabled()) {
       LOG.trace("Found {} files for resource '{}'", listOfFiles.size(), dataResource.getId());
       for (ContentInformation ci : listOfFiles) {
@@ -455,7 +343,6 @@ public class MetadataRecordUtil {
     if (!listOfFiles.isEmpty()) {
       returnValue = listOfFiles.get(0);
     }
-    LOG.info("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 
@@ -560,22 +447,59 @@ public class MetadataRecordUtil {
   }
 
   /**
-   * Update/create related identifier to values given by metadata record.
+   * Update/create related identifier for resource to values given by metadata
+   * record.
    *
-   * @param relatedIdentifier related identifier (if null create a new one)
-   * @param metadataRecord record holding schema information.
-   * @return updated/created related identifier.
+   * @param dataResource data resource holding related resource.
+   * @param metadataRecord record holding resource information.
    */
-  private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
-    if (relatedIdentifier == null) {
-      relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, null, null, null);
+  private static void updateRelatedIdentifierForResource(DataResource dataResource, MetadataRecord metadataRecord) {
+    RelatedIdentifier schemaRelatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    if (schemaRelatedIdentifier == null) {
+      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, null, null, null);
+      dataResource.getRelatedIdentifiers().add(schemaRelatedIdentifier);
+    }
+    ResourceIdentifier schemaIdentifier = metadataRecord.getRelatedResource();
+    schemaRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
+    schemaRelatedIdentifier.setValue(schemaIdentifier.getIdentifier());
+    LOG.trace("Set related identfier for resource to '{}'", schemaRelatedIdentifier);
+  }
+
+  /**
+   * Update/create related identifier for schema to values given by metadata
+   * record.
+   *
+   * @param dataResource data resource holding related schema.
+   * @param metadataRecord record holding schema information.
+   */
+  private static void updateRelatedIdentifierForSchema(DataResource dataResource, MetadataRecord metadataRecord) {
+    RelatedIdentifier schemaRelatedIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
+    if (schemaRelatedIdentifier == null) {
+      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, null, null, null);
+      dataResource.getRelatedIdentifiers().add(schemaRelatedIdentifier);
     }
     ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);
-    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
-    relatedIdentifier.setValue(schemaIdentifier.getIdentifier());
-    LOG.trace("Set relatedId for schema to '{}'", relatedIdentifier);
+    schemaRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.valueOf(schemaIdentifier.getIdentifierType().name()));
+    schemaRelatedIdentifier.setValue(schemaIdentifier.getIdentifier());
+    LOG.trace("Set relatedId for schema to '{}'", schemaRelatedIdentifier);
+  }
 
-    return relatedIdentifier;
+  /**
+   * Set title for data resource if and only if not already set.
+   *
+   * @param dataResource data resource
+   */
+  public static void setTitle(DataResource dataResource) {
+    String defaultTitle = "Metadata 4 metastore";
+    boolean titleExists = false;
+    for (Title title : dataResource.getTitles()) {
+      if (title.getTitleType() == null && title.getValue().equals(defaultTitle)) {
+        titleExists = true;
+      }
+    }
+    if (!titleExists) {
+      dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
+    }
   }
 
   /**
@@ -780,6 +704,24 @@ public class MetadataRecordUtil {
     dataRecordDao = aDataRecordDao;
   }
 
+  private static DataResource getDataResource(MetadataRecord metadataRecord) {
+    DataResource dataResource;
+    if (metadataRecord.getId() != null) {
+      try {
+        dataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, metadataRecord.getId(), metadataRecord.getRecordVersion());
+        dataResource = DataResourceUtils.copyDataResource(dataResource);
+      } catch (ResourceNotFoundException rnfe) {
+        LOG.error("Error catching DataResource for " + metadataRecord.getId() + " -> " + rnfe.getMessage());
+        dataResource = DataResource.factoryNewDataResource(metadataRecord.getId());
+        dataResource.setVersion("1");
+      }
+    } else {
+      dataResource = new DataResource();
+      dataResource.setVersion("1");
+    }
+    return dataResource;
+  }
+
   private static void saveNewDataRecord(MetadataRecord result) {
     DataRecord dataRecord;
 
@@ -816,7 +758,6 @@ public class MetadataRecordUtil {
       LOG.trace("Data record saved: {}", dataRecord);
     }
   }
-
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();

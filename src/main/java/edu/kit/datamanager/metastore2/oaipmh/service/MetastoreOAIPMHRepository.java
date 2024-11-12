@@ -195,7 +195,6 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   public void listSets(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listSets().");
     //@TODO support collections?
-    //builder.addSet("default", "default");
     builder.addError(OAIPMHerrorcodeType.NO_SET_HIERARCHY, "Sets are currently not supported.");
   }
 

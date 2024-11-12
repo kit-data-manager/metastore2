@@ -67,6 +67,8 @@ import java.util.stream.Stream;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeAcl;
 import static edu.kit.datamanager.metastore2.util.MetadataRecordUtil.mergeEntry;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
+import java.time.Instant;
+import org.springframework.web.context.request.async.DeferredResult;
 
 /**
  * Utility class for handling json documents
@@ -106,44 +108,11 @@ public class MetadataSchemaRecordUtil {
           MultipartFile document,
           BiFunction<String, Long, String> getSchemaDocumentById) {
     MetadataSchemaRecord metadataRecord;
-
+    
     // Do some checks first.
-    if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
-      String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-    try {
-      metadataRecord = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
-    } catch (IOException ex) {
-      String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
-      if (ex instanceof JsonParseException) {
-        message = message + " Reason: " + ex.getMessage();
-      }
-      LOG.error("Error parsing json: ", ex);
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
-
-    if (metadataRecord.getSchemaId() == null) {
-      String message = "Mandatory attributes schemaId not found in record. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    } else {
-      String value = URLEncoder.encode(metadataRecord.getSchemaId(), StandardCharsets.UTF_8);
-      if (!value.equals(metadataRecord.getSchemaId())) {
-        String message = "Not a valid schema id! Encoded: " + value;
-        LOG.error(message);
-        throw new BadArgumentException(message);
-      }
-      String toLowerCase;
-      toLowerCase = metadataRecord.getSchemaId().toLowerCase(Locale.getDefault());
-      if (!toLowerCase.equals(metadataRecord.getSchemaId())) {
-        String message = "Not a valid schema id! Please try '" + toLowerCase + "' instead!";
-        LOG.error(message);
-        throw new BadArgumentException(message);
-      }
-    }
+    checkForAtLeastOneDocumentAvailable(recordDocument, document);
+    metadataRecord = parseMetadataSchemaRecord(recordDocument);
+    testForValidSchemaId(metadataRecord.getSchemaId());
     // Create schema record
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(metadataRecord.getSchemaId());
@@ -243,7 +212,7 @@ public class MetadataSchemaRecordUtil {
     DataResource givenRecord = null;
     if (metadataRecord != null) {
       givenRecord = MetadataSchemaRecordUtil.migrateToDataResource(applicationProperties, metadataRecord);
-    } 
+    }
     DataResource updateDataResource = DataResourceRecordUtil.updateDataResource4SchemaDocument(applicationProperties, resourceId, eTag, givenRecord, schemaDocument, supplier);
 
     return migrateToMetadataSchemaRecord(applicationProperties, updateDataResource, true);
@@ -281,6 +250,59 @@ public class MetadataSchemaRecordUtil {
     schemaRecordDao.deleteAll(listOfSchemaIds);
   }
 
+  private static void checkForAtLeastOneDocumentAvailable(MultipartFile recordDocument,
+          MultipartFile document) {
+    if (recordDocument == null || recordDocument.isEmpty() || document == null || document.isEmpty()) {
+      String message = "No metadata record and/or metadata document provided. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
+  }
+
+  private static MetadataSchemaRecord parseMetadataSchemaRecord(MultipartFile recordDocument) {
+    MetadataSchemaRecord metadataSchemaRecord;
+
+    try {
+      metadataSchemaRecord = Json.mapper().readValue(recordDocument.getInputStream(), MetadataSchemaRecord.class);
+    } catch (IOException ex) {
+      String message = "No valid metadata record provided. Returning HTTP BAD_REQUEST.";
+      if (ex instanceof JsonParseException) {
+        message = message + " Reason: " + ex.getMessage();
+      }
+      LOG.error("Error parsing json: ", ex);
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
+    return metadataSchemaRecord;
+  }
+  /** 
+   * Test for valid schemaID.
+   * Must not contain upper case
+   * Has to be encoded equal to origin -> no spaces or special characters
+   * @param schemaId schema identifier 
+   */
+  private static void testForValidSchemaId(String schemaId) {
+    if (schemaId == null) {
+      String message = "Mandatory attributes schemaId not found in record. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    } else {
+      String value = URLEncoder.encode(schemaId, StandardCharsets.UTF_8);
+      if (!value.equals(schemaId)) {
+        String message = "Not a valid schema id! Encoded: " + value;
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
+      String toLowerCase;
+      toLowerCase = schemaId.toLowerCase(Locale.getDefault());
+      if (!toLowerCase.equals(schemaId)) {
+        String message = "Not a valid schema id! Please try '" + toLowerCase + "' instead!";
+        LOG.error(message);
+        throw new BadArgumentException(message);
+      }
+    }
+  }
+
   /**
    * Migrate from metadata schema record to data resource.
    *
@@ -306,20 +328,7 @@ public class MetadataSchemaRecordUtil {
         dataResource.setVersion("1");
       }
       dataResource.setAcls(metadataSchemaRecord.getAcl());
-      if (metadataSchemaRecord.getCreatedAt() != null) {
-        boolean createDateExists = false;
-        Set<Date> dates = dataResource.getDates();
-        for (edu.kit.datamanager.repo.domain.Date d : dates) {
-          if (edu.kit.datamanager.repo.domain.Date.DATE_TYPE.CREATED.equals(d.getType())) {
-            LOG.trace("Creation date entry found.");
-            createDateExists = true;
-            break;
-          }
-        }
-        if (!createDateExists) {
-          dataResource.getDates().add(Date.factoryDate(metadataSchemaRecord.getCreatedAt(), Date.DATE_TYPE.CREATED));
-        }
-      }
+      DataResourceRecordUtil.setCreationDate(dataResource, metadataSchemaRecord.getCreatedAt());
       if (metadataSchemaRecord.getPid() != null) {
         PrimaryIdentifier pid = PrimaryIdentifier.factoryPrimaryIdentifier();
         pid.setIdentifierType(metadataSchemaRecord.getPid().getIdentifierType().name());
@@ -329,17 +338,8 @@ public class MetadataSchemaRecordUtil {
         LOG.trace("Remove existing identifier");
         dataResource.setIdentifier(null);
       }
-      String defaultTitle = metadataSchemaRecord.getMimeType();
-      boolean titleExists = false;
-      for (Title title : dataResource.getTitles()) {
-        if (title.getTitleType() == null) {
-          title.setValue(defaultTitle);
-          titleExists = true;
-        }
-      }
-      if (!titleExists) {
-        dataResource.getTitles().add(Title.factoryTitle(defaultTitle, null));
-      }
+      MetadataRecordUtil.setTitle(dataResource);
+
       dataResource.setResourceType(ResourceType.createResourceType(metadataSchemaRecord.getType().name() + DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
       dataResource.getFormats().clear();
       dataResource.getFormats().add(metadataSchemaRecord.getType().name());
@@ -435,8 +435,6 @@ public class MetadataSchemaRecordUtil {
           }
 
         }
-
-      } finally {
         if (message != null) {
           LOG.error(message);
           throw new BadArgumentException(message);
@@ -498,9 +496,9 @@ public class MetadataSchemaRecordUtil {
       // label -> description of type (OTHER)
       // description -> description of type (TECHNICAL_INFO)
       // comment -> description of type (ABSTRACT)
-      Iterator<Description> desc_iterator = dataResource.getDescriptions().iterator();
-      while (desc_iterator.hasNext()) {
-        Description nextDescription = desc_iterator.next();
+      Iterator<Description> descriptionIterator = dataResource.getDescriptions().iterator();
+      while (descriptionIterator.hasNext()) {
+        Description nextDescription = descriptionIterator.next();
         switch (nextDescription.getType()) {
           case ABSTRACT:
             metadataSchemaRecord.setComment(nextDescription.getDescription());
@@ -573,17 +571,6 @@ public class MetadataSchemaRecordUtil {
     }
   }
 
-  private static void mergeSchemaRecord(SchemaRecord oldRecord, MetadataSchemaRecord newSettings) {
-    LOG.trace("Merge Schema record...");
-    Objects.requireNonNull(oldRecord);
-    Objects.requireNonNull(newSettings);
-    oldRecord.setDocumentHash(newSettings.getSchemaHash());
-    oldRecord.setSchemaDocumentUri(newSettings.getSchemaDocumentUri());
-//    oldRecord.setSchemaId(newSettings.getSchemaId() + "/" + newSettings.getSchemaVersion());
-    oldRecord.setVersion(newSettings.getSchemaVersion());
-    oldRecord.setType(newSettings.getType());
-  }
-
   /**
    * Gets SchemaRecord from identifier. Afterwards there should be a clean up.
    *
@@ -597,11 +584,7 @@ public class MetadataSchemaRecordUtil {
   public static SchemaRecord getSchemaRecord(ResourceIdentifier identifier, Long version) {
     LOG.trace("getSchemaRecord {},{}", identifier, version);
     SchemaRecord schemaRecord;
-    if (identifier == null || identifier.getIdentifierType() == null) {
-      String message = "Missing resource identifier for schema. Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
-      throw new BadArgumentException(message);
-    }
+    checkIdentifier(identifier);
     switch (identifier.getIdentifierType()) {
       case INTERNAL:
         String schemaId = identifier.getIdentifier();
@@ -650,6 +633,14 @@ public class MetadataSchemaRecordUtil {
       LOG.trace("No matching schema record found!");
     }
     return schemaRecord;
+  }
+
+  private static void checkIdentifier(ResourceIdentifier identifier) {
+    if (identifier == null || identifier.getIdentifierType() == null) {
+      String message = "Missing resource identifier for schema. Returning HTTP BAD_REQUEST.";
+      LOG.error(message);
+      throw new BadArgumentException(message);
+    }
   }
 
   /**

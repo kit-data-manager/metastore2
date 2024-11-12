@@ -109,11 +109,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
   private final ApplicationProperties applicationProperties;
 
-  private final ILinkedMetadataRecordDao metadataRecordDao;
-
   private final MetastoreConfiguration metadataConfig;
-
-  private final IDataResourceDao dataResourceDao;
 
   private final ISchemaRecordDao schemaRecordDao;
 
@@ -133,17 +129,14 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
    * @param applicationProperties Configuration for controller.
    * @param metadataConfig Configuration for metadata documents repository.
    * @param metadataRecordDao DAO for metadata records.
-   * @param dataResourceDao DAO for data resources.
+   * @param schemaRecordDao  DAO for schema records.
    */
   public MetadataControllerImplV2(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
           ILinkedMetadataRecordDao metadataRecordDao,
-          IDataResourceDao dataResourceDao,
           ISchemaRecordDao schemaRecordDao) {
     this.applicationProperties = applicationProperties;
     this.metadataConfig = metadataConfig;
-    this.metadataRecordDao = metadataRecordDao;
-    this.dataResourceDao = dataResourceDao;
     this.schemaRecordDao = schemaRecordDao;
     LOG.info("------------------------------------------------------");
     LOG.info("------{}", this.metadataConfig);
@@ -165,7 +158,6 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
           HttpServletResponse response,
           UriComponentsBuilder uriBuilder) throws URISyntaxException {
 
-//    long nano1 = System.nanoTime() / 1000000;
     LOG.trace("Performing createRecord({},...).", recordDocument);
     DataResource metadataRecord;
     if (recordDocument == null || recordDocument.isEmpty()) {
@@ -183,13 +175,11 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       LOG.error("Error parsing json: ", ex);
       throw new BadArgumentException(message);
     }
-//    long nano2 = System.nanoTime() / 1000000;
 
     DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(metadataRecord);
 
     LOG.debug("Test for existing metadata record for given schema and resource");
     RelatedIdentifier schemaIdentifier;
-//    try {
     schemaIdentifier = DataResourceRecordUtil.getSchemaIdentifier(metadataRecord);
     switch (schemaIdentifier.getIdentifierType()) {
       case INTERNAL:
@@ -210,40 +200,17 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       default:
         throw new UnprocessableEntityException("Schema referenced by '" + schemaIdentifier.getIdentifierType().toString() + "' is not supported yet!");
     }
-//    } catch (ResourceNotFoundException rnfe) {
-//      LOG.debug("Error checking for existing relations.", rnfe);
-//      throw new UnprocessableEntityException("Schema ID seems to be invalid");
-//    }
-    //Can't test this 
-//    boolean recordAlreadyExists = metadataRecordDao.existsDataResourceByRelatedResourceAndSchemaId(
-//            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue(), 
-//            getRelatedIdentifier(metadataRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA).getValue());
-//    long nano3 = System.nanoTime() / 1000000;
-//
-//    if (recordAlreadyExists) {
-//      String message = String.format("Conflict! There is already a metadata document with "
-//              + "the same schema ('%s') and the same related resource ('%s')",
-//              metadataRecord.getSchemaId(),
-//              metadataRecord.getRelatedResource().getIdentifier());
-//      LOG.error(message);
-//      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
-//    }
+
     DataResource result = DataResourceRecordUtil.createDataResourceRecord4Metadata(metadataConfig, recordDocument, document);
     LOG.trace("Get dataresource: '{}'", result);
     String eTag = result.getEtag();
     LOG.trace("Get ETag: ' {}'", eTag);
     // Successfully created metadata record.
-//    long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
     DataResourceRecordUtil.fixSchemaUrl(result);
-//    long nano5 = System.nanoTime() / 1000000;
-//    metadataRecordDao.save(new LinkedMetadataRecord(result));
-//    long nano6 = System.nanoTime() / 1000000;
 
     URI locationUri;
     locationUri = WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(result.getId(), Long.valueOf(result.getVersion()), null, null)).toUri();
-    long nano7 = System.nanoTime() / 1000000;
-//    LOG.info("Create Record Service, {}, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1, nano4 - nano1, nano5 - nano1, nano6 - nano1, nano7 - nano1);
 
     LOG.trace("Sending CREATE event.");
     messagingService.orElse(new LogfileMessagingService()).
@@ -477,24 +444,6 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       details.put("No of metadata documents", Long.toString(DataResourceRecordUtil.getNoOfMetadataDocuments()));
       builder.withDetail("metadataRepo", details);
     }
-  }
-
-  /**
-   * Get value of relatedIdentitier with given relation type.
-   *
-   * @param result data resource.
-   * @param relationType type of related identifier.
-   * @return related identifier.
-   */
-  private RelatedIdentifier getRelatedIdentifier(DataResource result, RelatedIdentifier.RELATION_TYPES relationType) {
-    RelatedIdentifier relatedIdentifier = null;
-    for (RelatedIdentifier item : result.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(relationType)) {
-        relatedIdentifier = item;
-        break;
-      }
-    }
-    return relatedIdentifier;
   }
 
   @Bean

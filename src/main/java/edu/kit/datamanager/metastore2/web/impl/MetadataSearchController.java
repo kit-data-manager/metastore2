@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller for search entities.
+ * @deprecated Should be replaced by API v2 (api/v2/metadata/...)
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")

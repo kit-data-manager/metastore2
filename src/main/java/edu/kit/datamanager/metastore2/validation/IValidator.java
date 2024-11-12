@@ -42,6 +42,7 @@ public interface IValidator {
    * @param type Type of the schema.
    * 
    * @return supports schema type or not.
+   * @deprecated Should be replaced by 'supportsMimeType'.
    */
   @Deprecated
   boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type);
