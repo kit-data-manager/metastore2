@@ -51,7 +51,7 @@ public interface IValidator {
    * Supports the given MIME type.
    *
    * @see https://www.iana.org/assignments/media-types/media-types.xhtml
-   * @param type Type of the schema.
+   * @param mimetype Type of the schema.
    * 
    * @return supports schema type or not.
    */

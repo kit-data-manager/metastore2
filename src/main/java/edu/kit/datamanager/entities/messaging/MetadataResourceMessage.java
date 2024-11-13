@@ -160,8 +160,8 @@ public class MetadataResourceMessage extends DataResourceMessage {
     if (dataResource != null) {
       String metadataDocumentUri = DataResourceRecordUtil.getMetadataDocumentUri(dataResource.getId(), dataResource.getVersion()).toString();
       String schemaDocumentUri = DataResourceRecordUtil.getSchemaIdentifier(dataResource).getValue();
-      String[] split = schemaDocumentUri.split(DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR);
-      String schemaId = split[split.length - 1].split("\\?")[0];
+      String[] split = schemaDocumentUri.split(DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR, -1);
+      String schemaId = split[split.length - 1].split("\\?", -1)[0];
 
       properties.put(RESOLVING_URL_PROPERTY, metadataDocumentUri);
       properties.put(DOCUMENT_TYPE_PROPERTY, schemaId);

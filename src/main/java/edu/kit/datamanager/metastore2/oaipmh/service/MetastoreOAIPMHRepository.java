@@ -52,6 +52,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -97,8 +98,8 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetastoreOAIPMHRepository.class);
 
-  private final MetadataFormatType DC_SCHEMA;
-  private final MetadataFormatType DATACITE_SCHEMA;
+  private static final MetadataFormatType DC_SCHEMA;
+  private static final MetadataFormatType DATACITE_SCHEMA;
 
   private final OaiPmhConfiguration pluginConfiguration;
 
@@ -108,9 +109,22 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
   private MetastoreConfiguration metadataConfig;
+  
+  static {
+    DC_SCHEMA = new MetadataFormatType();
+    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
+    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
+    DC_SCHEMA.setMetadataPrefix("oai_dc");
+
+    DATACITE_SCHEMA = new MetadataFormatType();
+    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
+    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
+    DATACITE_SCHEMA.setMetadataPrefix("datacite");
+  }
 
   /**
    * Default constructor.
+   * @param pluginConfiguration configuration for OAI-PMH.
    */
   @Autowired
   public MetastoreOAIPMHRepository(OaiPmhConfiguration pluginConfiguration) {
@@ -121,19 +135,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
    * Default constructor.
    *
    * @param name The repository name.
+   * @param pluginConfiguration configuration for OAI-PMH.
    */
   private MetastoreOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration) {
     super(name);
     this.pluginConfiguration = pluginConfiguration;
-    DC_SCHEMA = new MetadataFormatType();
-    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
-    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
-    DC_SCHEMA.setMetadataPrefix("oai_dc");
-
-    DATACITE_SCHEMA = new MetadataFormatType();
-    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
-    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
-    DATACITE_SCHEMA.setMetadataPrefix("datacite");
   }
 
   @Override
@@ -332,7 +338,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     } else if (object.getSchemaId().equals(schemaId)) {
       LOGGER.info("Return stored document of resource '{}'.", object.getMetadataId());
       try {
-        URL url = new URL(object.getMetadataDocumentUri());
+        URL url = new URI(object.getMetadataDocumentUri()).toURL();
         byte[] readFileToByteArray = FileUtils.readFileToByteArray(Paths.get(url.toURI()).toFile());
         try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)) {
           IOUtils.copy(inputStream, bout);

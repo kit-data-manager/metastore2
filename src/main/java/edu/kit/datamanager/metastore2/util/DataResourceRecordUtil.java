@@ -100,7 +100,6 @@ public class DataResourceRecordUtil {
   private static final String ERROR_PARSING_JSON = "Error parsing json: ";
 
   private static MetastoreConfiguration schemaConfig;
-  private static String guestToken = null;
 
   private static IDataRecordDao dataRecordDao;
   private static IDataResourceDao dataResourceDao;
@@ -139,9 +138,7 @@ public class DataResourceRecordUtil {
     if (schemaConfig.isAuthEnabled() && !authorizationIdentities.contains(RepoUserRole.ADMINISTRATOR.getValue())) {
       isAllowed = false;
       // Check if authorized user still has ADMINISTRATOR rights
-      Iterator<AclEntry> iterator = aclEntries.iterator();
-      while (iterator.hasNext()) {
-        AclEntry aclEntry = iterator.next();
+      for (AclEntry aclEntry : aclEntries) {
         LOG.trace("'{}' has '{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
         if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE) && authorizationIdentities.contains(aclEntry.getSid())) {
           isAllowed = true;
@@ -168,7 +165,6 @@ public class DataResourceRecordUtil {
    * @param applicationProperties Settings of repository.
    * @param recordDocument Record of the schema.
    * @param document Schema document.
-   * @param getSchemaDocumentById Method for creating access URL.
    * @return Record of registered schema document.
    */
   public static DataResource createDataResourceRecord4Schema(MetastoreConfiguration applicationProperties,
@@ -287,7 +283,7 @@ public class DataResourceRecordUtil {
           MultipartFile recordDocument,
           MultipartFile document,
           UnaryOperator<String> supplier) {
-    DataResource givenDataResource = null;
+    DataResource givenDataResource;
     givenDataResource = checkParameters(recordDocument, document, false);
 
     return updateDataResource4MetadataDocument(applicationProperties, resourceId, eTag, givenDataResource, document, supplier);
@@ -835,10 +831,6 @@ public class DataResourceRecordUtil {
     return queryDataResources(spec, pgbl).getTotalElements();
   }
 
-  public static void setToken(String bearerToken) {
-    guestToken = bearerToken;
-  }
-
   /**
    * Set schema config.
    *
@@ -860,7 +852,7 @@ public class DataResourceRecordUtil {
   /**
    * Set DAO for data record.
    *
-   * @param aDataRecordDao the dataRecordDao to set
+   * @param aDataResourceDao the dataResourceDao to set
    */
   public static void setDataResourceDao(IDataResourceDao aDataResourceDao) {
     dataResourceDao = aDataResourceDao;
@@ -898,7 +890,7 @@ public class DataResourceRecordUtil {
   }
 
   public static final void fixSchemaUrl(RelatedIdentifier schemaIdentifier) {
-    if ((schemaIdentifier != null) && (schemaIdentifier.getIdentifierType().equals(Identifier.IDENTIFIER_TYPE.INTERNAL))) {
+    if (schemaIdentifier != null && schemaIdentifier.getIdentifierType().equals(Identifier.IDENTIFIER_TYPE.INTERNAL)) {
       String value = schemaIdentifier.getValue();
       StringTokenizer tokenizer = new StringTokenizer(schemaIdentifier.getValue(), SCHEMA_VERSION_SEPARATOR);
       Long version = null;
@@ -1012,6 +1004,7 @@ public class DataResourceRecordUtil {
    * Transform schema identifier to global available identifier (if neccessary).
    *
    * @param dataResourceRecord Metadata record hold schema identifier.
+   * @param relationType Relation type of the identifier.
    * @return ResourceIdentifier with a global accessible identifier.
    */
   public static RelatedIdentifier getRelatedIdentifier(DataResource dataResourceRecord, RelatedIdentifier.RELATION_TYPES relationType) {
@@ -1044,7 +1037,8 @@ public class DataResourceRecordUtil {
 
   public static final void check4validId(DataResource metadataRecord, boolean allowUpperCase) {
     String id = metadataRecord.getId();
-    String lowerCaseId = id.toLowerCase();
+    String lowerCaseId;
+    lowerCaseId = id.toLowerCase(Locale.getDefault());
 
     if (allowUpperCase) {
       lowerCaseId = id;
@@ -1087,7 +1081,7 @@ public class DataResourceRecordUtil {
       throw new BadArgumentException(message);
     }
 
-    IValidator applicableValidator = null;
+    IValidator applicableValidator;
     try {
       applicableValidator = getValidatorForRecord(metastoreProperties, dataResource, document);
 
@@ -1269,7 +1263,8 @@ public class DataResourceRecordUtil {
           schemaRecord = schemaRecordDao.findByAlternateId(schemaIdentifier.getValue());
           break;
         case INTERNAL:
-          String[] split = schemaId.split(SCHEMA_VERSION_SEPARATOR);
+          String[] split;
+          split = schemaId.split(SCHEMA_VERSION_SEPARATOR, -1);
           if (split.length == 1) {
             schemaRecord = schemaRecordDao.findFirstBySchemaIdStartsWithOrderByVersionDesc(schemaId + SCHEMA_VERSION_SEPARATOR);
           } else {
@@ -1388,7 +1383,7 @@ public class DataResourceRecordUtil {
     // Get schema record for this schema
     validateMetadataSchemaDocument(applicationProperties, updatedDataResource, schemaDocument);
 
-    boolean noChanges = false;
+    boolean noChanges;
     String fileName;
 
     fileName = (info != null) ? info.getRelativePath() : schemaDocument.getOriginalFilename();
@@ -1446,7 +1441,7 @@ public class DataResourceRecordUtil {
       mergePublicationYear(oldDataResource, updatedDataResource);
       mergePublisher(oldDataResource, updatedDataResource);
       mergeAcl(oldDataResource, updatedDataResource);
-      mergeRights(oldDataResource, updatedDataResource);
+      fixEmptyRights(updatedDataResource);
       mergeState(oldDataResource, updatedDataResource);
       mergeResourceType(oldDataResource, updatedDataResource);
       mergeCreateDate(oldDataResource, updatedDataResource);
@@ -1497,23 +1492,29 @@ public class DataResourceRecordUtil {
     return updatedDataResource;
   }
 
-  private static DataResource mergeRights(DataResource oldDataResource, DataResource updatedDataResource) {
+  /**
+   * Fix rights to an empty array if no rights are provided.
+   *
+   * @param updatedDataResource data resource to check.
+   * @return Fixed data resource.
+   */
+  private static DataResource fixEmptyRights(DataResource updatedDataResource) {
     if (updatedDataResource != null && updatedDataResource.getRights() == null) {
-        updatedDataResource.setRights(new HashSet<>());
+      updatedDataResource.setRights(new HashSet<>());
     }
     return updatedDataResource;
   }
 
   private static DataResource mergeState(DataResource oldDataResource, DataResource updatedDataResource) {
     if (updatedDataResource != null && updatedDataResource.getState() == null) {
-        updatedDataResource.setState(oldDataResource.getState());
+      updatedDataResource.setState(oldDataResource.getState());
     }
     return updatedDataResource;
   }
 
   private static DataResource mergeResourceType(DataResource oldDataResource, DataResource updatedDataResource) {
     if (updatedDataResource != null && updatedDataResource.getResourceType() == null) {
-        updatedDataResource.setResourceType(oldDataResource.getResourceType());
+      updatedDataResource.setResourceType(oldDataResource.getResourceType());
     }
     return updatedDataResource;
   }
@@ -1572,8 +1573,8 @@ public class DataResourceRecordUtil {
   /**
    * Migrate schema from INTERNAL type to URL type (if necessary)
    *
-   * @param dataResource
-   * @return
+   * @param dataResource Data resource which should be fixed.
+   * @return Fixed data resource.
    */
   private static DataResource fixRelatedSchemaIfNeeded(DataResource dataResource) {
     RelatedIdentifier relatedIdentifier = getSchemaIdentifier(dataResource);
@@ -1596,8 +1597,8 @@ public class DataResourceRecordUtil {
    * given or check type.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param metadataRecord metadata of the document.
-   * @param document documentdataResource
+   * @param dataResource  Data resource record of the document.
+   * @param document Document of data resource.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
           DataResource dataResource,
@@ -1610,7 +1611,8 @@ public class DataResourceRecordUtil {
     }
     boolean validationSuccess = false;
     StringBuilder errorMessage = new StringBuilder();
-    SchemaRecord findByAlternateId = getSchemaRecordFromDataResource(dataResource);
+    SchemaRecord findByAlternateId;
+    findByAlternateId = getSchemaRecordFromDataResource(dataResource);
     if (findByAlternateId != null) {
       try {
         validateMetadataDocument(metastoreProperties, document, findByAlternateId);
@@ -1625,7 +1627,10 @@ public class DataResourceRecordUtil {
         errorMessage.append(ex.getMessage()).append("\n");
       }
     } else {
-      errorMessage.append("No matching schema found for '" + getSchemaIdentifier(dataResource).getValue() + "'!");
+      errorMessage.append("No matching schema found for '");
+      RelatedIdentifier schemaIdentifier = getSchemaIdentifier(dataResource);
+      errorMessage = schemaIdentifier != null ? errorMessage.append(schemaIdentifier.getValue()) : errorMessage.append("missing schema identifier");
+      errorMessage.append("'!");
     }
     if (!validationSuccess) {
       LOG.error(errorMessage.toString());
@@ -1818,6 +1823,8 @@ public class DataResourceRecordUtil {
   }
 
   /**
+   * Set base URL for accessing instances.
+   * 
    * @param aBaseUrl the baseUrl to set
    */
   public static void setBaseUrl(String aBaseUrl) {

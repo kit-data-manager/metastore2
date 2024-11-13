@@ -32,7 +32,6 @@ import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.SCHEMA_
 import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.queryDataResources;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
@@ -56,7 +55,6 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.javers.core.Javers;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -114,11 +112,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * Logger.
    */
   private static final Logger LOG = LoggerFactory.getLogger(ElasticIndexerRunner.class);
-  /**
-   * DAO for all data resources.
-   */
-  @Autowired
-  private IDataResourceDao dataResourceDao;
+
   /**
    * DAO for all schema records.
    */
@@ -135,21 +129,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   @Autowired
   private IUrl2PathDao url2PathDao;
   /**
-   * Instance for managing versions.
-   */
-  @Autowired
-  private Javers javers;
-  /**
    * Instance of schema repository.
    */
   @Autowired
   private MetastoreConfiguration schemaConfig;
-  /**
-   * Instande of metadata reository.
-   *
-   */
-  @Autowired
-  private MetastoreConfiguration metadataConfig;
+
   /**
    * Optional messagingService bean may or may not be available, depending on a
    * service's configuration. If messaging capabilities are disabled, this bean
@@ -176,7 +160,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
             .addObject(this)
             .build();
     try {
-      LOG.trace("Parse arguments: '{}'", args);
+      LOG.trace("Parse arguments: '{}'", (Object)args);
       argueParser.parse(args);
       LOG.trace("Find all schemas...");
       List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
@@ -339,7 +323,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Migrate all data resources from version 1 to version 2.
    *
-   * @throws InterruptedException
+   * @throws InterruptedException Process was interrupted.
    */
   private void migrateToVersion2() throws InterruptedException {
     LOG.info("Start Migrate2DataCite Runner for migrating database from version 1 to version 2.");
@@ -384,17 +368,23 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Remove all indexed entries for given schema. (If search is enabled)
    *
+   * example:
+   *  POST /metastore-schemaid/_delete_by_query
+   *  {
+   *    "query": {
+   *      "range": {
+   *        "metadataRecord.identifier.id": {
+   *          "gte": 1
+   *        }
+   *      }
+   *    }
+   *  }
+   * 
+   * 
    * @param schemaId schema
    */
   private void removeAllIndexedEntries(String schemaId) {
     // Delete all entries in elastic (if available)
-    // POST /my-index-000001/_delete_by_query
-    //{
-    //  "query": {
-    //    "match": {
-    //      "user.id": "elkbee"
-    //    }
-    //  }
     LOG.trace("Remove all indexed entries...");
     if (searchConfiguration.isSearchEnabled()) {
       String prefix4Indices = searchConfiguration.getIndex();
@@ -407,7 +397,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.trace(searchConfiguration.toString());
       LOG.trace("Remove all entries for index: '{}'", prefix4Indices + schemaId);
       SimpleServiceClient client = SimpleServiceClient.create(searchConfiguration.getUrl() + "/" + prefix4Indices + schemaId + "/_delete_by_query");
-      String query = "{ \"query\": { \"range\" : { \"metadataRecord.schemaVersion\" : { \"gte\" : 1} } } }";
+      String query = "{ \"query\": { \"range\" : { \"metadataRecord.identifier.id\" : { \"gte\" : 1} } } }";
       client.withContentType(MediaType.APPLICATION_JSON);
       try {
         String postResource = client.postResource(query, String.class);

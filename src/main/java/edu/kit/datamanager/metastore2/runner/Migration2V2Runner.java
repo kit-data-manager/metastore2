@@ -78,7 +78,6 @@ public class Migration2V2Runner {
    *
    * @param id ID of the schema document.
    * @param version Version of the schema document.
-   * @param format Format of the schema document. (XML/JSON)
    */
   public void saveSchema(String id, long version) {
     LOG.info("Migrate datacite for schema document with id: '{}' / version: '{}'", id, version);
@@ -134,6 +133,7 @@ public class Migration2V2Runner {
    * @param id ID of the metadata document.
    * @param version Version of the metadata document.
    * @param format Format of the metadata document. (XML/JSON)
+   * @return Persisted data resource.
    */
   public DataResource saveMetadata(String id, long version, String format) {
     LOG.trace("Migrate datacite for metadata document with id: '{}' / version: '{}' and format: '{}'", id, version, format);
@@ -184,12 +184,17 @@ public class Migration2V2Runner {
 
     return migratedDataResource;
   }
-
-  public DataResource getCopyOfDataResource(DataResource metadataDocument) {
+  /**
+   * Create a deep copy of a data resource instance.
+   * @param dataResource Data resource.
+   * @return Deep copy of data resource.
+   */
+  public DataResource getCopyOfDataResource(DataResource dataResource) {
     DataResource copy = null;
-    Optional<DataResource> dataResource = dataResourceDao.findById(metadataDocument.getId());
-    if (dataResource.isPresent()) { 
-      copy = DataResourceUtils.copyDataResource(dataResource.get());
+    Optional<DataResource> origDataResource;
+    origDataResource = dataResourceDao.findById(dataResource.getId());
+    if (origDataResource.isPresent()) { 
+      copy = DataResourceUtils.copyDataResource(origDataResource.get());
     }
     return copy;
   }
@@ -211,6 +216,8 @@ public class Migration2V2Runner {
   }
 
   /**
+   * Set base URL for accessing documents and records.
+   * 
    * @param baseUrl the baseUrl to set
    */
   public void setBaseUrl(String baseUrl) {

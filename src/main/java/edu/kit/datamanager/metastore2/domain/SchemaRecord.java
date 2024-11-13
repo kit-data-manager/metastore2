@@ -54,7 +54,7 @@ public class SchemaRecord implements Serializable {
   public String getSchemaIdWithoutVersion() {
     String pureSchemaId = null;
     if (schemaId != null) {
-      pureSchemaId = schemaId.split("/")[0];
+      pureSchemaId = schemaId.split("/", -1)[0];
     } 
     return pureSchemaId;
   }
