@@ -1792,7 +1792,7 @@ public class DataResourceRecordUtil {
    * @return Pageable Object holding all data resources fulfilling the
    * specification.
    */
-  public static Page<DataResource> queryDataResources(Specification spec, Pageable pgbl) {
+  public static Page<DataResource> queryDataResources(Specification<DataResource> spec, Pageable pgbl) {
     Page<DataResource> records = null;
     try {
       records = spec != null ? dataResourceDao.findAll(spec, pgbl) : dataResourceDao.findAll(pgbl);

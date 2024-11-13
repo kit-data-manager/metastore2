@@ -366,7 +366,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * Migrate dataresources of schemas using version 1 to version 2.
    */
   private void migrateAllSchemasToDataciteVersion2() {
-    Specification spec;
+    Specification<DataResource> spec;
     spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE, ResourceType.TYPE_GENERAL.DATASET));
     int pageNumber = 0;
     int pageSize = 1;
@@ -437,7 +437,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    * Migrate dataresources of metadata documents from version 1 to version 2.
    */
   private void migrateAllMetadataDocumentsToDataciteVersion2() {
-    Specification spec;
+    Specification<DataResource> spec;
     spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE, ResourceType.TYPE_GENERAL.DATASET));
     int pageNumber = 0;
     int pageSize = 10;
