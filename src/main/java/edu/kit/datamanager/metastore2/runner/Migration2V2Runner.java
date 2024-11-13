@@ -15,12 +15,14 @@
  */
 package edu.kit.datamanager.metastore2.runner;
 
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
@@ -89,6 +91,8 @@ public class Migration2V2Runner {
         break;
       }
     }
+    // Move PID from alternateIdentifier to identifier
+    movePidFromAlternateToPrimaryIdentifier(recordByIdAndVersion);
     // Set resource type to  new definition of version 2 ('...'_Schema)
     ResourceType resourceType = recordByIdAndVersion.getResourceType();
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
@@ -142,6 +146,8 @@ public class Migration2V2Runner {
         break;
       }
     }
+    // Move PID from alternateIdentifier to identifier
+    movePidFromAlternateToPrimaryIdentifier(recordByIdAndVersion);
     // Set resource type to  new definition of version 2 ('...'_Metadata)
     ResourceType resourceType = recordByIdAndVersion.getResourceType();
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
@@ -186,6 +192,22 @@ public class Migration2V2Runner {
       copy = DataResourceUtils.copyDataResource(dataResource.get());
     }
     return copy;
+  }
+  
+  private void movePidFromAlternateToPrimaryIdentifier(DataResource dataResource) {
+    Identifier pid = null;
+    // Move PID from alternateIdentifier to identifier
+    for (Identifier altIdentifier : dataResource.getAlternateIdentifiers()) {
+      if (altIdentifier.getIdentifierType() == Identifier.IDENTIFIER_TYPE.DOI) {
+        PrimaryIdentifier primaryIdentifier = PrimaryIdentifier.factoryPrimaryIdentifier(altIdentifier.getValue());
+        dataResource.setIdentifier(primaryIdentifier);
+        pid = altIdentifier;
+        break;
+      }
+    }
+    if (pid != null) {
+      dataResource.getAlternateIdentifiers().remove(pid);
+    }
   }
 
   /**
