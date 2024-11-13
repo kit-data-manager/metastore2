@@ -304,7 +304,6 @@ public class DataResourceRecordUtil {
     DataResource mergedDataResource = mergeDataResource(oldDataResource, givenDataResource);
     updatedDataResource = fixRelatedSchemaIfNeeded(mergedDataResource);
 
-    boolean noChanges = false;
     if (document != null) {
       updateMetadataDocument(applicationProperties, updatedDataResource, document, supplier);
     } else {
@@ -330,12 +329,6 @@ public class DataResourceRecordUtil {
         throw new CustomInternalServerError("Metadata document on server does not exist!");
       }
 
-    }
-    if (noChanges) {
-      Optional<DataRecord> dataRecord = dataRecordDao.findTopByMetadataIdOrderByVersionDesc(oldDataResource.getId());
-      if (dataRecord.isPresent()) {
-        dataRecordDao.delete(dataRecord.get());
-      }
     }
     oldDataResource = DataResourceUtils.updateResource(applicationProperties, resourceId, updatedDataResource, eTag, supplier);
 
