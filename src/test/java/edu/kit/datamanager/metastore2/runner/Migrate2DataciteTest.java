@@ -97,6 +97,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41417"})
+@TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=update"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:./src/test/resources/migrateToV2/migrationDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/migrationRunner/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/migrationRunner/metadata"})
