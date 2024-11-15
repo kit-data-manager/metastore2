@@ -49,7 +49,7 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:6.1.14'
+    implementation 'org.springframework:spring-messaging:6.2.0'
     implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.1.5'
 
     // Spring Boot
