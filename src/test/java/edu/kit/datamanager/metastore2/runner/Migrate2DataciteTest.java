@@ -15,33 +15,21 @@
  */
 package edu.kit.datamanager.metastore2.runner;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
-import edu.kit.datamanager.util.AuthenticationHelper;
-import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Stream;
+import java.nio.file.StandardCopyOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.io.FileUtils;
 import org.javers.core.Javers;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -57,7 +45,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
@@ -71,12 +58,9 @@ import org.springframework.test.context.support.DirtiesContextTestExecutionListe
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
-import static com.github.stefanbirkner.systemlambda.SystemLambda.*;
+import static org.junit.Assert.assertFalse;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 /**
@@ -98,7 +82,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41417"})
 @TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=update"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:./src/test/resources/migrateToV2/migrationDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:/tmp/metastore2/migrationRunner/database/migrationDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/migrationRunner/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/migrationRunner/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
@@ -139,10 +123,27 @@ public class Migrate2DataciteTest {
 
   @BeforeClass
   public static void setUpClass() {
+    Path dataBaseV1Source = Path.of("./src/test/resources/migrateToV2/migrationDatabase.mv.db");
+    Path dataBaseV1Target = Path.of("/tmp/metastore2/migrationRunner/database/migrationDatabase.mv.db");
+    StandardCopyOption overwriteExisting = StandardCopyOption.REPLACE_EXISTING;
+    try {
+      FileUtils.copyFile(dataBaseV1Source.toFile(), dataBaseV1Target.toFile(), overwriteExisting);
+    } catch (IOException ex) {
+      Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, null, ex);
+    }
+    Assert.assertTrue("Database file does not exist!", dataBaseV1Target.toFile().exists());
   }
 
   @AfterClass
   public static void tearDownClass() {
+    try {
+      Path pathToBeDeleted = Path.of("/tmp/metastore2/migrationRunner");
+      FileUtils.deleteDirectory(pathToBeDeleted.toFile());
+      assertFalse("Directory still exists", Files.exists(pathToBeDeleted));
+    } catch (IOException ex) {
+      Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, null, ex);
+    }
+      Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, "Path should be deleted!");
   }
 
   @Before
