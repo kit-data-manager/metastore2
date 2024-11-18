@@ -227,6 +227,40 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   @Test
+  public void testCreateSchemaRecordWithMinimalInput() throws Exception {
+    String id = "my_dc_minimal_record";
+    DataResource record = new DataResource();
+    record.setId(id);
+    // mandatory element title has to be set
+    setTitle(record, id);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
+  @Test
+  public void testCreateSchemaRecordWithMinimalInputAndNoContentType() throws Exception {
+    String id = "my_dc_minimal_record";
+    DataResource record = new DataResource();
+    record.setId(id);
+    // mandatory element title has to be set
+    setTitle(record, id);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", null, KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_SCHEMA_PATH).
+            file(recordFile).
+            file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
+  }
+
+  @Test
   public void testCreateSchemaRecordWithAlternateEndpoint() throws Exception {
     DataResource record = createDataResource4Schema("my_dc_alternate");
     ObjectMapper mapper = new ObjectMapper();

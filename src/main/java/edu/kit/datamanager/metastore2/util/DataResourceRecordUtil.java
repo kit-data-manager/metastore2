@@ -616,19 +616,9 @@ public class DataResourceRecordUtil {
   }
 
   public static ContentInformation getContentInformationByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
-    return getContentInformationByIdAndVersion(metastoreProperties, recordId, null);
-  }
-
-  public static ContentInformation getContentInformationByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     LOG.trace("Obtaining content information record with id {} and version {}.", recordId, version);
     return metastoreProperties.getContentInformationService().getContentInformation(recordId, null, version);
-  }
-
-  public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
-    return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
   }
 
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
@@ -1558,6 +1548,8 @@ public class DataResourceRecordUtil {
         LOG.error("Error reading current file!", ex);
         throw new BadArgumentException("Error reading schema document!");
       }
+    } else {
+      throw new CustomInternalServerError("No content information provided!");
     }
     return noChanges;
   }
