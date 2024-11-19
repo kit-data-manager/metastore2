@@ -122,7 +122,7 @@ dependencies {
     
     // Additional libraries for tests
     testImplementation "com.google.guava:guava:33.3.1-jre"
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.2"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.3"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
