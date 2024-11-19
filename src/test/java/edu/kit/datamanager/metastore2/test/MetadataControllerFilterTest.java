@@ -165,6 +165,18 @@ public class MetadataControllerFilterTest {
   }
 
   @Test
+  public void testFindAllSchemaRecords() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
+            .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andReturn();
+    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+    Assert.assertEquals("No of schema records:", MAX_NO_OF_SCHEMAS * 2, result.length);
+  }
+
+  @Test
   public void testFindSchemaRecordsBySchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {

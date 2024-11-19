@@ -664,7 +664,6 @@ public class DataResourceRecordUtil {
    * @return Specification with schemaIds added.
    */
   public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
-//    ToDo....
     Specification<DataResource> specWithSchema = specification;
     if (schemaIds != null) {
       List<String> allSchemaIds = new ArrayList<>();
@@ -685,32 +684,37 @@ public class DataResourceRecordUtil {
   public static final Specification<DataResource> findByMimetypes(List<String> mimeTypes) {
     // Search for both mimetypes (xml & json)
     ResourceType resourceType = null;
+    final int JSON = 1; // bit 0
+    final int XML  = 2;  // bit 1
     // 
+    int searchFor = 0; // 1 - JSON, 2 - XML, 3 - both
     if (mimeTypes != null) {
-      int searchFor = 0; // 1 - JSON, 2 - XML, 3 - both
       for (String mimeType : mimeTypes) {
         if (mimeType.contains("json")) {
-          searchFor += 1;
+          searchFor |= JSON;
         }
         if (mimeType.contains("xml")) {
-          searchFor += 2;
+          searchFor |= XML;
         }
       }
-      resourceType = switch (searchFor) {
-        // 1 -> search for JSON only
-        case 1 ->
-          ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-        // 2 -> search for XML only
-        case 2 ->
-          ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
-        // 3 -> Search for both mimetypes (xml & json)
-        case 3 ->
-          ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
-        // 0 -> Unknown mimetype
-        default ->
-          ResourceType.createResourceType("unknown");
-      };
+    } else {
+      searchFor = JSON | XML;
     }
+    resourceType = switch (searchFor) {
+      // 1 -> search for JSON only
+      case JSON ->
+        ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      // 2 -> search for XML only
+      case XML ->
+        ResourceType.createResourceType(DataResourceRecordUtil.XML_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL);
+      // 3 -> Search for both mimetypes (xml & json)
+      case JSON | XML ->
+        ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
+      // 0 -> Unknown mimetype
+      default ->
+        ResourceType.createResourceType("unknown");
+    };
+
     return ResourceTypeSpec.toSpecification(resourceType);
   }
 
@@ -1582,7 +1586,7 @@ public class DataResourceRecordUtil {
    * given or check type.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param dataResource  Data resource record of the document.
+   * @param dataResource Data resource record of the document.
    * @param document Document of data resource.
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
@@ -1809,7 +1813,7 @@ public class DataResourceRecordUtil {
 
   /**
    * Set base URL for accessing instances.
-   * 
+   *
    * @param aBaseUrl the baseUrl to set
    */
   public static void setBaseUrl(String aBaseUrl) {

@@ -8,10 +8,8 @@ package edu.kit.datamanager.metastore2.test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.repo.RelatedIdentifier;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
@@ -141,7 +139,7 @@ public class MetadataControllerFilterTestV2 {
   private static final String XML_SCHEMA_ID = "xml_schema_";
   private static final String RELATED_RESOURCE = "resource_";
   private static final String INVALID_MIMETYPE = "application/invalid";
-  
+
   private static final String API_BASE_PATH = "/api/v2";
   private static final String ALTERNATE_API_SCHEMA_PATH = API_BASE_PATH + "/schemas";
   private static final String API_SCHEMA_PATH = ALTERNATE_API_SCHEMA_PATH + "/";
@@ -188,6 +186,23 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals("No of records for schema '" + i + "'", 1, result.length);
       Assert.assertEquals("SchemaID '" + schemaId + "'", schemaId, result[0].getId());
+    }
+  }
+
+  @Test
+  public void testFindAllSchemaRecords() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    MvcResult res = this.mockMvc.perform(get(API_SCHEMA_PATH)
+            .header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andReturn();
+    DataResource[] result = map.readValue(res.getResponse().getContentAsString(), DataResource[].class);
+
+    Assert.assertEquals("No of schema records:", MAX_NO_OF_SCHEMAS * 2, result.length);
+    for (DataResource schemaRecord : result) {
+      Assert.assertTrue("Resource type should end with '_Schema'",
+              schemaRecord.getResourceType().getValue().endsWith(DataResourceRecordUtil.SCHEMA_SUFFIX));
     }
   }
 
@@ -534,8 +549,8 @@ public class MetadataControllerFilterTestV2 {
     record.getRelatedIdentifiers().add(relatedIdentifier);
     record.getTitles().add(Title.factoryTitle("Document for schemaID: " + schemaId));
     Set<AclEntry> aclEntries = new HashSet<>();
-    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
-    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+    aclEntries.add(new AclEntry("SELF", PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
     record.setAcls(aclEntries);
     ObjectMapper mapper = new ObjectMapper();
 
