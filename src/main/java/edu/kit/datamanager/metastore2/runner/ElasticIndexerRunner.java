@@ -83,6 +83,11 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Parameter(names = {"--migrate2DataCite"}, description = "Migrate database from version 1.X to 2.X.")
   boolean doMigration2DataCite;
+  /**
+   * Start migration to version 2
+   */
+  @Parameter(names = {"--prefixIndices", "-p"}, description = "Prefix used for the indices inside elastic.")
+  String prefixIndices;
 
   /**
    * ***************************************************************************
@@ -156,12 +161,22 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   @Override
   @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
+    // Set defaults for cli arguments.
+    prefixIndices = "metastore-";
+    updateDate = new Date(0);
+    indices = new HashSet<>();
+    
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
             .build();
     try {
       LOG.trace("Parse arguments: '{}'", (Object)args);
       argueParser.parse(args);
+      LOG.trace("doMigration2DataCite: '{}'", doMigration2DataCite);
+      LOG.trace("PrefixIndices: '{}'", prefixIndices);
+      LOG.trace("Update index: '{}'", updateIndex);
+      LOG.trace("update date: '{}'", updateDate.toString());
+      LOG.trace("Indices: '{}'", indices);
       LOG.trace("Find all schemas...");
       List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
       if (!findAllSchemas.isEmpty()) {
@@ -175,12 +190,6 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         DataResourceRecordUtil.setBaseUrl(baseUrl);
       }
       if (updateIndex) {
-        if (updateDate == null) {
-          updateDate = new Date(0);
-        }
-        if (indices == null) {
-          indices = new HashSet<>();
-        }
         updateElasticsearchIndex();
       }
       if (doMigration2DataCite) {
@@ -366,38 +375,25 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   }
 
   /**
-   * Remove all indexed entries for given schema. (If search is enabled)
+   * Remove all indexed entries (indexed with V1) for given schema. (If search is enabled)
    *
-   * example:
-   *  POST /metastore-schemaid/_delete_by_query
-   *  {
-   *    "query": {
-   *      "range": {
-   *        "metadataRecord.identifier.id": {
-   *          "gte": 1
-   *        }
-   *      }
-   *    }
-   *  }
-   * 
-   * 
+   * example: POST /metastore-schemaid/_delete_by_query { "query": { "range": {
+   * "metadataRecord.schemaVersion": { "gte": 1 } } } }
+   *
+   *
    * @param schemaId schema
    */
   private void removeAllIndexedEntries(String schemaId) {
     // Delete all entries in elastic (if available)
-    LOG.trace("Remove all indexed entries...");
+    LOG.trace("Remove all indexed entries for '{}'...", schemaId);
     if (searchConfiguration.isSearchEnabled()) {
-      String prefix4Indices = searchConfiguration.getIndex();
-      Pattern pattern = Pattern.compile("(.*?)(\\*.*)");
-      Matcher matcher = pattern.matcher(prefix4Indices);
-      if (matcher.find()) {
-        prefix4Indices = matcher.group(1);
-      }
+      String prefix4Indices = prefixIndices;
 
       LOG.trace(searchConfiguration.toString());
       LOG.trace("Remove all entries for index: '{}'", prefix4Indices + schemaId);
       SimpleServiceClient client = SimpleServiceClient.create(searchConfiguration.getUrl() + "/" + prefix4Indices + schemaId + "/_delete_by_query");
-      String query = "{ \"query\": { \"range\" : { \"metadataRecord.identifier.id\" : { \"gte\" : 1} } } }";
+      String query = "{ \"query\": { \"range\" : { \"metadataRecord.schemaVersion\" : { \"gte\" : 1} } } }";
+      LOG.trace("Query: '{}'", query);                       
       client.withContentType(MediaType.APPLICATION_JSON);
       try {
         String postResource = client.postResource(query, String.class);

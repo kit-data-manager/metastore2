@@ -23,10 +23,14 @@ import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.Title;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.io.FileUtils;
@@ -80,7 +84,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41417"})
+@TestPropertySource(properties = {"server.port=41437"})
 @TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=update"})
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:/tmp/metastore2/migrationRunner/database/migrationDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/migrationRunner/schema"})
@@ -98,23 +102,12 @@ public class Migrate2DataciteTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  Javers javers = null;
-  @Autowired
-  private ILinkedMetadataRecordDao metadataRecordDao;
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
-  private IDataRecordDao dataRecordDao;
-  @Autowired
-  private ISchemaRecordDao schemaRecordDao;
-  @Autowired
-  private IContentInformationDao contentInformationDao;
-  @Autowired
-  private IAllIdentifiersDao allIdentifiersDao;
-  @Autowired
-  private IUrl2PathDao url2PathDao;
-  @Autowired
   private MetastoreConfiguration metadataConfig;
+  @Autowired
+  private Migration2V2Runner migrate2V2Runner;
+
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
@@ -143,7 +136,7 @@ public class Migrate2DataciteTest {
     } catch (IOException ex) {
       Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, null, ex);
     }
-      Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, "Path should be deleted!");
+    Logger.getLogger(Migrate2DataciteTest.class.getName()).log(Level.SEVERE, "Path should be deleted!");
   }
 
   @Before
@@ -169,11 +162,75 @@ public class Migrate2DataciteTest {
   public void tearDown() {
   }
 
-
   @Test
   public void testElasticRunnerMigration() throws Exception {
     eir.run("--migrate2DataCite");
     Assert.assertTrue(true);
+  }
+
+  /**
+   * Test for argument null.
+   */
+  @Test
+  public void testcopyDataResource() {
+    Migration2V2Runner m2r = migrate2V2Runner;
+    DataResource invalidTestResource = DataResource.factoryNewDataResource("invalidId");
+    DataResource result = m2r.getCopyOfDataResource(invalidTestResource);
+    Assert.assertEquals(invalidTestResource, result);
+  }
+
+  /**
+   * Test for argument null.
+   */
+  @Test(expected = NullPointerException.class)
+  public void testcopyDataResourceWithNullArgument() {
+    Migration2V2Runner m2r = migrate2V2Runner;
+    DataResource expected = null;
+    DataResource invalidTestResource = null;
+    DataResource result = m2r.getCopyOfDataResource(invalidTestResource);
+    Assert.assertEquals(expected, result);
+  }
+
+  /**
+   * Test for argument null.
+   */
+  @Test(expected = NullPointerException.class)
+  public void testcopyDataResourceWithIdSetToNull() {
+    Migration2V2Runner m2r = migrate2V2Runner;
+    DataResource expected = null;
+    DataResource invalidTestResource = DataResource.factoryNewDataResource();
+    invalidTestResource.setId(null);
+    DataResource result = m2r.getCopyOfDataResource(invalidTestResource);
+    Assert.assertEquals(expected, result);
+  }
+
+  /**
+   * Test for invalid data resources.
+   */
+  @Test
+  public void testRemoveTitleType() {
+    Migration2V2Runner m2r = new Migration2V2Runner();
+    Set<Title> titles = null;
+    Set<Title> expected = null;
+    titles = new HashSet<>();
+    expected = new HashSet<>();
+    expected.addAll(titles);
+    m2r.removeTitleType(titles);
+    Assert.assertEquals(expected, titles);
+    titles = new HashSet<>();
+    titles.add(Title.factoryTitle("any", Title.TYPE.ALTERNATIVE_TITLE));
+    expected = new HashSet<>();
+    expected.addAll(titles);
+    m2r.removeTitleType(titles);
+    Assert.assertEquals(expected, titles);
+    titles = new HashSet<>();
+    titles.add(Title.factoryTitle("any", Title.TYPE.ALTERNATIVE_TITLE));
+    titles.add(Title.factoryTitle("title", Title.TYPE.OTHER));
+    expected = new HashSet<>();
+    expected.addAll(titles);
+    m2r.removeTitleType(titles);
+    Assert.assertNotEquals(expected, titles);
+
   }
 
   public static synchronized boolean isInitialized() {

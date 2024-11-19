@@ -83,13 +83,9 @@ public class Migration2V2Runner {
     LOG.info("Migrate datacite for schema document with id: '{}' / version: '{}'", id, version);
     DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
     DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
+
     // Remove type from first title with type 'OTHER'
-    for (Title title : recordByIdAndVersion.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER) {
-        title.setTitleType(null);
-        break;
-      }
-    }
+    removeTitleType(recordByIdAndVersion.getTitles());
     // Move PID from alternateIdentifier to identifier
     movePidFromAlternateToPrimaryIdentifier(recordByIdAndVersion);
     // Set resource type to  new definition of version 2 ('...'_Schema)
@@ -140,12 +136,8 @@ public class Migration2V2Runner {
     DataResource currentDataResource = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
     DataResource recordByIdAndVersion = DataResourceUtils.copyDataResource(currentDataResource);
     // Remove type from first title with type 'OTHER'
-    for (Title title : recordByIdAndVersion.getTitles()) {
-      if (title.getTitleType() == Title.TYPE.OTHER) {
-        title.setTitleType(null);
-        break;
-      }
-    }
+    removeTitleType(recordByIdAndVersion.getTitles());
+
     // Move PID from alternateIdentifier to identifier
     movePidFromAlternateToPrimaryIdentifier(recordByIdAndVersion);
     // Set resource type to  new definition of version 2 ('...'_Metadata)
@@ -184,21 +176,27 @@ public class Migration2V2Runner {
 
     return migratedDataResource;
   }
+
   /**
    * Create a deep copy of a data resource instance.
+   *
    * @param dataResource Data resource.
    * @return Deep copy of data resource.
    */
   public DataResource getCopyOfDataResource(DataResource dataResource) {
     DataResource copy = null;
     Optional<DataResource> origDataResource;
+    Objects.requireNonNull(dataResource);
+    Objects.requireNonNull(dataResource.getId());
     origDataResource = dataResourceDao.findById(dataResource.getId());
-    if (origDataResource.isPresent()) { 
+    if (origDataResource.isPresent()) {
       copy = DataResourceUtils.copyDataResource(origDataResource.get());
+    } else {
+      copy = DataResourceUtils.copyDataResource(dataResource);
     }
     return copy;
   }
-  
+
   private void movePidFromAlternateToPrimaryIdentifier(DataResource dataResource) {
     Identifier pid = null;
     // Move PID from alternateIdentifier to identifier
@@ -215,9 +213,18 @@ public class Migration2V2Runner {
     }
   }
 
+  protected void removeTitleType(Set<Title> titles) {
+    for (Title title : titles) {
+      if (title.getTitleType() == Title.TYPE.OTHER) {
+        title.setTitleType(null);
+        break;
+      }
+    }
+ }
+
   /**
    * Set base URL for accessing documents and records.
-   * 
+   *
    * @param baseUrl the baseUrl to set
    */
   public void setBaseUrl(String baseUrl) {
