@@ -1,15 +1,16 @@
 package edu.kit.datamanager.metastore2.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import java.util.HashMap;
-import java.util.Map;
 import com.google.gson.annotations.SerializedName;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
 import java.io.Serializable;
 import java.util.Arrays;
-import lombok.Data;
+import java.util.HashMap;
+import java.util.Map;
 
 @Entity
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -28,18 +29,15 @@ public class ResourceIdentifier implements Serializable {
 
   @Override
   public String toString() {
-    StringBuilder sb = new StringBuilder();
-    sb.append(ResourceIdentifier.class.getName()).append('@').append(Integer.toHexString(System.identityHashCode(this))).append('[');
-    sb.append("resourceIdentifier");
-    sb.append('=');
-    sb.append(((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()));
-    sb.append(',');
-    sb.append("resourceIdentifierType");
-    sb.append('=');
-    sb.append(((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()));
-    sb.append(']');
-
-    return sb.toString();
+    return ResourceIdentifier.class.getName() + '@' + Integer.toHexString(System.identityHashCode(this)) + '[' +
+            "resourceIdentifier" +
+            '=' +
+            ((this.getIdentifier() == null) ? "<null>" : this.getIdentifier()) +
+            ',' +
+            "resourceIdentifierType" +
+            '=' +
+            ((this.getIdentifierType() == null) ? "<null>" : this.getIdentifierType()) +
+            ']';
   }
 
   @Override
@@ -55,8 +53,7 @@ public class ResourceIdentifier implements Serializable {
     boolean returnValue = true;
     if (other != this) {
       returnValue = false;
-      if (other instanceof ResourceIdentifier) {
-        ResourceIdentifier rhs = ((ResourceIdentifier) other);
+      if (other instanceof ResourceIdentifier rhs) {
         // check for id
         if ((((this.getId() == null) && (rhs.getId() == null))
                 || ((this.getId() != null) && this.getId().equals(rhs.getId())))

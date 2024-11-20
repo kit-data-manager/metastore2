@@ -16,20 +16,15 @@
 package edu.kit.datamanager.metastore2.oaipmh.service;
 
 import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
+import org.openarchives.oai._2.DeletedRecordType;
+import org.openarchives.oai._2.DescriptionType;
+import org.openarchives.oai._2.GranularityType;
+import org.slf4j.LoggerFactory;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.TimeZone;
-import org.openarchives.oai._2.DeletedRecordType;
-import org.openarchives.oai._2.DescriptionType;
-import org.openarchives.oai._2.GranularityType;
-import static org.openarchives.oai._2.VerbType.GET_RECORD;
-import static org.openarchives.oai._2.VerbType.IDENTIFY;
-import static org.openarchives.oai._2.VerbType.LIST_IDENTIFIERS;
-import static org.openarchives.oai._2.VerbType.LIST_METADATA_FORMATS;
-import static org.openarchives.oai._2.VerbType.LIST_RECORDS;
-import static org.openarchives.oai._2.VerbType.LIST_SETS;
-import org.slf4j.LoggerFactory;
 
 /**
  * An abstract OAI-PMH repository implementation that can be used to implement

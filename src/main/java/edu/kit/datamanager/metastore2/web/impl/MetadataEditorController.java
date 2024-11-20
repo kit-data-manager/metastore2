@@ -6,16 +6,16 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.metastore2.dto.EditorRequestMetadata;
 import edu.kit.datamanager.metastore2.dto.EditorRequestSchema;
 import edu.kit.datamanager.metastore2.dto.TabulatorItems;
-import edu.kit.datamanager.metastore2.dto.EditorRequestMetadata;
+import edu.kit.datamanager.metastore2.web.IMetadataEditorController;
 import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import jakarta.servlet.http.HttpServletResponse;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
@@ -26,9 +26,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
-import edu.kit.datamanager.metastore2.web.IMetadataEditorController;
-import jakarta.servlet.http.HttpServletResponse;
-import org.json.simple.parser.ParseException;
+
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Controller for the metadata editor web frontend.

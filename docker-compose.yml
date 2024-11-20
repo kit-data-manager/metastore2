@@ -20,7 +20,8 @@ services:
       - dps
   elasticsearch:
     image: elasticsearch:${ELASTICSEARCH_VERSION}
-    container_name: elastic4indexing
+    container_name: elastic.docker
+    hostname: elastic.docker
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -42,6 +43,7 @@ services:
     depends_on:
       - elasticsearch
     container_name: rabbitmq4indexing
+    hostname: rabbitmq.docker
     environment:
       - HOSTNAMES=rabbitmq.docker
       - RABBITMQ_DEFAULT_USER=${RABBIT_MQ_USER}
@@ -72,6 +74,7 @@ services:
   metastore:
     image: ${PREFIX4DOCKER}/metastore2:${METASTORE_VERSION}
     container_name: metastore.docker
+    hostname: metastore.docker
     environment:
       - HOSTNAMES=metastore.docker
       - REPO_SEARCH_ENABLED=true

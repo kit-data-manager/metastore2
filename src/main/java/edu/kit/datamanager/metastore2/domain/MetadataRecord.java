@@ -29,13 +29,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.http.MediaType;
+
 import java.io.Serializable;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.Data;
-import org.springframework.http.MediaType;
 
 /**
  * Record for a metadata document.

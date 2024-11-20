@@ -15,21 +15,15 @@
  */
 package edu.kit.datamanager.metastore2.web.impl;
 
-import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.exceptions.ResourceNotFoundException;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.util.ActuatorUtil;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
-import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.TitleSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.*;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -38,18 +32,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import java.net.URI;
-import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.UnaryOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.info.Info;
@@ -62,6 +44,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,13 +55,26 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
+
 /**
  * Controller for schema documents.
+ * @deprecated Should be replaced by API v2 (api/v2/schemas/...)
  */
 @Controller
 @RequestMapping(value = "/api/v1/schemas")
 @Tag(name = "Schema Registry")
 @Schema(description = "Schema Registry")
+@Deprecated(since = "2.0.0", forRemoval = true)
 public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   private static final Logger LOG = LoggerFactory.getLogger(SchemaRegistryControllerImpl.class);
@@ -117,7 +113,8 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     LOG.trace("Performing createRecord({},....", recordDocument);
     BiFunction<String, Long, String> getSchemaDocumentById;
     getSchemaDocumentById = (schema, version) -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getSchemaDocumentById(schema, version, null, null)).toString();
-
+    Authentication authentication = AuthenticationHelper.getAuthentication();
+    authentication.isAuthenticated();
     MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.createMetadataSchemaRecord(schemaConfig, recordDocument, document, getSchemaDocumentById);
     LOG.trace("Schema record successfully persisted. Returning result.");
     String etag = schemaRecord.getEtag();
@@ -253,13 +250,10 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(mimeTypes);
     // Add authentication if enabled
-    spec = addAuthenticationSpecification(spec);
-    //one of given mimetypes.
-    if ((mimeTypes != null) && !mimeTypes.isEmpty()) {
-      spec = spec.and(TitleSpec.toSpecification(mimeTypes.toArray(new String[mimeTypes.size()])));
-    }
+    spec = DataResourceRecordUtil.findByAccessRights(spec);
+
     if ((updateFrom != null) || (updateUntil != null)) {
       spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
     }
@@ -289,7 +283,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
       MetadataSchemaRecordUtil.fixSchemaDocumentUri(item);
       schemaList.add(item);
       if (LOG.isTraceEnabled()) {
-        LOG.trace("===> " + item.toString());
+        LOG.trace("===> " + item);
       }
     });
 
@@ -317,7 +311,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
     URI locationUri;
     locationUri = MetadataSchemaRecordUtil.getSchemaDocumentUri(updatedSchemaRecord);
-    LOG.trace("Set locationUri to '{}'", locationUri.toString());
+    LOG.trace("Set locationUri to '{}'", locationUri);
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updatedSchemaRecord);
   }
 
@@ -337,33 +331,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
 
   @Override
   public void contribute(Info.Builder builder) {
-    LOG.trace("Check for SchemaRepo actuator information...");
-
-    URL basePath = schemaConfig.getBasepath();
-    Map<String, String> details = ActuatorUtil.testDirectory(basePath);
-
-    if (!details.isEmpty()) {
-      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
-      builder.withDetail("schemaRepo", details);
-    }
-  }
-
-  private Specification<DataResource> addAuthenticationSpecification(Specification<DataResource> spec) {
-    if (schemaConfig.isAuthEnabled()) {
-      boolean isAdmin;
-      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
-      // Add authorization for non administrators
-      if (!isAdmin) {
-        List<String> authorizationIdentities = AuthenticationHelper.getAuthorizationIdentities();
-        if (authorizationIdentities != null) {
-          LOG.trace("Creating (READ) permission specification.");
-          Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
-        } else {
-          LOG.trace("No permission information provided. Skip creating permission specification.");
-        }
-      }
-    }
-    return spec;
+    LOG.trace("Check for SchemaRepo actuator information (v1)...");
+    LOG.trace("Check for SchemaRepo actuator information (v1) disabled!");
   }
 }

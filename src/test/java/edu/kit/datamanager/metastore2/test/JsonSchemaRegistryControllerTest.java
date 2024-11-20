@@ -11,31 +11,13 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.Agent;
-import edu.kit.datamanager.repo.domain.ContentInformation;
-import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.Date;
-import edu.kit.datamanager.repo.domain.Description;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Locale;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -49,9 +31,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -64,15 +44,27 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.*;
+import java.util.stream.Stream;
+
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 /**
  *
@@ -306,10 +298,8 @@ public class JsonSchemaRegistryControllerTest {
     String locationUri = result.getResponse().getHeader("Location");
     String content = result.getResponse().getContentAsString();
 
-    MvcResult result2 = this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
-    String content2 = result2.getResponse().getContentAsString();
-
-    Assert.assertEquals(content, content2);
+    // URL should point to API v2. Therefor accept header is not allowed. 
+    this.mockMvc.perform(get(locationUri).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isNotAcceptable());
   }
 
   @Test
@@ -536,7 +526,7 @@ public class JsonSchemaRegistryControllerTest {
             file(schemaFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
     MetadataSchemaRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord.class);
-    Assert.assertEquals(result.getSchemaVersion(), Long.valueOf(1l));
+    Assert.assertEquals(result.getSchemaVersion(), Long.valueOf(1L));
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
             file(recordFile).
@@ -730,7 +720,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -758,6 +749,7 @@ public class JsonSchemaRegistryControllerTest {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataSchemaRecord record = mapper.readValue(body, MetadataSchemaRecord.class);
+    String mimeTypeBefore = record.getMimeType();
     record.setMimeType(MediaType.APPLICATION_XML.toString());
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
@@ -766,7 +758,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertEquals(record.getMimeType(), record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -839,12 +832,13 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
 //    Assert.assertEquals(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
-    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
+    Assert.assertEquals(record.getSchemaVersion() + 1L, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -877,7 +871,7 @@ public class JsonSchemaRegistryControllerTest {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     testForNextVersion(record.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
     Assert.assertEquals(record.getSchemaId(), record2.getSchemaId());
-    Assert.assertEquals((long) record.getSchemaVersion() + 1l, (long) record2.getSchemaVersion());
+    Assert.assertEquals(record.getSchemaVersion() + 1L, (long) record2.getSchemaVersion());
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -922,7 +916,8 @@ public class JsonSchemaRegistryControllerTest {
     body = result.getResponse().getContentAsString();
 
     MetadataSchemaRecord record2 = mapper.readValue(body, MetadataSchemaRecord.class);
-    Assert.assertNotEquals(mimeTypeBefore, record2.getMimeType());//mime type was changed by update
+    Assert.assertEquals(mimeTypeBefore, record2.getMimeType());//mime type was not changed (as it is linked to schema)
+    Assert.assertNotEquals(record1.getMimeType(), record2.getMimeType());//mime type was not changed (as it is linked to schema)
     Assert.assertEquals(record1.getCreatedAt(), record2.getCreatedAt());
     // Version shouldn't be updated
     Assert.assertEquals(record1.getSchemaDocumentUri(), record2.getSchemaDocumentUri());
@@ -1026,7 +1021,7 @@ public class JsonSchemaRegistryControllerTest {
     // create should return conflict
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1049,7 +1044,7 @@ public class JsonSchemaRegistryControllerTest {
   private void ingestSchemaRecord(String schemaId) throws Exception {
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setVersion(1l);
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     ObjectMapper mapper = new ObjectMapper();
 
@@ -1068,7 +1063,7 @@ public class JsonSchemaRegistryControllerTest {
     dataResource.setPublisher("SELF");
     Instant now = Instant.now();
     dataResource.setPublicationYear(Integer.toString(Calendar.getInstance().get(Calendar.YEAR)));
-    dataResource.setResourceType(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE));
+    dataResource.setResourceType(ResourceType.createResourceType(DataResourceRecordUtil.JSON_SCHEMA_TYPE, ResourceType.TYPE_GENERAL.MODEL));
     dataResource.getDates().add(Date.factoryDate(now, Date.DATE_TYPE.CREATED));
     dataResource.getFormats().add(MetadataSchemaRecord.SCHEMA_TYPE.JSON.name());
     dataResource.setLastUpdate(now);
@@ -1099,8 +1094,8 @@ public class JsonSchemaRegistryControllerTest {
     contentInformationDao.save(ci);
 
     SchemaRecord schemaRecord = new SchemaRecord();
-    schemaRecord.setSchemaId(dataResource.getId());
-    schemaRecord.setVersion(1l);
+    schemaRecord.setSchemaId(dataResource.getId() + "/1");
+    schemaRecord.setVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     schemaRecord.setSchemaDocumentUri(ci.getContentUri());
     schemaRecord.setDocumentHash(ci.getHash());

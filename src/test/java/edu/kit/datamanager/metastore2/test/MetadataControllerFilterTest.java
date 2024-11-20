@@ -16,16 +16,6 @@ import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -37,9 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -53,12 +41,26 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
 
 /**
  *
@@ -163,6 +165,18 @@ public class MetadataControllerFilterTest {
   }
 
   @Test
+  public void testFindAllSchemaRecords() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    MvcResult res = this.mockMvc.perform(get("/api/v1/schemas/")
+            .header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE))
+            .andDo(print())
+            .andExpect(status().isOk())
+            .andReturn();
+    MetadataSchemaRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataSchemaRecord[].class);
+    Assert.assertEquals("No of schema records:", MAX_NO_OF_SCHEMAS * 2, result.length);
+  }
+
+  @Test
   public void testFindSchemaRecordsBySchemaId() throws Exception {
     ObjectMapper map = new ObjectMapper();
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
@@ -198,7 +212,7 @@ public class MetadataControllerFilterTest {
         Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, item.getSchema().getIdentifierType());
         String schemaUrl = item.getSchema().getIdentifier();
         Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
-        Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
+        Assert.assertTrue(schemaUrl.contains("/api/v2/schemas/"));
         Assert.assertTrue(schemaUrl.contains(schemaId));
       }
     }
@@ -225,6 +239,31 @@ public class MetadataControllerFilterTest {
       MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
       Assert.assertEquals("No of records for schema '1 - " + i + "'", noOfResults, result.length);
+    }
+  }
+
+  @Test
+  public void testFindRecordsByMultipleButWrongSchemaIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += (MAX_NO_OF_SCHEMAS - j + 1) * 2;
+        String relatedResource = RELATED_RESOURCE + j;
+        get.param("schemaId", relatedResource);
+      }
+      get.param("size", Integer.toString(noOfResults * 2));
+      get.header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+      Assert.assertEquals("No of records for schema '1 - " + i + "'", 0, result.length);
     }
   }
 
@@ -368,6 +407,30 @@ public class MetadataControllerFilterTest {
       MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
 
       Assert.assertEquals("No of records for schema '1 - " + i + "'", noOfResults, result.length);
+    }
+  }
+
+  @Test
+  public void testFindRecordsByMultipleButWrongResourceIds() throws Exception {
+    ObjectMapper map = new ObjectMapper();
+    int noOfResults;
+    for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
+      MockHttpServletRequestBuilder get = get("/api/v1/metadata/");
+      noOfResults = 0;
+      for (int j = 1; j <= i; j++) {
+        noOfResults += j;
+        String schemaId = JSON_SCHEMA_ID + j;
+        get.param("resourceId", schemaId);
+      }
+      get.header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE);
+      MvcResult res = this.mockMvc
+              .perform(get)
+              .andDo(print())
+              .andExpect(status().isOk())
+              .andReturn();
+      MetadataRecord[] result = map.readValue(res.getResponse().getContentAsString(), MetadataRecord[].class);
+
+      Assert.assertEquals("No of records for schema '1 - " + i + "'", 0, result.length);
     }
   }
 

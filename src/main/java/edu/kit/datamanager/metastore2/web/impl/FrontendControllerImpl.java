@@ -14,8 +14,6 @@ import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletResponse;
-import java.util.Arrays;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +27,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.List;
 
 /**
  * Controller used by web frontends.
@@ -90,7 +90,7 @@ public class FrontendControllerImpl implements IFrontendController {
       pageable = PageRequest.of(pgbl.getPageNumber() < 1 ? 0 : pgbl.getPageNumber() - 1, pgbl.getPageSize(), Sort.by("id").ascending());
     }
     LOG.trace(SHOW_PAGE, pageable);
-    List<String> metadataDocumentId = id == null ? null : Arrays.asList(id);
+    List<String> metadataDocumentId = id == null ? null : List.of(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords = metadtaControllerImpl.getRecords(null, null, metadataDocumentId, null, null, pageable, wr, hsr, ucb);
     List<MetadataRecord> metadataRecords = responseEntity4metadataRecords.getBody();
 
@@ -144,7 +144,7 @@ public class FrontendControllerImpl implements IFrontendController {
     }
     LOG.trace(SHOW_PAGE, pageable);
 
-    List<String> schemaIds = id == null ? null : Arrays.asList(id);
+    List<String> schemaIds = id == null ? null : List.of(id);
     ResponseEntity< List<MetadataRecord>> responseEntity4metadataRecords;
     List<MetadataRecord> metadataRecords = null;
     String pageSize = null;

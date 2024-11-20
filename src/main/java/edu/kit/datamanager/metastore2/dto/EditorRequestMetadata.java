@@ -6,10 +6,11 @@
 package edu.kit.datamanager.metastore2.dto;
 
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 import org.json.simple.JSONObject;
+
+import java.util.List;
 
 /**
  * Data transfer object for Web UI.

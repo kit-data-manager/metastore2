@@ -16,9 +16,10 @@
 package edu.kit.datamanager.metastore2.dao;
 
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.List;
 
 /**
  * DAO for the record of a schema document.
@@ -28,12 +29,13 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, JpaSpecificationExecutor<SchemaRecord> {
 
   boolean existsSchemaRecordBySchemaIdAndVersion(String schemaId, Long version);
+  boolean existsSchemaRecordBySchemaIdStartsWithAndVersion(String schemaId, Long version);
 
-  SchemaRecord findBySchemaIdAndVersion(String schemaId, Long version);
+  SchemaRecord findBySchemaId(String schemaIdWithVersion);
 
-  List<SchemaRecord> findBySchemaIdOrderByVersionDesc(String schemaId);
+  SchemaRecord findByAlternateId(String alternateId);
 
-  SchemaRecord findTopBySchemaIdOrderByVersionDesc(String schemaId);
+  List<SchemaRecord> findBySchemaIdStartsWithOrderByVersionDesc(String schemaId);
 
-  SchemaRecord findFirstBySchemaIdOrderByVersionDesc(String schemaId);
+  SchemaRecord findFirstBySchemaIdStartsWithOrderByVersionDesc(String schemaId);
 }

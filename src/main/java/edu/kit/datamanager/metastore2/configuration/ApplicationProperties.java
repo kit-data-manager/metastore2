@@ -17,8 +17,6 @@ package edu.kit.datamanager.metastore2.configuration;
 
 import edu.kit.datamanager.annotations.LocalFolderURL;
 import edu.kit.datamanager.configuration.GenericApplicationProperties;
-import java.net.URL;
-import java.util.List;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,6 +24,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
+
+import java.net.URL;
+import java.util.List;
 
 /**
  * Properties for configuration of MetaStore.

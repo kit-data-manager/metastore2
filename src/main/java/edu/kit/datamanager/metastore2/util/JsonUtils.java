@@ -17,26 +17,20 @@ package edu.kit.datamanager.metastore2.util;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.networknt.schema.JsonSchema;
-import com.networknt.schema.JsonSchemaException;
-import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.*;
 import com.networknt.schema.SpecVersion.VersionFlag;
-import static com.networknt.schema.SpecVersion.VersionFlag.V201909;
-import static com.networknt.schema.SpecVersion.VersionFlag.V6;
-import static com.networknt.schema.SpecVersion.VersionFlag.V7;
-import com.networknt.schema.SpecVersionDetector;
-import com.networknt.schema.ValidationMessage;
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 
 /**
  * Utility class for handling json documents

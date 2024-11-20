@@ -22,17 +22,6 @@ import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.junit.Assert;
@@ -51,9 +40,7 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.restdocs.JUnitRestDocumentation;
-import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import org.springframework.security.test.context.support.WithSecurityContextTestExecutionListener;
-import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestExecutionListeners;
@@ -66,15 +53,30 @@ import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Stream;
+
+import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  *
@@ -473,6 +475,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).
             andReturn();
     String locationUri = result.getResponse().getHeader("Location");
+        // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
+
     String content = result.getResponse().getContentAsString();
 
     ObjectMapper map = new ObjectMapper();
@@ -773,7 +778,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
@@ -809,7 +814,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     MetadataRecord result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
 
     record.setRelatedResource(RELATED_RESOURCE_2);
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
@@ -822,7 +827,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
             andReturn();
 
     result = mapper.readValue(res.getResponse().getContentAsString(), MetadataRecord.class);
-    Assert.assertEquals(Long.valueOf(1l), result.getRecordVersion());
+    Assert.assertEquals(Long.valueOf(1L), result.getRecordVersion());
   }
 
   @Test
@@ -852,6 +857,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     String body = result.getResponse().getContentAsString();
     MetadataRecord mr = mapper.readValue(body, MetadataRecord.class);
     String locationUri = result.getResponse().getHeader("Location");
+    // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
     String recordId = mr.getId();
 
     result = this.mockMvc.perform(get(locationUri).
@@ -896,7 +903,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(ResourceIdentifier.IdentifierType.URL, result.getSchema().getIdentifierType());
     String schemaUrl = result.getSchema().getIdentifier();
     Assert.assertTrue(schemaUrl.startsWith("http://localhost:"));
-    Assert.assertTrue(schemaUrl.contains("/api/v1/schemas/"));
+    Assert.assertTrue(schemaUrl.contains("/api/v2/schemas/"));
     Assert.assertTrue(schemaUrl.contains(SCHEMA_ID));
     Assert.assertNotEquals("file:///tmp/dc.xml", result.getMetadataDocumentUri());
   }
@@ -1082,7 +1089,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -1142,7 +1149,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     if (record.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(oldRecord.getAcl()));
       // There should be an additional entry
-      Assert.assertTrue(oldRecord.getAcl().size() + 1 == record2.getAcl().size());
+      Assert.assertEquals(oldRecord.getAcl().size() + 1, record2.getAcl().size());
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
   }
@@ -1305,6 +1312,8 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     String etag = result.getResponse().getHeader("ETag");
     String body = result.getResponse().getContentAsString();
     String locationUri = result.getResponse().getHeader("Location");
+    // Due to redirect from API v1 to API v2.
+    locationUri = locationUri.replace("/v2/", "/v1/");
 
     MetadataRecord record2 = mapper.readValue(body, MetadataRecord.class);
     MockMultipartFile recordFile2 = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record2).getBytes());
@@ -1328,7 +1337,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record2.getCreatedAt(), record3.getCreatedAt());
     Assert.assertEquals(record2.getMetadataDocumentUri().replace("version=1", "version=2"), record3.getMetadataDocumentUri());
     Assert.assertEquals(record2.getSchema().getIdentifier(), record3.getSchema().getIdentifier());
-    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record2.getRecordVersion(), record3.getRecordVersion() - 1L);// version should be 1 higher
     if (record2.getAcl() != null) {
       Assert.assertTrue(record2.getAcl().containsAll(record3.getAcl()));
     }
@@ -1422,7 +1431,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getMetadataDocumentUri().replace("version=1", "version=2"), record2.getMetadataDocumentUri());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }
@@ -1688,7 +1697,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());//mime type was changed by update
     Assert.assertEquals(record.getCreatedAt(), record2.getCreatedAt());
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
-    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1l);// version should be 1 higher
+    Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
       Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
     }

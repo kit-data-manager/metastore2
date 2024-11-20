@@ -18,6 +18,9 @@ package edu.kit.datamanager.metastore2.util;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.clients.SimpleServiceClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -28,8 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for actuators collecting information details about local
@@ -58,7 +59,7 @@ public class ActuatorUtil {
       Path path = Paths.get(pathUrl.toURI());
       properties = determineDetailsForPath(path);
     } catch (URISyntaxException ex) {
-      LOG.error("Invalid base path uri of '" + pathUrl.toString() + "'.", ex);
+      LOG.error("Invalid base path uri of '" + pathUrl + "'.", ex);
     }
     return properties;
   }
@@ -106,12 +107,12 @@ public class ActuatorUtil {
       properties.put("Free space", freeSpace);
 
     } catch (IOException ioe) {
-      LOG.error("Failed to check repository folder at '" + path.toString() + "'.");
+      LOG.error("Failed to check repository folder at '" + path + "'.");
     } finally {
       try {
         Files.deleteIfExists(probe);
       } catch (IOException ignored) {
-        LOG.error("Can't delete file '{}'.", probe.toString());
+        LOG.error("Can't delete file '{}'.", probe);
       }
     }
     return properties;

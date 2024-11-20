@@ -15,33 +15,16 @@
  */
 package edu.kit.datamanager.metastore2.oaipmh.util;
 
+import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
+import org.openarchives.oai._2.*;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import org.openarchives.oai._2.AboutType;
-import org.openarchives.oai._2.DescriptionType;
-import org.openarchives.oai._2.GetRecordType;
-import org.openarchives.oai._2.HeaderType;
-import org.openarchives.oai._2.IdentifyType;
-import org.openarchives.oai._2.ListIdentifiersType;
-import org.openarchives.oai._2.ListMetadataFormatsType;
-import org.openarchives.oai._2.ListRecordsType;
-import org.openarchives.oai._2.ListSetsType;
-import org.openarchives.oai._2.MetadataFormatType;
-import org.openarchives.oai._2.MetadataType;
-import org.openarchives.oai._2.OAIPMHerrorType;
-import org.openarchives.oai._2.OAIPMHerrorcodeType;
-import org.openarchives.oai._2.OAIPMHtype;
-import org.openarchives.oai._2.RecordType;
-import org.openarchives.oai._2.RequestType;
-import org.openarchives.oai._2.SetType;
-import org.openarchives.oai._2.VerbType;
-import edu.kit.datamanager.metastore2.oaipmh.service.AbstractOAIPMHRepository;
-import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
-import org.openarchives.oai._2.ResumptionTokenType;
-import org.slf4j.LoggerFactory;
 
 /**
  * Helper class for collecting request parameters and building OAI-PMH response.
@@ -239,7 +222,28 @@ public class OAIPMHBuilder {
     }
     switch (verb) {
       case GET_RECORD:
-      case LIST_RECORDS: {
+      case LIST_RECORDS: 
+        getOrListRecords(identifier, recordDatestamp, setSpecs, metadata, about);
+        break;
+      case LIST_IDENTIFIERS: {
+        HeaderType header = new HeaderType();
+        if (identifier == null || recordDatestamp == null) {
+          throw new IllegalArgumentException("Arguments identifier and recordDatestamp must not be null.");
+        }
+        header.setIdentifier(identifier);
+        header.setDatestamp(repository.getDateFormat().format(recordDatestamp));
+        // header.setStatus(StatusType.DELETED); --> not supported yet
+        header.getSetSpec().addAll(setSpecs);
+        listIdentifiers.getHeader().add(header);
+        break;
+      }
+      default: 
+        // no action required
+    }
+    return this;
+  }
+  
+  private void getOrListRecords(String identifier, Date recordDatestamp, List<String> setSpecs, Object metadata, Object about) {
         RecordType recordType = new RecordType();
         HeaderType header = new HeaderType();
         if (identifier == null || recordDatestamp == null) {
@@ -269,25 +273,6 @@ public class OAIPMHBuilder {
         } else {
           listRecordsType.getRecord().add(recordType);
         }
-
-        break;
-      }
-      case LIST_IDENTIFIERS: {
-        HeaderType header = new HeaderType();
-        if (identifier == null || recordDatestamp == null) {
-          throw new IllegalArgumentException("Arguments identifier and recordDatestamp must not be null.");
-        }
-        header.setIdentifier(identifier);
-        header.setDatestamp(repository.getDateFormat().format(recordDatestamp));
-        // header.setStatus(StatusType.DELETED); --> not supported yet
-        header.getSetSpec().addAll(setSpecs);
-        listIdentifiers.getHeader().add(header);
-        break;
-      }
-      default: 
-        // no action required
-    }
-    return this;
   }
 
   public OAIPMHBuilder addError(OAIPMHerrorcodeType code, String message) {

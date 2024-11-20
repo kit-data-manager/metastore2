@@ -8,14 +8,10 @@
 
 package org.openarchives.oai._2;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlAttribute;
-import jakarta.xml.bind.annotation.XmlSchemaType;
-import jakarta.xml.bind.annotation.XmlType;
-import jakarta.xml.bind.annotation.XmlValue;
-import java.math.BigInteger;
+import jakarta.xml.bind.annotation.*;
+
 import javax.xml.datatype.XMLGregorianCalendar;
+import java.math.BigInteger;
 
 
 /**

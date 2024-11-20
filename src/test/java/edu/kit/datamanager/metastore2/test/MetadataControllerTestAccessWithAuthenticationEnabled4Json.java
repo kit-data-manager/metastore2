@@ -420,7 +420,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabled4Json {
   private void ingestSchemaRecord(String schemaId) throws Exception {
     MetadataSchemaRecord schemaRecord = new MetadataSchemaRecord();
     schemaRecord.setSchemaId(schemaId);
-    schemaRecord.setSchemaVersion(1l);
+    schemaRecord.setSchemaVersion(1L);
     schemaRecord.setType(MetadataSchemaRecord.SCHEMA_TYPE.JSON);
     Set<AclEntry> aclEntries = new HashSet<>();
     aclEntries.add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));

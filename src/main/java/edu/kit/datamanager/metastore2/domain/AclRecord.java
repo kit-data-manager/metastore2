@@ -21,11 +21,12 @@ import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import org.springframework.http.MediaType;
+
 import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.Data;
-import org.springframework.http.MediaType;
 
 /**
  * Record holding metadata document + list of SIDs allowed to at least read the document.
@@ -33,9 +34,13 @@ import org.springframework.http.MediaType;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @Data
 public class AclRecord implements Serializable {
-
+  /**
+   * Resource type for elastic search indexing.
+   */
   public static final String RESOURCE_TYPE = "application/vnd.datamanager.acl+json";
-
+  /**
+   * Media type for elastic search indexing.
+   */
   public static final MediaType ACL_RECORD_MEDIA_TYPE = MediaType.valueOf(RESOURCE_TYPE);
 
   @NotNull(message = "A list of access control entries with at least access for READ.")

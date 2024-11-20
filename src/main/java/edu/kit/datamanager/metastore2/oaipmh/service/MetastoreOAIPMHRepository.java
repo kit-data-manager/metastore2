@@ -15,23 +15,44 @@
  */
 package edu.kit.datamanager.metastore2.oaipmh.service;
 
-import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
+import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.domain.DataRecord;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
-import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
 import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.xml.DataCiteMapper;
 import edu.kit.datamanager.util.xml.DublinCoreMapper;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.datacite.schema.kernel_4.Resource;
+import org.openarchives.oai._2.*;
+import org.purl.dc.elements._1.ElementContainer;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
+import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Component;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -40,40 +61,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
-import jakarta.xml.bind.JAXBContext;
-import jakarta.xml.bind.JAXBException;
-import jakarta.xml.bind.Marshaller;
+import java.util.*;
 import java.util.function.UnaryOperator;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.datacite.schema.kernel_4.Resource;
-import org.openarchives.oai._2.DeletedRecordType;
-import org.openarchives.oai._2.DescriptionType;
-import org.openarchives.oai._2.GranularityType;
-import org.openarchives.oai._2.MetadataFormatType;
-import org.openarchives.oai._2.OAIPMHerrorcodeType;
-import org.openarchives.oai._2.ResumptionTokenType;
-import org.purl.dc.elements._1.ElementContainer;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Component;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * Simple OAI-PMH repository implementation taking its information from a KIT
@@ -109,10 +98,10 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(MetastoreOAIPMHRepository.class);
 
-  private MetadataFormatType DC_SCHEMA;
-  private MetadataFormatType DATACITE_SCHEMA;
+  private static final MetadataFormatType DC_SCHEMA;
+  private static final MetadataFormatType DATACITE_SCHEMA;
 
-  private OaiPmhConfiguration pluginConfiguration;
+  private final OaiPmhConfiguration pluginConfiguration;
 
   @Autowired
   private IDataRecordDao dataRecordDao;
@@ -120,9 +109,22 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
   private MetastoreConfiguration metadataConfig;
+  
+  static {
+    DC_SCHEMA = new MetadataFormatType();
+    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
+    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
+    DC_SCHEMA.setMetadataPrefix("oai_dc");
+
+    DATACITE_SCHEMA = new MetadataFormatType();
+    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
+    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
+    DATACITE_SCHEMA.setMetadataPrefix("datacite");
+  }
 
   /**
    * Default constructor.
+   * @param pluginConfiguration configuration for OAI-PMH.
    */
   @Autowired
   public MetastoreOAIPMHRepository(OaiPmhConfiguration pluginConfiguration) {
@@ -133,19 +135,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
    * Default constructor.
    *
    * @param name The repository name.
+   * @param pluginConfiguration configuration for OAI-PMH.
    */
   private MetastoreOAIPMHRepository(String name, OaiPmhConfiguration pluginConfiguration) {
     super(name);
     this.pluginConfiguration = pluginConfiguration;
-    DC_SCHEMA = new MetadataFormatType();
-    DC_SCHEMA.setMetadataNamespace("http://www.openarchives.org/OAI/2.0/oai_dc/");
-    DC_SCHEMA.setSchema("http://www.openarchives.org/OAI/2.0/oai_dc.xsd");
-    DC_SCHEMA.setMetadataPrefix("oai_dc");
-
-    DATACITE_SCHEMA = new MetadataFormatType();
-    DATACITE_SCHEMA.setMetadataNamespace("http://datacite.org/schema/kernel-4");
-    DATACITE_SCHEMA.setSchema("http://schema.datacite.org/meta/kernel-4.1/metadata.xsd");
-    DATACITE_SCHEMA.setMetadataPrefix("datacite");
   }
 
   @Override
@@ -160,12 +154,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
 
   @Override
   public List<String> getAdminEmail() {
-    return Arrays.asList(pluginConfiguration.getAdminEmail());
+    return Collections.singletonList(pluginConfiguration.getAdminEmail());
   }
 
   @Override
   public String getEarliestDatestamp() {
-    return getDateFormat().format(new Date(0l));
+    return getDateFormat().format(new Date(0L));
   }
 
   @Override
@@ -207,7 +201,6 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
   public void listSets(OAIPMHBuilder builder) {
     LOGGER.trace("Performing listSets().");
     //@TODO support collections?
-    //builder.addSet("default", "default");
     builder.addError(OAIPMHerrorcodeType.NO_SET_HIERARCHY, "Sets are currently not supported.");
   }
 
@@ -249,12 +242,12 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     LOGGER.trace("Adding {} records to result.", results.size());
     results.stream().forEach(result -> {
       //TODO get proper date
-      Date changeDate = new Date(0l);
+      Date changeDate = new Date(0L);
       if (result.getLastUpdate() != null) {
         changeDate = Date.from(result.getLastUpdate());
       }
 
-      builder.addRecord(result.getMetadataId(), changeDate, Arrays.asList("default"));
+      builder.addRecord(result.getMetadataId(), changeDate, List.of("default"));
     });
   }
 
@@ -345,7 +338,7 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     } else if (object.getSchemaId().equals(schemaId)) {
       LOGGER.info("Return stored document of resource '{}'.", object.getMetadataId());
       try {
-        URL url = new URL(object.getMetadataDocumentUri());
+        URL url = new URI(object.getMetadataDocumentUri()).toURL();
         byte[] readFileToByteArray = FileUtils.readFileToByteArray(Paths.get(url.toURI()).toFile());
         try (InputStream inputStream = new ByteArrayInputStream(readFileToByteArray)) {
           IOUtils.copy(inputStream, bout);
@@ -388,11 +381,11 @@ public class MetastoreOAIPMHRepository extends AbstractOAIPMHRepository {
     Document doc = getMetadataDocument(result, builder.getMetadataPrefix());
     if (doc != null) {
       LOGGER.trace("Adding record using obtained metadata document.");
-      Date resourceDate = new Date(0l);
+      Date resourceDate = new Date(0L);
       if (result.getLastUpdate() != null) {
         resourceDate = Date.from(result.getLastUpdate());
       }
-      builder.addRecord(result.getMetadataId(), resourceDate, Arrays.asList("default"), doc.getDocumentElement());
+      builder.addRecord(result.getMetadataId(), resourceDate, List.of("default"), doc.getDocumentElement());
     } else {
       LOGGER.error("No metadata document found for prefix {} and object identifier {}. Returning OAI-PMH error CANNOT_DISSEMINATE_FORMAT.", builder.getMetadataPrefix(), result.getId());
       builder.addError(OAIPMHerrorcodeType.CANNOT_DISSEMINATE_FORMAT, null);

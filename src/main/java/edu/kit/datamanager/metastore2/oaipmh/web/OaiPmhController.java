@@ -20,10 +20,6 @@ import edu.kit.datamanager.metastore2.oaipmh.util.OAIPMHBuilder;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Marshaller;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.util.Date;
 import org.apache.http.HttpStatus;
 import org.openarchives.oai._2.OAIPMHerrorcodeType;
 import org.openarchives.oai._2.OAIPMHtype;
@@ -37,6 +33,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.util.Date;
 
 /**
  * Controller for OAI-PMH protocol.

@@ -120,7 +120,7 @@ You can see, that most of the sent metadata schema record is empty. Only schemaI
 
 include::{snippets}/register-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/register-schema/http-response.adoc[]
@@ -275,7 +275,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/register-another-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/register-another-schema/http-response.adoc[]
@@ -520,7 +520,7 @@ You can see, that most of the sent metadata schema record is empty. Only schemaI
 
 include::{snippets}/ingest-metadata-document/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/ingest-metadata-document/http-response.adoc[]
@@ -822,7 +822,7 @@ You can see, that most of the sent metadata schema record is empty. Only schemaI
 
 include::{snippets}/register-json-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/register-json-schema/http-response.adoc[]
@@ -1009,7 +1009,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/register-another-json-schema/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/register-another-json-schema/http-response.adoc[]
@@ -1246,7 +1246,7 @@ You can see, that most of the sent metadata schema record is empty. Only schemaI
 
 include::{snippets}/ingest-json-metadata-document/http-request.adoc[]
 
-As Content-Type only 'application/json' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
+As Content-Type only 'multpart/form-data' is supported and should be provided. The other headers are typically set by the HTTP client. After validating the 
 provided document, adding missing information where possible and persisting the created resource, the result is sent back to the user and will look that way:
 
 include::{snippets}/ingest-json-metadata-document/http-response.adoc[]
