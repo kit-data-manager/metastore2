@@ -683,9 +683,9 @@ public class DataResourceRecordUtil {
 
   public static final Specification<DataResource> findByMimetypes(List<String> mimeTypes) {
     // Search for both mimetypes (xml & json)
-    ResourceType resourceType = null;
+    ResourceType resourceType;
     final int JSON = 1; // bit 0
-    final int XML  = 2;  // bit 1
+    final int XML = 2;  // bit 1
     // 
     int searchFor = 0; // 1 - JSON, 2 - XML, 3 - both
     if (mimeTypes != null) {
@@ -936,42 +936,38 @@ public class DataResourceRecordUtil {
     if (dataResource != null) {
       Set<RelatedIdentifier> relatedResources = dataResource.getRelatedIdentifiers();
 
-      // Check if related resource already exists (only one related resource of type isMetadataFor allowed)
+      // Check if related resource already exists (only one related resource of type hasMetadata is allowed)
       for (RelatedIdentifier item : relatedResources) {
-        switch (item.getRelationType()) {
-          case IS_METADATA_FOR:
-            noOfRelatedData++;
-            break;
-          case HAS_METADATA:
-            noOfRelatedSchemas++;
-            break;
-          default:
+        if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
+          noOfRelatedSchemas++;
+        }
+        if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
+          noOfRelatedData++;
         }
       }
     }
     checkNoOfRelatedIdentifiers(noOfRelatedData, noOfRelatedSchemas);
   }
-
+  /** Validate related identifiers.
+   * There has to be exactly one schema (hasMetadata) 
+   * and at *least* one related data resource.
+   * @param noOfRelatedData No of related data resources.
+   * @param noOfRelatedSchemas No of related schemas.
+   */
   private static void checkNoOfRelatedIdentifiers(int noOfRelatedData, int noOfRelatedSchemas) {
-    String message;
-    message = "Invalid related resources! Expected '1' related resource found '%d'. Expected '1' related schema found '%d'!";
-
-    if (noOfRelatedData != 1 || noOfRelatedSchemas != 1) {
+    if ((noOfRelatedSchemas != 1) || (noOfRelatedData == 0)) {
       String errorMessage = "";
-      if (noOfRelatedData == 0) {
-        errorMessage = "Mandatory attribute relatedIdentifier of type 'isMetadataFor' was not found in record. \n";
-      }
-      if (noOfRelatedData > 1) {
-        errorMessage = "Mandatory attribute relatedIdentifier of type 'isMetadataFor' was provided more than once in record. \n";
-      }
       if (noOfRelatedSchemas == 0) {
-        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'hasMetadata' was not found in record. \n";
-      }
+        errorMessage = "Mandatory attribute relatedIdentifier of type 'hasMetadata' was not found in record. \n";
+      }       
       if (noOfRelatedSchemas > 1) {
-        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'hasMetadata' was provided more than once in record. \n";
+        errorMessage = "Mandatory attribute relatedIdentifier of type 'hasMetadata' was provided more than once in record. \n";
+      }
+      if (noOfRelatedData == 0) {
+        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'isMetadataFor' was not found in record. \n";
       }
       errorMessage = errorMessage + "Returning HTTP BAD_REQUEST.";
-      LOG.error(message);
+      LOG.error(errorMessage);
       throw new BadArgumentException(errorMessage);
     }
   }
