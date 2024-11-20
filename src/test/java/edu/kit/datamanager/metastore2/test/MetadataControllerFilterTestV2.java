@@ -382,7 +382,7 @@ public class MetadataControllerFilterTestV2 {
   @Test
   public void testFindRecordsByResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE + i, null, null);
+      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, RELATED_RESOURCE + i, null, null);
       relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH)
               .param("resourceId", relatedIdentifier.getValue()))
@@ -394,9 +394,9 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals((MAX_NO_OF_SCHEMAS - i + 1) * 2, result.length);
       for (DataResource item : result) {
-        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue());
-        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getIdentifierType());
-        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getRelationType());
+        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getValue());
+        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getIdentifierType());
+        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getRelationType());
       }
     }
   }
@@ -467,7 +467,7 @@ public class MetadataControllerFilterTestV2 {
   @Test
   public void testFindRecordsByMultipleResourceIdsIncludingInvalidResourceId() throws Exception {
     for (int i = 1; i <= MAX_NO_OF_SCHEMAS; i++) {
-      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE + i, null, null);
+      edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, RELATED_RESOURCE + i, null, null);
       relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       MvcResult res = this.mockMvc.perform(get(API_METADATA_PATH)
               .param("resourceId", relatedIdentifier.getValue())
@@ -480,9 +480,9 @@ public class MetadataControllerFilterTestV2 {
 
       Assert.assertEquals((MAX_NO_OF_SCHEMAS - i + 1) * 2, result.length);
       for (DataResource item : result) {
-        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getValue());
-        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getIdentifierType());
-        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).getRelationType());
+        Assert.assertEquals(relatedIdentifier.getValue(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getValue());
+        Assert.assertEquals(relatedIdentifier.getIdentifierType(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getIdentifierType());
+        Assert.assertEquals(relatedIdentifier.getRelationType(), DataResourceRecordUtil.getRelatedIdentifier(item, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).getRelationType());
       }
     }
   }
@@ -541,9 +541,9 @@ public class MetadataControllerFilterTestV2 {
    */
   public void ingestMetadataDocument(String schemaId, String resource) throws Exception {
     DataResource record = new DataResource();
-    edu.kit.datamanager.repo.domain.RelatedIdentifier schemaIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.HAS_METADATA, schemaId, null, null);
+    edu.kit.datamanager.repo.domain.RelatedIdentifier schemaIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, schemaId, null, null);
     schemaIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
-    edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(edu.kit.datamanager.repo.domain.RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, resource, null, null);
+    edu.kit.datamanager.repo.domain.RelatedIdentifier relatedIdentifier = edu.kit.datamanager.repo.domain.RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, resource, null, null);
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     record.getRelatedIdentifiers().add(schemaIdentifier);
     record.getRelatedIdentifiers().add(relatedIdentifier);

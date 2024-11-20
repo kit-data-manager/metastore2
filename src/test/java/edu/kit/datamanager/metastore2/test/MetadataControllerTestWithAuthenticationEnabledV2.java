@@ -495,7 +495,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andDo(print()).
             andExpect(status().isCreated()).
             andReturn();
-    DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR).setValue(RELATED_RESOURCE_2.getIdentifier());
+    DataResourceRecordUtil.getRelatedIdentifier(record, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE).setValue(RELATED_RESOURCE_2.getIdentifier());
     recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
 
     this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH).
@@ -887,7 +887,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
         relatedIdentifiers.remove(item);
       }
     }
-    RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING_2, null, null);
+    RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, RELATED_RESOURCE_STRING_2, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     relatedIdentifiers.add(relatedResource);
     record.getAlternateIdentifiers().clear();

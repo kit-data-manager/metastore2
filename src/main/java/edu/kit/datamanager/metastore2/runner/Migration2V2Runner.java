@@ -95,13 +95,13 @@ public class Migration2V2Runner {
     // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
     for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+        item.setRelationType(DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
       }
     }
     // Add provenance
     if (version > 1) {
       String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(id, version - 1l, null, null)).toString();
-      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
+      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, schemaUrl, null, null);
       recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
       LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
     } else {
@@ -147,7 +147,7 @@ public class Migration2V2Runner {
     // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
     for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
       if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        item.setRelationType(RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+        item.setRelationType(DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
         String replaceFirst = item.getValue().replaceFirst("/api/v1/schemas/", "/api/v2/schemas/");
         item.setValue(replaceFirst);
       }
@@ -155,7 +155,7 @@ public class Migration2V2Runner {
     // Add provenance
     if (version > 1) {
       String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, version - 1l, null, null)).toString();
-      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, schemaUrl, null, null);
+      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, schemaUrl, null, null);
       recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
       LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
     } else {
