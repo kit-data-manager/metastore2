@@ -82,6 +82,10 @@ import java.time.Instant;
 public class DataResourceRecordUtil {
 
   public static final String RESOURCE_TYPE = "application/vnd.datacite.org+json";
+  
+  public static final RelatedIdentifier.RELATION_TYPES RELATED_DATA_RESOURCE_TYPE = RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR;
+  public static final RelatedIdentifier.RELATION_TYPES RELATED_SCHEMA_TYPE = RelatedIdentifier.RELATION_TYPES.HAS_METADATA;
+  public static final RelatedIdentifier.RELATION_TYPES RELATED_NEW_VERSION_OF = RelatedIdentifier.RELATION_TYPES.IS_NEW_VERSION_OF;
   /**
    * Mediatype for fetching a DataResource.
    */
@@ -359,7 +363,7 @@ public class DataResourceRecordUtil {
             toUri().
             toString();
     for (RelatedIdentifier item : newDataResource.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
+      if (item.getRelationType().equals(DataResourceRecordUtil.RELATED_NEW_VERSION_OF)) {
         String oldUrl = item.getValue();
         item.setValue(urlToPredecessor);
         item.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
@@ -368,7 +372,7 @@ public class DataResourceRecordUtil {
       }
     }
     if (!foundOldIdentifier) {
-      RelatedIdentifier newRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, urlToPredecessor, null, null);
+      RelatedIdentifier newRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, urlToPredecessor, null, null);
       newRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
       newDataResource.getRelatedIdentifiers().add(newRelatedIdentifier);
     }
@@ -675,7 +679,7 @@ public class DataResourceRecordUtil {
         }
       }
       if (!allSchemaIds.isEmpty()) {
-        specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, allSchemaIds.toArray(String[]::new)));
+        specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, allSchemaIds.toArray(String[]::new)));
       }
     }
     return specWithSchema;
@@ -728,7 +732,7 @@ public class DataResourceRecordUtil {
   public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
     Specification<DataResource> specWithSchema = specification;
     if ((relatedIds != null) && !relatedIds.isEmpty()) {
-      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedIds.toArray(String[]::new)));
+      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedIds.toArray(String[]::new)));
     }
     return specWithSchema;
   }
@@ -938,10 +942,10 @@ public class DataResourceRecordUtil {
 
       // Check if related resource already exists (only one related resource of type hasMetadata is allowed)
       for (RelatedIdentifier item : relatedResources) {
-        if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.HAS_METADATA) {
+        if (item.getRelationType() == DataResourceRecordUtil.RELATED_SCHEMA_TYPE) {
           noOfRelatedSchemas++;
         }
-        if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR) {
+        if (item.getRelationType() == DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE) {
           noOfRelatedData++;
         }
       }
@@ -958,13 +962,13 @@ public class DataResourceRecordUtil {
     if ((noOfRelatedSchemas != 1) || (noOfRelatedData == 0)) {
       String errorMessage = "";
       if (noOfRelatedSchemas == 0) {
-        errorMessage = "Mandatory attribute relatedIdentifier of type 'hasMetadata' was not found in record. \n";
+        errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was not found in record. \n";
       }       
       if (noOfRelatedSchemas > 1) {
-        errorMessage = "Mandatory attribute relatedIdentifier of type 'hasMetadata' was provided more than once in record. \n";
+        errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was provided more than once in record. \n";
       }
       if (noOfRelatedData == 0) {
-        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type 'isMetadataFor' was not found in record. \n";
+        errorMessage = errorMessage + "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE + "' was not found in record. \n";
       }
       errorMessage = errorMessage + "Returning HTTP BAD_REQUEST.";
       LOG.error(errorMessage);
@@ -980,7 +984,7 @@ public class DataResourceRecordUtil {
    */
   public static RelatedIdentifier getSchemaIdentifier(DataResource dataResourceRecord) {
     LOG.trace("Get schema identifier for '{}'.", dataResourceRecord.getId());
-    return getRelatedIdentifier(dataResourceRecord, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+    return getRelatedIdentifier(dataResourceRecord, DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
   }
 
   /**
@@ -996,7 +1000,7 @@ public class DataResourceRecordUtil {
 
     Set<RelatedIdentifier> relatedResources = dataResourceRecord.getRelatedIdentifiers();
 
-    // Check if related resource already exists (only one related resource of type isMetadataFor allowed)
+    // Check if related resource already exists (only one related resource of type DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE allowed)
     for (RelatedIdentifier item : relatedResources) {
       if (item.getRelationType().equals(relationType)) {
         relatedIdentifier = item;
@@ -1736,7 +1740,7 @@ public class DataResourceRecordUtil {
   }
 
   public static final void setRelatedResource(MetadataRecord metadataRecord, DataResource dataResource) {
-    RelatedIdentifier relatedId = getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    RelatedIdentifier relatedId = getRelatedIdentifier(dataResource, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE);
     if (relatedId != null) {
       ResourceIdentifier resourceIdentifier = ResourceIdentifier.factoryInternalResourceIdentifier(relatedId.getValue());
       if (relatedId.getIdentifierType() != null) {

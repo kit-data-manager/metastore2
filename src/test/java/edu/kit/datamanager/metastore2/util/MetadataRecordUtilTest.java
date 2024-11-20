@@ -729,7 +729,7 @@ public class MetadataRecordUtilTest {
     //@ToDo Make this working again
 //    dataResource.getTitles().add(Title.factoryTitle(SCHEMA_ID));
 //    dataResource.setResourceType(ResourceType.createResourceType(SCHEMA_ID));
-//    RelatedIdentifier relId = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, SCHEMA_ID, null, null);
+//    RelatedIdentifier relId = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, SCHEMA_ID, null, null);
 //    relId.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
 //    dataResource.getRelatedIdentifiers().add(relId);
 //    // dataResourceService adds ACL
@@ -819,7 +819,7 @@ public class MetadataRecordUtilTest {
   }
 
   private void setSchema(DataResource dataResource) {
-    RelatedIdentifier factoryRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "anySchema", null, null);
+    RelatedIdentifier factoryRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, "anySchema", null, null);
     factoryRelatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
     dataResource.getRelatedIdentifiers().add(factoryRelatedIdentifier);
   }

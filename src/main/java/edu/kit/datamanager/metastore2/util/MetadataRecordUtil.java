@@ -454,9 +454,9 @@ public class MetadataRecordUtil {
    * @param metadataRecord record holding resource information.
    */
   private static void updateRelatedIdentifierForResource(DataResource dataResource, MetadataRecord metadataRecord) {
-    RelatedIdentifier schemaRelatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    RelatedIdentifier schemaRelatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE);
     if (schemaRelatedIdentifier == null) {
-      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, null, null, null);
+      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, null, null, null);
       dataResource.getRelatedIdentifiers().add(schemaRelatedIdentifier);
     }
     ResourceIdentifier schemaIdentifier = metadataRecord.getRelatedResource();
@@ -475,7 +475,7 @@ public class MetadataRecordUtil {
   private static void updateRelatedIdentifierForSchema(DataResource dataResource, MetadataRecord metadataRecord) {
     RelatedIdentifier schemaRelatedIdentifier = DataResourceRecordUtil.getSchemaIdentifier(dataResource);
     if (schemaRelatedIdentifier == null) {
-      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, null, null, null);
+      schemaRelatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, null, null, null);
       dataResource.getRelatedIdentifiers().add(schemaRelatedIdentifier);
     }
     ResourceIdentifier schemaIdentifier = MetadataSchemaRecordUtil.getSchemaIdentifier(schemaConfig, metadataRecord);

@@ -527,7 +527,7 @@ public class CreateSchemaUtil {
     if (versionAsString != null) {
       record.setVersion(versionAsString);
     }
-    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE);
     relatedIdentifier.setValue("any");
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
     record.getAcls().add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
@@ -560,7 +560,7 @@ public class CreateSchemaUtil {
         String etag = result.getResponse().getHeader("ETag");
         String body = result.getResponse().getContentAsString();
         record = mapper.readValue(body, DataResource.class);
-        relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+        relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
         if ((schemaId != null) && schemaId.startsWith("http")) {
           relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
         } else {

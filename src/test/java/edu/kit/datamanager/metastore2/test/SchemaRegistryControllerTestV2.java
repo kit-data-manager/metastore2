@@ -1984,10 +1984,10 @@ public class SchemaRegistryControllerTestV2 {
     setTitle(record, id);
     record.setResourceType(ResourceType.createResourceType(metadataType, ResourceType.TYPE_GENERAL.MODEL));
 
-    RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, RELATED_RESOURCE_STRING, null, null);
+    RelatedIdentifier relatedResource = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, RELATED_RESOURCE_STRING, null, null);
     relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     record.getRelatedIdentifiers().add(relatedResource);
-    relatedResource = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, schemaId, null, null);
+    relatedResource = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, schemaId, null, null);
     if ((schemaId != null) && schemaId.startsWith("http")) {
       relatedResource.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
     } else {
@@ -2010,22 +2010,22 @@ public class SchemaRegistryControllerTestV2 {
   }
   
   public static void setRelatedResource(DataResource dataResource, String relatedResource) {
-    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE);
     if (relatedIdentifier != null) { 
       relatedIdentifier.setValue(relatedResource);
     } else {
-       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, relatedResource, null, null);
+       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedResource, null, null);
     dataResource.getRelatedIdentifiers().add(relatedIdentifier);
     }
     relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
  
   }
   public static void setRelatedSchema(DataResource dataResource, String relatedSchema) {
-    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, RelatedIdentifier.RELATION_TYPES.HAS_METADATA);
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(dataResource, DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
     if (relatedIdentifier != null) { 
       relatedIdentifier.setValue(relatedSchema);
     } else {
-       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, relatedSchema, null, null);
+       relatedIdentifier = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_SCHEMA_TYPE, relatedSchema, null, null);
     dataResource.getRelatedIdentifiers().add(relatedIdentifier);
     }
     if (relatedSchema.startsWith("http"))   {
@@ -2287,16 +2287,16 @@ public class SchemaRegistryControllerTestV2 {
     copyFirst.addAll(first);
     copySecond.addAll(second);
     for (RelatedIdentifier item : copyFirst) {
-      if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
+      if (item.getRelationType() == DataResourceRecordUtil.RELATED_NEW_VERSION_OF) {
         provenanceFirstRelatedIdentifier = item;
-        Assert.assertEquals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, item.getRelationType());
+        Assert.assertEquals(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, item.getRelationType());
         Assert.assertEquals(IDENTIFIER_TYPE.URL, item.getIdentifierType());
         break;
       }
     }
     for (RelatedIdentifier item : copySecond) {
-      if (item.getRelationType() == RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM) {
-       Assert.assertEquals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM, item.getRelationType());
+      if (item.getRelationType() == DataResourceRecordUtil.RELATED_NEW_VERSION_OF) {
+       Assert.assertEquals(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, item.getRelationType());
       Assert.assertEquals(IDENTIFIER_TYPE.URL, item.getIdentifierType());
        provenanceSecondRelatedIdentifier = item;
        if (provenanceFirstRelatedIdentifier != null) {
