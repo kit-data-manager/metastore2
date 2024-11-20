@@ -229,28 +229,81 @@ public class DataResourceRecordUtilTest {
     System.out.println("testvalidateRelatedResources4MetadataDocuments");
     try {
       DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(null);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
+      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+    }
+    try {
+      DataResource hasNoRelatedIdentifier = DataResource.factoryNewDataResource();
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasNoRelatedIdentifier);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
+      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+    }
+    try {
+      DataResource hasNeitherSchemaNorDataResource = DataResource.factoryNewDataResource();
+      hasNeitherSchemaNorDataResource.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_CITED_BY, "citation", null, null));
+      hasNeitherSchemaNorDataResource.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_DOCUMENTED_BY, "documentation", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasNeitherSchemaNorDataResource);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
+      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+    }
+    try {
+      DataResource hasTwoDataResourcesButNoSchema = DataResource.factoryNewDataResource();
+      hasTwoDataResourcesButNoSchema.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "first data", null, null));
+      hasTwoDataResourcesButNoSchema.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "second data", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasTwoDataResourcesButNoSchema);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertFalse("Multiple 'isMetadataFor' should be allowed!", bae.getMessage().contains("isMetadataFor"));
+      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+    }
+    try {
+      DataResource hasTwoSchemasAndNoDataResource = DataResource.factoryNewDataResource();
+      hasTwoSchemasAndNoDataResource.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "first schema", null, null));
+      hasTwoSchemasAndNoDataResource.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "second schema", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasTwoSchemasAndNoDataResource);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
+    }
+    try {
+      DataResource hasOneSchemaAndNoDataResource = DataResource.factoryNewDataResource();
+      hasOneSchemaAndNoDataResource.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "first schema", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasOneSchemaAndNoDataResource);
+      assertTrue(false);
+    } catch (BadArgumentException bae) {
+      assertFalse("Error should not contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
+    }
+    try {
+      DataResource hasSchemaAndTwoDataResources = DataResource.factoryNewDataResource();
+      hasSchemaAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "first schema", null, null));
+      hasSchemaAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "first data", null, null));
+      hasSchemaAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "second data", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasSchemaAndTwoDataResources);
       assertTrue(true);
     } catch (BadArgumentException bae) {
-      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
-      assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
-    }
-    try {
-      DataResource isMetadataFor = DataResource.factoryNewDataResource();
-      isMetadataFor.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "first", null, null));
-      isMetadataFor.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "second", null, null));
-      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(isMetadataFor);
+      assertFalse("Error should not contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+      assertFalse("Multiple 'isMetadataFor' should be allowed!", bae.getMessage().contains("isMetadataFor"));
       assertTrue(false);
-    } catch (BadArgumentException bae) {
-      assertTrue("Error should contain 'isMetadataFor'", bae.getMessage().contains("isMetadataFor"));
     }
     try {
-      DataResource hasMetadata = DataResource.factoryNewDataResource();
-      hasMetadata.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "first", null, null));
-      hasMetadata.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "second", null, null));
-      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasMetadata);
+      DataResource hasTwoSchemasAndTwoDataResources = DataResource.factoryNewDataResource();
+      hasTwoSchemasAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "first schema", null, null));
+      hasTwoSchemasAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.HAS_METADATA, "second schema", null, null));
+      hasTwoSchemasAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "first data", null, null));
+      hasTwoSchemasAndTwoDataResources.getRelatedIdentifiers().add(RelatedIdentifier.factoryRelatedIdentifier(RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR, "second data", null, null));
+      DataResourceRecordUtil.validateRelatedResources4MetadataDocuments(hasTwoSchemasAndTwoDataResources);
       assertTrue(false);
     } catch (BadArgumentException bae) {
       assertTrue("Error should contain 'hasMetadata'", bae.getMessage().contains("hasMetadata"));
+      assertFalse("Multiple 'isMetadataFor' should be allowed!", bae.getMessage().contains("isMetadataFor"));
     }
   }
 
