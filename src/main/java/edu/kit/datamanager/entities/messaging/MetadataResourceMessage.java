@@ -104,7 +104,12 @@ public class MetadataResourceMessage extends DataResourceMessage {
     Map<String, String> properties = new HashMap<>();
     if (metadataRecord != null) {
       properties.put(RESOLVING_URL_PROPERTY, removeFilterFromUri(metadataRecord.getMetadataDocumentUri()));
-      properties.put(DOCUMENT_TYPE_PROPERTY, metadataRecord.getSchema().getIdentifier());
+      // remove base path of endpoint from URL e.g.: http://x.y.z/metastore/api/v2/schemas/id_of_schema -> id_of_schema
+      String schemaDocumentUri = metadataRecord.getSchema().getIdentifier();
+      String[] split = schemaDocumentUri.split("\\/", -1); 
+      String schemaId = removeFilterFromUri(split[split.length - 1]);
+      properties.put(DOCUMENT_TYPE_PROPERTY, schemaId);
+      
       msg.setEntityId(metadataRecord.getId());
     }
     if (action != null) {
@@ -160,7 +165,8 @@ public class MetadataResourceMessage extends DataResourceMessage {
     if (dataResource != null) {
       String metadataDocumentUri = DataResourceRecordUtil.getMetadataDocumentUri(dataResource.getId(), dataResource.getVersion()).toString();
       String schemaDocumentUri = DataResourceRecordUtil.getSchemaIdentifier(dataResource).getValue();
-      String[] split = schemaDocumentUri.split(DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR, -1);
+      // remove base path of endpoint from URL e.g.: http://x.y.z/metastore/api/v2/schemas/id_of_schema -> id_of_schema
+      String[] split = schemaDocumentUri.split("\\/", -1); 
       String schemaId = removeFilterFromUri(split[split.length - 1]);
 
       properties.put(RESOLVING_URL_PROPERTY, removeFilterFromUri(metadataDocumentUri));

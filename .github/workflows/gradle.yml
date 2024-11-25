@@ -5,13 +5,13 @@ name: build with gradle
 
 on:
   push:
-    branches: [ master, main, testWorkflow, NEP ]
+    branches: [ main, testWorkflow, NEP ]
   pull_request:
-    branches: [ master, main, development, NEP ]
+    branches: [ main, development, NEP ]
 
 env:
     # JDK version used for building jar file
-    currentBuildVersion: 17
+    currentBuildVersion: 21
 jobs:
   build:
     runs-on: ${{ matrix.operating-system }}
@@ -19,7 +19,7 @@ jobs:
       matrix:
         operating-system: [ubuntu-latest, macOS-latest, windows-latest]
         # Use both LTS releases and latest one for tests
-        jdk: [ 17, 19 ]
+        jdk: [ 21, 23 ]
     steps:
     - name: Checkout repo
       uses: actions/checkout@v4
