@@ -103,12 +103,10 @@ public class MetadataResourceMessage extends DataResourceMessage {
     MetadataResourceMessage msg = new MetadataResourceMessage();
     Map<String, String> properties = new HashMap<>();
     if (metadataRecord != null) {
-      properties.put(RESOLVING_URL_PROPERTY, removeFilterFromUri(metadataRecord.getMetadataDocumentUri()));
-      // remove base path of endpoint from URL e.g.: http://x.y.z/metastore/api/v2/schemas/id_of_schema -> id_of_schema
+      String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
       String schemaDocumentUri = metadataRecord.getSchema().getIdentifier();
-      String[] split = schemaDocumentUri.split("\\/", -1); 
-      String schemaId = removeFilterFromUri(split[split.length - 1]);
-      properties.put(DOCUMENT_TYPE_PROPERTY, schemaId);
+      properties.put(RESOLVING_URL_PROPERTY, metadataDocumentUri);
+      properties.put(DOCUMENT_TYPE_PROPERTY, schemaDocumentUri);
       
       msg.setEntityId(metadataRecord.getId());
     }
@@ -165,12 +163,9 @@ public class MetadataResourceMessage extends DataResourceMessage {
     if (dataResource != null) {
       String metadataDocumentUri = DataResourceRecordUtil.getMetadataDocumentUri(dataResource.getId(), dataResource.getVersion()).toString();
       String schemaDocumentUri = DataResourceRecordUtil.getSchemaIdentifier(dataResource).getValue();
-      // remove base path of endpoint from URL e.g.: http://x.y.z/metastore/api/v2/schemas/id_of_schema -> id_of_schema
-      String[] split = schemaDocumentUri.split("\\/", -1); 
-      String schemaId = removeFilterFromUri(split[split.length - 1]);
 
-      properties.put(RESOLVING_URL_PROPERTY, removeFilterFromUri(metadataDocumentUri));
-      properties.put(DOCUMENT_TYPE_PROPERTY, schemaId);
+      properties.put(RESOLVING_URL_PROPERTY, metadataDocumentUri);
+      properties.put(DOCUMENT_TYPE_PROPERTY, schemaDocumentUri);
       msg.setEntityId(dataResource.getId());
     }
     if (action != null) {
@@ -185,19 +180,7 @@ public class MetadataResourceMessage extends DataResourceMessage {
     msg.setCurrentTimestamp();
     return msg;
   }
-  
-  /**
-   * Remove version and other stuff added to the URI.
-   * @param uri URI of the object.
-   * @return  URI without additional parameter.
-   */
-  public static String removeFilterFromUri(String uri) {
-    String strippedUri = null;
-    if (uri != null) {
-      strippedUri = uri.split("\\?", -1)[0];
-    }
-    return strippedUri;
-  }
+
   @Override
   public String getEntityName() {
     return "metadata";
