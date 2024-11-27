@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
-## [2.0.0] - 2024-11-25
+## [2.0.0] - 2024-11-29
 ### Security
 
 ### Added
@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - DataCite is now supported as administrative metadata (API V2)
+- Update to Java 21
 - Update dependency gradle to v8.11.1
 - Update rabbitmq Docker tag to v4
 - Update eclipse-temurin Docker tag to v23
@@ -28,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Libs
 - Update dependency ajv to v8.17.1
 - Update dependency com.google.errorprone:error_prone_core to v2.36.0
-- Update dependency com.networknt:json-schema-validator to v1.5.3
+- Update dependency com.networknt:json-schema-validator to v1.5.4
 - Update dependency commons-io:commons-io to v2.18.0
 - Update dependency edu.kit.datamanager:repo-core to v1.2.3
 - Update dependency edu.kit.datamanager:service-base to v1.3.2
@@ -45,8 +46,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update dependency org.springframework.data:spring-data-elasticsearch to v5.4.0
 - Update dependency org.springframework.restdocs:spring-restdocs-mockmvc to v3.0.3
 - Update dependency org.springframework:spring-messaging to v6.2.0
+- Update dependency org.springframework.cloud:spring-cloud-gateway-mvc to v4.1.6
 - Update dependency org.springframework.cloud:spring-cloud-starter-config to v4.1.3
-- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.1.3
+- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.1.4
 - Bump org.springframework.data:spring-data-elasticsearch from 5.3.3 to 5.3.4.
 
 ### Deprecated
