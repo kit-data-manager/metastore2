@@ -118,8 +118,6 @@ In addition, ACL may be useful to make schema readable/editable by
 others. This will be of interest while accessing/updating an existing
 schema.(if authorization is enabled)
 
-License URI is optional. It’s new since 1.4.2.
-
 ## Registering a Metadata Schema Document
 
 The following example shows the creation of the first XSD schema only
@@ -196,7 +194,7 @@ the user and will look that way:
 
     HTTP/1.1 201 Created
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=1
-    ETag: "1432044929"
+    ETag: "58150585"
     Content-Type: application/json
     Content-Length: 801
 
@@ -224,7 +222,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -233,7 +231,7 @@ the user and will look that way:
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:32.58Z",
+      "lastUpdate" : "2024-11-25T13:50:12.08Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -261,7 +259,7 @@ field 'Id'.
 
 As 'Accept' field you have to provide
 'application/vnd.datacite.org+json' otherwise you will get the landing
-page of the digital object schema instead.
+page of the digital object instead.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_xsd' -i -X GET \
         -H 'Accept: application/vnd.datacite.org+json'
@@ -278,7 +276,7 @@ As a result, you receive the datacite record send before and again the
 corresponding ETag in the HTTP response header.
 
     HTTP/1.1 200 OK
-    ETag: "1432044929"
+    ETag: "58150585"
     Content-Type: application/vnd.datacite.org+json
     Content-Length: 801
 
@@ -306,7 +304,7 @@ corresponding ETag in the HTTP response header.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -315,7 +313,7 @@ corresponding ETag in the HTTP response header.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:32.58Z",
+      "lastUpdate" : "2024-11-25T13:50:12.08Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -324,7 +322,7 @@ corresponding ETag in the HTTP response header.
       } ]
     }
 
-### Getting a Metadata Schema Document
+### Getting a Schema Document
 
 For obtaining accessible metadata schemas you also have to provide the
 'schemaId'. For accessing schema document you have to provide
@@ -395,14 +393,14 @@ metadata schema document and/or datacite record.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "1432044929"' \
+        -H 'If-Match: "58150585"' \
         -F 'schema=@schema-v2.xsd;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
     PUT /metastore/api/v2/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "1432044929"
+    If-Match: "58150585"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -432,7 +430,7 @@ ETag.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=2
-    ETag: "1398092788"
+    ETag: "-879539924"
     Content-Type: application/json
     Content-Length: 1011
 
@@ -460,7 +458,7 @@ ETag.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -475,7 +473,7 @@ ETag.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:32.695Z",
+      "lastUpdate" : "2024-11-25T13:50:12.211Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -509,14 +507,14 @@ document and/or datacite record.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "1398092788"' \
+        -H 'If-Match: "-879539924"' \
         -F 'schema=@schema-v3.xsd;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
     PUT /metastore/api/v2/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "1398092788"
+    If-Match: "-879539924"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -547,7 +545,7 @@ ETag.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=3
-    ETag: "-393230376"
+    ETag: "1398169616"
     Content-Type: application/json
     Content-Length: 1011
 
@@ -575,7 +573,7 @@ ETag.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -590,7 +588,7 @@ ETag.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:32.731Z",
+      "lastUpdate" : "2024-11-25T13:50:12.251Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -675,7 +673,7 @@ the user and will look that way:
 
     HTTP/1.1 201 Created
     Location: http://localhost:8040/metastore/api/v2/schemas/another_xsd?version=1
-    ETag: "1370518322"
+    ETag: "-1133048982"
     Content-Type: application/json
     Content-Length: 799
 
@@ -703,7 +701,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 2,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -712,7 +710,7 @@ the user and will look that way:
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:32.747Z",
+      "lastUpdate" : "2024-11-25T13:50:12.267Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 2,
@@ -723,7 +721,7 @@ the user and will look that way:
 
 Now there are two schemaIds registered in the metadata schema registry.
 
-### Getting a List of Metadata Schema Records
+### Getting a List of Datacite Records of a Schema
 
 For getting all accessible datacite records of schema documents type:
 
@@ -765,7 +763,7 @@ As a result, you receive a list of datacite records.
       },
       "dates" : [ {
         "id" : 2,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -774,7 +772,7 @@ As a result, you receive a list of datacite records.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:32.747Z",
+      "lastUpdate" : "2024-11-25T13:50:12.267Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 2,
@@ -805,7 +803,7 @@ As a result, you receive a list of datacite records.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -820,7 +818,7 @@ As a result, you receive a list of datacite records.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:32.731Z",
+      "lastUpdate" : "2024-11-25T13:50:12.251Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -845,7 +843,7 @@ The modified HTTP request with pagination looks like follows:
     GET /metastore/api/v2/schemas/?page=0&size=20 HTTP/1.1
     Host: localhost:8040
 
-### Getting a List of all Schema Records for a Specific SchemaId
+### Getting a List of all Datacite Records of a Schema for a Specific SchemaId
 
 If you want to obtain all versions of a specific schema you may add the
 schemaId as a filter parameter. This may look like this:
@@ -889,7 +887,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -904,7 +902,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:32.731Z",
+      "lastUpdate" : "2024-11-25T13:50:12.251Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -935,7 +933,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -950,7 +948,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:32.695Z",
+      "lastUpdate" : "2024-11-25T13:50:12.211Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -981,7 +979,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -990,7 +988,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:32.58Z",
+      "lastUpdate" : "2024-11-25T13:50:12.08Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -1200,21 +1198,21 @@ example we introduce a user called 'admin' and give him all rights.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_xsd' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-393230376"' \
+        -H 'If-Match: "1398169616"' \
         -F 'record=@schema-record-v4.json;type=application/json'
 
 Same for the HTTP request.
 
     PUT /metastore/api/v2/schemas/my_first_xsd HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-393230376"
+    If-Match: "1398169616"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=schema-record-v4.json
     Content-Type: application/json
 
-    {"id":"my_first_xsd","identifier":{"id":1,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":1,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":1,"value":"Title for my_first_xsd","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":1,"value":"XML_Schema","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":1,"value":"2024-11-22T14:26:32Z","type":"CREATED"}],"relatedIdentifiers":[{"id":1,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/metadata/my_first_xsd?version=2","relationType":"IS_NEW_VERSION_OF","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":1,"value":"my_first_xsd","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"3","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:32.731Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}]}
+    {"id":"my_first_xsd","identifier":{"id":1,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":1,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":1,"value":"Title for my_first_xsd","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":1,"value":"XML_Schema","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":1,"value":"2024-11-25T13:50:12Z","type":"CREATED"}],"relatedIdentifiers":[{"id":1,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/metadata/my_first_xsd?version=2","relationType":"IS_NEW_VERSION_OF","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":1,"value":"my_first_xsd","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"3","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:12.251Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 As a result, you receive 200 as HTTP status, the updated datacite record
@@ -1222,9 +1220,9 @@ and the updated ETag and location in the HTTP response header.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=3
-    ETag: "137544821"
+    ETag: "1337460292"
     Content-Type: application/json
-    Content-Length: 1087
+    Content-Length: 1086
 
     {
       "id" : "my_first_xsd",
@@ -1250,7 +1248,7 @@ and the updated ETag and location in the HTTP response header.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:32Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1265,7 +1263,7 @@ and the updated ETag and location in the HTTP response header.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:33.003Z",
+      "lastUpdate" : "2024-11-25T13:50:12.56Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -1347,7 +1345,7 @@ At least the following elements have to be provided by the user:
 
 -   relatedIdentifier/schema: Link to the related schema.
     (identifierType: INTERNAL and URL are supported, relationType:
-    IS\_DERIVED\_FROM)
+    HAS\_METADATA)
 
 -   relatedIdentifier/data: Link to the (data) resource.
     (identifierType: any, relationType: IS\_METADATA\_FOR)
@@ -1358,8 +1356,6 @@ In addition, ACL may be useful to make metadata editable by others.
 If linked schema is identified by its schemaId the INTERNAL type has to
 be used. It’s then linked to the current schema version at creation
 time.
-
-License URI is optional. It’s new since 1.4.2.
 
 ### Register/Ingest a Datacite Record with Metadata Document
 
@@ -1381,7 +1377,7 @@ and its datacite record only providing mandatory fields mentioned above:
         {
           "identifierType": "URL",
           "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=1",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         },
         {
           "identifierType": "URL",
@@ -1435,13 +1431,13 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1
-    ETag: "-1820103729"
+    Location: http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1
+    ETag: "-1376240683"
     Content-Type: application/json
     Content-Length: 1203
 
     {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -1464,7 +1460,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1480,11 +1476,11 @@ the user and will look that way:
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:33.023Z",
+      "lastUpdate" : "2024-11-25T13:50:12.582Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -1506,12 +1502,12 @@ conflicts.
 For accessing the metadata the location URL provided before may be used.
 The URL is compiled by the id of the metadata and its version.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1' -i -X GET \
         -H 'Accept: application/xml'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1 HTTP/1.1
+    GET /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1 HTTP/1.1
     Accept: application/xml
     Host: localhost:8040
 
@@ -1542,12 +1538,12 @@ The only difference is the content type. It has to be set to
 "application/vnd.datacite.org+json". Then the command line looks like
 this:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1' -i -X GET \
         -H 'Accept: application/vnd.datacite.org+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1 HTTP/1.1
+    GET /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1 HTTP/1.1
     Accept: application/vnd.datacite.org+json
     Host: localhost:8040
 
@@ -1555,13 +1551,13 @@ The linked metadata will be returned. The result is sent back to the
 user and will look that way:
 
     HTTP/1.1 200 OK
-    ETag: "-1820103729"
-    Location: http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1
+    ETag: "-1376240683"
+    Location: http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1
     Content-Type: application/vnd.datacite.org+json
     Content-Length: 1203
 
     {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -1584,7 +1580,7 @@ user and will look that way:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1600,11 +1596,11 @@ user and will look that way:
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:33.023Z",
+      "lastUpdate" : "2024-11-25T13:50:12.582Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -1631,7 +1627,7 @@ the ETag is needed:
           "id": 1,
           "identifierType": "URL",
           "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=2",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         }
       ],
       [...]
@@ -1651,9 +1647,9 @@ the ETag is needed:
       <example:date>2018-07-02</example:date>
     </example:metadata>
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-1820103729"' \
+        -H 'If-Match: "-1376240683"' \
         -F 'record=@metadata-record-v2.json;type=application/json' \
         -F 'document=@metadata-v2.xml;type=application/xml'
 
@@ -1661,16 +1657,16 @@ You can see, that the schema was set to version 2 (allowing additional
 field for date) and the ACL entry for "guest" was added. All other
 properties are still the same. HTTP-wise the call looks as follows:
 
-    PUT /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9 HTTP/1.1
+    PUT /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-1820103729"
+    If-Match: "-1376240683"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record-v2.json
     Content-Type: application/json
 
-    {"id":"db2379c7-1952-406d-ae69-5a9a9d39c9c9","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first XML metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"XML_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-22T14:26:33Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=2","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"db2379c7-1952-406d-ae69-5a9a9d39c9c9","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:33.023Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
+    {"id":"23dd1d7d-f4fa-40ad-a846-0a2c50b06399","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first XML metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"XML_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-25T13:50:12Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_xsd?version=2","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"23dd1d7d-f4fa-40ad-a846-0a2c50b06399","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:12.582Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v2.xml
     Content-Type: application/xml
@@ -1685,13 +1681,13 @@ properties are still the same. HTTP-wise the call looks as follows:
 The response provides the updated datacite record:
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2
-    ETag: "1547105945"
+    Location: http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2
+    ETag: "-727104155"
     Content-Type: application/json
     Content-Length: 1475
 
     {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -1714,7 +1710,7 @@ The response provides the updated datacite record:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1730,16 +1726,16 @@ The response provides the updated datacite record:
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:33.105Z",
+      "lastUpdate" : "2024-11-25T13:50:12.678Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -1762,25 +1758,25 @@ Repeat the last step and update to the current version. As mentioned
 before the ETag is needed. As the ETag has changed in the meanwhile you
 first have to get the new ETag.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2' -i -X GET \
         -H 'Accept: application/vnd.datacite.org+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2 HTTP/1.1
+    GET /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2 HTTP/1.1
     Accept: application/vnd.datacite.org+json
     Host: localhost:8040
 
 You will get the new datacite record with the new ETag.
 
     HTTP/1.1 200 OK
-    ETag: "1547105945"
-    Location: http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2
+    ETag: "-727104155"
+    Location: http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2
     Content-Type: application/vnd.datacite.org+json
     Content-Length: 1475
 
     {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -1803,7 +1799,7 @@ You will get the new datacite record with the new ETag.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1819,16 +1815,16 @@ You will get the new datacite record with the new ETag.
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:33.105Z",
+      "lastUpdate" : "2024-11-25T13:50:12.678Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -1854,7 +1850,7 @@ Etag.
           "id": 1,
           "identifierType": "INTERNAL",
           "value": "my_first_xsd",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         }
       ],
       [...]
@@ -1872,24 +1868,24 @@ version 3).
       <example:note>since version 3 notes are allowed</example:note>
     </example:metadata>
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "1547105945"' \
+        -H 'If-Match: "-727104155"' \
         -F 'record=@metadata-record-v3.json;type=application/json' \
         -F 'document=@metadata-v3.xml;type=application/xml'
 
 HTTP-wise the call looks as follows:
 
-    PUT /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9 HTTP/1.1
+    PUT /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "1547105945"
+    If-Match: "-727104155"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record-v3.json
     Content-Type: application/json
 
-    {"id":"db2379c7-1952-406d-ae69-5a9a9d39c9c9","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first XML metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"XML_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-22T14:26:33Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"INTERNAL","value":"my_first_xsd","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"db2379c7-1952-406d-ae69-5a9a9d39c9c9","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:33.023Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
+    {"id":"23dd1d7d-f4fa-40ad-a846-0a2c50b06399","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first XML metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"XML_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-25T13:50:12Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"INTERNAL","value":"my_first_xsd","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"23dd1d7d-f4fa-40ad-a846-0a2c50b06399","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:12.582Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.xml
     Content-Type: application/xml
@@ -1905,13 +1901,13 @@ HTTP-wise the call looks as follows:
 You will get the new datacite record.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=3
-    ETag: "1996473594"
+    Location: http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=3
+    ETag: "-503671098"
     Content-Type: application/json
     Content-Length: 1475
 
     {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -1934,7 +1930,7 @@ You will get the new datacite record.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -1945,7 +1941,7 @@ You will get the new datacite record.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -1955,11 +1951,11 @@ You will get the new datacite record.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:33.149Z",
+      "lastUpdate" : "2024-11-25T13:50:12.726Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -1975,11 +1971,11 @@ You will get the new datacite record.
 Now you can access the updated metadata via the URI in the HTTP response
 header.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=3' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=3' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=3 HTTP/1.1
+    GET /metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=3 HTTP/1.1
     Host: localhost:8040
 
 You will get the updated metadata.
@@ -2028,11 +2024,11 @@ size as additional query parameters.
 If you want to obtain all versions of a specific resource you may add
 'id' as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?id=db2379c7-1952-406d-ae69-5a9a9d39c9c9' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?id=23dd1d7d-f4fa-40ad-a846-0a2c50b06399' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?id=db2379c7-1952-406d-ae69-5a9a9d39c9c9 HTTP/1.1
+    GET /metastore/api/v2/metadata/?id=23dd1d7d-f4fa-40ad-a846-0a2c50b06399 HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of datacite records in descending order.
@@ -2044,7 +2040,7 @@ As a result, you receive a list of datacite records in descending order.
     Content-Length: 4161
 
     [ {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -2067,7 +2063,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2078,7 +2074,7 @@ As a result, you receive a list of datacite records in descending order.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -2088,11 +2084,11 @@ As a result, you receive a list of datacite records in descending order.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:33.149Z",
+      "lastUpdate" : "2024-11-25T13:50:12.726Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -2104,7 +2100,7 @@ As a result, you receive a list of datacite records in descending order.
         "permission" : "ADMINISTRATE"
       } ]
     }, {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -2127,7 +2123,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2143,16 +2139,16 @@ As a result, you receive a list of datacite records in descending order.
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:33.105Z",
+      "lastUpdate" : "2024-11-25T13:50:12.678Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -2164,7 +2160,7 @@ As a result, you receive a list of datacite records in descending order.
         "permission" : "ADMINISTRATE"
       } ]
     }, {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -2187,7 +2183,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2203,11 +2199,11 @@ As a result, you receive a list of datacite records in descending order.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:33.023Z",
+      "lastUpdate" : "2024-11-25T13:50:12.582Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -2220,7 +2216,6 @@ As a result, you receive a list of datacite records in descending order.
 
 If you want to find all records belonging to an external resource.
 MetaStore may hold multiple metadata documents per resource.
-(Nevertheless only one per registered schema)
 
 Command line:
 
@@ -2239,7 +2234,7 @@ You will get the current version of the datacite record(s).
     Content-Length: 1479
 
     [ {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -2262,7 +2257,7 @@ You will get the current version of the datacite record(s).
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2273,7 +2268,7 @@ You will get the current version of the datacite record(s).
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -2283,11 +2278,11 @@ You will get the current version of the datacite record(s).
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:33.149Z",
+      "lastUpdate" : "2024-11-25T13:50:12.726Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -2306,11 +2301,11 @@ If you want to find all datacite records updated after a specific date.
 
 Command line:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A33.209222545Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A12.797908423Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A33.209222545Z HTTP/1.1
+    GET /metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A12.797908423Z HTTP/1.1
     Host: localhost:8040
 
 You will get the current version datacite records updated ln the last 2
@@ -2322,7 +2317,7 @@ hours.
     Content-Length: 1479
 
     [ {
-      "id" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+      "id" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -2345,7 +2340,7 @@ hours.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:33Z",
+        "value" : "2024-11-25T13:50:12Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2356,7 +2351,7 @@ hours.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/db2379c7-1952-406d-ae69-5a9a9d39c9c9?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/23dd1d7d-f4fa-40ad-a846-0a2c50b06399?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -2366,11 +2361,11 @@ hours.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "db2379c7-1952-406d-ae69-5a9a9d39c9c9",
+        "value" : "23dd1d7d-f4fa-40ad-a846-0a2c50b06399",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:33.149Z",
+      "lastUpdate" : "2024-11-25T13:50:12.726Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -2390,11 +2385,11 @@ range.
 
 Command line:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A33.209222545Z&until=2024-11-22T13%3A26%3A33.209219312Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A12.797908423Z&until=2024-11-25T12%3A50%3A12.797905403Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A33.209222545Z&until=2024-11-22T13%3A26%3A33.209219312Z HTTP/1.1
+    GET /metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A12.797908423Z&until=2024-11-25T12%3A50%3A12.797905403Z HTTP/1.1
     Host: localhost:8040
 
 You will get an empty array as no datacite record exists in the given
@@ -2416,36 +2411,59 @@ all starts with creating your first json schema resource. The model of a
 datacite record looks like this:
 
     {
-      "schemaId" : "...",
-      "schemaVersion" : 1,
-      "mimeType" : "...",
-      "type" : "...",
-      "createdAt" : "...",
+      "id" : "...",
+      "identifier" : {
+        "value" : "(:tba)",
+        "identifierType" : "DOI"
+      },
+      "creators" : [ {
+        "givenName" : "..."
+      } ],
+      "titles" : [ {
+        "value" : "..."
+      } ],
+      "publisher" : "...",
+      "publicationYear" : "...",
+      "resourceType" : {
+        "value" : "...",
+        "typeGeneral" : "..."
+      },
+      "dates" : [ {
+        "value" : "...",
+        "type" : "..."
+      } ],
+      "relatedIdentifiers" : [ {
+        "value" : "...",
+        "identifierType" : "...",
+        "relationType" : "..."
+      }} ],
+      "alternateIdentifiers" : [ {
+        "value" : "...",
+        "identifierType" : "..."
+      } ],
+      "version" : "...",
+      "rights": [
+        {
+          "schemeId": "",
+          "schemeUri": ""
+        }
+      ],
       "lastUpdate" : "...",
-      "acl" : [ {
-        "id" : 1,
+      "state" : "...",
+      "acls" : [ {
         "sid" : "...",
         "permission" : "..."
-      } ],
-      "licenseUri" : "...",
-      "schemaDocumentUri" : "...",
-      "schemaHash" : "...",
-      "locked" : false
+      } ]
     }
 
 At least the following elements are expected to be provided by the user:
 
--   schemaId: A unique label for the schema.
+-   id: A unique label for the schema.
 
--   mimeType: The resource type must be assigned by the user. For JSON
-    schemas this should be *application/json*
-
--   type: XML or JSON. For JSON schemas this should be *JSON*
+-   title: Any title for the schema.
 
 In addition, ACL may be useful to make schema editable by others. (This
 will be of interest while updating an existing schema)
-
-License URI is optional. It’s new since 1.5.0.
 
 ## Registering a Metadata Schema Document
 
@@ -2454,8 +2472,12 @@ providing mandatory fields mentioned above:
 
     schema-record4json.json:
     {
-      "schemaId" : "my_first_json",
-      "type" : "JSON"
+      "id": "my_first_json",
+      "titles": [
+        {
+          "value": "Title for my_first_json",
+        }
+      ]
     }
 
     schema.json:
@@ -2528,7 +2550,7 @@ the user and will look that way:
 
     HTTP/1.1 201 Created
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=1
-    ETag: "-759012511"
+    ETag: "855670887"
     Content-Type: application/json
     Content-Length: 806
 
@@ -2556,7 +2578,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -2565,7 +2587,7 @@ the user and will look that way:
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:26.664Z",
+      "lastUpdate" : "2024-11-25T13:50:05.753Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -2588,8 +2610,7 @@ There are two possible values for DataResource: *XML\_Schema* and
 
 ### Getting a Datacite Schema Record
 
-For obtaining one datacite record you have to provide the value of the
-field 'schemaId'.
+For obtaining one datacite record you have to provide the 'schemaId'.
 
 As 'Accept' field you have to provide
 'application/vnd.datacite.org+json' otherwise you will get the landing
@@ -2610,7 +2631,7 @@ As a result, you receive the datacite record send before and again the
 corresponding ETag in the HTTP response header.
 
     HTTP/1.1 200 OK
-    ETag: "-759012511"
+    ETag: "855670887"
     Content-Type: application/vnd.datacite.org+json
     Content-Length: 806
 
@@ -2638,7 +2659,7 @@ corresponding ETag in the HTTP response header.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -2647,7 +2668,7 @@ corresponding ETag in the HTTP response header.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:26.664Z",
+      "lastUpdate" : "2024-11-25T13:50:05.753Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -2656,7 +2677,7 @@ corresponding ETag in the HTTP response header.
       } ]
     }
 
-### Getting a Metadata Schema Document
+### Getting a Schema Document
 
 For obtaining accessible metadata schemas you also have to provide the
 'schemaId'. For accessing schema document you have to provide
@@ -2672,7 +2693,7 @@ path of the resource using the base path and the 'schemaId'.
     Accept: application/json
     Host: localhost:8040
 
-As a result, you receive the XSD schema send before.
+As a result, you receive the JSON schema send before.
 
     HTTP/1.1 200 OK
     Content-Type: text/plain
@@ -2736,14 +2757,14 @@ metadata schema document and/or datacite record.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "-759012511"' \
+        -H 'If-Match: "855670887"' \
         -F 'schema=@schema-v2.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
     PUT /metastore/api/v2/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "-759012511"
+    If-Match: "855670887"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -2783,7 +2804,7 @@ ETag.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=2
-    ETag: "575519683"
+    ETag: "-1991796919"
     Content-Type: application/json
     Content-Length: 1016
 
@@ -2811,7 +2832,7 @@ ETag.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2826,7 +2847,7 @@ ETag.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:26.854Z",
+      "lastUpdate" : "2024-11-25T13:50:05.941Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -2875,14 +2896,14 @@ document and/or datacite record.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "575519683"' \
+        -H 'If-Match: "-1991796919"' \
         -F 'schema=@schema-v3.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
     PUT /metastore/api/v2/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "575519683"
+    If-Match: "-1991796919"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
@@ -2927,9 +2948,9 @@ ETag.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=3
-    ETag: "254981415"
+    ETag: "2066868822"
     Content-Type: application/json
-    Content-Length: 1015
+    Content-Length: 1016
 
     {
       "id" : "my_first_json",
@@ -2955,7 +2976,7 @@ ETag.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -2970,7 +2991,7 @@ ETag.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:26.94Z",
+      "lastUpdate" : "2024-11-25T13:50:06.037Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3061,9 +3082,9 @@ the user and will look that way:
 
     HTTP/1.1 201 Created
     Location: http://localhost:8040/metastore/api/v2/schemas/another_json?version=1
-    ETag: "-1932760524"
+    ETag: "-769946310"
     Content-Type: application/json
-    Content-Length: 799
+    Content-Length: 803
 
     {
       "id" : "another_json",
@@ -3089,7 +3110,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 2,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -3098,7 +3119,7 @@ the user and will look that way:
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:27Z",
+      "lastUpdate" : "2024-11-25T13:50:06.097Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 2,
@@ -3109,7 +3130,7 @@ the user and will look that way:
 
 Now there are two schemaIds registered in the metadata schema registry.
 
-### Getting a List of Metadata Schema Records
+### Getting a List of Datacite Records of a Schema
 
 For getting all accessible datacite records of schema documents type:
 
@@ -3125,7 +3146,7 @@ As a result, you receive a list of datacite records.
     HTTP/1.1 200 OK
     Content-Range: 0-1/2
     Content-Type: application/json
-    Content-Length: 1820
+    Content-Length: 1825
 
     [ {
       "id" : "another_json",
@@ -3151,7 +3172,7 @@ As a result, you receive a list of datacite records.
       },
       "dates" : [ {
         "id" : 2,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -3160,7 +3181,7 @@ As a result, you receive a list of datacite records.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:27Z",
+      "lastUpdate" : "2024-11-25T13:50:06.097Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 2,
@@ -3191,7 +3212,7 @@ As a result, you receive a list of datacite records.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3206,7 +3227,7 @@ As a result, you receive a list of datacite records.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:26.94Z",
+      "lastUpdate" : "2024-11-25T13:50:06.037Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3231,7 +3252,7 @@ The modified HTTP request with pagination looks like follows:
     GET /metastore/api/v2/schemas/?page=0&size=20 HTTP/1.1
     Host: localhost:8040
 
-### Getting a List of all Schema Records for a Specific SchemaId
+### Getting a List of all Datacite Records of a Schema for a Specific SchemaId
 
 If you want to obtain all versions of a specific schema you may add the
 schemaId as a filter parameter. This may look like this:
@@ -3249,7 +3270,7 @@ As a result, you receive a list of datacite records in descending order.
     HTTP/1.1 200 OK
     Content-Range: 0-2/3
     Content-Type: application/json
-    Content-Length: 2845
+    Content-Length: 2846
 
     [ {
       "id" : "my_first_json",
@@ -3275,7 +3296,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3290,7 +3311,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:26.94Z",
+      "lastUpdate" : "2024-11-25T13:50:06.037Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3321,7 +3342,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3336,7 +3357,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:26.854Z",
+      "lastUpdate" : "2024-11-25T13:50:05.941Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3367,7 +3388,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "alternateIdentifiers" : [ {
@@ -3376,7 +3397,7 @@ As a result, you receive a list of datacite records in descending order.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:26.664Z",
+      "lastUpdate" : "2024-11-25T13:50:05.753Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3399,7 +3420,7 @@ HTTP-wise the call looks as follows:
     Accept: application/json
     Host: localhost:8040
 
-As a result, you receive the XSD schema document sent before:
+As a result, you receive the JSON schema document sent before:
 
     HTTP/1.1 200 OK
     Content-Type: text/plain
@@ -3452,7 +3473,7 @@ HTTP-wise the call looks as follows:
     Accept: application/json
     Host: localhost:8040
 
-As a result, you receive the initial XSD schema document (version 1).
+As a result, you receive the initial JSON schema document (version 1).
 
     HTTP/1.1 200 OK
     Content-Type: text/plain
@@ -3586,21 +3607,21 @@ example we introduce a user called 'admin' and give him all rights.
 
     $ curl 'http://localhost:8040/metastore/api/v2/schemas/my_first_json' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "254981415"' \
+        -H 'If-Match: "2066868822"' \
         -F 'record=@schema-record4json-v4.json;type=application/json'
 
 Same for the HTTP request.
 
     PUT /metastore/api/v2/schemas/my_first_json HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "254981415"
+    If-Match: "2066868822"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=schema-record4json-v4.json
     Content-Type: application/json
 
-    {"id":"my_first_json","identifier":{"id":1,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":1,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":1,"value":"Title for my_first_json","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":1,"value":"JSON_Schema","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":1,"value":"2024-11-22T14:26:26Z","type":"CREATED"}],"relatedIdentifiers":[{"id":1,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/metadata/my_first_json?version=2","relationType":"IS_NEW_VERSION_OF","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":1,"value":"my_first_json","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"3","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:26.94Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}]}
+    {"id":"my_first_json","identifier":{"id":1,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":1,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":1,"value":"Title for my_first_json","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":1,"value":"JSON_Schema","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":1,"value":"2024-11-25T13:50:05Z","type":"CREATED"}],"relatedIdentifiers":[{"id":1,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/metadata/my_first_json?version=2","relationType":"IS_NEW_VERSION_OF","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":1,"value":"my_first_json","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"3","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:06.037Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":1,"sid":"SELF","permission":"ADMINISTRATE"},{"id":null,"sid":"admin","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm--
 
 As a result, you receive 200 as HTTP status, the updated datacite record
@@ -3608,7 +3629,7 @@ and the updated ETag and location in the HTTP response header.
 
     HTTP/1.1 200 OK
     Location: http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=3
-    ETag: "395896196"
+    ETag: "1277397194"
     Content-Type: application/json
     Content-Length: 1092
 
@@ -3636,7 +3657,7 @@ and the updated ETag and location in the HTTP response header.
       },
       "dates" : [ {
         "id" : 1,
-        "value" : "2024-11-22T14:26:26Z",
+        "value" : "2024-11-25T13:50:05Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3651,7 +3672,7 @@ and the updated ETag and location in the HTTP response header.
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:27.409Z",
+      "lastUpdate" : "2024-11-25T13:50:06.549Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 1,
@@ -3733,7 +3754,7 @@ At least the following elements have to be provided by the user:
 
 -   relatedIdentifier/schema: Link to the related schema.
     (identifierType: INTERNAL and URL are supported, relationType:
-    IS\_DERIVED\_FROM)
+    HAS\_METADATA)
 
 -   relatedIdentifier/data: Link to the (data) resource.
     (identifierType: any, relationType: IS\_METADATA\_FOR)
@@ -3744,8 +3765,6 @@ In addition, ACL may be useful to make metadata editable by others.
 If linked schema is identified by its schemaId the INTERNAL type has to
 be used. It’s then linked to the current schema version at creation
 time.
-
-License URI is optional. It’s new since 1.4.2.
 
 ### Register/Ingest a Datacite Record with Metadata Document
 
@@ -3759,8 +3778,6 @@ and its datacite record only providing mandatory fields mentioned above:
           "value": "Title of first metadata document",
         }
       ],
-      "publisher": null,
-      "publicationYear": null,
       "resourceType": {
         "value": "JSON_Metadata",
         "typeGeneral": "MODEL"
@@ -3769,7 +3786,7 @@ and its datacite record only providing mandatory fields mentioned above:
         {
           "identifierType": "URL",
           "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=1",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         },
         {
           "identifierType": "URL",
@@ -3821,13 +3838,13 @@ possible and persisting the created resource, the result is sent back to
 the user and will look that way:
 
     HTTP/1.1 201 Created
-    Location: http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1
-    ETag: "536402562"
+    Location: http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1
+    ETag: "2079736072"
     Content-Type: application/json
-    Content-Length: 1205
+    Content-Length: 1206
 
     {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -3850,7 +3867,7 @@ the user and will look that way:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3866,11 +3883,11 @@ the user and will look that way:
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:27.43Z",
+      "lastUpdate" : "2024-11-25T13:50:06.577Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -3892,12 +3909,12 @@ conflicts.
 For accessing the metadata the location URL provided before may be used.
 The URL is compiled by the id of the metadata and its version.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1' -i -X GET \
         -H 'Accept: application/json'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1 HTTP/1.1
+    GET /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1 HTTP/1.1
     Accept: application/json
     Host: localhost:8040
 
@@ -3925,12 +3942,12 @@ The only difference is the content type. It has to be set to
 "application/vnd.datacite.org+json". Then the command line looks like
 this:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1' -i -X GET \
         -H 'Accept: application/vnd.datacite.org+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1 HTTP/1.1
+    GET /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1 HTTP/1.1
     Accept: application/vnd.datacite.org+json
     Host: localhost:8040
 
@@ -3938,13 +3955,13 @@ The linked metadata will be returned. The result is sent back to the
 user and will look that way:
 
     HTTP/1.1 200 OK
-    ETag: "536402562"
-    Location: http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1
+    ETag: "2079736072"
+    Location: http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1
     Content-Type: application/vnd.datacite.org+json
-    Content-Length: 1205
+    Content-Length: 1206
 
     {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -3967,7 +3984,7 @@ user and will look that way:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -3983,11 +4000,11 @@ user and will look that way:
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:27.43Z",
+      "lastUpdate" : "2024-11-25T13:50:06.577Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -4013,7 +4030,7 @@ mentioned before the ETag is needed:
           "id": 1,
           "identifierType": "URL",
           "value": "http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=2",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         }
       ],
       [...]
@@ -4032,9 +4049,9 @@ mentioned before the ETag is needed:
     "date": "2018-07-02"
     }
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "536402562"' \
+        -H 'If-Match: "2079736072"' \
         -F 'record=@metadata-record4json-v2.json;type=application/json' \
         -F 'document=@metadata-v2.json;type=application/xml'
 
@@ -4042,16 +4059,16 @@ You can see, that the schema was set to version 2 (allowing additional
 field for date) and the ACL entry for "guest" was added. All other
 properties are still the same. HTTP-wise the call looks as follows:
 
-    PUT /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1 HTTP/1.1
+    PUT /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "536402562"
+    If-Match: "2079736072"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record4json-v2.json
     Content-Type: application/json
 
-    {"id":"a7484515-ba87-46e2-8a21-a1600039346d","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first JSON metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"JSON_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-22T14:26:27Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=2","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"a7484515-ba87-46e2-8a21-a1600039346d","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:27.43Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
+    {"id":"d9c917ee-160e-460c-b169-8f952ab505c7","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first JSON metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"JSON_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-25T13:50:06Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=2","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"d9c917ee-160e-460c-b169-8f952ab505c7","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:06.577Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v2.json
     Content-Type: application/xml
@@ -4065,13 +4082,13 @@ properties are still the same. HTTP-wise the call looks as follows:
 The response provides the updated datacite record:
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2
-    ETag: "2057586597"
+    Location: http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2
+    ETag: "-324611405"
     Content-Type: application/json
-    Content-Length: 1478
+    Content-Length: 1477
 
     {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4094,7 +4111,7 @@ The response provides the updated datacite record:
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4105,7 +4122,7 @@ The response provides the updated datacite record:
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4115,11 +4132,11 @@ The response provides the updated datacite record:
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:27.556Z",
+      "lastUpdate" : "2024-11-25T13:50:06.71Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -4142,25 +4159,25 @@ Repeat the last step and update to the current version. As mentioned
 before the ETag is needed. As the ETag has changed in the meanwhile you
 first have to get the new ETag.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2' -i -X GET \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2' -i -X GET \
         -H 'Accept: application/vnd.datacite.org+json'
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2 HTTP/1.1
+    GET /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2 HTTP/1.1
     Accept: application/vnd.datacite.org+json
     Host: localhost:8040
 
 You will get the new datacite record with the new ETag.
 
     HTTP/1.1 200 OK
-    ETag: "2057586597"
-    Location: http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2
+    ETag: "-324611405"
+    Location: http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2
     Content-Type: application/vnd.datacite.org+json
-    Content-Length: 1478
+    Content-Length: 1477
 
     {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4183,7 +4200,7 @@ You will get the new datacite record with the new ETag.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4194,7 +4211,7 @@ You will get the new datacite record with the new ETag.
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4204,11 +4221,11 @@ You will get the new datacite record with the new ETag.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:27.556Z",
+      "lastUpdate" : "2024-11-25T13:50:06.71Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -4234,7 +4251,7 @@ Etag.
           "id": 1,
           "identifierType": "INTERNAL",
           "value": "my_first_json",
-          "relationType": "IS_DERIVED_FROM"
+          "relationType": "HAS_METADATA"
         }
       ],
       [...]
@@ -4258,24 +4275,24 @@ version 3).
     "note": "since version 3 notes are allowed"
     }
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d' -i -X PUT \
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7' -i -X PUT \
         -H 'Content-Type: multipart/form-data' \
-        -H 'If-Match: "2057586597"' \
+        -H 'If-Match: "-324611405"' \
         -F 'record=@metadata-record4json-v3.json;type=application/json' \
         -F 'document=@metadata-v3.json;type=application/json'
 
 HTTP-wise the call looks as follows:
 
-    PUT /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d HTTP/1.1
+    PUT /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7 HTTP/1.1
     Content-Type: multipart/form-data; boundary=6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
-    If-Match: "2057586597"
+    If-Match: "-324611405"
     Host: localhost:8040
 
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=record; filename=metadata-record4json-v3.json
     Content-Type: application/json
 
-    {"id":"a7484515-ba87-46e2-8a21-a1600039346d","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first JSON metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"JSON_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-22T14:26:27Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=3","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"a7484515-ba87-46e2-8a21-a1600039346d","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-22T14:26:27.43Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
+    {"id":"d9c917ee-160e-460c-b169-8f952ab505c7","identifier":{"id":3,"value":"(:tba)","identifierType":"DOI"},"creators":[{"id":3,"familyName":null,"givenName":"SELF","affiliations":[]}],"titles":[{"id":3,"value":"Title of first JSON metadata document","titleType":null,"lang":null}],"publisher":"SELF","publicationYear":"2024","resourceType":{"id":3,"value":"JSON_Metadata","typeGeneral":"MODEL"},"subjects":[],"contributors":[],"dates":[{"id":3,"value":"2024-11-25T13:50:06Z","type":"CREATED"}],"relatedIdentifiers":[{"id":2,"identifierType":"URL","value":"https://repo/anyResourceId","relationType":"IS_METADATA_FOR","scheme":null,"relatedMetadataScheme":null},{"id":3,"identifierType":"URL","value":"http://localhost:8040/metastore/api/v2/schemas/my_first_json?version=3","relationType":"HAS_METADATA","scheme":null,"relatedMetadataScheme":null}],"descriptions":[],"geoLocations":[],"language":null,"alternateIdentifiers":[{"id":3,"value":"d9c917ee-160e-460c-b169-8f952ab505c7","identifierType":"INTERNAL"}],"sizes":[],"formats":[],"version":"1","rights":[],"fundingReferences":[],"lastUpdate":"2024-11-25T13:50:06.577Z","state":"VOLATILE","embargoDate":null,"acls":[{"id":null,"sid":"guest","permission":"READ"},{"id":4,"sid":"SELF","permission":"ADMINISTRATE"}]}
     --6o2knFse3p53ty9dmcQvWAIx1zInP11uCfbm
     Content-Disposition: form-data; name=document; filename=metadata-v3.json
     Content-Type: application/json
@@ -4290,13 +4307,13 @@ HTTP-wise the call looks as follows:
 You will get the new datacite record.
 
     HTTP/1.1 200 OK
-    Location: http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=3
-    ETag: "1038379398"
+    Location: http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=3
+    ETag: "973115988"
     Content-Type: application/json
     Content-Length: 1478
 
     {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4319,7 +4336,7 @@ You will get the new datacite record.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4330,7 +4347,7 @@ You will get the new datacite record.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4340,11 +4357,11 @@ You will get the new datacite record.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:27.626Z",
+      "lastUpdate" : "2024-11-25T13:50:06.777Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -4360,11 +4377,11 @@ You will get the new datacite record.
 Now you can access the updated metadata via the URI in the HTTP response
 header.
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=3' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=3' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=3 HTTP/1.1
+    GET /metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=3 HTTP/1.1
     Host: localhost:8040
 
 You will get the updated metadata.
@@ -4408,11 +4425,11 @@ size as additional query parameters.
 If you want to obtain all versions of a specific resource you may add
 'id' as a filter parameter. This may look like this:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?id=a7484515-ba87-46e2-8a21-a1600039346d' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?id=d9c917ee-160e-460c-b169-8f952ab505c7' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?id=a7484515-ba87-46e2-8a21-a1600039346d HTTP/1.1
+    GET /metastore/api/v2/metadata/?id=d9c917ee-160e-460c-b169-8f952ab505c7 HTTP/1.1
     Host: localhost:8040
 
 As a result, you receive a list of datacite records in descending order.
@@ -4424,7 +4441,7 @@ As a result, you receive a list of datacite records in descending order.
     Content-Length: 4169
 
     [ {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4447,7 +4464,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4458,7 +4475,7 @@ As a result, you receive a list of datacite records in descending order.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4468,11 +4485,11 @@ As a result, you receive a list of datacite records in descending order.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:27.626Z",
+      "lastUpdate" : "2024-11-25T13:50:06.777Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -4484,7 +4501,7 @@ As a result, you receive a list of datacite records in descending order.
         "permission" : "ADMINISTRATE"
       } ]
     }, {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4507,7 +4524,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4518,7 +4535,7 @@ As a result, you receive a list of datacite records in descending order.
       }, {
         "id" : 4,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=1",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=1",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4528,11 +4545,11 @@ As a result, you receive a list of datacite records in descending order.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "2",
-      "lastUpdate" : "2024-11-22T14:26:27.556Z",
+      "lastUpdate" : "2024-11-25T13:50:06.71Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 5,
@@ -4544,7 +4561,7 @@ As a result, you receive a list of datacite records in descending order.
         "permission" : "ADMINISTRATE"
       } ]
     }, {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4567,7 +4584,7 @@ As a result, you receive a list of datacite records in descending order.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4583,11 +4600,11 @@ As a result, you receive a list of datacite records in descending order.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "1",
-      "lastUpdate" : "2024-11-22T14:26:27.43Z",
+      "lastUpdate" : "2024-11-25T13:50:06.577Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 4,
@@ -4600,7 +4617,6 @@ As a result, you receive a list of datacite records in descending order.
 
 If you want to find all records belonging to an external resource.
 MetaStore may hold multiple metadata documents per resource.
-(Nevertheless only one per registered schema)
 
 Command line:
 
@@ -4619,7 +4635,7 @@ You will get the current version datacite record.
     Content-Length: 1482
 
     [ {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4642,7 +4658,7 @@ You will get the current version datacite record.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4653,7 +4669,7 @@ You will get the current version datacite record.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4663,11 +4679,11 @@ You will get the current version datacite record.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:27.626Z",
+      "lastUpdate" : "2024-11-25T13:50:06.777Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -4686,11 +4702,11 @@ If you want to find all datacite records updated after a specific date.
 
 Command line:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A27.730520539Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A06.893252207Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A27.730520539Z HTTP/1.1
+    GET /metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A06.893252207Z HTTP/1.1
     Host: localhost:8040
 
 You will get the current version datacite records updated ln the last 2
@@ -4702,7 +4718,7 @@ hours.
     Content-Length: 1482
 
     [ {
-      "id" : "a7484515-ba87-46e2-8a21-a1600039346d",
+      "id" : "d9c917ee-160e-460c-b169-8f952ab505c7",
       "identifier" : {
         "id" : 3,
         "value" : "(:tba)",
@@ -4725,7 +4741,7 @@ hours.
       },
       "dates" : [ {
         "id" : 3,
-        "value" : "2024-11-22T14:26:27Z",
+        "value" : "2024-11-25T13:50:06Z",
         "type" : "CREATED"
       } ],
       "relatedIdentifiers" : [ {
@@ -4736,7 +4752,7 @@ hours.
       }, {
         "id" : 5,
         "identifierType" : "URL",
-        "value" : "http://localhost:8040/metastore/api/v2/metadata/a7484515-ba87-46e2-8a21-a1600039346d?version=2",
+        "value" : "http://localhost:8040/metastore/api/v2/metadata/d9c917ee-160e-460c-b169-8f952ab505c7?version=2",
         "relationType" : "IS_NEW_VERSION_OF"
       }, {
         "id" : 3,
@@ -4746,11 +4762,11 @@ hours.
       } ],
       "alternateIdentifiers" : [ {
         "id" : 3,
-        "value" : "a7484515-ba87-46e2-8a21-a1600039346d",
+        "value" : "d9c917ee-160e-460c-b169-8f952ab505c7",
         "identifierType" : "INTERNAL"
       } ],
       "version" : "3",
-      "lastUpdate" : "2024-11-22T14:26:27.626Z",
+      "lastUpdate" : "2024-11-25T13:50:06.777Z",
       "state" : "VOLATILE",
       "acls" : [ {
         "id" : 6,
@@ -4770,11 +4786,11 @@ range.
 
 Command line:
 
-    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A27.730520539Z&until=2024-11-22T13%3A26%3A27.730516191Z' -i -X GET
+    $ curl 'http://localhost:8040/metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A06.893252207Z&until=2024-11-25T12%3A50%3A06.893247495Z' -i -X GET
 
 HTTP-wise the call looks as follows:
 
-    GET /metastore/api/v2/metadata/?from=2024-11-22T12%3A26%3A27.730520539Z&until=2024-11-22T13%3A26%3A27.730516191Z HTTP/1.1
+    GET /metastore/api/v2/metadata/?from=2024-11-25T11%3A50%3A06.893252207Z&until=2024-11-25T12%3A50%3A06.893247495Z HTTP/1.1
     Host: localhost:8040
 
 You will get an empty array as no datacite record exists in the given

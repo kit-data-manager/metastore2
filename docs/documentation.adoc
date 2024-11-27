@@ -860,7 +860,7 @@ In the actual HTTP request there is nothing special. You just access the path of
 
 include::{snippets}/get-json-schema-document/http-request.adoc[]
 
-As a result, you receive the XSD schema send before. 
+As a result, you receive the JSON schema send before. 
 
 include::{snippets}/get-json-schema-document/http-response.adoc[]
 
@@ -1071,7 +1071,7 @@ HTTP-wise the call looks as follows:
 
 include::{snippets}/get-json-schema-v3/http-request.adoc[]
 
-As a result, you receive the XSD schema document sent before. 
+As a result, you receive the JSON schema document sent before. 
 
 include::{snippets}/get-json-schema-v3/http-response.adoc[]
 
