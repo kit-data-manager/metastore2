@@ -13,7 +13,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
-## [1.4.4]  2024-08-20
+## [2.0.0] - 2024-11-29
+### Security
+
+### Added
+- API V2
+
+### Changed
+- DataCite is now supported as administrative metadata (API V2)
+- Update to Java 21
+- Update dependency gradle to v8.11.1
+- Update rabbitmq Docker tag to v4
+- Update eclipse-temurin Docker tag to v23
+ 
+### Libs
+- Update dependency ajv to v8.17.1
+- Update dependency com.google.errorprone:error_prone_core to v2.36.0
+- Update dependency com.networknt:json-schema-validator to v1.5.4
+- Update dependency commons-io:commons-io to v2.18.0
+- Update dependency edu.kit.datamanager:repo-core to v1.2.3
+- Update dependency edu.kit.datamanager:service-base to v1.3.2
+- Update plugin io.freefair.lombok to v8.11
+- Update plugin io.freefair.maven-publish-java to v8.11
+- Update dependency jacoco to v0.8.12
+- Update dependency org.javers:javers-core to v7.7.0
+- Update plugin net.ltgt.errorprone to v4.1.0
+- Update dependency org.apache.tika:tika-core to v3
+- Update plugin org.owasp.dependencycheck to v11
+- Update dependency org.mockito:mockito-core to v5.14.2
+- Bump org.postgresql:postgresql from 42.7.3 to 42.7.4
+- Update plugin org.springframework.boot to v3.3.6
+- Update dependency org.springframework.data:spring-data-elasticsearch to v5.4.0
+- Update dependency org.springframework.restdocs:spring-restdocs-mockmvc to v3.0.3
+- Update dependency org.springframework:spring-messaging to v6.2.0
+- Update dependency org.springframework.cloud:spring-cloud-gateway-mvc to v4.1.6
+- Update dependency org.springframework.cloud:spring-cloud-starter-config to v4.1.3
+- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.1.4
+- Bump org.springframework.data:spring-data-elasticsearch from 5.3.3 to 5.3.4.
+
+### Deprecated
+- API V1
+
+## [1.4.4] - 2024-08-20
 
 ### Changed
 - Bump gradle from 8.7 to 8.8. 
@@ -488,6 +529,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Registry for XSD files and support for XML metadata
 
 [Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...HEAD
+[2.0.0]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...v2.0.0
 [1.4.4]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/kit-data-manager/metastore2/compare/v1.4.1...v1.4.2
