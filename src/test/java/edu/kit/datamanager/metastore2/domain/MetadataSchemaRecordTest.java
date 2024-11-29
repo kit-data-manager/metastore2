@@ -93,7 +93,7 @@ public class MetadataSchemaRecordTest {
   public void testSetAndGetSchemaVersion() {
     System.out.println("getSchemaVersion");
     MetadataSchemaRecord instance = new MetadataSchemaRecord();
-    Long expResult = 3l;
+    Long expResult = 3L;
     instance.setSchemaVersion(expResult);
     Long result = instance.getSchemaVersion();
     assertEquals(expResult, result);

@@ -33,14 +33,11 @@ import org.springframework.cloud.gateway.mvc.ProxyExchange;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller for search entities.
+ * @deprecated Should be replaced by API v2 (api/v2/metadata/...)
  */
 @Controller
 @RequestMapping(value = "/api/v1/metadata")
@@ -54,7 +51,7 @@ public class MetadataSearchController {
   private static final String SEARCH_PATH_POSTFIX = "/_search";
 
   @Autowired
-  private SearchConfiguration searchConfiguration;
+  private final SearchConfiguration searchConfiguration;
 
   /**
    * Constructor with configuration.
@@ -68,6 +65,16 @@ public class MetadataSearchController {
     LOG.info("------------------------------------------------------");
   }
 
+  /**
+   * Proxy for elasticsearch.
+   * 
+   * @deprecated Please use SearchController instead!
+   * @param body query
+   * @param schemaIds schemaIds which should be used for search (prefix with 'metastore-')        
+   * @param proxy set by Spring Boot
+   * @param pgbl page information
+   * @return Prepared query with post filter for authorization.
+   */
   @PostMapping("/{schemaId}/search")
   @Operation(deprecated = true,
           summary = "Search for metadata document/records",
@@ -90,17 +97,6 @@ public class MetadataSearchController {
           })
   @ResponseBody
   @PageableAsQueryParam
-  /**
-   * Proxy for elasticsearch.
-   * 
-   * @deprecation Please use SearchController instead!
-   * @param body query
-   * @param schemaIds schemaIds which should be used for search (prefix with 'metastore-')        
-   * @param proxy set by Spring Boot
-   * @param pgbl page information
-   * @return Prepared query with post filter for authorization.
-   * 
-   */
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
           @Parameter(description = "Contains all schemaIds prefixed with 'metastore-'"
                   + "to which the records refer as comma-separated values. "
@@ -115,7 +111,17 @@ public class MetadataSearchController {
 
     return proxy.uri(searchConfiguration.getUrl() + "/" + schemaIds + SEARCH_PATH_POSTFIX).post();
   }
-
+  /**
+   * Proxy for elasticsearch.
+   * 
+   * @throws java.lang.Exception Something went wrong (e.g. elasticsearch is down).
+   * @deprecated Please use SearchController instead!
+   * @param body query
+   * @param proxy set by Spring Boot
+   * @param pgbl page information
+   * @return Search result.
+   * 
+   */
   @PostMapping("/search")
   @Operation(deprecated = true,
           summary = "Search for metadata document/records",
@@ -138,16 +144,6 @@ public class MetadataSearchController {
           })
   @ResponseBody
   @PageableAsQueryParam
-  /**
-   * Proxy for elasticsearch.
-   * 
-   * @deprecation Please use SearchController instead!
-   * @param body query
-   * @param proxy set by Spring Boot
-   * @param pgbl page information
-   * @return Search result.
-   * 
-   */
   public ResponseEntity<?> proxy(@RequestBody JsonNode body,
           ProxyExchange<JsonNode> proxy,
           @Parameter(hidden = true) final Pageable pgbl) throws Exception {

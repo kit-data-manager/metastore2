@@ -81,7 +81,7 @@ public class JsonUtilsFailingTest {
       utilities.when(() -> SimpleServiceClient.create(any(String.class)))
               .thenThrow(new NullPointerException());
       JsonUtils.validateJsonSchemaDocument(schemaDocument, VersionFlag.V201909);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
       assertTrue(jvex.getMessage().contains(JsonUtils.ERROR_VALIDATING_SCHEMA));
@@ -103,7 +103,7 @@ public class JsonUtilsFailingTest {
       VersionFlag version = mock(VersionFlag.class);
       when(version.ordinal()).thenReturn(Integer.valueOf(VersionFlag.values().length));
       JsonUtils.validateJsonSchemaDocument(schemaDocument, version);
-      assertTrue(false);
+      fail();
     } catch (JsonValidationException jvex) {
       assertTrue(true);
     }

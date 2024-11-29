@@ -35,6 +35,7 @@ import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import org.javers.core.Javers;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -169,8 +170,8 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
 
     guestToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(guestPrincipal, RepoUserRole.GUEST).
-            addSimpleClaim("email", "thomas.jejkal@kit.edu").
-            addSimpleClaim("orcid", "0000-0003-2804-688X").
+            addSimpleClaim("email", "guest@kit.edu").
+            addSimpleClaim("orcid", "0123-4567-89AB-CDEF").
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(applicationProperties.getJwtSecret());
@@ -215,6 +216,47 @@ public class SchemaRegistryControllerTestAccessWithAuthenticationEnabled {
       }
       ingestSchemaRecord4UnregisteredUsers(SCHEMA_ID + "_" + schemaNo);
     }
+  }
+
+  @Test
+  public void testCreateRecordWithoutAuthentication() throws Exception {
+    String schemaId = "no_authentication";
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(schemaId);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile)).
+            // Test with no authentication
+//            header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
+            andDo(print()).
+            andExpect(status().isUnauthorized());
+  }
+
+  @Test
+  @Ignore
+  public void testCreateRecordAsGuestOnly() throws Exception {
+    String schemaId = "guest_authentication";
+    MetadataSchemaRecord record = new MetadataSchemaRecord();
+    record.setSchemaId(schemaId);
+    record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", CreateSchemaUtil.KIT_SCHEMA.getBytes());
+
+    this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
+            file(recordFile).
+            file(schemaFile).
+            // Test with guest rights only
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
+            andDo(print()).
+            andExpect(status().isUnauthorized());
   }
 
   @Test

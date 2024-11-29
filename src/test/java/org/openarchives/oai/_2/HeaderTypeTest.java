@@ -49,7 +49,7 @@ public class HeaderTypeTest {
         String expResult = value;
         String result = instance.getIdentifier();
         assertEquals(expResult, result);
-        value = new String("identifier");
+        value = "identifier";
         expResult = value;
         instance.setIdentifier(value);
         result = instance.getIdentifier();
@@ -67,7 +67,7 @@ public class HeaderTypeTest {
         String expResult = value;
         String result = instance.getDatestamp();
         assertEquals(expResult, result);
-        value = new String("identifier");
+        value = "identifier";
         expResult = value;
         instance.setDatestamp(value);
         result = instance.getDatestamp();

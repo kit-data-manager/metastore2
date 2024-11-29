@@ -41,7 +41,7 @@ public class JsonValidatorTest {
   }
 
   @Before
-  public void setUp() throws FileNotFoundException, IOException {
+  public void setUp() throws IOException {
     File schemaFile = new File(jsonSchemaFile);
     if (!schemaFile.exists()) {
       try ( FileOutputStream fout = new FileOutputStream(schemaFile)) {
@@ -177,7 +177,7 @@ public class JsonValidatorTest {
     assertNotNull(instance.getErrorMessage());
   }
   @Test
-  public void testValidateMetadataDocumentWithNullDocument() throws FileNotFoundException, IOException {
+  public void testValidateMetadataDocumentWithNullDocument() throws IOException {
     System.out.println("testValidateMetadataDocumentWithEmptyDocument");
     File schemaFile = new File(jsonSchemaFile);
     InputStream metadataDocumentStream = null;
@@ -187,7 +187,7 @@ public class JsonValidatorTest {
     assertEquals(expResult, result);
   }
   @Test
-  public void testValidateMetadataDocumentWithEmptyDocument() throws FileNotFoundException, IOException {
+  public void testValidateMetadataDocumentWithEmptyDocument() throws IOException {
     System.out.println("testValidateMetadataDocumentWithEmptyDocument");
     File schemaFile = new File(jsonSchemaFile);
     InputStream metadataDocumentStream = null;
@@ -199,7 +199,7 @@ public class JsonValidatorTest {
   }
 
   @Test
-  public void testValidateMetadataDocumentWithValidDocument() throws FileNotFoundException, IOException {
+  public void testValidateMetadataDocumentWithValidDocument() throws IOException {
     System.out.println("testValidateMetadataDocumentWithEmptyDocument");
     File schemaFile = new File(jsonSchemaFile);
      InputStream metadataDocumentStream = null;

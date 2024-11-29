@@ -9,13 +9,15 @@ import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.exception.JsonValidationException;
 import edu.kit.datamanager.metastore2.util.JsonUtils;
 import edu.kit.datamanager.metastore2.validation.IValidator;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Class for validating JSON files.
@@ -35,6 +37,11 @@ public class JsonValidator implements IValidator {
   @Override
   public boolean supportsSchemaType(MetadataSchemaRecord.SCHEMA_TYPE type) {
     return MetadataSchemaRecord.SCHEMA_TYPE.JSON.equals(type);
+  }
+
+  @Override
+  public boolean supportsMimetype(String type) {
+    return MediaType.APPLICATION_JSON_VALUE.equals(type);
   }
 
   @Override

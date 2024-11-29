@@ -48,7 +48,7 @@ public class MetadataFormatTypeTest {
         String expResult = value;
         String result = instance.getMetadataPrefix();
         assertEquals(expResult, result);
-        value = new String("metadataprefix");
+        value = "metadataprefix";
         expResult = value;
         instance.setMetadataPrefix(value);
         result = instance.getMetadataPrefix();
@@ -66,7 +66,7 @@ public class MetadataFormatTypeTest {
         String expResult = value;
         String result = instance.getSchema();
         assertEquals(expResult, result);
-        value = new String("schema");
+        value = "schema";
         expResult = value;
         instance.setSchema(value);
         result = instance.getSchema();
@@ -84,7 +84,7 @@ public class MetadataFormatTypeTest {
         String expResult = value;
         String result = instance.getMetadataNamespace();
         assertEquals(expResult, result);
-        value = new String("metadatanamespace");
+        value = "metadatanamespace";
         expResult = value;
         instance.setMetadataNamespace(value);
         result = instance.getMetadataNamespace();

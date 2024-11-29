@@ -842,10 +842,10 @@ public class OaiPmhControllerTest {
   private void checkInvalidResponseList(VerbType type, String from, String until, String metadataPrefix, String token, OAIPMHerrorcodeType errorType) throws Exception {
     MockHttpServletRequestBuilder param = get("/oaipmh").param("verb", type.value());
     if (from != null) {
-      param = param.param("from", from.toString());
+      param = param.param("from", from);
     }
     if (until != null) {
-      param = param.param("until", until.toString());
+      param = param.param("until", until);
     }
     if (metadataPrefix != null) {
       param = param.param("metadataPrefix", metadataPrefix);
@@ -985,7 +985,7 @@ public class OaiPmhControllerTest {
 //    record.setId("my_id");
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
     UUID randomUUID = UUID.randomUUID();
-    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier("http://example.org/" + randomUUID.toString()));
+    record.setRelatedResource(ResourceIdentifier.factoryUrlResourceIdentifier("http://example.org/" + randomUUID));
     Set<AclEntry> aclEntries = new HashSet<>();
 //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
 //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
@@ -1036,9 +1036,9 @@ public class OaiPmhControllerTest {
       Validator validator = schema.newValidator();
       validator.validate(xmlFile);
     } catch (SAXException e) {
-      Assert.assertFalse("Response is not valid!" + e.getMessage(), true);
+      Assert.fail("Response is not valid!" + e.getMessage());
     } catch (IOException e) {
-      Assert.assertFalse(e.getMessage(), true);
+      Assert.fail(e.getMessage());
     }
 
   }
@@ -1066,9 +1066,9 @@ public class OaiPmhControllerTest {
       Validator validator = schema.newValidator();
       validator.validate(xmlFile);
     } catch (SAXException e) {
-      Assert.assertFalse("Response is not valid!" + e.getMessage(), true);
+      Assert.fail("Response is not valid!" + e.getMessage());
     } catch (IOException e) {
-      Assert.assertFalse(e.getMessage(), true);
+      Assert.fail(e.getMessage());
     }
 
   }

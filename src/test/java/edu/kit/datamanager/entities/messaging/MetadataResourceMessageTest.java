@@ -9,11 +9,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.kit.datamanager.exceptions.MessageValidationException;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
+
 import static org.junit.Assert.*;
 
 /**
@@ -105,7 +102,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.createMessage(metadataRecord, null, DataResourceMessage.SUB_CATEGORY.DATA, uri, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -130,7 +127,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.factoryCreateMetadataMessage(metadataRecord, caller, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -150,7 +147,7 @@ public class MetadataResourceMessageTest {
     MetadataResourceMessage result = MetadataResourceMessage.factoryCreateMetadataMessage(metadataRecord, caller, sender);
     try {
       checkJsonString(result, sender, caller, action, id, uri, type);
-      assertTrue(false);
+      fail();
     } catch (MessageValidationException mve) {
       assertTrue(mve.getMessage().contains("must not be null"));
     }
@@ -310,8 +307,8 @@ public class MetadataResourceMessageTest {
     } else {
       assertFalse(jsonString.contains("\"" + MetadataResourceMessage.DOCUMENT_TYPE_PROPERTY + "\":\""));
     }
-    
-    assertTrue(mdrm.getEntityName().equals("metadata"));
+
+    assertEquals("metadata", mdrm.getEntityName());
     assertTrue(mdrm.getRoutingKey().startsWith("metadata"));
     
   }

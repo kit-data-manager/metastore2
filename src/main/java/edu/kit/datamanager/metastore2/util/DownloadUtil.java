@@ -17,6 +17,12 @@ package edu.kit.datamanager.metastore2.util;
 
 import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.exceptions.CustomInternalServerError;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -27,11 +33,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 
 /**
  * Utility class for downloading resources from internet.
@@ -91,8 +92,8 @@ public class DownloadUtil {
         }
       }
     } catch (Throwable tw) {
-      LOGGER.error("Error reading URI '" + resourceURL.toString() + "'", tw);
-      throw new CustomInternalServerError("Error downloading resource from '" + resourceURL.toString() + "'!");
+      LOGGER.error("Error reading URI '" + resourceURL + "'", tw);
+      throw new CustomInternalServerError("Error downloading resource from '" + resourceURL + "'!");
     }
     downloadedFile = fixFileExtension(downloadedFile);
 
@@ -113,13 +114,13 @@ public class DownloadUtil {
         String contentOfFile = FileUtils.readFileToString(pathToFile.toFile(), StandardCharsets.UTF_8);
         String newExtension = guessFileExtension(contentOfFile.getBytes(StandardCharsets.UTF_8));
         if ((newExtension != null) && !pathToFile.toString().endsWith(newExtension)) {
-          renamedFile = Paths.get(pathToFile.toString() + newExtension);
+          renamedFile = Paths.get(pathToFile + newExtension);
           FileUtils.moveFile(pathToFile.toFile(), renamedFile.toFile());
           returnFile = renamedFile;
         }
       }
     } catch (IOException ex) {
-      LOGGER.error("Error moving file '{}' to '{}'.", pathToFile.toString(), renamedFile.toString());
+      LOGGER.error("Error moving file '{}' to '{}'.", pathToFile, renamedFile);
     }
     return returnFile;
   }
@@ -155,7 +156,7 @@ public class DownloadUtil {
     try {
       Files.deleteIfExists(tempFile);
     } catch (IOException ioe) {
-      throw new CustomInternalServerError("Error removing file '" + tempFile.toString() + "'!");
+      throw new CustomInternalServerError("Error removing file '" + tempFile + "'!");
     }
   }
 

@@ -20,15 +20,15 @@ import org.springframework.web.util.UriComponentsBuilder;
 public interface IMetadataEditorController {
 
   @RequestMapping("/schema-management")
-  public ModelAndView schemaManagement();
+  ModelAndView schemaManagement();
 
   @RequestMapping("/metadata-management")
-  public ModelAndView metadataManagement(Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb);
+  ModelAndView metadataManagement(Pageable pgbl,
+                                  WebRequest wr,
+                                  HttpServletResponse hsr,
+                                  UriComponentsBuilder ucb);
 
   @RequestMapping(value = {"/dashboard", "/", ""})
-  public String dashboard();
+  String dashboard();
 
 }

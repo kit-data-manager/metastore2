@@ -186,20 +186,20 @@ To stop and start all services do the following:
 ```
 user@localhost:/home/user/metastore2$ docker compose stop
 [+] Running 6/6
- ⠿ Container dockercompose-my-apache-1  Stopped                            1.5s
- ⠿ Container indexing4metastore         Stopped                           13.2s
- ⠿ Container dockercompose-dps-1        Stopped                            0.3s
+ ⠿ Container frontend.docker            Stopped                            1.5s
  ⠿ Container metastore.docker           St...                             13.1s
- ⠿ Container rabbitmq4indexing          S...                               6.5s
- ⠿ Container elastic4indexing           St...                              0.8s
+ ⠿ Container indexing.docker            Stopped                            0.3s
+ ⠿ Container metastore2-dps-1           Stopped                           13.2s
+ ⠿ Container rabbitmq.docker            S...                               6.5s
+ ⠿ Container elastic.docker             St...                              0.8s
 user@localhost:/home/user/metastore2$ docker compose start
 [+] Running 6/6
- ⠿ Container dockercompose-dps-1        Started                            0.4s
- ⠿ Container dockercompose-my-apache-1  Started                            0.6s
- ⠿ Container elastic4indexing           He...                             10.9s
- ⠿ Container rabbitmq4indexing          S...                               0.3s
- ⠿ Container metastore.docker           St...                              0.5s
- ⠿ Container indexing4metastore         Started                            0.5s
+ ⠿ Container frontend.docker     Started                                                                                                                                 0.3s
+ ⠿ Container metastore2-dps-1    Started                                                                                                                                10.5s
+ ⠿ Container elastic.docker      Started                                                                                                                                 0.2s
+ ⠿ Container rabbitmq.docker     Started                                                                                                                                 0.2s
+ ⠿ Container metastore.docker    Started                                                                                                                                 0.2s
+ ⠿ Container indexing.docker     Started                                                                                                                                 0.2s
 user@localhost:/home/user/metastore2$
 ```
 
@@ -236,7 +236,8 @@ user@localhost:/home/user/metastore2$bash /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/
 ## More Information
 
 * [Information about KIT Data Manager 2](https://github.com/kit-data-manager/base-repo)
-* [REST Documentation MetaStore2](restDocu.md) 
+* [REST Documentation MetaStore2 API V1](restDocu.md) 
+* [REST Documentation MetaStore2 API V2](restDocuV2.md) 
 
 ## License
 

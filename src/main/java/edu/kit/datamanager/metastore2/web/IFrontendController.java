@@ -27,7 +27,7 @@ public interface IFrontendController {
   @RequestMapping(value = "/schemas", method = RequestMethod.GET, produces = {"application/tabulator+json"})
   @ResponseBody
   @PageableAsQueryParam
-  public ResponseEntity<TabulatorLocalPagination> findAllSchemasForTabulator(
+  ResponseEntity<TabulatorLocalPagination> findAllSchemasForTabulator(
           @Parameter(hidden = true) final Pageable pgbl,
           final WebRequest wr,
           final HttpServletResponse hsr,
@@ -36,7 +36,7 @@ public interface IFrontendController {
   @RequestMapping(value = "/metadata", method = RequestMethod.GET, produces = {"application/tabulator+json"})
   @ResponseBody
   @PageableAsQueryParam
-  public ResponseEntity<TabulatorLocalPagination> findAllMetadataForTabulator(
+  ResponseEntity<TabulatorLocalPagination> findAllMetadataForTabulator(
           @RequestParam(value = "id", required = false) String id,
           @Parameter(hidden = true) final Pageable pgbl,
           final WebRequest wr,
@@ -45,17 +45,17 @@ public interface IFrontendController {
 
   @RequestMapping(value = "/schemas", method = RequestMethod.GET, produces = {"application/json"})
   @ResponseBody
-  public ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb);
+  ResponseEntity<TabulatorRemotePagination> getSchemaRecordsForUi(Pageable pgbl,
+                                                                  WebRequest wr,
+                                                                  HttpServletResponse hsr,
+                                                                  UriComponentsBuilder ucb);
 
   @RequestMapping(value = "/metadata", method = RequestMethod.GET, produces = {"application/json"})
   @ResponseBody
-  public ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id,
-          Pageable pgbl,
-          WebRequest wr,
-          HttpServletResponse hsr,
-          UriComponentsBuilder ucb);
+  ResponseEntity<TabulatorRemotePagination> getMetadataRecordsForUi(@RequestParam(value = "id", required = false) String id,
+                                                                    Pageable pgbl,
+                                                                    WebRequest wr,
+                                                                    HttpServletResponse hsr,
+                                                                    UriComponentsBuilder ucb);
 
 }

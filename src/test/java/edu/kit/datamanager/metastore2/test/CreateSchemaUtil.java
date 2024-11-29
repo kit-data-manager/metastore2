@@ -6,15 +6,17 @@
 package edu.kit.datamanager.metastore2.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
+import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.util.AuthenticationHelper;
-import java.util.HashSet;
-import java.util.Set;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -26,8 +28,12 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -355,6 +361,222 @@ public class CreateSchemaUtil {
         recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
         // Update metadata document
         MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v1/metadata/" + metadataId).file(recordFile);
+        if (metadataFile != null) {
+          file = file.file(metadataFile);
+        }
+        MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                header("If-Match", etag).
+                with(putMultipart());
+        result = mockMvc.perform(header).
+                andDo(print()).
+                andExpect(expectedStatus).
+                andReturn();
+      }
+
+    }
+    return result;
+  }
+
+  public static String ingestKitSchemaRecordV2(MockMvc mockMvc, String schemaId, String jwtSecret) throws Exception {
+    return ingestXmlSchemaRecordV2(mockMvc, schemaId, KIT_SCHEMA, jwtSecret);
+
+  }
+
+  /**
+   * Ingest schema in MetaStore as user 'test_user' If schema already exists
+   * update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @return
+   * @throws Exception
+   */
+  public static String ingestXmlSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret) throws Exception {
+    return ingestOrUpdateXmlSchemaRecordV2(mockMvc, schemaId, schemaContent, jwtSecret, false, status().isCreated());
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateXmlSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_XML, schemaId, schemaContent, jwtSecret, update, expectedStatus);
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateJsonSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_JSON, schemaId, schemaContent, jwtSecret, update, expectedStatus);
+  }
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param mediaType 
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateSchemaRecordV2(MockMvc mockMvc, MediaType mediaType, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    String locationUri = null;
+    jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
+    userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
+            addSimpleClaim("email", "any@example.org").
+            addSimpleClaim("orcid", "0000-0001-2345-6789").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    DataResource record;
+    if (mediaType.toString().contains("xml")) {
+      record = SchemaRegistryControllerTestV2.createDataResource4XmlSchema(schemaId);
+    } else {
+      record = SchemaRegistryControllerTestV2.createDataResource4JsonSchema(schemaId);
+    }
+    record.getAcls().add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile;
+    MockMultipartFile schemaFile;
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
+    // Test if schema is already registered.
+    MvcResult result = mockMvc.perform(get("/api/v2/schemas/" + schemaId).
+            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andReturn();
+    if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
+
+      result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v2/schemas/").
+              file(recordFile).
+              file(schemaFile).
+              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+              andDo(print()).andExpect(expectedStatus).andReturn();
+      if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
+        locationUri = result.getResponse().getHeader("Location");
+      }
+    } else {
+      if (update) {
+        String etag = result.getResponse().getHeader("ETag");
+        String body = result.getResponse().getContentAsString();
+        record = mapper.readValue(body, DataResource.class);
+        recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+        // Update metadata document
+        MockHttpServletRequestBuilder header = MockMvcRequestBuilders.
+                multipart("/api/v2/schemas/" + schemaId).
+                file(recordFile).
+                file(schemaFile).
+                header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                header("If-Match", etag).
+                with(putMultipart());
+        mockMvc.perform(header).
+                andDo(print()).
+                andExpect(expectedStatus).
+                andReturn();
+      }
+
+    }
+    return locationUri;
+  }
+
+  public static MvcResult ingestXmlMetadataDocumentV2(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret) throws Exception {
+    return ingestOrUpdateXmlMetadataDocumentV2(mockMvc, schemaId, version, metadataId, metadataDocument, jwtSecret, false, status().isCreated());
+  }
+
+  public static MvcResult ingestOrUpdateXmlMetadataDocumentV2(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
+    jwtSecret = (jwtSecret == null) ? "jwtSecret" : jwtSecret;
+    userToken = edu.kit.datamanager.util.JwtBuilder.createUserToken(otherUserPrincipal, RepoUserRole.USER).
+            addSimpleClaim("email", "any@example.org").
+            addSimpleClaim("orcid", "0000-0001-2345-6789").
+            addSimpleClaim("loginFailures", 0).
+            addSimpleClaim("active", true).
+            addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    // Test if metadataId is already registered.
+
+    MvcResult result = null;
+    String versionAsString = null;
+    if (version != null) {
+      versionAsString = version.toString();
+    }
+
+    DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(metadataId, schemaId, versionAsString);
+    if (versionAsString != null) {
+      record.setVersion(versionAsString);
+    }
+    RelatedIdentifier relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE);
+    relatedIdentifier.setValue("any");
+    relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+    record.getAcls().add(new AclEntry(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL, PERMISSION.READ));
+    ObjectMapper mapper = new ObjectMapper();
+
+    MockMultipartFile recordFile;
+    MockMultipartFile metadataFile = null;
+    recordFile = new MockMultipartFile("record", "record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    if (metadataDocument != null) {
+      metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
+    }
+    result = mockMvc.perform(get("/api/v2/metadata/" + metadataId).
+            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andReturn();
+    if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
+      // Create metadata document
+      MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v2/metadata/").file(recordFile);
+      if (metadataFile != null) {
+        file = file.file(metadataFile);
+      }
+      MockHttpServletRequestBuilder header = file.header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+              accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE);
+      result = mockMvc.perform(header).
+              andDo(print()).
+              andExpect(expectedStatus).
+              andReturn();
+    } else {
+      if (update) {
+        String etag = result.getResponse().getHeader("ETag");
+        String body = result.getResponse().getContentAsString();
+        record = mapper.readValue(body, DataResource.class);
+        relatedIdentifier = DataResourceRecordUtil.getRelatedIdentifier(record, DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
+        if ((schemaId != null) && schemaId.startsWith("http")) {
+          relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.URL);
+        } else {
+          relatedIdentifier.setIdentifierType(Identifier.IDENTIFIER_TYPE.INTERNAL);
+          if (versionAsString != null) {
+            relatedIdentifier.setValue(schemaId + DataResourceRecordUtil.SCHEMA_VERSION_SEPARATOR + versionAsString);
+          } else {
+            relatedIdentifier.setValue(schemaId);
+          }
+        }
+        if (versionAsString != null) {
+          record.setVersion(versionAsString);
+        }
+        recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+        // Update metadata document
+        MockMultipartHttpServletRequestBuilder file = MockMvcRequestBuilders.multipart("/api/v2/metadata/" + metadataId).file(recordFile);
         if (metadataFile != null) {
           file = file.file(metadataFile);
         }
