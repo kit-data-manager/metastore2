@@ -13,7 +13,8 @@ services:
         ipv4_address: 172.0.0.10
   my-apache:
     image: ${PREFIX4DOCKER}/frontend-collection-metastore:${FRONTEND_COLLECTION_VERSION}
-    container_name: my_apache
+    container_name: frontend.docker
+    hostname: frontend.docker
     ports:
      - "80:80"
     networks:
@@ -42,7 +43,7 @@ services:
     image: rabbitmq:4-management
     depends_on:
       - elasticsearch
-    container_name: rabbitmq4indexing
+    container_name: rabbitmq.docker
     hostname: rabbitmq.docker
     environment:
       - HOSTNAMES=rabbitmq.docker
@@ -55,7 +56,8 @@ services:
       - dps
   indexing-service:
     image: ${PREFIX4DOCKER}/indexing-service:${INDEXING_SERVICE_VERSION}
-    container_name: indexing4metastore
+    container_name: indexing.docker
+    hostname: indexing.docker
     environment:
       - REPO_MESSAGING_USERNAME=${RABBIT_MQ_USER}
       - REPO_MESSAGING_PASSWORD=${RABBIT_MQ_PASSWORD}
