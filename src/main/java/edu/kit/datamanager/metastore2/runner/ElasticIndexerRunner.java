@@ -451,7 +451,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
 
     // Get resource type of schema....
     String format = null;
-    RelatedIdentifier identifier = DataResourceRecordUtil.getRelatedIdentifier(copy, DataResourceRecordUtil.RELATED_NEW_VERSION_OF);
+    RelatedIdentifier identifier = DataResourceRecordUtil.getRelatedIdentifier(copy, RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM);
     if (identifier != null) {
       String schemaUrl = identifier.getValue();
       Optional<Url2Path> findByUrl = url2PathDao.findByUrl(schemaUrl);
