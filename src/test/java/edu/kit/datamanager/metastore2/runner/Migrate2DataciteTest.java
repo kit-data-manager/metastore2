@@ -20,6 +20,7 @@ import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -165,6 +166,16 @@ public class Migrate2DataciteTest {
   @Test
   public void testElasticRunnerMigration() throws Exception {
     eir.run("--migrate2DataCite");
+    Assert.assertEquals("No of metadata documents should be correct!", 2, DataResourceRecordUtil.getNoOfMetadataDocuments());
+    Assert.assertEquals("No of schema documents should be correct!", 2, DataResourceRecordUtil.getNoOfSchemaDocuments());
+    DataResource recordById = dataResourceDao.findById("simple").get();
+    Assert.assertEquals("ResourceType should be correct!","JSON_Schema", recordById.getResourceType().getValue());
+    recordById = dataResourceDao.findById("aSimpleSch").get();
+    Assert.assertEquals("ResourceType should be correct!","JSON_Metadata", recordById.getResourceType().getValue());
+    recordById = dataResourceDao.findById("datacite").get();
+    Assert.assertEquals("ResourceType should be correct!","JSON_Schema", recordById.getResourceType().getValue());
+    recordById = dataResourceDao.findById("datac").get();
+    Assert.assertEquals("ResourceType should be correct!","JSON_Metadata", recordById.getResourceType().getValue());
     Assert.assertTrue(true);
   }
 
