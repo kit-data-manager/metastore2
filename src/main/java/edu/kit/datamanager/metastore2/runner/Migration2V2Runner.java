@@ -26,6 +26,7 @@ import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,12 +93,15 @@ public class Migration2V2Runner {
     ResourceType resourceType = recordByIdAndVersion.getResourceType();
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
     resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
-    // Migrate relation type from 'isDerivedFrom' to 'hasMetadata'
-    for (RelatedIdentifier item : recordByIdAndVersion.getRelatedIdentifiers()) {
-      if (item.getRelationType().equals(RelatedIdentifier.RELATION_TYPES.IS_DERIVED_FROM)) {
-        item.setRelationType(DataResourceRecordUtil.RELATED_SCHEMA_TYPE);
-      }
+    // Remove existing IDs
+    for (AclEntry acl : recordByIdAndVersion.getAcls()){
+      acl.setId(null);
     }
+    for (Identifier identifier : recordByIdAndVersion.getAlternateIdentifiers()){
+      identifier.setId(null);
+    }
+    recordByIdAndVersion.getResourceType().setId(null);
+    
     // Add provenance
     if (version > 1) {
       String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(id, version - 1l, null, null)).toString();
@@ -152,12 +156,22 @@ public class Migration2V2Runner {
         item.setValue(replaceFirst);
       }
     }
+    // Remove existing IDs
+    for (AclEntry acl : recordByIdAndVersion.getAcls()){
+      acl.setId(null);
+    }
+    for (Identifier identifier : recordByIdAndVersion.getAlternateIdentifiers()){
+      identifier.setId(null);
+    }
+    recordByIdAndVersion.getResourceType().setId(null);
+    
     // Add provenance
+    LOG.trace("Add provenance: '{}'", version);
     if (version > 1) {
-      String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, version - 1l, null, null)).toString();
-      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, schemaUrl, null, null);
+      String metadataUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImplV2.class).getMetadataDocumentById(id, version - 1l, null, null)).toString();
+      RelatedIdentifier provenance = RelatedIdentifier.factoryRelatedIdentifier(DataResourceRecordUtil.RELATED_NEW_VERSION_OF, metadataUrl, null, null);
       recordByIdAndVersion.getRelatedIdentifiers().add(provenance);
-      LOG.trace("Add provenance to datacite record: '{}'", schemaUrl);
+      LOG.trace("Add provenance to datacite record: '{}'", metadataUrl);
     } else {
       long currentVersion = metadataConfig.getAuditService().getCurrentVersion(id);
       if (currentVersion == 1l) {
@@ -220,7 +234,7 @@ public class Migration2V2Runner {
         break;
       }
     }
- }
+  }
 
   /**
    * Set base URL for accessing documents and records.
