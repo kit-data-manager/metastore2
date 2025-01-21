@@ -429,7 +429,21 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     String eTag = ControllerUtils.getEtagFromHeader(wr);
     DataResourceRecordUtil.deleteDataResourceRecord(metadataConfig, id, eTag, getById);
-
+    // Updating also elastic
+    //ToDo Special method for fetching gone resources.
+//    DataResource deletedDataResource = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+//    if (deletedDataResource.getState() == DataResource.State.REVOKED) { 
+//    LOG.trace("Sending UPDATE event.");
+//    messagingService.orElse(new LogfileMessagingService()).
+//            send(MetadataResourceMessage.factoryUpdateMetadataMessage(deletedDataResource, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+//    } else { 
+//    LOG.trace("Sending DELETE event.");
+//    messagingService.orElse(new LogfileMessagingService()).
+//            send(MetadataResourceMessage.factoryDeleteMetadataMessage(deletedDataResource, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+//    // ToDo Remove all related files and database entries
+//    //DataResourceRecordUtil.cleanUpEverything(deletedDataResource.getId());
+//    }
+      
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
