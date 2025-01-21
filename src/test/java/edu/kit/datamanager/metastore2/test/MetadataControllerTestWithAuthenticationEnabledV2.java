@@ -1827,25 +1827,38 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
+    // Get ETag of deleted record
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    DataResource record = mapper.readValue(body, DataResource.class);
+    Assert.assertEquals(DataResource.State.REVOKED, record.getState());
+
     // Delete second time
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
+            header("If-Match", etag).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
-            andExpect(status().isPreconditionRequired()).
+            andExpect(status().isNoContent()).
             andReturn();
-//    Recreation should be no problem.
-//    //try to create after deletion (Should return HTTP GONE)
-//    DataResource record = new DataResource();
-//    record.setSchemaId("dc");
-//    record.setRelatedResource(RELATED_RESOURCE);
-//    ObjectMapper mapper = new ObjectMapper();
-//
-//    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
-//    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT.getBytes());
-//
-//    this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + METADATA_RECORD_ID).
-//            file(recordFile).
-//            file(metadataFile)).andDo(print()).andExpect(status().isGone()).andReturn();
+    // Get ETag of twice deleted record
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    // Record can't be deleted by owner finally State should be still 'REVOKED'.
+    body = result.getResponse().getContentAsString();
+
+    record = mapper.readValue(body, DataResource.class);
+    Assert.assertEquals(DataResource.State.REVOKED, record.getState());
 
     // List of records should be smaller afterwards
     result = this.mockMvc.perform(get(API_METADATA_PATH).
@@ -1903,12 +1916,31 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andExpect(status().isOk()).
             andReturn();
     etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    DataResource record = mapper.readValue(body, DataResource.class);
+    Assert.assertEquals(DataResource.State.REVOKED, record.getState());
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
             header("If-Match", etag).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + curatorToken)).
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
+    // Get ETag of twice deleted record shouldn't be possible for users.
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+    // Get ETag of twice deleted record shouldn't be possible for admins.
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + curatorToken).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound()).
+            andReturn();
+
 //    Recreation should be no problem.
 //    //try to create after deletion (Should return HTTP GONE)
 //    DataResource record = new DataResource();
