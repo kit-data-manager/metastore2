@@ -53,8 +53,6 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -109,6 +107,25 @@ public class ElasticIndexerRunner implements CommandLineRunner {
    */
   @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
+
+  /**
+   * ***************************************************************************
+   * Parameter for purging database and disc.
+   * ***************************************************************************
+   */
+  /**
+   * Start purging databases and disc from resources with state 'GONE'
+   */
+  @Parameter(names = {"--purgeRepo"}, description = "Remove resources with state 'GONE'"
+          + " from database and from disc.")
+  boolean doPurgeRepo;
+  /**
+   * Start migration to version 2
+   */
+  @Parameter(names = {"--removeId", "-r"}, description = "Remove given ids (comma separated list). "
+          + "'all' will remove all resources with state 'GONE'.")
+  Set<String> purgeIds;
+
   /**
    * Determine the baseUrl of the service.
    */
