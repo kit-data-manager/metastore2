@@ -250,7 +250,7 @@ public class MetadataControllerImpl implements IMetadataController {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
     ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 

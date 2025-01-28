@@ -229,7 +229,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of DataResource.");
@@ -278,7 +278,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
     ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 
@@ -331,11 +331,11 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+    DataResource recordByIdAndVersion = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, null);
     List<DataResource> recordList = new ArrayList<>();
     long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
     for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
-      recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
+      recordList.add(DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version));
     }
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);

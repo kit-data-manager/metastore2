@@ -82,7 +82,7 @@ import java.time.Instant;
 public class DataResourceRecordUtil {
 
   public static final String RESOURCE_TYPE = "application/vnd.datacite.org+json";
-  
+
   public static final RelatedIdentifier.RELATION_TYPES RELATED_DATA_RESOURCE_TYPE = RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR;
   public static final RelatedIdentifier.RELATION_TYPES RELATED_SCHEMA_TYPE = RelatedIdentifier.RELATION_TYPES.HAS_METADATA;
   public static final RelatedIdentifier.RELATION_TYPES RELATED_NEW_VERSION_OF = RelatedIdentifier.RELATION_TYPES.IS_NEW_VERSION_OF;
@@ -228,7 +228,7 @@ public class DataResourceRecordUtil {
       }
     }
     // reload data resource
-    metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
+    metadataRecord = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
 
     return metadataRecord;
   }
@@ -264,7 +264,7 @@ public class DataResourceRecordUtil {
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-    dataResource = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, dataResource.getId(), Long.valueOf(dataResource.getVersion()));
+    dataResource = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(applicationProperties, dataResource.getId(), Long.valueOf(dataResource.getVersion()));
 
     return dataResource;
   }
@@ -583,6 +583,24 @@ public class DataResourceRecordUtil {
   public static DataResource getRecordById(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static DataResource getMetadataRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    DataResource returnValue = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+    if (!returnValue.getResourceType().getValue().endsWith(METADATA_SUFFIX)) {
+      throw new ResourceNotFoundException("Metadata document with ID '" + recordId + "' doesn't exist!");
+    }
+    return returnValue;
+  }
+
+  public static DataResource getSchemaRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    DataResource returnValue = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+    if (!returnValue.getResourceType().getValue().endsWith(SCHEMA_SUFFIX)) {
+      throw new ResourceNotFoundException("Schema document with ID '" + recordId + "' doesn't exist!");
+    }
+    return returnValue;
   }
 
   public static DataResource getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
@@ -952,9 +970,11 @@ public class DataResourceRecordUtil {
     }
     checkNoOfRelatedIdentifiers(noOfRelatedData, noOfRelatedSchemas);
   }
-  /** Validate related identifiers.
-   * There has to be exactly one schema (hasMetadata) 
-   * and at *least* one related data resource.
+
+  /**
+   * Validate related identifiers. There has to be exactly one schema
+   * (hasMetadata) and at *least* one related data resource.
+   *
    * @param noOfRelatedData No of related data resources.
    * @param noOfRelatedSchemas No of related schemas.
    */
@@ -963,7 +983,7 @@ public class DataResourceRecordUtil {
       String errorMessage = "";
       if (noOfRelatedSchemas == 0) {
         errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was not found in record. \n";
-      }       
+      }
       if (noOfRelatedSchemas > 1) {
         errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was provided more than once in record. \n";
       }

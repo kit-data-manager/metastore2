@@ -80,13 +80,13 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing  a query for records with given id.");
-    DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, id, version);
     List<DataResource> recordList = new ArrayList<>();
     recordList.add(recordByIdAndVersion);
     if (version == null) {
       long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
       for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, size));
+        recordList.add(DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, id, size));
       }
     }
 
@@ -115,14 +115,14 @@ public class LandingPageControllerImplV2 implements ILandingPageControllerV2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing  a query for all records with given id...");
-    DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource recordByIdAndVersion = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     List<DataResource> recordList = new ArrayList<>();
 
     recordList.add(recordByIdAndVersion);
     if (version == null) {
       long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
       for (long size = totalNoOfElements - 1; size > 0; size--) {
-        recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, size));
+        recordList.add(DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, size));
       }
     }
     List<MetadataRecord> resultList = new ArrayList<>();
