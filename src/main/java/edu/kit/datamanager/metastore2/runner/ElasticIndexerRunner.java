@@ -195,12 +195,17 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.trace("update date: '{}'", updateDate.toString());
       LOG.trace("Indices: '{}'", indices);
       LOG.trace("Find all schemas...");
-      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
+      // Try to determine baseUrl 
+      List<Url2Path> findAllSchemas = url2PathDao.findAll(PageRequest.of(0, 1)).getContent();
       if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
         // Try to fetch baseURL from this
-        SchemaRecord get = findAllSchemas.get(0);
-        Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
+        if (LOG.isTraceEnabled()) {
+          for(Url2Path item : findAllSchemas) {
+            LOG.trace("Url2Path: '{}'", item);
+          }
+        }
+        Url2Path findByPath = findAllSchemas.get(0);
         baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
         migrationTool.setBaseUrl(baseUrl);
