@@ -283,6 +283,7 @@ public class Application {
     DataResourceRecordUtil.setMetadataFormatDao(metadataFormatDao);
     DataResourceRecordUtil.setSchemaRecordDao(schemaRecordDao);
     DataResourceRecordUtil.setSchemaConfig(rbc);
+    DataResourceRecordUtil.setUrl2PathDao(url2PathDao);
 
     fixBasePath(rbc);
 

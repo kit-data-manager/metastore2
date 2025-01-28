@@ -24,6 +24,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -109,6 +110,7 @@ public class DataResourceRecordUtil {
   private static IDataResourceDao dataResourceDao;
   private static ISchemaRecordDao schemaRecordDao;
   private static IMetadataFormatDao metadataFormatDao;
+  private static IUrl2PathDao url2PathDao;
 
   public static final String SCHEMA_SUFFIX = "_Schema";
   public static final String XML_SCHEMA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + SCHEMA_SUFFIX;
@@ -315,12 +317,7 @@ public class DataResourceRecordUtil {
       info = getContentInformationOfResource(applicationProperties, updatedDataResource);
       // validate if document is still valid due to changed record settings.
       if (info != null) {
-        String metadataDocumentUri = info.getContentUri();
-        Path metadataDocumentPath = Paths.get(URI.create(metadataDocumentUri));
-        if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-          LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-          throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-        }
+        Path metadataDocumentPath = testForRegularFile(info.getContentUri());
         // test if document is still valid for updated(?) schema.
         try {
           InputStream inputStream = Files.newInputStream(metadataDocumentPath);
@@ -535,12 +532,8 @@ public class DataResourceRecordUtil {
       switch (pathToSchemaFile.getScheme()) {
         case "file":
           // check file
-          Path schemaDocumentPath = Paths.get(pathToSchemaFile);
-          if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-            LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-            String errorMessage = "Schema document on server either does not exist or is no file or is not readable.";
-            throw new CustomInternalServerError(errorMessage);
-          }
+          Path schemaDocumentPath = testForRegularFile(schemaRecord.getSchemaDocumentUri());
+
           byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
           IValidator applicableValidator;
           String mediaType = null;
@@ -646,15 +639,10 @@ public class DataResourceRecordUtil {
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     LOG.trace("Obtaining content information record with id {} and version {}.", recordId, version);
-    ContentInformation metadataRecord = getContentInformationByIdAndVersion(metastoreProperties, recordId, version);
+    ContentInformation contentRecord = getContentInformationByIdAndVersion(metastoreProperties, recordId, version);
 
-    URI metadataDocumentUri = URI.create(metadataRecord.getContentUri());
+    Path metadataDocumentPath = testForRegularFile(contentRecord.getContentUri());
 
-    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-    }
     return metadataDocumentPath;
   }
 
@@ -883,6 +871,15 @@ public class DataResourceRecordUtil {
    */
   public static void setSchemaRecordDao(ISchemaRecordDao aSchemaRecordDao) {
     schemaRecordDao = aSchemaRecordDao;
+  }
+
+  /**
+   * Set the DAO holding url and paths.
+   *
+   * @param aUrl2PathDao the url2PathDao to set
+   */
+  public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
+    url2PathDao = aUrl2PathDao;
   }
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
@@ -1417,15 +1414,8 @@ public class DataResourceRecordUtil {
     info = getContentInformationOfResource(applicationProperties, updatedDataResource);
     // validate if document is still valid due to changed record settings.
     Objects.requireNonNull(info);
-    URI schemaDocumentUri = URI.create(info.getContentUri());
 
-    Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-    if (!Files.exists(schemaDocumentPath)
-            || !Files.isRegularFile(schemaDocumentPath)
-            || !Files.isReadable(schemaDocumentPath)) {
-      LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-      throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-    }
+    Path schemaDocumentPath = testForRegularFile(info.getContentUri());
 
     try {
       byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
