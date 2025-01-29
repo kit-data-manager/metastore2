@@ -122,7 +122,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Start migration to version 2
    */
-  @Parameter(names = {"--removeId", "-r"}, description = "Remove given ids (comma separated list). "
+  @Parameter(names = {"--removeId", "-r"}, description = "Remove given ids (comma separated list not supported yet). "
           + "'all' will remove all resources with state 'GONE'.")
   Set<String> purgeIds;
 
@@ -165,6 +165,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private Optional<IMessagingService> messagingService;
   @Autowired
   private Migration2V2Runner migrationTool;
+  @Autowired
+  private PurgeRunner cleanUpTool;
 
   @Autowired
   private SearchConfiguration searchConfiguration;
@@ -182,12 +184,13 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     prefixIndices = "metastore-";
     updateDate = new Date(0);
     indices = new HashSet<>();
-    
+    purgeIds = new HashSet<>();
+
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
             .build();
     try {
-      LOG.trace("Parse arguments: '{}'", (Object)args);
+      LOG.trace("Parse arguments: '{}'", (Object) args);
       argueParser.parse(args);
       LOG.trace("doMigration2DataCite: '{}'", doMigration2DataCite);
       LOG.trace("PrefixIndices: '{}'", prefixIndices);
@@ -201,7 +204,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         // There is at least one schema.
         // Try to fetch baseURL from this
         if (LOG.isTraceEnabled()) {
-          for(Url2Path item : findAllSchemas) {
+          for (Url2Path item : findAllSchemas) {
             LOG.trace("Url2Path: '{}'", item);
           }
         }
@@ -216,6 +219,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       }
       if (doMigration2DataCite) {
         migrateToVersion2();
+      }
+      if (doPurgeRepo) {
+        cleanUpTool.removeResources(purgeIds);
       }
     } catch (Exception ex) {
       LOG.error("Error while executing runner!", ex);
@@ -397,7 +403,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   }
 
   /**
-   * Remove all indexed entries (indexed with V1) for given schema. (If search is enabled)
+   * Remove all indexed entries (indexed with V1) for given schema. (If search
+   * is enabled)
    *
    * example: POST /metastore-schemaid/_delete_by_query { "query": { "range": {
    * "metadataRecord.schemaVersion": { "gte": 1 } } } }
@@ -415,7 +422,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.trace("Remove all entries for index: '{}'", prefix4Indices + schemaId);
       SimpleServiceClient client = SimpleServiceClient.create(searchConfiguration.getUrl() + "/" + prefix4Indices + schemaId + "/_delete_by_query");
       String query = "{ \"query\": { \"range\" : { \"metadataRecord.schemaVersion\" : { \"gte\" : 1} } } }";
-      LOG.trace("Query: '{}'", query);                       
+      LOG.trace("Query: '{}'", query);
       client.withContentType(MediaType.APPLICATION_JSON);
       try {
         String postResource = client.postResource(query, String.class);

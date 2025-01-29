@@ -35,6 +35,7 @@ import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.StorageServiceProperties;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
@@ -102,7 +103,7 @@ public class Application {
   @Autowired
   private List<IRepoVersioningService> versioningServices;
   @Autowired
-  private List<IRepoStorageService>storageServices;
+  private List<IRepoStorageService> storageServices;
   @Autowired
   private ISchemaRecordDao schemaRecordDao;
   @Autowired
@@ -111,6 +112,8 @@ public class Application {
   private IDataResourceDao dataResourceDao;
   @Autowired
   private IUrl2PathDao url2PathDao;
+  @Autowired
+  private IAllIdentifiersDao allIdentifiersDao;
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
@@ -284,6 +287,7 @@ public class Application {
     DataResourceRecordUtil.setSchemaRecordDao(schemaRecordDao);
     DataResourceRecordUtil.setSchemaConfig(rbc);
     DataResourceRecordUtil.setUrl2PathDao(url2PathDao);
+    DataResourceRecordUtil.setAllIdentifiersDao(allIdentifiersDao);
 
     fixBasePath(rbc);
 
@@ -335,7 +339,7 @@ public class Application {
     rbc.setMaxJaversScope(this.applicationProperties.getMaxJaversScope());
     rbc.setSchemaRegistries(checkRegistries(applicationProperties.getSchemaRegistries()));
     rbc.setValidators(validators);
-    
+
     fixBasePath(rbc);
 
     printSettings(rbc);
