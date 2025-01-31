@@ -146,7 +146,7 @@ public class Migrate2DataciteTest {
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
             .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation).uris()
-                    .withPort(41417))
+                    .withPort(41437))
             .build();
     eir.indices = null;
     eir.updateDate = null;
