@@ -183,9 +183,12 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
     // Set defaults for cli arguments.
+    updateIndex = false;
     prefixIndices = "metastore-";
     updateDate = new Date(0);
     indices = new HashSet<>();
+    doMigration2DataCite = false;
+    doPurgeRepo = false;
     purgeIds = new HashSet<>();
 
     JCommander argueParser = JCommander.newBuilder()
@@ -198,7 +201,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.trace("PrefixIndices: '{}'", prefixIndices);
       LOG.trace("Update index: '{}'", updateIndex);
       LOG.trace("update date: '{}'", updateDate.toString());
-      LOG.trace("Indices: '{}'", indices);
+      LOG.trace("indices: '{}'", indices);
+      LOG.trace("doPurgeRepo: '{}'", doPurgeRepo);
+      LOG.trace("remove IDs: '{}'", purgeIds);
       LOG.trace("Find all schemas...");
       // Try to determine baseUrl 
       List<Url2Path> findAllSchemas = url2PathDao.findAll(PageRequest.of(0, 1)).getContent();
@@ -211,7 +216,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
           }
         }
         Url2Path findByPath = findAllSchemas.get(0);
-        baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
+       baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
         migrationTool.setBaseUrl(baseUrl);
         DataResourceRecordUtil.setBaseUrl(baseUrl);
@@ -223,7 +228,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         migrateToVersion2();
       }
       if (doPurgeRepo) {
-        cleanUpTool.removeResources(purgeIds);
+       cleanUpTool.removeResources(purgeIds);
       }
     } catch (Exception ex) {
       LOG.error("Error while executing runner!", ex);
