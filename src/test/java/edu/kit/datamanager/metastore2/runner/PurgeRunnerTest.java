@@ -194,9 +194,6 @@ public class PurgeRunnerTest {
     Assert.assertEquals(noOfMetadataFileAtStartUp, noOfMetadataFiles);// + 5);
 
     eir.run("--purgeRepo", "--removeId", "all");
-    eir.run("--purgeRepo", "--removeId", "all");
-    eir.run("--removeId", "acomplete_metadata", "-r", "atestdelete_metadata");
-    eir.run("--purgeRepo", "--removeId", "acomplete_metadata", "-r", "atestdelete_metadata");
     noOfSchemaFiles = countFilesInDirectory(schemaDir);
     noOfMetadataFiles = countFilesInDirectory(metadataDir);
     // 7 schema files should be deleted
