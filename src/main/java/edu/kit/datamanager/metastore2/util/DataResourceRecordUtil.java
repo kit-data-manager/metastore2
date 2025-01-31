@@ -71,6 +71,7 @@ import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.domain.Date;
@@ -111,6 +112,7 @@ public class DataResourceRecordUtil {
   private static ISchemaRecordDao schemaRecordDao;
   private static IMetadataFormatDao metadataFormatDao;
   private static IUrl2PathDao url2PathDao;
+  private static IAllIdentifiersDao allIdentifiersDao;
 
   public static final String SCHEMA_SUFFIX = "_Schema";
   public static final String XML_SCHEMA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + SCHEMA_SUFFIX;
@@ -880,6 +882,13 @@ public class DataResourceRecordUtil {
    */
   public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
     url2PathDao = aUrl2PathDao;
+  }
+
+  /**
+   * @param allIdentifiersDao the allIdentifiersDao to set
+   */
+  public static void setAllIdentifiersDao(IAllIdentifiersDao allIdentifiersDao) {
+    DataResourceRecordUtil.allIdentifiersDao = allIdentifiersDao;
   }
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
@@ -1805,6 +1814,104 @@ public class DataResourceRecordUtil {
       throw ex;
     }
     return records;
+  }
+
+  /**
+   * Remove all entries from database and all related files from disc. (For
+   * dataresources with state 'GONE' only.)
+   *
+   * @param dataResourceToRemove Identifier of the resource
+   */
+  public static void cleanUpDataResource(DataResource dataResourceToRemove) {
+    if (dataResourceToRemove.getState() == DataResource.State.GONE) {
+      LOG.trace("State 'GONE' detected. -> clean up resource");
+      String dataResourceId = dataResourceToRemove.getId();
+
+      List<String> uniqueIdentifiers = getUniqueIdentifiers(dataResourceToRemove);
+      long currentVersion = Long.parseLong(dataResourceToRemove.getVersion());
+      ContentInformation contentInformationByIdAndVersion = null;
+      for (long version = 1; version <= currentVersion; version++) {
+        contentInformationByIdAndVersion = getContentInformationByIdAndVersion(schemaConfig, dataResourceId, version);
+        String contentUri = contentInformationByIdAndVersion.getContentUri();
+        LOG.trace("Try to remove version '{}' of '{}' -> file: '{}'...", version, dataResourceId, contentUri);
+        try {
+          Path metadataDocumentPath = testForRegularFile(contentUri);
+          Files.delete(metadataDocumentPath);
+          LOG.trace("-> removed!");
+        } catch (CustomInternalServerError | IOException ex) {
+          LOG.error("Problem deleting '{}'", contentUri);
+          LOG.error("Reason: ", ex);
+        }
+        cleanUpHelperTables(dataResourceId, contentUri);
+      }
+      schemaConfig.getContentInformationService().delete(contentInformationByIdAndVersion);
+
+      LOG.trace("Delete data resource: '{}'", dataResourceToRemove.getId());
+      dataResourceDao.delete(dataResourceToRemove);
+      List<AllIdentifiers> findByIdentifierIn = allIdentifiersDao.findByIdentifierIn(uniqueIdentifiers);
+      for (AllIdentifiers identifier : findByIdentifierIn) {
+        LOG.trace("AllIdentifiers remove: '{}'", identifier);
+        allIdentifiersDao.delete(identifier);
+      }
+    }
+  }
+
+  private static void cleanUpHelperTables(String dataResourceId, String contentUri) {
+    // if data resource is a schema there are some helper tables...
+    List<SchemaRecord> allSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(dataResourceId);
+    for (SchemaRecord schemaRecord : allSchemaIds) {
+      LOG.trace("Delete schemaRecord: '{}'", schemaRecord);
+      schemaRecordDao.delete(schemaRecord);
+    }
+    List<Url2Path> findByPath = url2PathDao.findByPath(contentUri);
+    for (Url2Path entity : findByPath) {
+      url2PathDao.delete(entity);
+      LOG.trace("Delete url2Path: '{}'", entity);
+    }
+    for (MetadataFormat entity : metadataFormatDao.findAll()) {
+      if (entity.getMetadataPrefix().equalsIgnoreCase(dataResourceId)) {
+        metadataFormatDao.delete(entity);
+        LOG.trace("Delete metadataFormat: '{}'", entity);
+      }
+    }
+
+  }
+
+  /**
+   * Get all identifiers of a resource that have to be unique, e.g. primary and
+   * alternate identifiers.
+   *
+   * @param resource The resource.
+   *
+   * @return A list of identifiers.
+   */
+  private static List<String> getUniqueIdentifiers(DataResource resource) {
+    List<String> identifiers = new ArrayList<>();
+    identifiers.add(resource.getId());
+    if (resource.getIdentifier() != null) {
+      identifiers.add(resource.getIdentifier().getValue());
+    }
+    resource.getAlternateIdentifiers().forEach((alt) -> {
+      identifiers.add(alt.getValue());
+    });
+    return identifiers;
+  }
+
+  /**
+   * Test if String points to a regular file, which is readable.
+   *
+   * @param fileUri URI of file.
+   * @return Path to File
+   * @throws CustomInternalServerError File is not a regular file or not
+   * available or not readable.
+   */
+  public static Path testForRegularFile(String fileUri) throws CustomInternalServerError {
+    Path documentPath = Paths.get(URI.create(fileUri));
+    if (!Files.exists(documentPath) || !Files.isRegularFile(documentPath) || !Files.isReadable(documentPath)) {
+      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", documentPath);
+      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+    }
+    return documentPath;
   }
 
   /**

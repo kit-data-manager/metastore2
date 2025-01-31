@@ -61,11 +61,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.HttpClientErrorException;
 
 /**
- * This class contains 2 runners:
+ * This class contains 3 runners:
  * <ul><li>Runner for indexing all metadata documents of given schemas Arguments
  * have to start with at least 'reindex' followed by all indices which have to
  * be reindexed. If no indices are given all indices will be reindexed.</li>
- * <li>Runner for migrating dataresources from version 1 to version2.
+ * <li>Runner for migrating dataresources from version 1 to version2.</li>
+ * <li>Runner for purging schema/metadata documents and it's linked database entries.</li>
+ * </ul>
  */
 @Component
 public class ElasticIndexerRunner implements CommandLineRunner {
@@ -84,7 +86,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Start migration to version 2
    */
-  @Parameter(names = {"--prefixIndices", "-p"}, description = "Prefix used for the indices inside elastic.")
+  @Parameter(names = {"--prefixIndices", "-p"}, description = "Parameter for 'migrate2Datacite': Prefix used for the indices inside elastic.")
   String prefixIndices;
 
   /**
@@ -100,12 +102,12 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Restrict reindexing to provided indices only.
    */
-  @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
+  @Parameter(names = {"--indices", "-i"}, description = "Parameter for 'reindex': Only for given indices (comma separated) or all indices if not present.")
   Set<String> indices;
   /**
    * Restrict reindexing to dataresources new than given date.
    */
-  @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
+  @Parameter(names = {"--updateDate", "-u"}, description = "Parameter for 'reindex': Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
 
   /**
@@ -122,7 +124,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Start migration to version 2
    */
-  @Parameter(names = {"--removeId", "-r"}, description = "Remove given ids (comma separated list not supported yet). "
+  @Parameter(names = {"--removeId", "-r"}, description = "Parameter for 'purgeRepo': Remove given ids (comma separated list not supported yet). "
           + "'all' will remove all resources with state 'GONE'.")
   Set<String> purgeIds;
 
