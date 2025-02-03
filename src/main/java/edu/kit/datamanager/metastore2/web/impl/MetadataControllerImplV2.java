@@ -129,7 +129,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
    * @param applicationProperties Configuration for controller.
    * @param metadataConfig Configuration for metadata documents repository.
    * @param metadataRecordDao DAO for metadata records.
-   * @param schemaRecordDao  DAO for schema records.
+   * @param schemaRecordDao DAO for schema records.
    */
   public MetadataControllerImplV2(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
@@ -371,9 +371,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     }
 
     // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
+      DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
+      List<DataResource.State> stateList = Arrays.asList(states);
+      spec = spec.and(StateSpecification.toSpecification(stateList));
 
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
 
@@ -428,7 +428,21 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
 
     String eTag = ControllerUtils.getEtagFromHeader(wr);
-    DataResourceRecordUtil.deleteDataResourceRecord(metadataConfig, id, eTag, getById);
+    // Get ID in case of alternate identifiers are given
+    DataResource dataResourceBeforeDeletion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+
+    DataResourceRecordUtil.deleteDataResourceRecord(metadataConfig, dataResourceBeforeDeletion.getId(), eTag, getById);
+    // Updating also elastic
+    if (dataResourceBeforeDeletion.getState() != DataResource.State.REVOKED) {
+      DataResource dataResourceAfterDeletion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+      LOG.trace("Sending UPDATE event.");
+      messagingService.orElse(new LogfileMessagingService()).
+              send(MetadataResourceMessage.factoryUpdateMetadataMessage(dataResourceAfterDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    } else {
+      LOG.trace("Sending DELETE event.");
+      messagingService.orElse(new LogfileMessagingService()).
+              send(MetadataResourceMessage.factoryDeleteMetadataMessage(dataResourceBeforeDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    }
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
