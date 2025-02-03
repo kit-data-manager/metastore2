@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "$id": "http://www.example.org/schema/json/simple_v2",
+  "type": "object",
+  "title": "Json schema for tests",
+  "default": {},
+  "required": [
+    "title",
+    "date"
+  ],
+  "properties": {
+    "title": {
+      "type": "string",
+      "title": "Title",
+      "description": "Title of object."
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "title": "Date",
+      "description": "Date of object"
+    }
+  },
+  "additionalProperties": false
+}

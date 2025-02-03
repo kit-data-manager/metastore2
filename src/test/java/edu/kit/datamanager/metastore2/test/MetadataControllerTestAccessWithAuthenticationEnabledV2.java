@@ -13,11 +13,9 @@ import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
-import edu.kit.datamanager.metastore2.dao.ILinkedDataResourceDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -43,7 +41,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.postgresql.core.Oid.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -128,8 +125,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   @Autowired
   Javers javers = null;
   @Autowired
-  private ILinkedDataResourceDao metadataRecordDao;
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
   private IDataRecordDao dataRecordDao;
@@ -199,7 +194,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
 
       contentInformationDao.deleteAll();
       dataResourceDao.deleteAll();
-      metadataRecordDao.deleteAll();
       schemaRecordDao.deleteAll();
       dataRecordDao.deleteAll();
       allIdentifiersDao.deleteAll();

@@ -972,6 +972,15 @@ public class MetadataControllerTestV2 {
     Assert.assertNotEquals("file:///tmp/dc.xml", locationUri);
   }
 
+
+  @Test
+  public void testGetRecordBySchemaId() throws Exception {
+    this.mockMvc.perform(get(API_METADATA_PATH + SCHEMA_ID).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound());
+  }
+
   @Test
   public void testGetRecords() throws Exception {
     String metadataRecordId = createDCMetadataRecord();
@@ -2492,7 +2501,7 @@ public class MetadataControllerTestV2 {
     this.mockMvc.perform(get(redirectedUrl)
             .accept("text/html"))
             .andDo(print())
-            .andExpect(status().isBadRequest());
+            .andExpect(status().isNotFound());
   }
 
   @Test

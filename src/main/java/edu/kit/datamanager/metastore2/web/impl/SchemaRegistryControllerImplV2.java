@@ -143,7 +143,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse hsr) {
     LOG.trace("Performing getRecordById({}, {}).", schemaId, version);
 
-    DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
+    DataResource schemaRecord = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, schemaId, version);
     String etag = schemaRecord.getEtag();
 
     LOG.trace("Returning result.");
@@ -196,7 +196,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
           HttpServletResponse hsr) {
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
 
-    DataResource schemaRecord = DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
+    DataResource schemaRecord = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, schemaId, version);
     ContentInformation contentInfo = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaRecord.getId(), Long.valueOf(schemaRecord.getVersion()));
     MediaType contentType = MediaType.valueOf(contentInfo.getMediaType());
     URI pathToFile = URI.create(contentInfo.getContentUri());
@@ -229,7 +229,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       recordByIdAndVersion = DataResourceRecordUtil.getRecordById(schemaConfig, id);
       totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
       for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
-        recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(schemaConfig, id, version));
+        recordList.add(DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, id, version));
       }
     } catch (ResourceNotFoundException rnfe) {
       LOG.info("Schema ID '{}' is unkown. Return empty list...", id);

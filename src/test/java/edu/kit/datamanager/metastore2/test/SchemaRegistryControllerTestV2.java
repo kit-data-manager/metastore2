@@ -622,6 +622,18 @@ public class SchemaRegistryControllerTestV2 {
   }
 
   @Test
+  public void testGetMetadataRecordById() throws Exception {
+    String schemaId = "testGetSchemaRecordByIdWithoutVersion".toLowerCase(Locale.getDefault());
+    ingestXmlDataResource(schemaId);
+    String metadataId = createKitMetadataRecord(schemaId);
+
+    this.mockMvc.perform(get(API_SCHEMA_PATH + metadataId).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isNotFound());
+  }
+
+  @Test
   public void testGetSchemaRecordByIdWithVersion() throws Exception {
     String schemaId = "testGetSchemaRecordByIdWithVersion".toLowerCase(Locale.getDefault());
     ingestXmlDataResource(schemaId);

@@ -53,8 +53,6 @@ import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -63,11 +61,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.HttpClientErrorException;
 
 /**
- * This class contains 2 runners:
+ * This class contains 3 runners:
  * <ul><li>Runner for indexing all metadata documents of given schemas Arguments
  * have to start with at least 'reindex' followed by all indices which have to
  * be reindexed. If no indices are given all indices will be reindexed.</li>
- * <li>Runner for migrating dataresources from version 1 to version2.
+ * <li>Runner for migrating dataresources from version 1 to version2.</li>
+ * <li>Runner for purging schema/metadata documents and it's linked database entries.</li>
+ * </ul>
  */
 @Component
 public class ElasticIndexerRunner implements CommandLineRunner {
@@ -86,7 +86,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Start migration to version 2
    */
-  @Parameter(names = {"--prefixIndices", "-p"}, description = "Prefix used for the indices inside elastic.")
+  @Parameter(names = {"--prefixIndices", "-p"}, description = "Parameter for 'migrate2Datacite': Prefix used for the indices inside elastic.")
   String prefixIndices;
 
   /**
@@ -102,13 +102,32 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   /**
    * Restrict reindexing to provided indices only.
    */
-  @Parameter(names = {"--indices", "-i"}, description = "Only for given indices (comma separated) or all indices if not present.")
+  @Parameter(names = {"--indices", "-i"}, description = "Parameter for 'reindex': Only for given indices (comma separated) or all indices if not present.")
   Set<String> indices;
   /**
    * Restrict reindexing to dataresources new than given date.
    */
-  @Parameter(names = {"--updateDate", "-u"}, description = "Starting reindexing only for documents updated at earliest on update date.")
+  @Parameter(names = {"--updateDate", "-u"}, description = "Parameter for 'reindex': Starting reindexing only for documents updated at earliest on update date.")
   Date updateDate;
+
+  /**
+   * ***************************************************************************
+   * Parameter for purging database and disc.
+   * ***************************************************************************
+   */
+  /**
+   * Start purging databases and disc from resources with state 'GONE'
+   */
+  @Parameter(names = {"--purgeRepo"}, description = "Remove resources with state 'GONE'"
+          + " from database and from disc.")
+  boolean doPurgeRepo;
+  /**
+   * Start migration to version 2
+   */
+  @Parameter(names = {"--removeId", "-r"}, description = "Parameter for 'purgeRepo': Remove given ids (comma separated list not supported yet). "
+          + "'all' will remove all resources with state 'GONE'.")
+  Set<String> purgeIds;
+
   /**
    * Determine the baseUrl of the service.
    */
@@ -148,6 +167,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private Optional<IMessagingService> messagingService;
   @Autowired
   private Migration2V2Runner migrationTool;
+  @Autowired
+  private PurgeRunner cleanUpTool;
 
   @Autowired
   private SearchConfiguration searchConfiguration;
@@ -162,29 +183,40 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   @SuppressWarnings({"StringSplitter", "JavaUtilDate"})
   public void run(String... args) throws Exception {
     // Set defaults for cli arguments.
+    updateIndex = false;
     prefixIndices = "metastore-";
     updateDate = new Date(0);
     indices = new HashSet<>();
-    
+    doMigration2DataCite = false;
+    doPurgeRepo = false;
+    purgeIds = new HashSet<>();
+
     JCommander argueParser = JCommander.newBuilder()
             .addObject(this)
             .build();
     try {
-      LOG.trace("Parse arguments: '{}'", (Object)args);
+      LOG.trace("Parse arguments: '{}'", (Object) args);
       argueParser.parse(args);
       LOG.trace("doMigration2DataCite: '{}'", doMigration2DataCite);
       LOG.trace("PrefixIndices: '{}'", prefixIndices);
       LOG.trace("Update index: '{}'", updateIndex);
       LOG.trace("update date: '{}'", updateDate.toString());
-      LOG.trace("Indices: '{}'", indices);
+      LOG.trace("indices: '{}'", indices);
+      LOG.trace("doPurgeRepo: '{}'", doPurgeRepo);
+      LOG.trace("remove IDs: '{}'", purgeIds);
       LOG.trace("Find all schemas...");
-      List<SchemaRecord> findAllSchemas = schemaRecordDao.findAll(PageRequest.of(0, 1)).getContent();
+      // Try to determine baseUrl 
+      List<Url2Path> findAllSchemas = url2PathDao.findAll(PageRequest.of(0, 1)).getContent();
       if (!findAllSchemas.isEmpty()) {
         // There is at least one schema.
         // Try to fetch baseURL from this
-        SchemaRecord get = findAllSchemas.get(0);
-        Url2Path findByPath = url2PathDao.findByPath(get.getSchemaDocumentUri()).get(0);
-        baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
+        if (LOG.isTraceEnabled()) {
+          for (Url2Path item : findAllSchemas) {
+            LOG.trace("Url2Path: '{}'", item);
+          }
+        }
+        Url2Path findByPath = findAllSchemas.get(0);
+       baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
         migrationTool.setBaseUrl(baseUrl);
         DataResourceRecordUtil.setBaseUrl(baseUrl);
@@ -194,6 +226,9 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       }
       if (doMigration2DataCite) {
         migrateToVersion2();
+      }
+      if (doPurgeRepo) {
+       cleanUpTool.removeResources(purgeIds);
       }
     } catch (Exception ex) {
       LOG.error("Error while executing runner!", ex);
@@ -375,7 +410,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   }
 
   /**
-   * Remove all indexed entries (indexed with V1) for given schema. (If search is enabled)
+   * Remove all indexed entries (indexed with V1) for given schema. (If search
+   * is enabled)
    *
    * example: POST /metastore-schemaid/_delete_by_query { "query": { "range": {
    * "metadataRecord.schemaVersion": { "gte": 1 } } } }
@@ -393,7 +429,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.trace("Remove all entries for index: '{}'", prefix4Indices + schemaId);
       SimpleServiceClient client = SimpleServiceClient.create(searchConfiguration.getUrl() + "/" + prefix4Indices + schemaId + "/_delete_by_query");
       String query = "{ \"query\": { \"range\" : { \"metadataRecord.schemaVersion\" : { \"gte\" : 1} } } }";
-      LOG.trace("Query: '{}'", query);                       
+      LOG.trace("Query: '{}'", query);
       client.withContentType(MediaType.APPLICATION_JSON);
       try {
         String postResource = client.postResource(query, String.class);
