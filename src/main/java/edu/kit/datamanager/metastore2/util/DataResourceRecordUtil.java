@@ -686,7 +686,7 @@ public class DataResourceRecordUtil {
    * @param states Specifiy allowed states.
    * @return Refined specification for DataResource.
    */
-  public static Specification<DataResource> findByState(Specification<DataResource> specification, DataResource.State... states) {
+  public static Specification<DataResource> findByStateWithAuthorization(Specification<DataResource> specification, DataResource.State... states) {
     specification = initializeSpecification(specification);
     // Add authentication if enabled
     if (schemaConfig.isAuthEnabled()) {
@@ -694,12 +694,28 @@ public class DataResourceRecordUtil {
       isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
       // Add valid states for non administrators
       if (!isAdmin) {
-        List<DataResource.State> stateList = Arrays.asList(states);
-        specification = specification.and(StateSpecification.toSpecification(stateList));
+        findByStateOnly(specification, states);
       } else {
         LOG.trace("Administrator will find all resources regardless the state.");
       }
     }
+    return specification;
+  }
+
+  /**
+   * Add specification to find data resource by states regardless of users
+   * rights.
+   *
+   * @param specification Specification for DataResource.
+   * @param states Specifiy allowed states.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByStateOnly(Specification<DataResource> specification, DataResource.State... states) {
+    specification = initializeSpecification(specification);
+    
+    List<DataResource.State> stateList = Arrays.asList(states);
+    specification = specification.and(StateSpecification.toSpecification(stateList));
+    
     return specification;
   }
 
@@ -805,17 +821,19 @@ public class DataResourceRecordUtil {
     }
     return specification;
   }
+
   /**
    * Find by resource type. Only 2 resource types are valid:
    * <ul> <li> Schema documents </li>
    * <li> Metadata documents </li> </ul>
-   * @param specification Specification for search. 
+   *
+   * @param specification Specification for search.
    * @param resourceType Specification with resource type added.
-   * @return 
+   * @return
    */
   public static Specification<DataResource> findByResourceType(Specification<DataResource> specification, String resourceType) {
-   specification = initializeSpecification(specification);
-        // Search for resource type either of schema or metadata
+    specification = initializeSpecification(specification);
+    // Search for resource type either of schema or metadata
     Specification<DataResource> resourceTypeSpec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(resourceType, ResourceType.TYPE_GENERAL.MODEL));
     return specification.and(resourceTypeSpec);
 

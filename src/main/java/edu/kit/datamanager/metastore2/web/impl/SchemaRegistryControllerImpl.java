@@ -23,9 +23,7 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.*;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -61,7 +59,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
@@ -254,7 +251,7 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
     spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
-    spec = DataResourceRecordUtil.findByState(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     LOG.debug("Performing query for records.");
     Page<DataResource> records = null;

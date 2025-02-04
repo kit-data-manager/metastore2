@@ -31,9 +31,7 @@ import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.*;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -347,7 +345,7 @@ public class MetadataControllerImpl implements IMetadataController {
     spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
     spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
-    spec = DataResourceRecordUtil.findByState(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     if (LOG.isTraceEnabled()) {
       Page<DataResource> records = dataResourceDao.findAll(pgbl);

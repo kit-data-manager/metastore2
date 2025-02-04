@@ -70,7 +70,7 @@ public class PurgeRunner {
       LOG.info("Purge all resources with state 'GONE'.");
     }
     // Looking for removed data resources.
-    Specification<DataResource> spec = DataResourceRecordUtil.findByState(null, DataResource.State.GONE);
+    Specification<DataResource> spec = DataResourceRecordUtil.findByStateOnly(null, DataResource.State.GONE);
     LOG.debug("Performing query for records.");
     Page<DataResource> queryDataResources;
     boolean incrementPage = true;

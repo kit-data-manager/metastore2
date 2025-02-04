@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
@@ -32,15 +31,9 @@ import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataControllerV2;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
-import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -367,7 +360,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
     spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
     // Hide revoked and gone data resources. 
-    spec = DataResourceRecordUtil.findByState(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
 
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
