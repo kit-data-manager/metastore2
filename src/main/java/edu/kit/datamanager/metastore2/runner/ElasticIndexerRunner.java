@@ -44,6 +44,7 @@ import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import edu.kit.datamanager.util.JwtBuilder;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +67,8 @@ import org.springframework.web.client.HttpClientErrorException;
  * have to start with at least 'reindex' followed by all indices which have to
  * be reindexed. If no indices are given all indices will be reindexed.</li>
  * <li>Runner for migrating dataresources from version 1 to version2.</li>
- * <li>Runner for purging schema/metadata documents and it's linked database entries.</li>
+ * <li>Runner for purging schema/metadata documents and it's linked database
+ * entries.</li>
  * </ul>
  */
 @Component
@@ -216,7 +218,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
           }
         }
         Url2Path findByPath = findAllSchemas.get(0);
-       baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
+        baseUrl = findByPath.getUrl().split("/api/v1/schema")[0];
         LOG.trace("Found baseUrl: '{}'", baseUrl);
         migrationTool.setBaseUrl(baseUrl);
         DataResourceRecordUtil.setBaseUrl(baseUrl);
@@ -228,7 +230,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
         migrateToVersion2();
       }
       if (doPurgeRepo) {
-       cleanUpTool.removeResources(purgeIds);
+        cleanUpTool.removeResources(purgeIds);
       }
     } catch (Exception ex) {
       LOG.error("Error while executing runner!", ex);
@@ -277,16 +279,10 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       LOG.info("Reindex all indices!");
       // Search for all indices...
       // Build Specification
-      ResourceType resourceType = ResourceType.createResourceType(DataResourceRecordUtil.SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL);
-      Specification<DataResource> spec = ResourceTypeSpec.toSpecification(resourceType);
-      // Add authentication if enabled
-      if (updateDate != null) {
-        spec = spec.and(LastUpdateSpecification.toSpecification(updateDate.toInstant(), null));
-      }
+      Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, DataResourceRecordUtil.SCHEMA_SUFFIX);
+      spec = DataResourceRecordUtil.findByUpdateDates(spec, updateDate.toInstant(), null);
       // Hide revoked and gone data resources. 
-      DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-      List<DataResource.State> stateList = Arrays.asList(states);
-      spec = spec.and(StateSpecification.toSpecification(stateList));
+      spec = DataResourceRecordUtil.findByState(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
       int entriesPerPage = 20;
       int page = 0;
       LOG.debug("Performing query for records.");
@@ -376,7 +372,7 @@ public class ElasticIndexerRunner implements CommandLineRunner {
     SecurityContextHolder.getContext().setAuthentication(jwtAuthenticationToken);
     // Try to determine URL of repository
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+      Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, DataResourceRecordUtil.METADATA_SUFFIX);
     spec.or(ResourceTypeSpec.toSpecification(ResourceType.createResourceType(SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL)));
     Pageable pgbl = PageRequest.of(0, 1);
     long totalElements = queryDataResources(spec, pgbl).getTotalElements();

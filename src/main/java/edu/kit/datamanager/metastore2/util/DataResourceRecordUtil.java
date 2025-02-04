@@ -72,8 +72,10 @@ import java.util.stream.Stream;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
+import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.Date;
 import java.nio.charset.Charset;
 import java.time.Instant;
@@ -648,7 +650,15 @@ public class DataResourceRecordUtil {
     return metadataDocumentPath;
   }
 
-  public static Specification<DataResource> findByAccessRights(Specification<DataResource> spec) {
+  /**
+   * Add specification to find data resource by access rights. If caller has
+   * administration rights all resources will be found.
+   *
+   * @param specification Specification for DataResource.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByAccessRights(Specification<DataResource> specification) {
+    specification = initializeSpecification(specification);
     // Add authentication if enabled
     if (schemaConfig.isAuthEnabled()) {
       boolean isAdmin;
@@ -659,13 +669,38 @@ public class DataResourceRecordUtil {
         if (authorizationIdentities != null) {
           LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
+          specification = specification.and(permissionSpec);
         } else {
           LOG.trace("No permission information provided. Skip creating permission specification.");
         }
       }
     }
-    return spec;
+    return specification;
+  }
+
+  /**
+   * Add specification to find data resource by states. If caller has
+   * administration rights all resources will be found.
+   *
+   * @param specification Specification for DataResource.
+   * @param states Specifiy allowed states.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByState(Specification<DataResource> specification, DataResource.State... states) {
+    specification = initializeSpecification(specification);
+    // Add authentication if enabled
+    if (schemaConfig.isAuthEnabled()) {
+      boolean isAdmin;
+      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
+      // Add valid states for non administrators
+      if (!isAdmin) {
+        List<DataResource.State> stateList = Arrays.asList(states);
+        specification = specification.and(StateSpecification.toSpecification(stateList));
+      } else {
+        LOG.trace("Administrator will find all resources regardless the state.");
+      }
+    }
+    return specification;
   }
 
   /**
@@ -676,7 +711,7 @@ public class DataResourceRecordUtil {
    * @return Specification with schemaIds added.
    */
   public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
-    Specification<DataResource> specWithSchema = specification;
+    Specification<DataResource> specWithSchema = initializeSpecification(specification);
     if (schemaIds != null) {
       List<String> allSchemaIds = new ArrayList<>();
       for (String schemaId : schemaIds) {
@@ -693,7 +728,15 @@ public class DataResourceRecordUtil {
     return specWithSchema;
   }
 
-  public static final Specification<DataResource> findByMimetypes(List<String> mimeTypes) {
+  /**
+   * Add specification to find data resource of schema documents by mimetype.
+   *
+   * @param specification Specification for DataResource.
+   * @param mimeTypes Provided mimetypes.
+   * @return Refined specification for DataResource.
+   */
+  public static final Specification<DataResource> findByMimetypes(Specification<DataResource> specification, List<String> mimeTypes) {
+    specification = initializeSpecification(specification);
     // Search for both mimetypes (xml & json)
     ResourceType resourceType;
     final int JSON = 1; // bit 0
@@ -727,22 +770,62 @@ public class DataResourceRecordUtil {
         ResourceType.createResourceType("unknown");
     };
 
-    return ResourceTypeSpec.toSpecification(resourceType);
+    return specification.and(ResourceTypeSpec.toSpecification(resourceType));
   }
 
   /**
-   * Create specification for all listed schemaIds.
+   * Create specification for all listed related data resources
+   * (IS_METADATA_FOR).
    *
    * @param specification Specification for search.
    * @param relatedIds Provided schemaIDs...
-   * @return Specification with schemaIds added.
+   * @return Specification with related data resources added.
    */
   public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
-    Specification<DataResource> specWithSchema = specification;
+    specification = initializeSpecification(specification);
     if ((relatedIds != null) && !relatedIds.isEmpty()) {
-      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedIds.toArray(String[]::new)));
+      specification = specification.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedIds.toArray(String[]::new)));
     }
-    return specWithSchema;
+    return specification;
+  }
+
+  /**
+   * Create specification for all listed related data resources
+   * (IS_METADATA_FOR).
+   *
+   * @param specification Specification for search.
+   * @param updateFrom Start date of date range.
+   * @param updateUntil End date of date range.
+   * @return Specification with date range added.
+   */
+  public static Specification<DataResource> findByUpdateDates(Specification<DataResource> specification, Instant updateFrom, Instant updateUntil) {
+    specification = initializeSpecification(specification);
+    if ((updateFrom != null) || (updateUntil != null)) {
+      specification = specification.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    }
+    return specification;
+  }
+  /**
+   * Find by resource type. Only 2 resource types are valid:
+   * <ul> <li> Schema documents </li>
+   * <li> Metadata documents </li> </ul>
+   * @param specification Specification for search. 
+   * @param resourceType Specification with resource type added.
+   * @return 
+   */
+  public static Specification<DataResource> findByResourceType(Specification<DataResource> specification, String resourceType) {
+   specification = initializeSpecification(specification);
+        // Search for resource type either of schema or metadata
+    Specification<DataResource> resourceTypeSpec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(resourceType, ResourceType.TYPE_GENERAL.MODEL));
+    return specification.and(resourceTypeSpec);
+
+  }
+
+  private static Specification<DataResource> initializeSpecification(Specification<DataResource> specification) {
+    if (specification == null) {
+      specification = Specification.where(null);
+    }
+    return specification;
   }
 
   /**
@@ -812,7 +895,7 @@ public class DataResourceRecordUtil {
    */
   public static long getNoOfMetadataDocuments() {
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, METADATA_SUFFIX);
     Pageable pgbl = PageRequest.of(0, 1);
     return queryDataResources(spec, pgbl).getTotalElements();
   }
@@ -825,7 +908,7 @@ public class DataResourceRecordUtil {
    */
   public static long getNoOfSchemaDocuments() {
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, SCHEMA_SUFFIX);
     Pageable pgbl = PageRequest.of(0, 1);
     return queryDataResources(spec, pgbl).getTotalElements();
   }

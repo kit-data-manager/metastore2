@@ -267,17 +267,11 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(mimeTypes);
-
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(null, mimeTypes);
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
-    if ((updateFrom != null) || (updateUntil != null)) {
-      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
-    }
-    // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
+    spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
+    spec = DataResourceRecordUtil.findByState(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     LOG.debug("Performing query for records.");
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
