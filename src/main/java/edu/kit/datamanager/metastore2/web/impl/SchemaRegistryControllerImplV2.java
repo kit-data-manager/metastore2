@@ -26,8 +26,6 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryControllerV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.util.ControllerUtils;
@@ -64,7 +62,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.UnaryOperator;
@@ -267,17 +264,11 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(mimeTypes);
-
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(null, mimeTypes);
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
-    if ((updateFrom != null) || (updateUntil != null)) {
-      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
-    }
-    // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
+    spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     LOG.debug("Performing query for records.");
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);

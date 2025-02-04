@@ -2305,7 +2305,7 @@ public class MetadataControllerTestV2 {
             andExpect(status().isOk()).
             andReturn();
     int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
-    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
+    Assert.assertEquals("No of records should be still the same!", noOfRecords, noOfRecordsAfter);
   }
 
   @Test
