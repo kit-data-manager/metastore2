@@ -694,7 +694,7 @@ public class DataResourceRecordUtil {
       isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
       // Add valid states for non administrators
       if (!isAdmin) {
-        findByStateOnly(specification, states);
+        specification = findByStateOnly(specification, states);
       } else {
         LOG.trace("Administrator will find all resources regardless the state.");
       }

@@ -1728,7 +1728,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
             header("If-Match", etag)).
             andDo(print()).
-            andExpect(status().isUnauthorized()).
+            andExpect(status().isForbidden()).
             andReturn();
   }
 
@@ -1827,6 +1827,19 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
+    // Delete second time without ETag
+    this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isPreconditionRequired()).
+            andReturn();
+    // Delete second time with old ETag
+    this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
+            header("If-Match", etag).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+            andDo(print()).
+            andExpect(status().isPreconditionFailed()).
+            andReturn();
     // Get ETag of deleted record
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
@@ -1839,6 +1852,16 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
 
     DataResource record = mapper.readValue(body, DataResource.class);
     Assert.assertEquals(DataResource.State.REVOKED, record.getState());
+
+    // List of records should be smaller afterwards
+    result = this.mockMvc.perform(get(API_METADATA_PATH).
+            header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+            header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
+    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
 
     // Delete second time
     this.mockMvc.perform(delete(API_METADATA_PATH + metadataRecordId).
@@ -1867,7 +1890,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
+    noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
     Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
   }
 
@@ -1907,6 +1930,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andDo(print()).
             andExpect(status().isNoContent()).
             andReturn();
+    // List of records should be smaller afterwards
     result = this.mockMvc.perform(get(API_METADATA_PATH).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
@@ -1915,7 +1939,6 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             andReturn();
     int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
     Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
-    // List of records should be smaller afterwards
     result = this.mockMvc.perform(get(API_METADATA_PATH).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken).
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
@@ -1953,7 +1976,7 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andExpect(status().isNotFound());
-    // Get ETag of twice deleted record shouldn't be possible for curators.
+    // Get ETag of twice deleted record should be possible for curators.
     result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
             header(HttpHeaders.AUTHORIZATION, "Bearer " + curatorToken).
             header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).

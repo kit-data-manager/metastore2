@@ -345,6 +345,7 @@ public class MetadataControllerImpl implements IMetadataController {
     spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
     spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
+
     spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     if (LOG.isTraceEnabled()) {

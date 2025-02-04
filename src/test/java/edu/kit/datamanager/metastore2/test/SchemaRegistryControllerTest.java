@@ -1372,10 +1372,10 @@ public class SchemaRegistryControllerTest {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isGone()).andReturn();
 
-    // List of records should be smaller afterwards
+    // List of records should be still the same size 
     result = this.mockMvc.perform(get(API_SCHEMA_PATH).header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataSchemaRecord[].class).length;
-    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
+    Assert.assertEquals("No of records should be still the same!", noOfRecords, noOfRecordsAfter);
   }
 
   @Test
