@@ -145,7 +145,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .apply(springSecurity()) 
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41432))
             .build();
@@ -201,14 +201,14 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
 
       try {
         // Create schema only once.
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
         }
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -245,6 +245,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
               andDo(print()).
@@ -267,6 +269,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).
@@ -288,6 +292,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
               andDo(print()).
@@ -310,6 +316,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
               andDo(print()).
@@ -330,9 +338,12 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId())).
               andDo(print()).
               andExpect(status().isOk());
+
     }
   }
 

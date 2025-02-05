@@ -1509,10 +1509,10 @@ public class SchemaRegistryControllerTestV2 {
             file(recordFile).
             file(schemaFile)).andDo(print()).andExpect(status().isGone()).andReturn();
 
-    // List of records should be smaller afterwards
+    // List of records should be still listing deleted record
     result = this.mockMvc.perform(get(API_SCHEMA_PATH).header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).andDo(print()).andExpect(status().isOk()).andReturn();
     int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), DataResource[].class).length;
-    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
+    Assert.assertEquals("No of records should be still the same!", noOfRecords, noOfRecordsAfter);
   }
 
   @Test

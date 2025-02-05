@@ -15,19 +15,8 @@
  */
 package edu.kit.datamanager.metastore2.runner;
 
-import edu.kit.datamanager.entities.Identifier;
-import edu.kit.datamanager.entities.PERMISSION;
-import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
-import edu.kit.datamanager.repo.domain.acl.AclEntry;
-import edu.kit.datamanager.repo.util.DataResourceUtils;
-import edu.kit.datamanager.security.filter.JwtAuthenticationToken;
-import edu.kit.datamanager.util.JwtBuilder;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -67,7 +56,6 @@ import org.springframework.web.context.WebApplicationContext;
 import static org.junit.Assert.assertFalse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.context.SecurityContextHolder;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 
 /**
@@ -90,7 +78,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @TestPropertySource(properties = {"server.port=41438"})
 @TestPropertySource(properties = {"repo.auth.enabled=false"})
 @TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=update"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:///tmp/metastore2/testCleanUp/database/cleanUpDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:/tmp/metastore2/testCleanUp/database/cleanUpDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/testCleanUp/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/testCleanUp/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
@@ -167,10 +155,10 @@ public class PurgeRunnerTest {
       Path pathToBeDeleted = Path.of("/tmp/metastore2/testCleanUp");
       FileUtils.deleteDirectory(pathToBeDeleted.toFile());
       assertFalse("Directory still exists", Files.exists(pathToBeDeleted));
+      LOG.info("Path '{}' should be deleted!", pathToBeDeleted);
     } catch (IOException ex) {
       LOG.error("Unknown exception.", ex);
     }
-    LOG.error("Path should be deleted!");
   }
 
   @Test
@@ -183,7 +171,7 @@ public class PurgeRunnerTest {
     noOfSchemaFilesAtStartup = countFilesInDirectory(schemaDir);
     noOfMetadataFileAtStartUp = countFilesInDirectory(metadataDir);
 
-    eir.run("--purgeRepo", "--removeId", "acomplete_metadata", "-r", "atestdelete_metadata");
+    eir.run("--purgeRepo", "--removeId", "complete_metadata", "-r", "testdelete_metadata");
     noOfSchemaFiles = countFilesInDirectory(schemaDir);
     noOfMetadataFiles = countFilesInDirectory(metadataDir);
     // no of schema files should be the same
@@ -191,7 +179,7 @@ public class PurgeRunnerTest {
     // 5 metadata documents should be deleted
     // complete_metadata -> 4 files
     // testdelete_metadata -> 1 file.
-    Assert.assertEquals(noOfMetadataFileAtStartUp, noOfMetadataFiles);// + 5);
+    Assert.assertEquals(noOfMetadataFileAtStartUp, noOfMetadataFiles + 5);
 
     eir.run("--purgeRepo", "--removeId", "all");
     noOfSchemaFiles = countFilesInDirectory(schemaDir);
