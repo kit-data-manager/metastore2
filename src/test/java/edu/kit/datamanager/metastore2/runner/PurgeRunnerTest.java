@@ -78,7 +78,7 @@ import static org.springframework.security.test.web.servlet.setup.SecurityMockMv
 @TestPropertySource(properties = {"server.port=41438"})
 @TestPropertySource(properties = {"repo.auth.enabled=false"})
 @TestPropertySource(properties = {"spring.jpa.hibernate.ddl-auto=update"})
-@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:///tmp/metastore2/testCleanUp/database/cleanUpDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:file:/tmp/metastore2/testCleanUp/database/cleanUpDatabase;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/testCleanUp/schema"})
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/testCleanUp/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
