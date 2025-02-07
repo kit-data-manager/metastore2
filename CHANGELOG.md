@@ -13,6 +13,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  
 ### Fixed
 
+## [2.0.1] - 2025-02-07
+
+### Added
+- Add more migration tests.
+- Remove deleted resources also from search index (if available)
+ 
+### Changed
+- ACL entries of resources are now always available  
+### Fixed
+- Fix error determining correct format of metadata document. 
+- Fix problem with transaction while migrating to V2. (remove old ids)
+
+### Libs
+- Update dependency com.google.guava:guava to v33.4.0-jre
+- Update dependency com.networknt:json-schema-validator to v1.5.5 
+- Update dependency edu.kit.datamanager:repo-core to v1.2.5
+- Update dependency edu.kit.datamanager:service-base to v1.3.3
+- Update dependency gradle to v8.12.1
+- Update dependency org.apache.commons:commons-text to v1.13.0
+- Update dependency org.apache.tika:tika-core to v3.1.0 
+- Update dependency org.postgresql:postgresql to v42.7.5
+- Update dependency org.mockito:mockito-core to v5.15.2
+- Update dependency org.springframework.cloud:spring-cloud-gateway-mvc to v4.2.0
+- Update dependency org.springframework.cloud:spring-cloud-starter-config to v4.2.0
+- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.2.0
+- Update dependency org.springframework.data:spring-data-elasticsearch to v5.4.2
+- Update dependency org.springframework:spring-messaging to v6.2.2
+- Update springDocVersion to v2.8.4
+
+### Plugins
+- Update plugin io.freefair.lombok to v8.12.1
+- Update plugin io.freefair.maven-publish-java to v8.12.1
+- Update plugin io.spring.dependency-management to v1.1.7
+- Update plugin net.researchgate.release to v3.1.0
+- Update plugin org.asciidoctor.jvm.convert to v4.0.4
+- Update plugin org.owasp.dependencycheck to v12.0.2
+- Update plugin org.springframework.boot to v3.4.2 
+
 ## [2.0.0] - 2024-11-29
 
 ### Added
@@ -527,7 +565,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/kit-data-manager/metastore2/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...v2.0.0
 [1.4.4]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...v1.4.3

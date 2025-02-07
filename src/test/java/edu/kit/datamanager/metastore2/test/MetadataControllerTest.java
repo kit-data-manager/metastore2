@@ -1848,9 +1848,39 @@ public class MetadataControllerTest {
     String etag = result.getResponse().getHeader("ETag");
     // Delete record
     this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).header("If-Match", etag)).andDo(print()).andExpect(status().isNoContent()).andReturn();
+    // List of records should be smaller afterwards
+    result = this.mockMvc.perform(get("/api/v1/metadata/").
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    Assert.assertEquals("No of records should still be the same!", noOfRecords, noOfRecordsAfter);
 
-    // Delete second time
-    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId)).andDo(print()).andExpect(status().isPreconditionRequired()).andReturn();
+      // Delete second time without ETag
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId)).
+            andDo(print()).
+            andExpect(status().isPreconditionRequired()).
+            andReturn();
+    // Delete second time with old ETag
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isPreconditionFailed()).
+            andReturn();
+   // Get ETag of deleted record.
+    result = this.mockMvc.perform(get("/api/v1/metadata/" + metadataRecordId).
+            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    etag = result.getResponse().getHeader("ETag");
+    // Delete second time with new ETag
+    this.mockMvc.perform(delete("/api/v1/metadata/" + metadataRecordId).
+            header("If-Match", etag)).
+            andDo(print()).
+            andExpect(status().isNoContent()).
+            andReturn();
 //    Recreation should be no problem.
 //    //try to create after deletion (Should return HTTP GONE)
 //    MetadataRecord record = new MetadataRecord();
@@ -1871,8 +1901,8 @@ public class MetadataControllerTest {
             andDo(print()).
             andExpect(status().isOk()).
             andReturn();
-    int noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
-    Assert.assertEquals("No of records should be decremented!", noOfRecords - 1, noOfRecordsAfter);
+    noOfRecordsAfter = mapper.readValue(result.getResponse().getContentAsString(), MetadataRecord[].class).length;
+    Assert.assertEquals("No of records should be the same!", noOfRecords, noOfRecordsAfter);
   }
 
   @Test

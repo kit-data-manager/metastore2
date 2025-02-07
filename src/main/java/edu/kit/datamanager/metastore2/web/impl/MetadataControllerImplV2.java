@@ -16,7 +16,6 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.entities.messaging.MetadataResourceMessage;
 import edu.kit.datamanager.exceptions.AccessForbiddenException;
@@ -32,15 +31,9 @@ import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataControllerV2;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
-import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
-import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -129,7 +122,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
    * @param applicationProperties Configuration for controller.
    * @param metadataConfig Configuration for metadata documents repository.
    * @param metadataRecordDao DAO for metadata records.
-   * @param schemaRecordDao  DAO for schema records.
+   * @param schemaRecordDao DAO for schema records.
    */
   public MetadataControllerImplV2(ApplicationProperties applicationProperties,
           MetastoreConfiguration metadataConfig,
@@ -229,7 +222,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Performing getRecordById({}, {}).", id, version);
 
     LOG.trace("Obtaining metadata record with id {} and version {}.", id, version);
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     LOG.trace("Metadata record found. Prepare response.");
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     LOG.trace("Get ETag of DataResource.");
@@ -278,7 +271,7 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
     ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 
@@ -331,11 +324,11 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
 
     //if security is enabled, include principal in query
     LOG.debug("Performing query for records.");
-    DataResource recordByIdAndVersion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+    DataResource recordByIdAndVersion = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, null);
     List<DataResource> recordList = new ArrayList<>();
     long totalNoOfElements = Long.parseLong(recordByIdAndVersion.getVersion());
     for (long version = totalNoOfElements - pgbl.getOffset(), size = 0; version > 0 && size < pgbl.getPageSize(); version--, size++) {
-      recordList.add(DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version));
+      recordList.add(DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version));
     }
 
     String contentRange = ControllerUtils.getContentRangeHeader(pgbl.getPageNumber(), pgbl.getPageSize(), totalNoOfElements);
@@ -360,20 +353,15 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       return getAllVersions(id, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, DataResourceRecordUtil.METADATA_SUFFIX);
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
     spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
-
-    if ((updateFrom != null) || (updateUntil != null)) {
-      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
-    }
-
+    spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
     // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+
 
     Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pgbl);
 
@@ -428,7 +416,21 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     getById = t -> WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(this.getClass()).getRecordById(t, null, wr, hsr)).toString();
 
     String eTag = ControllerUtils.getEtagFromHeader(wr);
-    DataResourceRecordUtil.deleteDataResourceRecord(metadataConfig, id, eTag, getById);
+    // Get ID in case of alternate identifiers are given
+    DataResource dataResourceBeforeDeletion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+
+    DataResourceRecordUtil.deleteDataResourceRecord(metadataConfig, dataResourceBeforeDeletion.getId(), eTag, getById);
+    // Updating also elastic
+    if (dataResourceBeforeDeletion.getState() != DataResource.State.REVOKED) {
+      DataResource dataResourceAfterDeletion = DataResourceRecordUtil.getRecordById(metadataConfig, id);
+      LOG.trace("Sending UPDATE event.");
+      messagingService.orElse(new LogfileMessagingService()).
+              send(MetadataResourceMessage.factoryUpdateMetadataMessage(dataResourceAfterDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    } else {
+      LOG.trace("Sending DELETE event.");
+      messagingService.orElse(new LogfileMessagingService()).
+              send(MetadataResourceMessage.factoryDeleteMetadataMessage(dataResourceBeforeDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    }
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }

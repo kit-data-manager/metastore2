@@ -24,6 +24,7 @@ import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
 import edu.kit.datamanager.metastore2.domain.oaipmh.MetadataFormat;
@@ -70,8 +71,11 @@ import java.util.stream.Stream;
 
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.JSON;
 import static edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord.SCHEMA_TYPE.XML;
+import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
+import edu.kit.datamanager.repo.dao.spec.dataresource.LastUpdateSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.PermissionSpecification;
 import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
+import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.Date;
 import java.nio.charset.Charset;
 import java.time.Instant;
@@ -82,7 +86,7 @@ import java.time.Instant;
 public class DataResourceRecordUtil {
 
   public static final String RESOURCE_TYPE = "application/vnd.datacite.org+json";
-  
+
   public static final RelatedIdentifier.RELATION_TYPES RELATED_DATA_RESOURCE_TYPE = RelatedIdentifier.RELATION_TYPES.IS_METADATA_FOR;
   public static final RelatedIdentifier.RELATION_TYPES RELATED_SCHEMA_TYPE = RelatedIdentifier.RELATION_TYPES.HAS_METADATA;
   public static final RelatedIdentifier.RELATION_TYPES RELATED_NEW_VERSION_OF = RelatedIdentifier.RELATION_TYPES.IS_NEW_VERSION_OF;
@@ -109,6 +113,8 @@ public class DataResourceRecordUtil {
   private static IDataResourceDao dataResourceDao;
   private static ISchemaRecordDao schemaRecordDao;
   private static IMetadataFormatDao metadataFormatDao;
+  private static IUrl2PathDao url2PathDao;
+  private static IAllIdentifiersDao allIdentifiersDao;
 
   public static final String SCHEMA_SUFFIX = "_Schema";
   public static final String XML_SCHEMA_TYPE = MetadataSchemaRecord.SCHEMA_TYPE.XML + SCHEMA_SUFFIX;
@@ -228,7 +234,7 @@ public class DataResourceRecordUtil {
       }
     }
     // reload data resource
-    metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
+    metadataRecord = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(applicationProperties, metadataRecord.getId(), Long.valueOf(metadataRecord.getVersion()));
 
     return metadataRecord;
   }
@@ -264,7 +270,7 @@ public class DataResourceRecordUtil {
     DataResource createResource = DataResourceUtils.createResource(applicationProperties, dataResource);
     // store document
     ContentDataUtils.addFile(applicationProperties, createResource, document, document.getOriginalFilename(), null, true, t -> "somethingStupid");
-    dataResource = DataResourceRecordUtil.getRecordByIdAndVersion(applicationProperties, dataResource.getId(), Long.valueOf(dataResource.getVersion()));
+    dataResource = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(applicationProperties, dataResource.getId(), Long.valueOf(dataResource.getVersion()));
 
     return dataResource;
   }
@@ -315,12 +321,7 @@ public class DataResourceRecordUtil {
       info = getContentInformationOfResource(applicationProperties, updatedDataResource);
       // validate if document is still valid due to changed record settings.
       if (info != null) {
-        String metadataDocumentUri = info.getContentUri();
-        Path metadataDocumentPath = Paths.get(URI.create(metadataDocumentUri));
-        if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-          LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-          throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-        }
+        Path metadataDocumentPath = testForRegularFile(info.getContentUri());
         // test if document is still valid for updated(?) schema.
         try {
           InputStream inputStream = Files.newInputStream(metadataDocumentPath);
@@ -535,12 +536,8 @@ public class DataResourceRecordUtil {
       switch (pathToSchemaFile.getScheme()) {
         case "file":
           // check file
-          Path schemaDocumentPath = Paths.get(pathToSchemaFile);
-          if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
-            LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-            String errorMessage = "Schema document on server either does not exist or is no file or is not readable.";
-            throw new CustomInternalServerError(errorMessage);
-          }
+          Path schemaDocumentPath = testForRegularFile(schemaRecord.getSchemaDocumentUri());
+
           byte[] schemaDocument = FileUtils.readFileToByteArray(schemaDocumentPath.toFile());
           IValidator applicableValidator;
           String mediaType = null;
@@ -583,6 +580,24 @@ public class DataResourceRecordUtil {
   public static DataResource getRecordById(MetastoreConfiguration metastoreProperties,
           String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null);
+  }
+
+  public static DataResource getMetadataRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    DataResource returnValue = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+    if (!returnValue.getResourceType().getValue().endsWith(METADATA_SUFFIX)) {
+      throw new ResourceNotFoundException("Metadata document with ID '" + recordId + "' doesn't exist!");
+    }
+    return returnValue;
+  }
+
+  public static DataResource getSchemaRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
+          String recordId, Long version) throws ResourceNotFoundException {
+    DataResource returnValue = getRecordByIdAndVersion(metastoreProperties, recordId, version);
+    if (!returnValue.getResourceType().getValue().endsWith(SCHEMA_SUFFIX)) {
+      throw new ResourceNotFoundException("Schema document with ID '" + recordId + "' doesn't exist!");
+    }
+    return returnValue;
   }
 
   public static DataResource getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
@@ -628,19 +643,22 @@ public class DataResourceRecordUtil {
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
           String recordId, Long version) throws ResourceNotFoundException {
     LOG.trace("Obtaining content information record with id {} and version {}.", recordId, version);
-    ContentInformation metadataRecord = getContentInformationByIdAndVersion(metastoreProperties, recordId, version);
+    ContentInformation contentRecord = getContentInformationByIdAndVersion(metastoreProperties, recordId, version);
 
-    URI metadataDocumentUri = URI.create(metadataRecord.getContentUri());
+    Path metadataDocumentPath = testForRegularFile(contentRecord.getContentUri());
 
-    Path metadataDocumentPath = Paths.get(metadataDocumentUri);
-    if (!Files.exists(metadataDocumentPath) || !Files.isRegularFile(metadataDocumentPath) || !Files.isReadable(metadataDocumentPath)) {
-      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", metadataDocumentPath);
-      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
-    }
     return metadataDocumentPath;
   }
 
-  public static Specification<DataResource> findByAccessRights(Specification<DataResource> spec) {
+  /**
+   * Add specification to find data resource by access rights. If caller has
+   * administration rights all resources will be found.
+   *
+   * @param specification Specification for DataResource.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByAccessRights(Specification<DataResource> specification) {
+    specification = initializeSpecification(specification);
     // Add authentication if enabled
     if (schemaConfig.isAuthEnabled()) {
       boolean isAdmin;
@@ -651,13 +669,54 @@ public class DataResourceRecordUtil {
         if (authorizationIdentities != null) {
           LOG.trace("Creating (READ) permission specification. '{}'", authorizationIdentities);
           Specification<DataResource> permissionSpec = PermissionSpecification.toSpecification(authorizationIdentities, PERMISSION.READ);
-          spec = spec.and(permissionSpec);
+          specification = specification.and(permissionSpec);
         } else {
           LOG.trace("No permission information provided. Skip creating permission specification.");
         }
       }
     }
-    return spec;
+    return specification;
+  }
+
+  /**
+   * Add specification to find data resource by states. If caller has
+   * administration rights all resources will be found.
+   *
+   * @param specification Specification for DataResource.
+   * @param states Specifiy allowed states.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByStateWithAuthorization(Specification<DataResource> specification, DataResource.State... states) {
+    specification = initializeSpecification(specification);
+    // Add authentication if enabled
+    if (schemaConfig.isAuthEnabled()) {
+      boolean isAdmin;
+      isAdmin = AuthenticationHelper.hasAuthority(RepoUserRole.ADMINISTRATOR.toString());
+      // Add valid states for non administrators
+      if (!isAdmin) {
+        specification = findByStateOnly(specification, states);
+      } else {
+        LOG.trace("Administrator will find all resources regardless the state.");
+      }
+    }
+    return specification;
+  }
+
+  /**
+   * Add specification to find data resource by states regardless of users
+   * rights.
+   *
+   * @param specification Specification for DataResource.
+   * @param states Specifiy allowed states.
+   * @return Refined specification for DataResource.
+   */
+  public static Specification<DataResource> findByStateOnly(Specification<DataResource> specification, DataResource.State... states) {
+    specification = initializeSpecification(specification);
+    
+    List<DataResource.State> stateList = Arrays.asList(states);
+    specification = specification.and(StateSpecification.toSpecification(stateList));
+    
+    return specification;
   }
 
   /**
@@ -668,7 +727,7 @@ public class DataResourceRecordUtil {
    * @return Specification with schemaIds added.
    */
   public static Specification<DataResource> findBySchemaId(Specification<DataResource> specification, List<String> schemaIds) {
-    Specification<DataResource> specWithSchema = specification;
+    Specification<DataResource> specWithSchema = initializeSpecification(specification);
     if (schemaIds != null) {
       List<String> allSchemaIds = new ArrayList<>();
       for (String schemaId : schemaIds) {
@@ -685,7 +744,15 @@ public class DataResourceRecordUtil {
     return specWithSchema;
   }
 
-  public static final Specification<DataResource> findByMimetypes(List<String> mimeTypes) {
+  /**
+   * Add specification to find data resource of schema documents by mimetype.
+   *
+   * @param specification Specification for DataResource.
+   * @param mimeTypes Provided mimetypes.
+   * @return Refined specification for DataResource.
+   */
+  public static final Specification<DataResource> findByMimetypes(Specification<DataResource> specification, List<String> mimeTypes) {
+    specification = initializeSpecification(specification);
     // Search for both mimetypes (xml & json)
     ResourceType resourceType;
     final int JSON = 1; // bit 0
@@ -719,22 +786,64 @@ public class DataResourceRecordUtil {
         ResourceType.createResourceType("unknown");
     };
 
-    return ResourceTypeSpec.toSpecification(resourceType);
+    return specification.and(ResourceTypeSpec.toSpecification(resourceType));
   }
 
   /**
-   * Create specification for all listed schemaIds.
+   * Create specification for all listed related data resources
+   * (IS_METADATA_FOR).
    *
    * @param specification Specification for search.
    * @param relatedIds Provided schemaIDs...
-   * @return Specification with schemaIds added.
+   * @return Specification with related data resources added.
    */
   public static Specification<DataResource> findByRelatedId(Specification<DataResource> specification, List<String> relatedIds) {
-    Specification<DataResource> specWithSchema = specification;
+    specification = initializeSpecification(specification);
     if ((relatedIds != null) && !relatedIds.isEmpty()) {
-      specWithSchema = specWithSchema.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedIds.toArray(String[]::new)));
+      specification = specification.and(RelatedIdentifierSpec.toSpecification(DataResourceRecordUtil.RELATED_DATA_RESOURCE_TYPE, relatedIds.toArray(String[]::new)));
     }
-    return specWithSchema;
+    return specification;
+  }
+
+  /**
+   * Create specification for all listed related data resources
+   * (IS_METADATA_FOR).
+   *
+   * @param specification Specification for search.
+   * @param updateFrom Start date of date range.
+   * @param updateUntil End date of date range.
+   * @return Specification with date range added.
+   */
+  public static Specification<DataResource> findByUpdateDates(Specification<DataResource> specification, Instant updateFrom, Instant updateUntil) {
+    specification = initializeSpecification(specification);
+    if ((updateFrom != null) || (updateUntil != null)) {
+      specification = specification.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
+    }
+    return specification;
+  }
+
+  /**
+   * Find by resource type. Only 2 resource types are valid:
+   * <ul> <li> Schema documents </li>
+   * <li> Metadata documents </li> </ul>
+   *
+   * @param specification Specification for search.
+   * @param resourceType Specification with resource type added.
+   * @return
+   */
+  public static Specification<DataResource> findByResourceType(Specification<DataResource> specification, String resourceType) {
+    specification = initializeSpecification(specification);
+    // Search for resource type either of schema or metadata
+    Specification<DataResource> resourceTypeSpec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(resourceType, ResourceType.TYPE_GENERAL.MODEL));
+    return specification.and(resourceTypeSpec);
+
+  }
+
+  private static Specification<DataResource> initializeSpecification(Specification<DataResource> specification) {
+    if (specification == null) {
+      specification = Specification.where(null);
+    }
+    return specification;
   }
 
   /**
@@ -804,7 +913,7 @@ public class DataResourceRecordUtil {
    */
   public static long getNoOfMetadataDocuments() {
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, METADATA_SUFFIX);
     Pageable pgbl = PageRequest.of(0, 1);
     return queryDataResources(spec, pgbl).getTotalElements();
   }
@@ -817,7 +926,7 @@ public class DataResourceRecordUtil {
    */
   public static long getNoOfSchemaDocuments() {
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(SCHEMA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, SCHEMA_SUFFIX);
     Pageable pgbl = PageRequest.of(0, 1);
     return queryDataResources(spec, pgbl).getTotalElements();
   }
@@ -865,6 +974,22 @@ public class DataResourceRecordUtil {
    */
   public static void setSchemaRecordDao(ISchemaRecordDao aSchemaRecordDao) {
     schemaRecordDao = aSchemaRecordDao;
+  }
+
+  /**
+   * Set the DAO holding url and paths.
+   *
+   * @param aUrl2PathDao the url2PathDao to set
+   */
+  public static void setUrl2PathDao(IUrl2PathDao aUrl2PathDao) {
+    url2PathDao = aUrl2PathDao;
+  }
+
+  /**
+   * @param allIdentifiersDao the allIdentifiersDao to set
+   */
+  public static void setAllIdentifiersDao(IAllIdentifiersDao allIdentifiersDao) {
+    DataResourceRecordUtil.allIdentifiersDao = allIdentifiersDao;
   }
 
   public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
@@ -952,9 +1077,11 @@ public class DataResourceRecordUtil {
     }
     checkNoOfRelatedIdentifiers(noOfRelatedData, noOfRelatedSchemas);
   }
-  /** Validate related identifiers.
-   * There has to be exactly one schema (hasMetadata) 
-   * and at *least* one related data resource.
+
+  /**
+   * Validate related identifiers. There has to be exactly one schema
+   * (hasMetadata) and at *least* one related data resource.
+   *
    * @param noOfRelatedData No of related data resources.
    * @param noOfRelatedSchemas No of related schemas.
    */
@@ -963,7 +1090,7 @@ public class DataResourceRecordUtil {
       String errorMessage = "";
       if (noOfRelatedSchemas == 0) {
         errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was not found in record. \n";
-      }       
+      }
       if (noOfRelatedSchemas > 1) {
         errorMessage = "Mandatory attribute relatedIdentifier of type '" + DataResourceRecordUtil.RELATED_SCHEMA_TYPE + "' was provided more than once in record. \n";
       }
@@ -1397,15 +1524,8 @@ public class DataResourceRecordUtil {
     info = getContentInformationOfResource(applicationProperties, updatedDataResource);
     // validate if document is still valid due to changed record settings.
     Objects.requireNonNull(info);
-    URI schemaDocumentUri = URI.create(info.getContentUri());
 
-    Path schemaDocumentPath = Paths.get(schemaDocumentUri);
-    if (!Files.exists(schemaDocumentPath)
-            || !Files.isRegularFile(schemaDocumentPath)
-            || !Files.isReadable(schemaDocumentPath)) {
-      LOG.warn("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
-      throw new CustomInternalServerError("Schema document on server either does not exist or is no file or is not readable.");
-    }
+    Path schemaDocumentPath = testForRegularFile(info.getContentUri());
 
     try {
       byte[] schemaDoc = Files.readAllBytes(schemaDocumentPath);
@@ -1795,6 +1915,104 @@ public class DataResourceRecordUtil {
       throw ex;
     }
     return records;
+  }
+
+  /**
+   * Remove all entries from database and all related files from disc. (For
+   * dataresources with state 'GONE' only.)
+   *
+   * @param dataResourceToRemove Identifier of the resource
+   */
+  public static void cleanUpDataResource(DataResource dataResourceToRemove) {
+    if (dataResourceToRemove.getState() == DataResource.State.GONE) {
+      LOG.trace("State 'GONE' detected. -> clean up resource");
+      String dataResourceId = dataResourceToRemove.getId();
+
+      List<String> uniqueIdentifiers = getUniqueIdentifiers(dataResourceToRemove);
+      long currentVersion = Long.parseLong(dataResourceToRemove.getVersion());
+      ContentInformation contentInformationByIdAndVersion = null;
+      for (long version = 1; version <= currentVersion; version++) {
+        contentInformationByIdAndVersion = getContentInformationByIdAndVersion(schemaConfig, dataResourceId, version);
+        String contentUri = contentInformationByIdAndVersion.getContentUri();
+        LOG.trace("Try to remove version '{}' of '{}' -> file: '{}'...", version, dataResourceId, contentUri);
+        try {
+          Path metadataDocumentPath = testForRegularFile(contentUri);
+          Files.delete(metadataDocumentPath);
+          LOG.trace("-> removed!");
+        } catch (CustomInternalServerError | IOException ex) {
+          LOG.error("Problem deleting '{}'", contentUri);
+          LOG.error("Reason: ", ex);
+        }
+        cleanUpHelperTables(dataResourceId, contentUri);
+      }
+      schemaConfig.getContentInformationService().delete(contentInformationByIdAndVersion);
+
+      LOG.trace("Delete data resource: '{}'", dataResourceToRemove.getId());
+      dataResourceDao.delete(dataResourceToRemove);
+      List<AllIdentifiers> findByIdentifierIn = allIdentifiersDao.findByIdentifierIn(uniqueIdentifiers);
+      for (AllIdentifiers identifier : findByIdentifierIn) {
+        LOG.trace("AllIdentifiers remove: '{}'", identifier);
+        allIdentifiersDao.delete(identifier);
+      }
+    }
+  }
+
+  private static void cleanUpHelperTables(String dataResourceId, String contentUri) {
+    // if data resource is a schema there are some helper tables...
+    List<SchemaRecord> allSchemaIds = schemaRecordDao.findBySchemaIdStartsWithOrderByVersionDesc(dataResourceId);
+    for (SchemaRecord schemaRecord : allSchemaIds) {
+      LOG.trace("Delete schemaRecord: '{}'", schemaRecord);
+      schemaRecordDao.delete(schemaRecord);
+    }
+    List<Url2Path> findByPath = url2PathDao.findByPath(contentUri);
+    for (Url2Path entity : findByPath) {
+      url2PathDao.delete(entity);
+      LOG.trace("Delete url2Path: '{}'", entity);
+    }
+    for (MetadataFormat entity : metadataFormatDao.findAll()) {
+      if (entity.getMetadataPrefix().equalsIgnoreCase(dataResourceId)) {
+        metadataFormatDao.delete(entity);
+        LOG.trace("Delete metadataFormat: '{}'", entity);
+      }
+    }
+
+  }
+
+  /**
+   * Get all identifiers of a resource that have to be unique, e.g. primary and
+   * alternate identifiers.
+   *
+   * @param resource The resource.
+   *
+   * @return A list of identifiers.
+   */
+  private static List<String> getUniqueIdentifiers(DataResource resource) {
+    List<String> identifiers = new ArrayList<>();
+    identifiers.add(resource.getId());
+    if (resource.getIdentifier() != null) {
+      identifiers.add(resource.getIdentifier().getValue());
+    }
+    resource.getAlternateIdentifiers().forEach((alt) -> {
+      identifiers.add(alt.getValue());
+    });
+    return identifiers;
+  }
+
+  /**
+   * Test if String points to a regular file, which is readable.
+   *
+   * @param fileUri URI of file.
+   * @return Path to File
+   * @throws CustomInternalServerError File is not a regular file or not
+   * available or not readable.
+   */
+  public static Path testForRegularFile(String fileUri) throws CustomInternalServerError {
+    Path documentPath = Paths.get(URI.create(fileUri));
+    if (!Files.exists(documentPath) || !Files.isRegularFile(documentPath) || !Files.isReadable(documentPath)) {
+      LOG.warn("Metadata document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", documentPath);
+      throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
+    }
+    return documentPath;
   }
 
   /**

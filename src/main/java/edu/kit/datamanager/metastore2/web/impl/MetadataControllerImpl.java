@@ -31,9 +31,7 @@ import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.IMetadataController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.dao.spec.dataresource.*;
 import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
@@ -250,7 +248,7 @@ public class MetadataControllerImpl implements IMetadataController {
       throw new AccessForbiddenException("Only for services!");
     }
 
-    DataResource metadataRecord = DataResourceRecordUtil.getRecordByIdAndVersion(metadataConfig, id, version);
+    DataResource metadataRecord = DataResourceRecordUtil.getMetadataRecordByIdAndVersion(metadataConfig, id, version);
     DataResourceRecordUtil.fixSchemaUrl(metadataRecord);
     ElasticWrapper aclRecord = new ElasticWrapper(metadataRecord);
 
@@ -339,21 +337,16 @@ public class MetadataControllerImpl implements IMetadataController {
       return getAllVersions(id, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(DataResourceRecordUtil.METADATA_SUFFIX, ResourceType.TYPE_GENERAL.MODEL));
+    Specification<DataResource> spec = DataResourceRecordUtil.findByResourceType(null, DataResourceRecordUtil.METADATA_SUFFIX);
 
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
 
     spec = DataResourceRecordUtil.findBySchemaId(spec, schemaIds);
     spec = DataResourceRecordUtil.findByRelatedId(spec, relatedIds);
-    if ((updateFrom != null) || (updateUntil != null)) {
-      spec = spec.and(LastUpdateSpecification.toSpecification(updateFrom, updateUntil));
-    }
+    spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
 
-    // Hide revoked and gone data resources. 
-    DataResource.State[] states = {DataResource.State.FIXED, DataResource.State.VOLATILE};
-    List<DataResource.State> stateList = Arrays.asList(states);
-    spec = spec.and(StateSpecification.toSpecification(stateList));
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     if (LOG.isTraceEnabled()) {
       Page<DataResource> records = dataResourceDao.findAll(pgbl);

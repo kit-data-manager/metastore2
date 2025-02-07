@@ -13,11 +13,9 @@ import edu.kit.datamanager.entities.RepoUserRole;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
-import edu.kit.datamanager.metastore2.dao.ILinkedDataResourceDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -43,7 +41,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static org.postgresql.core.Oid.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -128,8 +125,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   @Autowired
   Javers javers = null;
   @Autowired
-  private ILinkedDataResourceDao metadataRecordDao;
-  @Autowired
   private IDataResourceDao dataResourceDao;
   @Autowired
   private IDataRecordDao dataRecordDao;
@@ -150,7 +145,7 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   public void setUp() throws Exception {
     // setup mockMvc
     this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-            .apply(springSecurity()) 
+            .apply(springSecurity())
             .apply(documentationConfiguration(this.restDocumentation).uris()
                     .withPort(41432))
             .build();
@@ -199,7 +194,6 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
 
       contentInformationDao.deleteAll();
       dataResourceDao.deleteAll();
-      metadataRecordDao.deleteAll();
       schemaRecordDao.deleteAll();
       dataRecordDao.deleteAll();
       allIdentifiersDao.deleteAll();
@@ -207,14 +201,14 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
 
       try {
         // Create schema only once.
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
         }
         Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
         Paths.get(TEMP_DIR_4_SCHEMAS + INVALID_SCHEMA).toFile().createNewFile();
-        try ( Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_METADATA)))) {
           walk.sorted(Comparator.reverseOrder())
                   .map(Path::toFile)
                   .forEach(File::delete);
@@ -251,6 +245,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken)).
               andDo(print()).
@@ -273,6 +269,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).
@@ -294,6 +292,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + guestToken)).
               andDo(print()).
@@ -316,6 +316,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId()).
               header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken)).
               andDo(print()).
@@ -336,9 +338,12 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
             andReturn();
     List<DataResource> resultList = mapper.readValue(mvcResult.getResponse().getContentAsString(), mapCollectionType);
     for (DataResource item : resultList) {
+      // First test for ACL
+      Assert.assertFalse("There should be at least one ACL entry!", item.getAcls().isEmpty());
       this.mockMvc.perform(get("/api/v2/metadata/" + item.getId())).
               andDo(print()).
               andExpect(status().isOk());
+
     }
   }
 
