@@ -67,6 +67,9 @@ public class ApplicationProperties extends GenericApplicationProperties {
   @Value("${metastore.metadata.schemaRegistries: }")
   private List<String> schemaRegistries;
 
+  @Value("${metastore.metadata.schemaRegistries: }")
+  private String postEnabledForRole;
+
   @Value("${metastore.javers.scope:20}")
   private int maxJaversScope;
 
