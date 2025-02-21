@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
+ *
  */
 public class CreateSchemaUtil {
 
@@ -234,7 +235,7 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -247,6 +248,23 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, schemaContent, update, userToken, expectedStatus);
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate      Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateXmlSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+    String locationUri = null;
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(schemaId);
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
@@ -263,15 +281,15 @@ public class CreateSchemaUtil {
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
     MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+                    header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
       result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-              file(recordFile).
-              file(schemaFile).
-              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+                      file(recordFile).
+                      file(schemaFile).
+                      header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).andExpect(expectedStatus).andReturn();
       if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
         locationUri = result.getResponse().getHeader("Location");
@@ -312,10 +330,12 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateXmlMetadataDocument(mockMvc, schemaId, version, metadataId, metadataDocument, update, userToken, expectedStatus);
+  }
+
+  public static MvcResult ingestOrUpdateXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
     // Test if metadataId is already registered.
-
     MvcResult result = null;
-
     MetadataRecord record = new MetadataRecord();
     record.setId(metadataId);
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
@@ -335,7 +355,7 @@ public class CreateSchemaUtil {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
     }
     result = mockMvc.perform(get("/api/v1/metadata/" + metadataId).
-            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+                    header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
@@ -405,7 +425,7 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -421,23 +441,24 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
   public static String ingestOrUpdateJsonSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
     return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_JSON, schemaId, schemaContent, jwtSecret, update, expectedStatus);
   }
+
   /**
    * Update schema in MetaStore as user 'test_user'. If schema already exists
    * and noUpdate is false update schema.
    *
    * @param mockMvc
-   * @param mediaType 
+   * @param mediaType
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -450,6 +471,24 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateSchemaRecordV2(mockMvc, mediaType, schemaId, schemaContent, update, userToken, expectedStatus);
+  }
+
+    /**
+     * Update schema in MetaStore as user 'test_user'. If schema already exists
+     * and noUpdate is false update schema.
+     *
+     * @param mockMvc
+     * @param mediaType
+     * @param schemaId
+     * @param schemaContent
+     * @param jwtSecret
+     * @param noUpdate      Only ingest or do update also
+     * @return
+     * @throws Exception
+     */
+    public static String ingestOrUpdateSchemaRecordV2(MockMvc mockMvc, MediaType mediaType, String schemaId, String schemaContent, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+      String locationUri = null;
     DataResource record;
     if (mediaType.toString().contains("xml")) {
       record = SchemaRegistryControllerTestV2.createDataResource4XmlSchema(schemaId);
@@ -466,15 +505,15 @@ public class CreateSchemaUtil {
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
     MvcResult result = mockMvc.perform(get("/api/v2/schemas/" + schemaId).
-            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+                    accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
       result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v2/schemas/").
-              file(recordFile).
-              file(schemaFile).
-              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+                      file(recordFile).
+                      file(schemaFile).
+                      header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).andExpect(expectedStatus).andReturn();
       if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
         locationUri = result.getResponse().getHeader("Location");
@@ -515,8 +554,13 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
-    // Test if metadataId is already registered.
+    return ingestOrUpdateXmlMetadataDocumentV2(mockMvc, schemaId, version, metadataId, metadataDocument, update, userToken, expectedStatus);
 
+  }
+
+    public static MvcResult ingestOrUpdateXmlMetadataDocumentV2(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+
+    // Test if metadataId is already registered.
     MvcResult result = null;
     String versionAsString = null;
     if (version != null) {
@@ -540,7 +584,7 @@ public class CreateSchemaUtil {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
     }
     result = mockMvc.perform(get("/api/v2/metadata/" + metadataId).
-            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+                    accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
