@@ -42,161 +42,176 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 public class CreateSchemaUtil {
 
-  public final static String KIT_SCHEMA = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-          + "<xs:schema targetNamespace=\"http://www.example.org/kit\"\n"
-          + "           xmlns:kit=\"http://www.example.org/kit\"\n"
-          + "           xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "           elementFormDefault=\"qualified\">\n"
-          + "  <xs:simpleType name=\"stringtype\">\n"
-          + "    <xs:restriction base=\"xs:string\"></xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:simpleType name=\"employeeidtype\">\n"
-          + "    <xs:restriction base=\"xs:string\">\n"
-          + "      <xs:pattern value=\"[a-z]{2}[0-9]{4}\"></xs:pattern>\n"
-          + "    </xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:simpleType name=\"shorttype\">\n"
-          + "    <xs:restriction base=\"xs:string\">\n"
-          + "      <xs:pattern value=\"[A-Z\\\\-]{3,8}\"></xs:pattern>\n"
-          + "    </xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:complexType name=\"departmenttype\">\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"departmentname\" type=\"kit:stringtype\"></xs:element>\n"
-          + "      <xs:element name=\"shortname\" type=\"kit:shorttype\"></xs:element>\n"
-          + "    </xs:sequence>\n"
-          + "  </xs:complexType>\n"
-          + " \n"
-          + "  <xs:complexType name=\"employeetype\">\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"name\" type=\"kit:stringtype\"></xs:element>\n"
-          + "      <xs:element name=\"department\" type=\"kit:departmenttype\"></xs:element>\n"
-          + "    </xs:sequence>\n"
-          + "    <xs:attribute name=\"employeeid\" type=\"kit:employeeidtype\" use=\"required\"></xs:attribute>\n"
-          + "  </xs:complexType>\n"
-          + "\n"
-          + "  <xs:element name=\"employee\" type=\"kit:employeetype\"></xs:element>\n"
-          + "</xs:schema>";
-  public final static String KIT_DOCUMENT = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_VERSION_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC-DEM</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_SMALL_CHANGE = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>DEM</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_1 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"abcdefg\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab12345\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_3 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_4 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC-TOLONG</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
+  public final static String KIT_SCHEMA = """
+          <?xml version="1.0" encoding="UTF-8" ?>
+          <xs:schema targetNamespace="http://www.example.org/kit"
+                     xmlns:kit="http://www.example.org/kit"
+                     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                     elementFormDefault="qualified">
+            <xs:simpleType name="stringtype">
+              <xs:restriction base="xs:string"></xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:simpleType name="employeeidtype">
+              <xs:restriction base="xs:string">
+                <xs:pattern value="[a-z]{2}[0-9]{4}"></xs:pattern>
+              </xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:simpleType name="shorttype">
+              <xs:restriction base="xs:string">
+                <xs:pattern value="[A-Z\\\\-]{3,8}"></xs:pattern>
+              </xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:complexType name="departmenttype">
+              <xs:sequence>
+                <xs:element name="departmentname" type="kit:stringtype"></xs:element>
+                <xs:element name="shortname" type="kit:shorttype"></xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          \s
+            <xs:complexType name="employeetype">
+              <xs:sequence>
+                <xs:element name="name" type="kit:stringtype"></xs:element>
+                <xs:element name="department" type="kit:departmenttype"></xs:element>
+              </xs:sequence>
+              <xs:attribute name="employeeid" type="kit:employeeidtype" use="required"></xs:attribute>
+            </xs:complexType>
+          
+            <xs:element name="employee" type="kit:employeetype"></xs:element>
+          </xs:schema>""";
+  public final static String KIT_DOCUMENT = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_VERSION_2 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC-DEM</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_SMALL_CHANGE = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>DEM</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_1 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="abcdefg">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_2 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab12345">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_3 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_4 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC-TOLONG</shortname>
+            </department>
+          </employee>""";
 
-  public final static String KIT_DOCUMENT_WRONG_NAMESPACE = "<employee xmlns=\"http://www.example.org/invalid/ns\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String XML_SCHEMA_V1 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V1_TYPO = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"titel\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V2 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "            <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V3 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "            <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "            <xs:element name=\"note\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_DOCUMENT_V1 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
-          + "  <ex:title>Title of first version</ex:title>\n"
-          + "</ex:metadata>";
-  public final static String XML_DOCUMENT_V2 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
-          + "  <ex:title>Title of second version</ex:title>\n"
-          + "  <ex:date>2021-06-15</ex:date>\n"
-          + "</ex:metadata>";
+  public final static String KIT_DOCUMENT_WRONG_NAMESPACE = """
+          <employee xmlns="http://www.example.org/invalid/ns" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String XML_SCHEMA_V1 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V1_TYPO = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="titel" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V2 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                      <xs:element name="date" type="xs:date"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V3 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                      <xs:element name="date" type="xs:date"/>
+                      <xs:element name="note" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_DOCUMENT_V1 = """
+          <?xml version='1.0' encoding='utf-8'?>
+          <ex:metadata xmlns:ex="http://www.example.org/schema/xsd/">
+            <ex:title>Title of first version</ex:title>
+          </ex:metadata>""";
+  public final static String XML_DOCUMENT_V2 = """
+          <?xml version='1.0' encoding='utf-8'?>
+          <ex:metadata xmlns:ex="http://www.example.org/schema/xsd/">
+            <ex:title>Title of second version</ex:title>
+            <ex:date>2021-06-15</ex:date>
+          </ex:metadata>""";
   public final static String XML_DOCUMENT_V3 = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
           + "  <ex:title>Title of third version</ex:title>\n"
