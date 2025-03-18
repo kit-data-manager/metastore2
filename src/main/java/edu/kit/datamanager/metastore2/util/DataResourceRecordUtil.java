@@ -1587,14 +1587,7 @@ public class DataResourceRecordUtil {
 
   private static DataResource mergeAcl(DataResource oldDataResource, DataResource updatedDataResource) {
     if (updatedDataResource != null) {
-      if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
-        updatedDataResource.setAcls(oldDataResource.getAcls());
-      } else {
-        // Check for access rights for changing ACL (need ADMINISTRATION rights!)
-        checkAccessRights(oldDataResource.getAcls(), true);
-        // Check if access rights still valid afterwards (at least one user with ADMINISTRATION rights should be available!)
-        checkAccessRights(updatedDataResource.getAcls(), false);
-      }
+      updatedDataResource.setAcls(mergeAcl(oldDataResource.getAcls(), updatedDataResource.getAcls()));
     }
     return updatedDataResource;
   }
