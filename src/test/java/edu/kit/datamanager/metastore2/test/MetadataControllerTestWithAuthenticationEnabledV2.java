@@ -1217,6 +1217,210 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
   }
 
   @Test
+  public void testUpdateRecordWithReadPermissionOnly() throws Exception {
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(otherUserPrincipal, PERMISSION.READ));
+    aclEntries.add(new AclEntry("ANYBODY", PERMISSION.READ));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
+    String metadataRecordId = createDCMetadataRecord(aclEntries);
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                    header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String etag = result.getResponse().getHeader("ETag");
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    DataResource record = mapper.readValue(body, DataResource.class);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
+                    file(recordFile).
+                    file(metadataFile).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken).
+                    header("If-Match", etag).
+                    with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isForbidden()).
+            andReturn();
+  }
+
+  @Test
+  public void testUpdateRecordWithWritePermission() throws Exception {
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(otherUserPrincipal, PERMISSION.WRITE));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
+    String metadataRecordId = createDCMetadataRecord(aclEntries);
+    // Get ContentInformation of first version
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                    header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String locationUri = result.getResponse().getHeader("Location");
+    String etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
+    DataResource record = mapper.readValue(body, DataResource.class);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
+                    file(recordFile).
+                    file(metadataFile).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken).
+                    header("If-Match", etag).
+                    with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    String locationUri2 = result.getResponse().getHeader("Location");
+    body = result.getResponse().getContentAsString();
+
+    DataResource record2 = mapper.readValue(body, DataResource.class);
+//    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
+    SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
+    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
+    SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
+    Assert.assertNotEquals(contentInformation1, contentInformation2);
+    Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
+    Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, (long)contentInformation2.getVersion());
+    Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
+    Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
+
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                    accept(MediaType.APPLICATION_XML)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = KIT_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
+
+    Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
+  }
+
+  @Test
+  public void testUpdateRecordWithAdminPermission() throws Exception {
+    Set<AclEntry> aclEntries = new HashSet<>();
+    aclEntries.add(new AclEntry(otherUserPrincipal, PERMISSION.ADMINISTRATE));
+    aclEntries.add(new AclEntry("test2", PERMISSION.ADMINISTRATE));
+    String metadataRecordId = createDCMetadataRecord(aclEntries);
+    // Get ContentInformation of first version
+    MvcResult result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String body = result.getResponse().getContentAsString();
+
+    ObjectMapper mapper = new ObjectMapper();
+    ContentInformation contentInformation1 = mapper.readValue(body, ContentInformation.class);
+
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                    header("Accept", DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String locationUri = result.getResponse().getHeader("Location");
+    String etag = result.getResponse().getHeader("ETag");
+    body = result.getResponse().getContentAsString();
+
+    DataResource record = mapper.readValue(body, DataResource.class);
+    MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+    MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
+
+    result = this.mockMvc.perform(MockMvcRequestBuilders.multipart(API_METADATA_PATH + record.getId()).
+                    file(recordFile).
+                    file(metadataFile).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken).
+                    header("If-Match", etag).
+                    with(putMultipart())).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+
+//    result = this.mockMvc.perform(put(API_METADATA_PATH + "dc").header("If-Match", etag).contentType(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE).content(mapper.writeValueAsString(record))).andDo(print()).andExpect(status().isOk()).andReturn();
+    String locationUri2 = result.getResponse().getHeader("Location");
+    body = result.getResponse().getContentAsString();
+
+    DataResource record2 = mapper.readValue(body, DataResource.class);
+//    Assert.assertNotEquals(record.getDocumentHash(), record2.getDocumentHash());
+    SchemaRegistryControllerTestV2.validateCreateDates(record.getDates(), record2.getDates());
+    Assert.assertEquals(DataResourceRecordUtil.getSchemaIdentifier(record), DataResourceRecordUtil.getSchemaIdentifier(record2));
+    Assert.assertEquals(Long.parseLong(record.getVersion()), Long.parseLong(record2.getVersion()) - 1L);// version should be 1 higher
+    SchemaRegistryControllerTestV2.validateSets(record.getAcls(), record2.getAcls());
+    Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
+
+    // Check ContentInformation of second version
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    accept(ContentInformation.CONTENT_INFORMATION_MEDIA_TYPE)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    body = result.getResponse().getContentAsString();
+
+    ContentInformation contentInformation2 = mapper.readValue(body, ContentInformation.class);
+    Assert.assertEquals(contentInformation1.getFilename(), contentInformation2.getFilename());
+    Assert.assertNotEquals(contentInformation1, contentInformation2);
+    Assert.assertNotEquals(contentInformation1.getContentUri(), contentInformation2.getContentUri());
+    Assert.assertNotEquals(contentInformation1.getVersion(), contentInformation2.getVersion());
+    Assert.assertEquals(contentInformation1.getVersion() + 1, (long)contentInformation2.getVersion());
+    Assert.assertNotEquals(contentInformation1.getHash(), contentInformation2.getHash());
+    Assert.assertNotEquals(contentInformation1.getSize(), contentInformation2.getSize());
+
+    // Check for new metadata document.
+    result = this.mockMvc.perform(get(API_METADATA_PATH + metadataRecordId).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + otherUserToken).
+                    accept(MediaType.APPLICATION_XML)).
+            andDo(print()).
+            andExpect(status().isOk()).
+            andReturn();
+    String content = result.getResponse().getContentAsString();
+
+    String dcMetadata = KIT_DOCUMENT_VERSION_2;
+
+    Assert.assertEquals(dcMetadata, content);
+
+    Assert.assertEquals(locationUri.replace("version=1", "version=2"), locationUri2);
+  }
+
+  @Test
   public void testUpdateAclOnly() throws Exception {
     ObjectMapper mapper = new ObjectMapper();
 
@@ -2139,9 +2343,15 @@ public class MetadataControllerTestWithAuthenticationEnabledV2 {
   }
 
   private String createDCMetadataRecord() throws Exception {
+    return createDCMetadataRecord(null);
+  }
+    private String createDCMetadataRecord(Set<AclEntry> aclEntries) throws Exception {
      String id = "createDCMetadataRecord";
     String schemaId = SCHEMA_ID;
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(id, schemaId);
+    if (aclEntries != null) {
+      record.setAcls(aclEntries);
+    }
 
     record.setId(null);
     record.getAlternateIdentifiers().clear();
