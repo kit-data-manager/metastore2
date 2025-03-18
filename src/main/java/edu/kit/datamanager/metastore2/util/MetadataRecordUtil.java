@@ -20,28 +20,15 @@ import edu.kit.datamanager.clients.SimpleServiceClient;
 import edu.kit.datamanager.entities.Identifier;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.entities.RepoUserRole;
-import edu.kit.datamanager.exceptions.AccessForbiddenException;
-import edu.kit.datamanager.exceptions.BadArgumentException;
-import edu.kit.datamanager.exceptions.CustomInternalServerError;
-import edu.kit.datamanager.exceptions.ResourceNotFoundException;
-import edu.kit.datamanager.exceptions.UnprocessableEntityException;
+import edu.kit.datamanager.exceptions.*;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
-import edu.kit.datamanager.metastore2.domain.DataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataRecord;
-import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
-import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier.IdentifierType;
-import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImpl;
 import edu.kit.datamanager.repo.configuration.RepoBaseConfiguration;
-import edu.kit.datamanager.repo.domain.ContentInformation;
-import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.domain.Date;
-import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Scheme;
-import edu.kit.datamanager.repo.domain.Title;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
@@ -49,26 +36,6 @@ import edu.kit.datamanager.repo.util.DataResourceUtils;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
 import io.swagger.v3.core.util.Json;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.UnaryOperator;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,6 +50,22 @@ import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.function.UnaryOperator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * Utility class for handling json documents
@@ -117,12 +100,12 @@ public class MetadataRecordUtil {
    * Create a digital object from metadata record and metadata document.
    *
    * @param applicationProperties Configuration properties.
-   * @param recordDocument Metadata record.
-   * @param document Metadata document.
+   * @param recordDocument        Metadata record.
+   * @param document              Metadata document.
    * @return Enriched metadata record.
    */
   public static MetadataRecord createMetadataRecord(MetastoreConfiguration applicationProperties,
-          MultipartFile recordDocument, MultipartFile document) {
+                                                    MultipartFile recordDocument, MultipartFile document) {
     MetadataRecord metadataRecord;
     long nano1 = System.nanoTime() / 1000000;
     // Do some checks first.
@@ -216,19 +199,19 @@ public class MetadataRecordUtil {
    * document.
    *
    * @param applicationProperties Configuration properties.
-   * @param resourceId Identifier of digital object.
-   * @param eTag ETag of the old digital object.
-   * @param recordDocument Metadata record.
-   * @param document Metadata document.
-   * @param supplier Function for updating record.
+   * @param resourceId            Identifier of digital object.
+   * @param eTag                  ETag of the old digital object.
+   * @param recordDocument        Metadata record.
+   * @param document              Metadata document.
+   * @param supplier              Function for updating record.
    * @return Enriched metadata record.
    */
   public static MetadataRecord updateMetadataRecord(MetastoreConfiguration applicationProperties,
-          String resourceId,
-          String eTag,
-          MultipartFile recordDocument,
-          MultipartFile document,
-          UnaryOperator<String> supplier) {
+                                                    String resourceId,
+                                                    String eTag,
+                                                    MultipartFile recordDocument,
+                                                    MultipartFile document,
+                                                    UnaryOperator<String> supplier) {
     MetadataRecord metadataRecord = null;
     MetadataRecord existingRecord;
 
@@ -339,14 +322,14 @@ public class MetadataRecordUtil {
    * Delete a digital object with given identifier.
    *
    * @param applicationProperties Configuration properties.
-   * @param id Identifier of digital object.
-   * @param eTag ETag of the old digital object.
-   * @param supplier Function for updating record.
+   * @param id                    Identifier of digital object.
+   * @param eTag                  ETag of the old digital object.
+   * @param supplier              Function for updating record.
    */
   public static void deleteMetadataRecord(MetastoreConfiguration applicationProperties,
-          String id,
-          String eTag,
-          UnaryOperator<String> supplier) {
+                                          String id,
+                                          String eTag,
+                                          UnaryOperator<String> supplier) {
     DataResourceUtils.deleteResource(applicationProperties, id, eTag, supplier);
     try {
       DataResourceUtils.getResourceByIdentifierOrRedirect(applicationProperties, id, null, supplier);
@@ -363,11 +346,11 @@ public class MetadataRecordUtil {
    * Migrate metadata record to data resource.
    *
    * @param applicationProperties Configuration settings of repository.
-   * @param metadataRecord Metadata record to migrate.
+   * @param metadataRecord        Metadata record to migrate.
    * @return Data resource of metadata record.
    */
   public static DataResource migrateToDataResource(RepoBaseConfiguration applicationProperties,
-          MetadataRecord metadataRecord) {
+                                                   MetadataRecord metadataRecord) {
     DataResource dataResource;
     if (metadataRecord.getId() != null) {
       try {
@@ -455,13 +438,13 @@ public class MetadataRecordUtil {
    * Migrate data resource to metadata record.
    *
    * @param applicationProperties Configuration settings of repository.
-   * @param dataResource Data resource to migrate.
-   * @param provideETag Flag for calculating etag.
+   * @param dataResource          Data resource to migrate.
+   * @param provideETag           Flag for calculating etag.
    * @return Metadata record of data resource.
    */
   public static MetadataRecord migrateToMetadataRecord(RepoBaseConfiguration applicationProperties,
-          DataResource dataResource,
-          boolean provideETag) {
+                                                       DataResource dataResource,
+                                                       boolean provideETag) {
     long nano1 = System.nanoTime() / 1000000;
     MetadataRecord metadataRecord = new MetadataRecord();
     if (dataResource != null) {
@@ -576,7 +559,7 @@ public class MetadataRecordUtil {
   }
 
   private static ContentInformation getContentInformationOfResource(RepoBaseConfiguration applicationProperties,
-          DataResource dataResource) {
+                                                                    DataResource dataResource) {
     ContentInformation returnValue = null;
     long nano1 = System.nanoTime() / 1000000;
     IContentInformationService contentInformationService = applicationProperties.getContentInformationService();
@@ -605,11 +588,11 @@ public class MetadataRecordUtil {
    * Returns schema record with the current version.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param schemaId SchemaID of the schema.
+   * @param schemaId            SchemaID of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
    */
   public static MetadataSchemaRecord getCurrentInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
-          String schemaId) {
+                                                                    String schemaId) {
     LOG.trace("Get current internal schema record for id '{}'.", schemaId);
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
@@ -654,13 +637,13 @@ public class MetadataRecordUtil {
    * Returns schema record with the current version.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param schemaId SchemaID of the schema.
-   * @param version Version of the schema.
+   * @param schemaId            SchemaID of the schema.
+   * @param version             Version of the schema.
    * @return MetadataSchemaRecord ResponseEntity in case of an error.
    */
   public static MetadataSchemaRecord getInternalSchemaRecord(MetastoreConfiguration metastoreProperties,
-          String schemaId,
-          Long version) {
+                                                             String schemaId,
+                                                             Long version) {
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
@@ -705,7 +688,7 @@ public class MetadataRecordUtil {
    * Update/create related identifier to values given by metadata record.
    *
    * @param relatedIdentifier related identifier (if null create a new one)
-   * @param metadataRecord record holding schema information.
+   * @param metadataRecord    record holding schema information.
    * @return updated/created related identifier.
    */
   private static RelatedIdentifier updateRelatedIdentifierForSchema(RelatedIdentifier relatedIdentifier, MetadataRecord metadataRecord) {
@@ -724,12 +707,12 @@ public class MetadataRecordUtil {
    * Validate metadata document with given schema.
    *
    * @param metastoreProperties Configuration for accessing services
-   * @param metadataRecord metadata of the document.
-   * @param document document
+   * @param metadataRecord      metadata of the document.
+   * @param document            document
    */
   private static void validateMetadataDocument(MetastoreConfiguration metastoreProperties,
-          MetadataRecord metadataRecord,
-          MultipartFile document) {
+                                               MetadataRecord metadataRecord,
+                                               MultipartFile document) {
     LOG.trace("validateMetadataDocument {},{}, {}", metastoreProperties, metadataRecord, document);
     if (document == null || document.isEmpty()) {
       String message = "Missing metadata document in body. Returning HTTP BAD_REQUEST.";
@@ -786,17 +769,17 @@ public class MetadataRecordUtil {
   }
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
+                                                       String recordId) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, null, false);
   }
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version) throws ResourceNotFoundException {
+                                                       String recordId, Long version) throws ResourceNotFoundException {
     return getRecordByIdAndVersion(metastoreProperties, recordId, version, false);
   }
 
   public static MetadataRecord getRecordByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
+                                                       String recordId, Long version, boolean supportEtag) throws ResourceNotFoundException {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
     long nano2;
@@ -827,12 +810,12 @@ public class MetadataRecordUtil {
   }
 
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId) throws ResourceNotFoundException {
+                                                       String recordId) throws ResourceNotFoundException {
     return getMetadataDocumentByIdAndVersion(metastoreProperties, recordId, null);
   }
 
   public static Path getMetadataDocumentByIdAndVersion(MetastoreConfiguration metastoreProperties,
-          String recordId, Long version) throws ResourceNotFoundException {
+                                                       String recordId, Long version) throws ResourceNotFoundException {
     LOG.trace("Obtaining metadata record with id {} and version {}.", recordId, version);
     MetadataRecord metadataRecord = getRecordByIdAndVersion(metastoreProperties, recordId, version);
 
@@ -849,7 +832,7 @@ public class MetadataRecordUtil {
   /**
    * Merge new metadata record in the existing one.
    *
-   * @param managed Existing metadata record.
+   * @param managed  Existing metadata record.
    * @param provided New metadata record.
    * @return Merged record
    */
@@ -877,7 +860,7 @@ public class MetadataRecordUtil {
   /**
    * Check validity of acl list and then merge new acl list in the existing one.
    *
-   * @param managed Existing metadata record.
+   * @param managed  Existing metadata record.
    * @param provided New metadata record.
    * @return Merged list
    */
@@ -886,7 +869,8 @@ public class MetadataRecordUtil {
     managed = (managed == null) ? new HashSet<>() : managed;
     provided = (provided == null) ? new HashSet<>() : provided;
     if (!provided.isEmpty()) {
-      if (!provided.equals(managed)) {
+      // check for equality of both lists ignoring ids.
+      if (!checkForEquality(managed, provided)) {
         // check for special access rights 
         // - only administrators are allowed to change ACL
         checkAccessRights(managed, true);
@@ -907,8 +891,8 @@ public class MetadataRecordUtil {
    * Set new value for existing one.
    *
    * @param description For logging purposes only
-   * @param managed Existing value.
-   * @param provided New value.
+   * @param managed     Existing value.
+   * @param provided    New value.
    * @return Merged record
    */
   public static <T> T mergeEntry(String description, T managed, T provided) {
@@ -918,9 +902,9 @@ public class MetadataRecordUtil {
   /**
    * Set new value for existing one.
    *
-   * @param description For logging purposes only
-   * @param managed Existing value.
-   * @param provided New value.
+   * @param description       For logging purposes only
+   * @param managed           Existing value.
+   * @param provided          New value.
    * @param overwriteWithNull Allows also deletion of a value.
    * @return Merged record
    */
@@ -1007,7 +991,6 @@ public class MetadataRecordUtil {
    *
    * @param aclEntries AclEntries of resource.
    * @param currentAcl Check current ACL (true) or new one (false).
-   *
    * @return Allowed (true) or not.
    */
   public static boolean checkAccessRights(Set<AclEntry> aclEntries, boolean currentAcl) {
@@ -1081,5 +1064,36 @@ public class MetadataRecordUtil {
       // Remove license
       dataResource.getRights().clear();
     }
+  }
+  /**
+  public static boolean checkForEquality(Set<AclEntry> oldEntries, Set<AclEntry> newEntries) {
+    boolean isEqual = false;
+    HashSet<Integer> collectIndices = new HashSet<>();
+    if (oldEntries == newEntries) {
+      isEqual = true;
+    } else {
+      if (oldEntries != null && newEntries != null && oldEntries.size() == newEntries.size()) {
+        isEqual = true;
+        for (AclEntry newEntry : newEntries) {
+          int index = 0;
+          boolean match = false;
+          for (AclEntry oldEntry : oldEntries) {
+            if (newEntry.getSid() != null && newEntry.getSid().equals(oldEntry.getSid())) {
+              if (newEntry.getPermission() != null && newEntry.getPermission().equals(oldEntry.getPermission())) {
+                match = true;
+                collectIndices.add(index);
+                break;
+              }
+            }
+            index++;
+          }
+          if (!match) {
+            isEqual = false;
+            break;
+          }
+        }
+      }
+    }
+    return (isEqual && (collectIndices.isEmpty() || (collectIndices.size() == oldEntries.size())));
   }
 }
