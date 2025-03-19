@@ -23,7 +23,11 @@ import edu.kit.datamanager.repo.domain.Date;
 import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.Scheme;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.UnaryOperator;
+
+import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import org.javers.core.Javers;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -812,6 +816,76 @@ public class MetadataRecordUtilTest {
     System.out.println("setToken");
     String bearerToken = "";
     MetadataRecordUtil.setToken(bearerToken);
+  }
+  @Test
+  public void checkForEqualityWithEqualAclEntries() {
+    Set<AclEntry> oldEntries = new HashSet<>();
+    oldEntries.add(new AclEntry("user1", PERMISSION.READ));
+    oldEntries.add(new AclEntry("user2", PERMISSION.WRITE));
+
+    Set<AclEntry> newEntries = new HashSet<>();
+    newEntries.add(new AclEntry("user1", PERMISSION.READ));
+    newEntries.add(new AclEntry("user2", PERMISSION.WRITE));
+
+    assertTrue(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
+    assertTrue(MetadataRecordUtil.checkForEquality(newEntries, oldEntries));
+  }
+
+  @Test
+  public void checkForEqualityWithDifferentAclEntries() {
+    Set<AclEntry> oldEntries = new HashSet<>();
+    oldEntries.add(new AclEntry("user1", PERMISSION.READ));
+    oldEntries.add(new AclEntry("user2", PERMISSION.WRITE));
+
+    Set<AclEntry> newEntries = new HashSet<>();
+    newEntries.add(new AclEntry("user1", PERMISSION.READ));
+    newEntries.add(new AclEntry("user3", PERMISSION.WRITE));
+
+    assertFalse(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
+    assertFalse(MetadataRecordUtil.checkForEquality(newEntries, oldEntries));
+  }
+
+  @Test
+  public void checkForEqualityWithMultipleSimilarAclEntries() {
+    Set<AclEntry> oldEntries = new HashSet<>();
+    oldEntries.add(new AclEntry("user1", PERMISSION.READ));
+    oldEntries.add(new AclEntry("user1", PERMISSION.READ));
+
+    Set<AclEntry> newEntries = new HashSet<>();
+    newEntries.add(new AclEntry("user1", PERMISSION.READ));
+    newEntries.add(new AclEntry("user3", PERMISSION.WRITE));
+
+    assertFalse(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
+    assertFalse(MetadataRecordUtil.checkForEquality(newEntries, oldEntries));
+  }
+
+  @Test
+  public void checkForEqualityWithDifferentPermissions() {
+    Set<AclEntry> oldEntries = new HashSet<>();
+    oldEntries.add(new AclEntry("user1", PERMISSION.READ));
+    oldEntries.add(new AclEntry("user2", PERMISSION.WRITE));
+
+    Set<AclEntry> newEntries = new HashSet<>();
+    newEntries.add(new AclEntry("user1", PERMISSION.READ));
+    newEntries.add(new AclEntry("user2", PERMISSION.ADMINISTRATE));
+
+    assertFalse(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
+  }
+
+  @Test
+  public void checkForEqualityWithEmptyAclEntries() {
+    Set<AclEntry> oldEntries = new HashSet<>();
+    Set<AclEntry> newEntries = new HashSet<>();
+
+    assertTrue(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
+  }
+
+  @Test
+  public void checkForEqualityWithNullAclEntries() {
+    Set<AclEntry> oldEntries = null;
+    Set<AclEntry> newEntries = null;
+
+    assertTrue(MetadataRecordUtil.checkForEquality(oldEntries, newEntries));
   }
 
   private void setSchema(DataResource dataResource) {
