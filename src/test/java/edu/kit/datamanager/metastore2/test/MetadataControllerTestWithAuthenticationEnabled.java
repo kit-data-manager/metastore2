@@ -17,6 +17,7 @@ import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.MetadataRecord;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.ResourceIdentifier;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -1051,6 +1052,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // Test with no id set.
+    for (AclEntry aclEntry : record.getAcl()) {
+      aclEntry.setId(0L);
+    }
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
 
@@ -1073,7 +1078,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
-      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(DataResourceRecordUtil.checkForEquality(record.getAcl(), record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
@@ -1109,6 +1114,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // Test with no id set.
+    for (AclEntry aclEntry : record.getAcl()) {
+      aclEntry.setId(0L);
+    }
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
 
@@ -1140,6 +1149,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // Test with no id set.
+    for (AclEntry aclEntry : record.getAcl()) {
+      aclEntry.setId(0L);
+    }
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
 
@@ -1162,7 +1175,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
-      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(DataResourceRecordUtil.checkForEquality(record.getAcl(), record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
@@ -1197,6 +1210,10 @@ public class MetadataControllerTestWithAuthenticationEnabled {
 
     ObjectMapper mapper = new ObjectMapper();
     MetadataRecord record = mapper.readValue(body, MetadataRecord.class);
+    // Test with no id set.
+    for (AclEntry aclEntry : record.getAcl()) {
+      aclEntry.setId(0L);
+    }
     MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
     MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", KIT_DOCUMENT_VERSION_2.getBytes());
 
@@ -1219,7 +1236,7 @@ public class MetadataControllerTestWithAuthenticationEnabled {
     Assert.assertEquals(record.getSchema().getIdentifier(), record2.getSchema().getIdentifier());
     Assert.assertEquals((long) record.getRecordVersion(), record2.getRecordVersion() - 1L);// version should be 1 higher
     if (record.getAcl() != null) {
-      Assert.assertTrue(record.getAcl().containsAll(record2.getAcl()));
+      Assert.assertTrue(DataResourceRecordUtil.checkForEquality(record.getAcl(), record2.getAcl()));
     }
     Assert.assertTrue(record.getLastUpdate().isBefore(record2.getLastUpdate()));
     // Check for new metadata document.
