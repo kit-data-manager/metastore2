@@ -73,10 +73,6 @@ import java.util.stream.Stream;
 public class MetadataRecordUtil {
 
   /**
-   * Separator for separating schemaId and schemaVersion.
-   */
-  public static final String SCHEMA_VERSION_SEPARATOR = ":";
-  /**
    * Logger for messages.
    */
   private static final Logger LOG = LoggerFactory.getLogger(MetadataRecordUtil.class);
@@ -146,7 +142,7 @@ public class MetadataRecordUtil {
     // validate schema document
     validateMetadataDocument(applicationProperties, metadataRecord, document);
     // set internal parameters
-    metadataRecord.setRecordVersion(1l);
+    metadataRecord.setRecordVersion(1L);
 
     long nano3 = System.nanoTime() / 1000000;
     // create record.
@@ -156,18 +152,12 @@ public class MetadataRecordUtil {
     // id will be set to alternate identifier if exists. 
     if (dataResource.getId() != null) {
       // check for valid identifier without any chars which may be encoded
-      try {
-        String originalId = dataResource.getId();
-        String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8.toString());
-        if (!value.equals(originalId)) {
-          String message = "Not a valid id! Encoded: " + value;
-          LOG.error(message);
-          throw new BadArgumentException(message);
-        }
-      } catch (UnsupportedEncodingException ex) {
-        String message = "Error encoding id " + metadataRecord.getSchemaId();
+      String originalId = dataResource.getId();
+      String value = URLEncoder.encode(originalId, StandardCharsets.UTF_8);
+      if (!value.equals(originalId)) {
+        String message = "Not a valid id! Encoded: " + value;
         LOG.error(message);
-        throw new CustomInternalServerError(message);
+        throw new BadArgumentException(message);
       }
 
       dataResource.getAlternateIdentifiers().add(Identifier.factoryInternalIdentifier(dataResource.getId()));
@@ -282,7 +272,7 @@ public class MetadataRecordUtil {
         LOG.trace("Updating schema document (and increment version)...");
         String version = dataResource.getVersion();
         if (version != null) {
-          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1l));
+          dataResource.setVersion(Long.toString(Long.parseLong(version) + 1L));
         }
         ContentDataUtils.addFile(applicationProperties, dataResource, document, fileName, null, true, supplier);
       }
@@ -478,7 +468,7 @@ public class MetadataRecordUtil {
         }
       }
 
-      Long recordVersion = 1l;
+      Long recordVersion = 1L;
       if (dataResource.getVersion() != null) {
         recordVersion = Long.parseLong(dataResource.getVersion());
       }
@@ -504,7 +494,7 @@ public class MetadataRecordUtil {
               metadataRecord.setSchemaVersion(Long.parseLong(matcher.group(1)));
             }
           } else {
-            metadataRecord.setSchemaVersion(1l);
+            metadataRecord.setSchemaVersion(1L);
           }
           LOG.trace("Set schema to '{}'", resourceIdentifier);
         }
@@ -514,13 +504,11 @@ public class MetadataRecordUtil {
         LOG.error(message);
         throw new BadArgumentException(message);
       }
-      DataRecord dataRecord = null;
+      DataRecord dataRecord;
       long nano2 = System.nanoTime() / 1000000;
       Optional<DataRecord> dataRecordResult = dataRecordDao.findByMetadataIdAndVersion(dataResource.getId(), recordVersion);
       long nano3 = System.nanoTime() / 1000000;
       long nano4 = nano3;
-      boolean isAvailable = false;
-      boolean saveDataRecord = false;
       if (dataRecordResult.isPresent()) {
         LOG.trace("Get document URI from DataRecord.");
         dataRecord = dataRecordResult.get();
@@ -528,11 +516,7 @@ public class MetadataRecordUtil {
         metadataRecord.setMetadataDocumentUri(dataRecord.getMetadataDocumentUri());
         metadataRecord.setDocumentHash(dataRecord.getDocumentHash());
         metadataRecord.setSchemaVersion(dataRecord.getSchemaVersion());
-        isAvailable = true;
       } else {
-        saveDataRecord = true;
-      }
-      if (!isAvailable) {
         LOG.trace("Get document URI from ContentInformation.");
         ContentInformation info;
         info = getContentInformationOfResource(applicationProperties, dataResource);
@@ -542,9 +526,7 @@ public class MetadataRecordUtil {
           metadataRecord.setMetadataDocumentUri(info.getContentUri());
           MetadataSchemaRecord currentSchemaRecord = MetadataSchemaRecordUtil.getCurrentSchemaRecord(schemaConfig, metadataRecord.getSchema());
           metadataRecord.setSchemaVersion(currentSchemaRecord.getSchemaVersion());
-          if (saveDataRecord) {
-            saveNewDataRecord(metadataRecord);
-          }
+          saveNewDataRecord(metadataRecord);
         }
       }
       // Only one license allowed. So don't worry about size of set.
@@ -580,7 +562,7 @@ public class MetadataRecordUtil {
     if (!listOfFiles.isEmpty()) {
       returnValue = listOfFiles.get(0);
     }
-    LOG.info("Get content information of resource, {}, {}, {}, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
+    LOG.info("Get content information of resource, {}, {}, {}", nano1, nano2 - nano1, nano3 - nano1);
     return returnValue;
   }
 
@@ -597,7 +579,7 @@ public class MetadataRecordUtil {
     MetadataSchemaRecord returnValue = null;
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
-    if (metastoreProperties.getSchemaRegistries().size() == 0) {
+    if (metastoreProperties.getSchemaRegistries().isEmpty()) {
       LOG.trace(LOG_SCHEMA_REGISTRY);
 
       returnValue = MetadataSchemaRecordUtil.getRecordById(metastoreProperties, schemaId);
@@ -648,7 +630,7 @@ public class MetadataRecordUtil {
     boolean success = false;
     StringBuilder errorMessage = new StringBuilder();
     LOG.trace("Get internal schema record for id '{}'.", schemaId);
-    if (metastoreProperties.getSchemaRegistries().size() == 0) {
+    if (metastoreProperties.getSchemaRegistries().isEmpty()) {
       LOG.trace(LOG_SCHEMA_REGISTRY);
 
       returnValue = MetadataSchemaRecordUtil.getRecordByIdAndVersion(metastoreProperties, schemaId, version);
@@ -783,7 +765,7 @@ public class MetadataRecordUtil {
     //if security enabled, check permission -> if not matching, return HTTP UNAUTHORIZED or FORBIDDEN
     long nano = System.nanoTime() / 1000000;
     long nano2;
-    MetadataRecord result = null;
+    MetadataRecord result;
     Page<DataResource> dataResource;
     try {
       dataResource = metastoreProperties.getDataResourceService().findAllVersions(recordId, null);
@@ -1013,9 +995,7 @@ public class MetadataRecordUtil {
       }
     }
     // Check if authorized user still has ADMINISTRATOR rights
-    Iterator<AclEntry> iterator = aclEntries.iterator();
-    while (iterator.hasNext()) {
-      AclEntry aclEntry = iterator.next();
+    for (AclEntry aclEntry : aclEntries) {
       LOG.trace("'{}' has ’{}' rights!", aclEntry.getSid(), aclEntry.getPermission());
       if (aclEntry.getPermission().atLeast(PERMISSION.ADMINISTRATE)
               && authorizationIdentities.contains(aclEntry.getSid())) {
@@ -1038,7 +1018,7 @@ public class MetadataRecordUtil {
     return isAllowed;
   }
 
-  public static final void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
+  public static void fixMetadataDocumentUri(MetadataRecord metadataRecord) {
     String metadataDocumentUri = metadataRecord.getMetadataDocumentUri();
     metadataRecord
             .setMetadataDocumentUri(WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(MetadataControllerImpl.class
@@ -1065,6 +1045,7 @@ public class MetadataRecordUtil {
       dataResource.getRights().clear();
     }
   }
+
   /**
    * Check if two sets of AclEntries are equal.
    *
