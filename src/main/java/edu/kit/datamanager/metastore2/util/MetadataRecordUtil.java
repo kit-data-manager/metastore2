@@ -1066,6 +1066,12 @@ public class MetadataRecordUtil {
     }
   }
   /**
+   * Check if two sets of AclEntries are equal.
+   *
+   * @param oldEntries Old set of AclEntries.
+   * @param newEntries New set of AclEntries.
+   * @return True if equal, false otherwise.
+   */
   public static boolean checkForEquality(Set<AclEntry> oldEntries, Set<AclEntry> newEntries) {
     boolean isEqual = false;
     HashSet<Integer> collectIndices = new HashSet<>();
