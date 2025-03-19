@@ -20,7 +20,7 @@ title: "MetaStore"
 type: software
 abstract: MetaStore is a research data repository software for storing metadata documents and schemas. Quality and consistency are ensured by associating and validating each document against a schema. It supports JSON and XML.
 version: 1.4.5
-date-released: 2023-02-28
+date-released: 2025-03-19
 doi: 10.5281/zenodo.7685007
 url: "https://github.com/kit-data-manager/metastore2"
 repository-code:  "https://github.com/kit-data-manager/metastore2"
