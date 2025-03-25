@@ -31,6 +31,8 @@ import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.core.util.Json;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,8 +79,16 @@ public class MetadataRecordUtil {
 
   private static IDataRecordDao dataRecordDao;
 
+  private static MeterRegistry meterRegistry;
+
   MetadataRecordUtil() {
     //Utility class
+  }
+
+  public static void registerMetrics() {
+    assert meterRegistry != null;
+
+    Gauge.builder("metastore.stored_metadata_records",() -> dataRecordDao.count()).register(meterRegistry);
   }
 
   /**
