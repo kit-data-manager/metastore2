@@ -50,7 +50,7 @@ if (System.getProperty('profile') == 'minimal') {
 dependencies {
     // Spring
     implementation 'org.springframework:spring-messaging:6.2.4'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.2.0'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.2.2'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
