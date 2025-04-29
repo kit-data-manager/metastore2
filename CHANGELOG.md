@@ -10,8 +10,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 ### Changed
- 
+
 ### Fixed
+
+## [2.0.2]
+### Security
+
+### Added
+
+### Changed
+
+### Fixed
+
+### Docker
+- Update eclipse-temurin Docker tag to v24
+
+### Libs
+- Update dependency com.google.guava:guava to v33.4.8-jre
+- Update dependency com.networknt:json-schema-validator to v1.5.6
+- Update dependency commons-io:commons-io to v2.19.0
+- Update dependency gradle to v8.14
+- Update dependency jacoco to v0.8.13
+- Update javersVersion to v7.8.0
+- Update dependency org.apache.commons:commons-collections4 to v4.5.0
+- Update dependency org.apache.commons:commons-text to v1.13.1
+- Update dependency org.mockito:mockito-core to v5.17.0
+- Update dependency org.springframework.cloud:spring-cloud-gateway-mvc to v4.2.2
+- Update dependency org.springframework.cloud:spring-cloud-starter-config to v4.2.2
+- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.2.1
+- Update dependency org.springframework.data:spring-data-elasticsearch to v5.4.5
+- Update dependency org.springframework:spring-messaging to v6.2.6
+- Update springDocVersion to v2.8.6
+
+### Plugins
+- Update plugin com.gorylenko.gradle-git-properties to v2.5.0
+- Update plugin io.freefair.lombok to v8.13.1
+- Update plugin io.freefair.maven-publish-java to v8.13.1
+- Update plugin net.ltgt.errorprone to v4.2.0
+- Update plugin org.owasp.dependencycheck to v12.1.1
+- Update plugin org.springframework.boot to v3.4.5
+
+
+
+
+
+
+
+
 
 ## [2.0.1] - 2025-02-07
 
