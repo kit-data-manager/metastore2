@@ -1,13 +1,13 @@
 plugins { 
-    id 'org.springframework.boot' version '3.4.2'
+    id 'org.springframework.boot' version '3.4.5'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'io.freefair.lombok' version '8.12.1'
-    id 'io.freefair.maven-publish-java' version '8.12.1'
-    id 'org.owasp.dependencycheck' version '12.1.0'
+    id 'io.freefair.lombok' version '8.13.1'
+    id 'io.freefair.maven-publish-java' version '8.13.1'
+    id 'org.owasp.dependencycheck' version '12.1.1'
     id 'org.asciidoctor.jvm.convert' version '4.0.4'
-    id 'net.ltgt.errorprone' version '4.1.0'
+    id 'net.ltgt.errorprone' version '4.2.0'
     id 'net.researchgate.release' version '3.1.0'
-    id 'com.gorylenko.gradle-git-properties' version '2.4.2'
+    id 'com.gorylenko.gradle-git-properties' version '2.5.0'
     id 'java'
     id 'jacoco'
 }
@@ -17,7 +17,7 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '2.8.5'
+    springDocVersion  = '2.8.6'
     javersVersion     = '7.8.0'
     keycloakVersion   = '19.0.0'
     errorproneVersion = '2.36.0'
@@ -49,8 +49,8 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:6.2.3'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.2.0'
+    implementation 'org.springframework:spring-messaging:6.2.6'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.2.2'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -69,8 +69,8 @@ dependencies {
 
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:4.2.0"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.2.0"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:4.2.2"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.2.1"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
@@ -82,9 +82,9 @@ dependencies {
 
     // apache
     implementation "commons-configuration:commons-configuration:1.10"
-    implementation "org.apache.commons:commons-collections4:4.4"
+    implementation "org.apache.commons:commons-collections4:4.5.0"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.13.0"
+    implementation "org.apache.commons:commons-text:1.13.1"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
@@ -99,11 +99,11 @@ dependencies {
     implementation "com.h2database:h2:2.3.232"
     
     // apache
-    implementation "commons-io:commons-io:2.18.0"
+    implementation "commons-io:commons-io:2.19.0"
     implementation "org.apache.tika:tika-core:3.1.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.5.5"
+    implementation "com.networknt:json-schema-validator:1.5.6"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation "xerces:xercesImpl:2.12.2"
@@ -113,7 +113,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.3.3"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.4.3"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.4.5"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
@@ -121,14 +121,14 @@ dependencies {
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
-    testImplementation "com.google.guava:guava:33.4.0-jre"
+    testImplementation "com.google.guava:guava:33.4.8-jre"
     testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.3"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.15.2"
+    testImplementation "org.mockito:mockito-core:5.17.0"
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
@@ -166,7 +166,7 @@ tasks.withType(Test) {
 }
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.13"
 }
 
 import java.text.SimpleDateFormat
