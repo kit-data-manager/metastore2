@@ -13,14 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [2.0.2]
+## [2.0.2] - 2025-05-02
 ### Security
+- Actuator endpoints are now restricted to info and health by default.
 
 ### Added
-
-### Changed
+- Creating a new schema/metadata document may be restricted to certain role only.
 
 ### Fixed
+- Fix bug while updating documents with write access via frontend.
+- Filter for duplicated http headers while using search proxy for elasticsearch.
 
 ### Docker
 - Update eclipse-temurin Docker tag to v24
@@ -29,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update dependency com.google.guava:guava to v33.4.8-jre
 - Update dependency com.networknt:json-schema-validator to v1.5.6
 - Update dependency commons-io:commons-io to v2.19.0
+- Update dependency edu.kit.datamanager:service-base to v1.3.4
 - Update dependency gradle to v8.14
 - Update dependency jacoco to v0.8.13
 - Update javersVersion to v7.8.0
@@ -49,14 +52,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update plugin net.ltgt.errorprone to v4.2.0
 - Update plugin org.owasp.dependencycheck to v12.1.1
 - Update plugin org.springframework.boot to v3.4.5
-
-
-
-
-
-
-
-
 
 ## [2.0.1] - 2025-02-07
 
@@ -610,7 +605,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.0.2...HEAD
+[2.0.2]: https://github.com/kit-data-manager/metastore2/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/kit-data-manager/metastore2/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...v2.0.0
 [1.4.4]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...v1.4.4
