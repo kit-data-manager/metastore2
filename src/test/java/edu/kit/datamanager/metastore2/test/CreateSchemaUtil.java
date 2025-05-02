@@ -38,164 +38,180 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
+ *
  */
 public class CreateSchemaUtil {
 
-  public final static String KIT_SCHEMA = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n"
-          + "<xs:schema targetNamespace=\"http://www.example.org/kit\"\n"
-          + "           xmlns:kit=\"http://www.example.org/kit\"\n"
-          + "           xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "           elementFormDefault=\"qualified\">\n"
-          + "  <xs:simpleType name=\"stringtype\">\n"
-          + "    <xs:restriction base=\"xs:string\"></xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:simpleType name=\"employeeidtype\">\n"
-          + "    <xs:restriction base=\"xs:string\">\n"
-          + "      <xs:pattern value=\"[a-z]{2}[0-9]{4}\"></xs:pattern>\n"
-          + "    </xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:simpleType name=\"shorttype\">\n"
-          + "    <xs:restriction base=\"xs:string\">\n"
-          + "      <xs:pattern value=\"[A-Z\\\\-]{3,8}\"></xs:pattern>\n"
-          + "    </xs:restriction>\n"
-          + "  </xs:simpleType>\n"
-          + " \n"
-          + "  <xs:complexType name=\"departmenttype\">\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"departmentname\" type=\"kit:stringtype\"></xs:element>\n"
-          + "      <xs:element name=\"shortname\" type=\"kit:shorttype\"></xs:element>\n"
-          + "    </xs:sequence>\n"
-          + "  </xs:complexType>\n"
-          + " \n"
-          + "  <xs:complexType name=\"employeetype\">\n"
-          + "    <xs:sequence>\n"
-          + "      <xs:element name=\"name\" type=\"kit:stringtype\"></xs:element>\n"
-          + "      <xs:element name=\"department\" type=\"kit:departmenttype\"></xs:element>\n"
-          + "    </xs:sequence>\n"
-          + "    <xs:attribute name=\"employeeid\" type=\"kit:employeeidtype\" use=\"required\"></xs:attribute>\n"
-          + "  </xs:complexType>\n"
-          + "\n"
-          + "  <xs:element name=\"employee\" type=\"kit:employeetype\"></xs:element>\n"
-          + "</xs:schema>";
-  public final static String KIT_DOCUMENT = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_VERSION_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC-DEM</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_SMALL_CHANGE = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>DEM</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_1 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"abcdefg\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_2 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab12345\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_3 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String KIT_DOCUMENT_INVALID_4 = "<employee xmlns=\"http://www.example.org/kit\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC-TOLONG</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
+  public final static String KIT_SCHEMA = """
+          <?xml version="1.0" encoding="UTF-8" ?>
+          <xs:schema targetNamespace="http://www.example.org/kit"
+                     xmlns:kit="http://www.example.org/kit"
+                     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                     elementFormDefault="qualified">
+            <xs:simpleType name="stringtype">
+              <xs:restriction base="xs:string"></xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:simpleType name="employeeidtype">
+              <xs:restriction base="xs:string">
+                <xs:pattern value="[a-z]{2}[0-9]{4}"></xs:pattern>
+              </xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:simpleType name="shorttype">
+              <xs:restriction base="xs:string">
+                <xs:pattern value="[A-Z\\\\-]{3,8}"></xs:pattern>
+              </xs:restriction>
+            </xs:simpleType>
+          \s
+            <xs:complexType name="departmenttype">
+              <xs:sequence>
+                <xs:element name="departmentname" type="kit:stringtype"></xs:element>
+                <xs:element name="shortname" type="kit:shorttype"></xs:element>
+              </xs:sequence>
+            </xs:complexType>
+          \s
+            <xs:complexType name="employeetype">
+              <xs:sequence>
+                <xs:element name="name" type="kit:stringtype"></xs:element>
+                <xs:element name="department" type="kit:departmenttype"></xs:element>
+              </xs:sequence>
+              <xs:attribute name="employeeid" type="kit:employeeidtype" use="required"></xs:attribute>
+            </xs:complexType>
+          
+            <xs:element name="employee" type="kit:employeetype"></xs:element>
+          </xs:schema>""";
+  public final static String KIT_DOCUMENT = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_VERSION_2 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC-DEM</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_SMALL_CHANGE = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>DEM</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_1 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="abcdefg">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_2 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab12345">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_3 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SC</shortname>
+            </department>
+          </employee>""";
+  public final static String KIT_DOCUMENT_INVALID_4 = """
+          <employee xmlns="http://www.example.org/kit" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC-TOLONG</shortname>
+            </department>
+          </employee>""";
 
-  public final static String KIT_DOCUMENT_WRONG_NAMESPACE = "<employee xmlns=\"http://www.example.org/invalid/ns\" employeeid=\"ab1234\">\n"
-          + "  <name>John Doe</name>\n"
-          + "  <department>\n"
-          + "  <departmentname>Scientific Computing Center</departmentname>\n"
-          + "    <shortname>SCC</shortname>\n"
-          + "  </department>\n"
-          + "</employee>";
-  public final static String XML_SCHEMA_V1 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V1_TYPO = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"titel\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V2 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "            <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_SCHEMA_V3 = "<xs:schema targetNamespace=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns=\"http://www.example.org/schema/xsd/\"\n"
-          + "                xmlns:xs=\"http://www.w3.org/2001/XMLSchema\"\n"
-          + "                elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\">\n"
-          + "      <xs:element name=\"metadata\">\n"
-          + "        <xs:complexType>\n"
-          + "          <xs:sequence>\n"
-          + "            <xs:element name=\"title\" type=\"xs:string\"/>\n"
-          + "            <xs:element name=\"date\" type=\"xs:date\"/>\n"
-          + "            <xs:element name=\"note\" type=\"xs:string\"/>\n"
-          + "          </xs:sequence>\n"
-          + "        </xs:complexType>\n"
-          + "      </xs:element>\n"
-          + "    </xs:schema>";
-  public final static String XML_DOCUMENT_V1 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
-          + "  <ex:title>Title of first version</ex:title>\n"
-          + "</ex:metadata>";
-  public final static String XML_DOCUMENT_V2 = "<?xml version='1.0' encoding='utf-8'?>\n"
-          + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
-          + "  <ex:title>Title of second version</ex:title>\n"
-          + "  <ex:date>2021-06-15</ex:date>\n"
-          + "</ex:metadata>";
+  public final static String KIT_DOCUMENT_WRONG_NAMESPACE = """
+          <employee xmlns="http://www.example.org/invalid/ns" employeeid="ab1234">
+            <name>John Doe</name>
+            <department>
+            <departmentname>Scientific Computing Center</departmentname>
+              <shortname>SCC</shortname>
+            </department>
+          </employee>""";
+  public final static String XML_SCHEMA_V1 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V1_TYPO = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="titel" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V2 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                      <xs:element name="date" type="xs:date"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_SCHEMA_V3 = """
+          <xs:schema targetNamespace="http://www.example.org/schema/xsd/"
+                          xmlns="http://www.example.org/schema/xsd/"
+                          xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                          elementFormDefault="qualified" attributeFormDefault="unqualified">
+                <xs:element name="metadata">
+                  <xs:complexType>
+                    <xs:sequence>
+                      <xs:element name="title" type="xs:string"/>
+                      <xs:element name="date" type="xs:date"/>
+                      <xs:element name="note" type="xs:string"/>
+                    </xs:sequence>
+                  </xs:complexType>
+                </xs:element>
+              </xs:schema>""";
+  public final static String XML_DOCUMENT_V1 = """
+          <?xml version='1.0' encoding='utf-8'?>
+          <ex:metadata xmlns:ex="http://www.example.org/schema/xsd/">
+            <ex:title>Title of first version</ex:title>
+          </ex:metadata>""";
+  public final static String XML_DOCUMENT_V2 = """
+          <?xml version='1.0' encoding='utf-8'?>
+          <ex:metadata xmlns:ex="http://www.example.org/schema/xsd/">
+            <ex:title>Title of second version</ex:title>
+            <ex:date>2021-06-15</ex:date>
+          </ex:metadata>""";
   public final static String XML_DOCUMENT_V3 = "<?xml version='1.0' encoding='utf-8'?>\n"
           + "<ex:metadata xmlns:ex=\"http://www.example.org/schema/xsd/\">\n"
           + "  <ex:title>Title of third version</ex:title>\n"
@@ -234,7 +250,7 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -247,6 +263,23 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateXmlSchemaRecord(mockMvc, schemaId, schemaContent, update, userToken, expectedStatus);
+  }
+
+  /**
+   * Update schema in MetaStore as user 'test_user'. If schema already exists
+   * and noUpdate is false update schema.
+   *
+   * @param mockMvc
+   * @param schemaId
+   * @param schemaContent
+   * @param jwtSecret
+   * @param noUpdate      Only ingest or do update also
+   * @return
+   * @throws Exception
+   */
+  public static String ingestOrUpdateXmlSchemaRecord(MockMvc mockMvc, String schemaId, String schemaContent, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+    String locationUri = null;
     MetadataSchemaRecord record = new MetadataSchemaRecord();
     record.setSchemaId(schemaId);
     record.setType(MetadataSchemaRecord.SCHEMA_TYPE.XML);
@@ -263,15 +296,15 @@ public class CreateSchemaUtil {
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
     MvcResult result = mockMvc.perform(get("/api/v1/schemas/" + schemaId).
-            header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
+                    header("Accept", MetadataSchemaRecord.METADATA_SCHEMA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
       result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/schemas/").
-              file(recordFile).
-              file(schemaFile).
-              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+                      file(recordFile).
+                      file(schemaFile).
+                      header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).andExpect(expectedStatus).andReturn();
       if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
         locationUri = result.getResponse().getHeader("Location");
@@ -312,10 +345,12 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateXmlMetadataDocument(mockMvc, schemaId, version, metadataId, metadataDocument, update, userToken, expectedStatus);
+  }
+
+  public static MvcResult ingestOrUpdateXmlMetadataDocument(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
     // Test if metadataId is already registered.
-
     MvcResult result = null;
-
     MetadataRecord record = new MetadataRecord();
     record.setId(metadataId);
     record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(schemaId));
@@ -335,7 +370,7 @@ public class CreateSchemaUtil {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
     }
     result = mockMvc.perform(get("/api/v1/metadata/" + metadataId).
-            header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
+                    header("Accept", MetadataRecord.METADATA_RECORD_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
@@ -405,7 +440,7 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -421,23 +456,24 @@ public class CreateSchemaUtil {
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
   public static String ingestOrUpdateJsonSchemaRecordV2(MockMvc mockMvc, String schemaId, String schemaContent, String jwtSecret, boolean update, ResultMatcher expectedStatus) throws Exception {
     return ingestOrUpdateSchemaRecordV2(mockMvc, MediaType.APPLICATION_JSON, schemaId, schemaContent, jwtSecret, update, expectedStatus);
   }
+
   /**
    * Update schema in MetaStore as user 'test_user'. If schema already exists
    * and noUpdate is false update schema.
    *
    * @param mockMvc
-   * @param mediaType 
+   * @param mediaType
    * @param schemaId
    * @param schemaContent
    * @param jwtSecret
-   * @param noUpdate Only ingest or do update also
+   * @param noUpdate      Only ingest or do update also
    * @return
    * @throws Exception
    */
@@ -450,6 +486,24 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
+    return ingestOrUpdateSchemaRecordV2(mockMvc, mediaType, schemaId, schemaContent, update, userToken, expectedStatus);
+  }
+
+    /**
+     * Update schema in MetaStore as user 'test_user'. If schema already exists
+     * and noUpdate is false update schema.
+     *
+     * @param mockMvc
+     * @param mediaType
+     * @param schemaId
+     * @param schemaContent
+     * @param jwtSecret
+     * @param noUpdate      Only ingest or do update also
+     * @return
+     * @throws Exception
+     */
+    public static String ingestOrUpdateSchemaRecordV2(MockMvc mockMvc, MediaType mediaType, String schemaId, String schemaContent, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+      String locationUri = null;
     DataResource record;
     if (mediaType.toString().contains("xml")) {
       record = SchemaRegistryControllerTestV2.createDataResource4XmlSchema(schemaId);
@@ -466,15 +520,15 @@ public class CreateSchemaUtil {
     schemaFile = new MockMultipartFile("schema", "schema.xsd", "application/xml", schemaContent.getBytes());
     // Test if schema is already registered.
     MvcResult result = mockMvc.perform(get("/api/v2/schemas/" + schemaId).
-            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+                    accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
 
       result = mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v2/schemas/").
-              file(recordFile).
-              file(schemaFile).
-              header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
+                      file(recordFile).
+                      file(schemaFile).
+                      header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
               andDo(print()).andExpect(expectedStatus).andReturn();
       if (result.getResponse().getStatus() == HttpStatus.CREATED.value()) {
         locationUri = result.getResponse().getHeader("Location");
@@ -515,8 +569,13 @@ public class CreateSchemaUtil {
             addSimpleClaim("loginFailures", 0).
             addSimpleClaim("active", true).
             addSimpleClaim("locked", false).getCompactToken(jwtSecret);
-    // Test if metadataId is already registered.
+    return ingestOrUpdateXmlMetadataDocumentV2(mockMvc, schemaId, version, metadataId, metadataDocument, update, userToken, expectedStatus);
 
+  }
+
+    public static MvcResult ingestOrUpdateXmlMetadataDocumentV2(MockMvc mockMvc, String schemaId, Long version, String metadataId, String metadataDocument, boolean update, String userToken, ResultMatcher expectedStatus) throws Exception {
+
+    // Test if metadataId is already registered.
     MvcResult result = null;
     String versionAsString = null;
     if (version != null) {
@@ -540,7 +599,7 @@ public class CreateSchemaUtil {
       metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", metadataDocument.getBytes());
     }
     result = mockMvc.perform(get("/api/v2/metadata/" + metadataId).
-            accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
+                    accept(DataResourceRecordUtil.DATA_RESOURCE_MEDIA_TYPE)).
             andDo(print()).
             andReturn();
     if (result.getResponse().getStatus() != HttpStatus.OK.value()) {
