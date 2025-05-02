@@ -38,13 +38,10 @@ import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.service.IContentInformationService;
 import edu.kit.datamanager.repo.util.ContentDataUtils;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.core.util.Json;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
@@ -93,16 +90,8 @@ public class MetadataSchemaRecordUtil {
 
   private static IDataRecordDao dataRecordDao;
 
-  private static MeterRegistry meterRegistry;
-
   MetadataSchemaRecordUtil() {
     //Utility class
-  }
-
-  public static void registerMetrics() {
-      assert meterRegistry != null;
-
-      Gauge.builder("metastore.stored_metadata_schemas",() -> schemaRecordDao.count()).register(meterRegistry);
   }
 
   /**
