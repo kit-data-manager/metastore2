@@ -17,3 +17,6 @@ nbproject
 # Ignore VS Code
 bin/
 .vscode/
+
+# Ignore IntelliJ IDEA
+.idea/

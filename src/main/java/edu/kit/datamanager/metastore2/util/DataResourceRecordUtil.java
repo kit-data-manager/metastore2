@@ -858,7 +858,8 @@ public class DataResourceRecordUtil {
     managed = (managed == null) ? new HashSet<>() : managed;
     provided = (provided == null) ? new HashSet<>() : provided;
     if (!provided.isEmpty()) {
-      if (!provided.equals(managed)) {
+      // check for equality of both lists ignoring ids.
+      if (!checkForEquality(managed, provided)) {
         // check for special access rights
         // - only administrators are allowed to change ACL
         checkAccessRights(managed, true);
@@ -1587,14 +1588,7 @@ public class DataResourceRecordUtil {
 
   private static DataResource mergeAcl(DataResource oldDataResource, DataResource updatedDataResource) {
     if (updatedDataResource != null) {
-      if ((updatedDataResource.getAcls() == null) || updatedDataResource.getAcls().isEmpty()) {
-        updatedDataResource.setAcls(oldDataResource.getAcls());
-      } else {
-        // Check for access rights for changing ACL (need ADMINISTRATION rights!)
-        checkAccessRights(oldDataResource.getAcls(), true);
-        // Check if access rights still valid afterwards (at least one user with ADMINISTRATION rights should be available!)
-        checkAccessRights(updatedDataResource.getAcls(), false);
-      }
+      updatedDataResource.setAcls(mergeAcl(oldDataResource.getAcls(), updatedDataResource.getAcls()));
     }
     return updatedDataResource;
   }
@@ -2013,6 +2007,37 @@ public class DataResourceRecordUtil {
       throw new CustomInternalServerError("Metadata document on server either does not exist or is no file or is not readable.");
     }
     return documentPath;
+  }
+
+  public static boolean checkForEquality(Set<AclEntry> oldEntries, Set<AclEntry> newEntries) {
+    boolean isEqual = false;
+    HashSet<Integer> collectIndices = new HashSet<>();
+    if (oldEntries == newEntries) {
+      isEqual = true;
+    } else {
+      if (oldEntries != null && newEntries != null && oldEntries.size() == newEntries.size()) {
+        isEqual = true;
+        for (AclEntry newEntry : newEntries) {
+          int index = 0;
+          boolean match = false;
+          for (AclEntry oldEntry : oldEntries) {
+            if (newEntry.getSid() != null && newEntry.getSid().equals(oldEntry.getSid())) {
+              if (newEntry.getPermission() != null && newEntry.getPermission().equals(oldEntry.getPermission())) {
+                match = true;
+                collectIndices.add(index);
+                break;
+              }
+            }
+            index++;
+          }
+          if (!match) {
+            isEqual = false;
+            break;
+          }
+        }
+      }
+    }
+    return (isEqual && (collectIndices.isEmpty() || (collectIndices.size() == oldEntries.size())));
   }
 
   /**

@@ -68,18 +68,18 @@ public class WebSecurityConfig {
   private String allowedOriginPattern;
 
   private static final String[] AUTH_WHITELIST_SWAGGER_UI = {
-    // -- Swagger UI v2
-    "/v2/api-docs",
-    "/swagger-resources",
-    "/swagger-resources/**",
-    "/configuration/ui",
-    "/configuration/security",
-    "/swagger-ui.html",
-    "/webjars/**",
-    // -- Swagger UI v3 (OpenAPI)
-    "/v3/api-docs/**",
-    "/swagger-ui/**"
-  // other public endpoints of your API may be appended to this array
+          // -- Swagger UI v2
+          "/v2/api-docs",
+          "/swagger-resources",
+          "/swagger-resources/**",
+          "/configuration/ui",
+          "/configuration/security",
+          "/swagger-ui.html",
+          "/webjars/**",
+          // -- Swagger UI v3 (OpenAPI)
+          "/v3/api-docs/**",
+          "/swagger-ui/**"
+          // other public endpoints of your API may be appended to this array
   };
 
   public WebSecurityConfig() {
@@ -89,16 +89,27 @@ public class WebSecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     HttpSecurity httpSecurity = http.authorizeHttpRequests(
-            authorize -> authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
-                    requestMatchers("/oaipmh").permitAll().
-                    requestMatchers("/static/**").permitAll().
-                    requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
-                    requestMatchers(EndpointRequest.to(
-                            InfoEndpoint.class,
-                            HealthEndpoint.class
-                    )).permitAll().
-                    requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
-                    requestMatchers("/**").authenticated()).
+                    authorize -> {
+                      authorize.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().
+                              requestMatchers("/oaipmh").permitAll().
+                              requestMatchers("/static/**").permitAll().
+                              requestMatchers(AUTH_WHITELIST_SWAGGER_UI).permitAll().
+                              requestMatchers(EndpointRequest.to(
+                                      InfoEndpoint.class,
+                                      HealthEndpoint.class
+                              )).permitAll();
+                      logger.info("Post enabled for all groups!?");
+                      if (!applicationProperties.getPostEnabledForRole().isBlank()) {
+                        logger.info("Post enabled for group '{}'!", applicationProperties.getPostEnabledForRole());
+                        authorize.
+                                requestMatchers(HttpMethod.POST, "/api/v1/schemas/").hasAnyRole(applicationProperties.getPostEnabledForRole()).
+                                requestMatchers(HttpMethod.POST, "/api/v2/schemas/").hasAnyRole(applicationProperties.getPostEnabledForRole()).
+                                requestMatchers(HttpMethod.POST, "/api/v1/metadata/").hasAnyRole(applicationProperties.getPostEnabledForRole()).
+                                requestMatchers(HttpMethod.POST, "/api/v2/metadata/").hasAnyRole(applicationProperties.getPostEnabledForRole());
+                      }
+                      authorize.requestMatchers(EndpointRequest.toAnyEndpoint()).hasAnyRole("ANONYMOUS", "ADMIN", "ACTUATOR", "SERVICE_WRITE").
+                              requestMatchers("/**").authenticated();
+                    }).
             sessionManagement(
                     session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     if (!enableCsrf) {

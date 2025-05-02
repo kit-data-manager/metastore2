@@ -94,8 +94,6 @@ public class ActuatorTest {
   @Autowired
   private WebApplicationContext context;
   @Autowired
-  Javers javers = null;
-  @Autowired
   private ILinkedMetadataRecordDao metadataRecordDao;
   @Autowired
   private IDataResourceDao dataResourceDao;
@@ -109,8 +107,6 @@ public class ActuatorTest {
   private IAllIdentifiersDao allIdentifiersDao;
   @Autowired
   private MetastoreConfiguration metadataConfig;
-  @Autowired
-  private MetastoreConfiguration schemaConfig;
   @Autowired
   private SearchConfiguration elasticConfig;
   @Rule
@@ -150,9 +146,23 @@ public class ActuatorTest {
   }
 
   @Test
-  public void testActuator() throws Exception {
-    // /actuator/info
-    this.mockMvc.perform(get("/actuator/info")).andDo(print()).andExpect(status().isOk())
+  public void testForNotExposedActuators() throws Exception {
+    this.mockMvc.perform(get("/actuator/beans")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/caches")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/conditions")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/configprops")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/env")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/loggers")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/heapdump")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/threaddump")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/metrics")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/scheduledtasks")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/mappings")).andDo(print()).andExpect(status().isNotFound());
+  }
+    @Test
+    public void testActuator() throws Exception {
+      // /actuator/info
+      this.mockMvc.perform(get("/actuator/info")).andDo(print()).andExpect(status().isOk())
             .andExpect(MockMvcResultMatchers.jsonPath("$.metadataRepo.['Total space']", Matchers.is(notNullValue())))
             .andExpect(MockMvcResultMatchers.jsonPath("$.schemaRepo.['Total space']", Matchers.is(notNullValue())))
             .andReturn();
