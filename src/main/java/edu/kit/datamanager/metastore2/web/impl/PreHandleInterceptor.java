@@ -1,7 +1,5 @@
 package edu.kit.datamanager.metastore2.web.impl;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,12 +11,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import java.security.MessageDigest;
-import java.util.HashSet;
 
 @Service
 public class PreHandleInterceptor implements HandlerInterceptor {
-    private final HashSet<String> uniqueUsers = new HashSet<>();
-    private final Counter counter;
+    private final MeterRegistry meterRegistry;
 
     /**
      * Logger for this class.
@@ -27,8 +23,7 @@ public class PreHandleInterceptor implements HandlerInterceptor {
 
     @Autowired
     PreHandleInterceptor(MeterRegistry meterRegistry) {
-        Gauge.builder("metastore.unique_users", uniqueUsers::size).register(meterRegistry);
-        counter = Counter.builder("metastore.requests_served").register(meterRegistry);
+        this.meterRegistry = meterRegistry;
     }
 
     @Override
@@ -50,9 +45,9 @@ public class PreHandleInterceptor implements HandlerInterceptor {
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
         messageDigest.update(ip.getBytes());
-        uniqueUsers.add(new String(messageDigest.digest()));
+        String ipHash = new String(messageDigest.digest());
 
-        counter.increment();
+        meterRegistry.summary("metastore.requests_served", "ipHash", ipHash).record(1);
 
         return true;
     }
