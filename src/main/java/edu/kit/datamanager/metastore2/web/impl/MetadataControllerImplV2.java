@@ -38,6 +38,9 @@ import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -105,6 +108,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
   private final MetastoreConfiguration metadataConfig;
 
   private final ISchemaRecordDao schemaRecordDao;
+
+  @Autowired
+  private MeterRegistry meterRegistry;
 
   /**
    * Optional messagingService bean may or may not be available, depending on a
@@ -208,6 +214,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Sending CREATE event.");
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
+    DistributionSummary.builder("metastore_metadata_records_created").tags("language", result.getLanguage()).register(meterRegistry).record(1);
 
     return ResponseEntity.created(locationUri).eTag("\"" + eTag + "\"").body(result);
   }
@@ -402,6 +410,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryUpdateMetadataMessage(updateDataResource, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
 
+    DistributionSummary.builder("metastore_metadata_records_updated").tags("language", updateDataResource.getLanguage(), "version", updateDataResource.getVersion()).register(meterRegistry).record(1);
+
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateDataResource);
   }
 
@@ -426,10 +436,14 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       LOG.trace("Sending UPDATE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryUpdateMetadataMessage(dataResourceAfterDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
+      DistributionSummary.builder("metastore_metadata_records_updated").tags("language", dataResourceAfterDeletion.getLanguage(), "version", dataResourceAfterDeletion.getVersion()).register(meterRegistry).record(1);
     } else {
       LOG.trace("Sending DELETE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryDeleteMetadataMessage(dataResourceBeforeDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+
+      DistributionSummary.builder("metastore_metadata_records_deleted").tags("language", dataResourceBeforeDeletion.getLanguage(), "version", dataResourceBeforeDeletion.getVersion()).register(meterRegistry).record(1);
     }
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);

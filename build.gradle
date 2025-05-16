@@ -134,6 +134,10 @@ dependencies {
 
     // errorprone
     errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
+
+    // monitoring
+    implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.8.0'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.4'
 }
 
 compileJava {
