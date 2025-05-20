@@ -17,6 +17,7 @@ package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +60,7 @@ public class SchemaRepoHealthCheck implements HealthIndicator {
     if (details.isEmpty()) {
       return Health.down().withDetail("No of schema documents", 0).build();
     } else {
-      details.put("No of schema documents", Long.toString(MetadataSchemaRecordUtil.getNoOfSchemas()));
+      details.put("No of schema documents", Long.toString(DataResourceRecordUtil.getNoOfSchemaDocuments()));
       return Health.up().withDetails(details).build();
     }
   }
