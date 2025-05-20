@@ -1,4 +1,4 @@
-package edu.kit.datamanager.metastore2.web.impl;
+package edu.kit.datamanager.metastore2.service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;

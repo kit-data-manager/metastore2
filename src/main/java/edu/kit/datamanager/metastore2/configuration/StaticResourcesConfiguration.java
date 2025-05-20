@@ -15,7 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.configuration;
 
-import edu.kit.datamanager.metastore2.web.impl.PreHandleInterceptor;
+import edu.kit.datamanager.metastore2.service.PreHandleInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
