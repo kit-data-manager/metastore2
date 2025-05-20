@@ -214,8 +214,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Sending CREATE event.");
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
-    DistributionSummary.builder("metastore_metadata_records_created").tags("language", result.getLanguage()).register(meterRegistry).record(1);
+    String language = result.getLanguage() != null ? result.getLanguage() : "unknown";
+    DistributionSummary.builder("metastore_metadata_records_created").tags("language", language).register(meterRegistry).record(1);
 
     return ResponseEntity.created(locationUri).eTag("\"" + eTag + "\"").body(result);
   }
@@ -409,8 +409,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Sending UPDATE event.");
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryUpdateMetadataMessage(updateDataResource, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
-    DistributionSummary.builder("metastore_metadata_records_updated").tags("language", updateDataResource.getLanguage(), "version", updateDataResource.getVersion()).register(meterRegistry).record(1);
+    String language = updateDataResource.getLanguage() != null ? updateDataResource.getLanguage() : "unknown";
+    DistributionSummary.builder("metastore_metadata_records_updated").tags("language", language, "version", updateDataResource.getVersion()).register(meterRegistry).record(1);
 
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateDataResource);
   }
@@ -436,14 +436,14 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       LOG.trace("Sending UPDATE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryUpdateMetadataMessage(dataResourceAfterDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
-      DistributionSummary.builder("metastore_metadata_records_updated").tags("language", dataResourceAfterDeletion.getLanguage(), "version", dataResourceAfterDeletion.getVersion()).register(meterRegistry).record(1);
+      String language = dataResourceAfterDeletion.getLanguage() != null ? dataResourceAfterDeletion.getLanguage() : "unknown";
+      DistributionSummary.builder("metastore_metadata_records_updated").tags("language", language, "version", dataResourceAfterDeletion.getVersion()).register(meterRegistry).record(1);
     } else {
       LOG.trace("Sending DELETE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryDeleteMetadataMessage(dataResourceBeforeDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
-
-      DistributionSummary.builder("metastore_metadata_records_deleted").tags("language", dataResourceBeforeDeletion.getLanguage(), "version", dataResourceBeforeDeletion.getVersion()).register(meterRegistry).record(1);
+      String language = dataResourceBeforeDeletion.getLanguage() != null ? dataResourceBeforeDeletion.getLanguage() : "unknown";
+      DistributionSummary.builder("metastore_metadata_records_deleted").tags("language", language, "version", dataResourceBeforeDeletion.getVersion()).register(meterRegistry).record(1);
     }
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
