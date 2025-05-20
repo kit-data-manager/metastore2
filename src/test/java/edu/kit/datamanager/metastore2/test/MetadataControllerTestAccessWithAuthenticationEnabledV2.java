@@ -391,18 +391,18 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   public void testSchemaPerDocument() throws Exception {
     Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
     Assert.assertNotNull(documentsPerSchema);
-    Assert.assertEquals(documentsPerSchema.size(), 1);
+    Assert.assertEquals(1, documentsPerSchema.size());
     Assert.assertTrue(documentsPerSchema.containsKey(SCHEMA_ID));
-    Assert.assertEquals(documentsPerSchema.get(SCHEMA_ID).longValue(), 17L);
+    Assert.assertEquals(17L, documentsPerSchema.get(SCHEMA_ID).longValue());
   }
 
   /**
    * Ingest metadata with 'otheruser' set permissions for admin, user and guest.
    *
-   * @param schemaId
-   * @param user
-   * @param guest
-   * @throws Exception
+   * @param schemaId ID of the schema
+   * @param user User permission
+   * @param guest Guest permission
+   * @throws Exception Exception during ingest.
    */
   private void ingestDataResource(String schemaId, PERMISSION user, PERMISSION guest) throws Exception {
     DataResource record = SchemaRegistryControllerTestV2.createDataResource4Document(schemaId, SCHEMA_ID);
