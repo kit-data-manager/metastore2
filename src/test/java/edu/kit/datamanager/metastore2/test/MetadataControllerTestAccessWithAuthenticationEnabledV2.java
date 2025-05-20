@@ -16,6 +16,7 @@ import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.AclRecord;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -28,10 +29,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 import org.hamcrest.Matchers;
 import static org.hamcrest.Matchers.greaterThan;
@@ -376,8 +374,8 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
   @Test
   public void testAccessAclForServiceWithServiceToken() throws Exception {
     MvcResult mvcResult = this.mockMvc.perform(get("/api/v2/metadata/" + ANONYMOUS_ID).
-            header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE).
-            header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)).
+                    header("Accept", AclRecord.ACL_RECORD_MEDIA_TYPE).
+                    header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)).
             andDo(print()).
             andExpect(status().isOk()).
             andExpect(MockMvcResultMatchers.jsonPath("$.read.length()", greaterThan(1))).
@@ -387,6 +385,15 @@ public class MetadataControllerTestAccessWithAuthenticationEnabledV2 {
     Assert.assertNotNull(result);
     Assert.assertTrue(result.getRead().contains(otherUserPrincipal));
     Assert.assertTrue(result.getRead().contains(AuthenticationHelper.ANONYMOUS_USER_PRINCIPAL));
+  }
+
+  @Test
+  public void testSchemaPerDocument() throws Exception {
+    Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
+    Assert.assertNotNull(documentsPerSchema);
+    Assert.assertEquals(documentsPerSchema.size(), 1);
+    Assert.assertTrue(documentsPerSchema.containsKey(SCHEMA_ID));
+    Assert.assertEquals(documentsPerSchema.get(SCHEMA_ID).longValue(), 17L);
   }
 
   /**
