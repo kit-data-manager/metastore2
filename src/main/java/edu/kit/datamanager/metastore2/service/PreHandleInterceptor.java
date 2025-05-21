@@ -12,6 +12,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HashSet;
 
@@ -49,8 +50,8 @@ public class PreHandleInterceptor implements HandlerInterceptor {
         LOGGER.debug("Using {} for monitoring", ip);
 
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-        messageDigest.update(ip.getBytes());
-        uniqueUsers.add(new String(messageDigest.digest()));
+        messageDigest.update(ip.getBytes(StandardCharsets.UTF_8));
+        uniqueUsers.add(new String(messageDigest.digest(), StandardCharsets.UTF_8));
 
         counter.increment();
 
