@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 Karlsruhe Institute of Technology.
+ * Copyright 2019 Karlsruhe Institute of Technology.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,61 +15,94 @@
  */
 package edu.kit.datamanager.metastore2.util;
 
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.MeterRegistry;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
+import edu.kit.datamanager.metastore2.dao.*;
+import edu.kit.datamanager.metastore2.domain.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
-@Service
+/**
+ * Utility class for providing monitoring functionality.
+ */
 public class MonitoringUtil {
-    /** Prefix for metrics. */
-    private static final String PREFIX_METRICS = "metastore.";
-    /** Number of schemas to be registered. */
-    private static final int NO_OF_SCHEMAS = 10;
+  /**
+   * Logger for messages.
+   */
+  private static final Logger LOG = LoggerFactory.getLogger(MonitoringUtil.class);
 
-    @Autowired
-    private static MeterRegistry meterRegistry;
+  private static MonitoringConfiguration monitoringConfiguration;
 
-    /**
-     * Register the metrics for the metastore.
-     */
-    public void registerMetrics() {
-        Gauge.builder(PREFIX_METRICS + "metadata_documents", this::countMetadataDocuments).register(meterRegistry);
-        Gauge.builder(PREFIX_METRICS + "metadata_schemas", this::countMetadataSchemas).register(meterRegistry);
-        registerDocumentsPerSchema(NO_OF_SCHEMAS);
+  private static IIpMonitoringDao ipMonitoringDao;
+
+
+  MonitoringUtil() {
+    //Utility class
+  }
+
+  /**
+   * Sets the repository for the IP monitoring.
+   * @param ipMonitoringDao the ipMonitoringDao to set
+   */
+  public static void setIpMonitoringDao(IIpMonitoringDao ipMonitoringDao) {
+    MonitoringUtil.ipMonitoringDao = ipMonitoringDao;
+  }
+  /**
+   * Sets the monitoring configuration.
+   * @param monitoringConfiguration the monitoringConfiguration to set
+   */
+  public static void setMonitoringConfiguration(MonitoringConfiguration monitoringConfiguration) {
+    MonitoringUtil.monitoringConfiguration = monitoringConfiguration;
+  }
+  /**
+   * Returns the number of unique users.
+   */
+  public static long getNoOfUniqueUsers() {
+    return ipMonitoringDao.count();
+  }
+
+  /**
+   * Register the IP hash for the given IP address.
+   * @param ip The IP address to hash.
+   */
+  public static void registerIp(String ip) {
+    // Check if IP address is null or empty
+    if (ip == null || ip.trim().isEmpty()) {
+      LOG.warn("IP address is null or empty. Cannot register.");
+      return;
     }
 
-    /**
-     * Count the number of metadata schemas in the repository.
-     * @return The number of metadata schemas.
-     */
-    int countMetadataSchemas() {
-        return (int)DataResourceRecordUtil.getNoOfSchemaDocuments();
+    String ipHash = ip;
+    try {
+      MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+      messageDigest.update(ip.getBytes(StandardCharsets.UTF_8));
+      ipHash = new String(messageDigest.digest(), StandardCharsets.UTF_8);
+    } catch (NoSuchAlgorithmException nsae) {
+      LOG.error("Error hashing IP address: ", nsae);
     }
-    /**
-     * Count the number of metadata documents in the repository.
-     * @return The number of metadata documents.
-     */
-    int countMetadataDocuments() {
-        return (int)DataResourceRecordUtil.getNoOfMetadataDocuments();
-    }
-    /**
-     * Register the top 'noOfSchemas' with their no of documents available.
-     * @param noOfSchemas Number of schemas to be registered. (< 0 -> all)
-     */
-    private void registerDocumentsPerSchema(int noOfSchemas) {
-        Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
-        if (noOfSchemas < 0) {
-            noOfSchemas = documentsPerSchema.size();
-        }
-        documentsPerSchema.
-                entrySet().
-                stream().
-                sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
-                limit(noOfSchemas).
-                forEach(entry -> Gauge.builder(PREFIX_METRICS + "documents_per_schema." + entry.getKey(), entry::getValue).register(meterRegistry));
-    }
+    IpMonitoring ipMonitoring = new IpMonitoring();
+    ipMonitoring.setIpHash(ipHash);
+    ipMonitoring.setLastVisit(Instant.now().truncatedTo(ChronoUnit.DAYS));
+    ipMonitoringDao.save(ipMonitoring);
+  }
+  /**
+   * Cleans up the metrics by deleting records older than the specified number of days.
+   */
+  public static void cleanupMetrics() {
+    Instant latestDate = Instant.now().minus(monitoringConfiguration.getNoOfDaysToKeep(), ChronoUnit.DAYS);
+    ipMonitoringDao.deleteAllEntriesOlderThan(latestDate);
+  }
 
+  /** Checks if monitoring is enabled.
+   * @return true if monitoring is enabled, false otherwise
+   */
+  public static boolean isMonitoringEnabled() {
+    return monitoringConfiguration.isEnabled();
+  }
 }
+
