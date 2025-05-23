@@ -13,24 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package edu.kit.datamanager.metastore2.runner;
+package edu.kit.datamanager.metastore2.service;
 
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
+import edu.kit.datamanager.metastore2.util.MonitoringUtil;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class DynamicDocumentMetrics implements MeterBinder {
+public class MonitoringService implements MeterBinder {
   /**
    * Prefix for metrics.
    */
@@ -59,42 +60,61 @@ public class DynamicDocumentMetrics implements MeterBinder {
   /**
    * Logger.
    */
-  private static final Logger LOG = LoggerFactory.getLogger(DynamicDocumentMetrics.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MonitoringService.class);
   private final Set<String> registeredSchemas = ConcurrentHashMap.newKeySet();
+  private final PreHandleInterceptor preHandleInterceptor;
   private MeterRegistry meterRegistry;
+
+  /**
+   * Constructor.
+   *
+   * @param preHandleInterceptor The pre-handle interceptor to be used for cleaning up metrics.
+   */
+  public MonitoringService(PreHandleInterceptor preHandleInterceptor) {
+    this.preHandleInterceptor = preHandleInterceptor;
+  }
 
   @Override
   public void bindTo(MeterRegistry meterRegistry) {
-    this.meterRegistry = meterRegistry;
-    Gauge.builder(PREFIX_METRICS + LABEL_METADATA_DOCUMENTS, this::countMetadataDocuments).register(meterRegistry);
-    Gauge.builder(PREFIX_METRICS + LABEL_METADATA_SCHEMAS, this::countMetadataSchemas).register(meterRegistry);
-    // Register the initial set of schemas
-    updateMetrics();
+    if (MonitoringUtil.isMonitoringEnabled()) {
+      this.meterRegistry = meterRegistry;
+      Gauge.builder(PREFIX_METRICS + LABEL_METADATA_DOCUMENTS, this::countMetadataDocuments).register(meterRegistry);
+      Gauge.builder(PREFIX_METRICS + LABEL_METADATA_SCHEMAS, this::countMetadataSchemas).register(meterRegistry);
+      // Register the initial set of schemas
+      updateMetrics();
+    } else {
+      LOG.info("Monitoring is disabled. Skipping metric registration.");
+    }
   }
 
   /**
    * Register and update the metrics for the metastore.
    */
-  @Scheduled(fixedRate = 360000) // 60 minutes
   public void updateMetrics() {
-    Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
-    LOG.trace("Documents per schema: {}", documentsPerSchema);
-    documentsPerSchema.
-            entrySet().
-            stream().
-            sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
-            limit(NO_OF_SCHEMAS).
-            forEach(entry -> {
-              String schemaId = entry.getKey();
-              if (registeredSchemas.add(schemaId)) {
-                Gauge.builder(PREFIX_METRICS + LABEL_DOCUMENTS_PER_SCHEMA,
-                                this,
-                                ddm -> ddm.getDocumentsPerSchema().
-                                        getOrDefault(schemaId, 0L)).
-                        tags(Tags.of(LABEL_SCHEMA_ID, schemaId)).
-                        register(meterRegistry);
-              }
-            });
+    if (MonitoringUtil.isMonitoringEnabled()) {
+      LOG.info("Updating metrics for the metastore");
+
+      Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
+      LOG.trace("Documents per schema: {}", documentsPerSchema);
+      documentsPerSchema.
+              entrySet().
+              stream().
+              sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
+              limit(NO_OF_SCHEMAS).
+              forEach(entry -> {
+                String schemaId = entry.getKey();
+                if (registeredSchemas.add(schemaId)) {
+                  Gauge.builder(PREFIX_METRICS + LABEL_DOCUMENTS_PER_SCHEMA,
+                                  this,
+                                  ddm -> ddm.getDocumentsPerSchema().
+                                          getOrDefault(schemaId, 0L)).
+                          tags(Tags.of(LABEL_SCHEMA_ID, schemaId)).
+                          register(meterRegistry);
+                }
+              });
+    } else {
+      LOG.info("Monitoring is disabled. Skipping metric update.");
+    }
   }
 
   /**
@@ -122,5 +142,13 @@ public class DynamicDocumentMetrics implements MeterBinder {
    */
   private Map<String, Long> getDocumentsPerSchema() {
     return DataResourceRecordUtil.collectDocumentsPerSchema();
+  }
+
+  /**
+   * Clean up the metrics for IP addresses that are older than the configured number of days.
+   */
+  @Transactional
+  public void cleanUpMetrics() {
+    MonitoringUtil.cleanupMetrics();
   }
 }
