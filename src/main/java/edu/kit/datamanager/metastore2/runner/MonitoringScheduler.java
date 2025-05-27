@@ -31,6 +31,7 @@ import java.time.Instant;
 /**
  * Scheduler for monitoring.
  */
+@Component
 public class MonitoringScheduler {
   public static final String MONITORING_DISABLED = "Monitoring is disabled.";
   /**
