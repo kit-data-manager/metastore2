@@ -45,7 +45,7 @@ import java.time.temporal.ChronoUnit;
         TransactionalTestExecutionListener.class,
         WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41402"})
+@TestPropertySource(properties = {"server.port=41420"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IIpMonitoringDaoTest {
 
