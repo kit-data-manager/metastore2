@@ -16,8 +16,6 @@
 package edu.kit.datamanager.metastore2.runner;
 
 import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
-import edu.kit.datamanager.metastore2.dao.IIpMonitoringDao;
-import edu.kit.datamanager.metastore2.domain.IpMonitoring;
 import edu.kit.datamanager.metastore2.service.MonitoringService;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
@@ -26,12 +24,9 @@ import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.TriggerContext;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 
 /**
  * Scheduler for monitoring.
@@ -49,7 +44,7 @@ public class MonitoringScheduler {
 
   private final ThreadPoolTaskScheduler scheduler4Monitoring = new ThreadPoolTaskScheduler();
 
-  MonitoringScheduler( MonitoringConfiguration monitoringConfiguration, MonitoringService monitoringService) {
+  MonitoringScheduler(MonitoringConfiguration monitoringConfiguration, MonitoringService monitoringService) {
     this.monitoringConfiguration = monitoringConfiguration;
     this.monitoringService = monitoringService;
   }
@@ -72,6 +67,7 @@ public class MonitoringScheduler {
       LOG.info(MONITORING_DISABLED);
     }
   }
+
   private Trigger cronTrigger(String cronExpression) {
     return new Trigger() {
       @Override
@@ -80,6 +76,7 @@ public class MonitoringScheduler {
       }
     };
   }
+
   private void runUpdateMetrics() {
     if (monitoringConfiguration.isEnabled()) {
       try {
@@ -95,7 +92,7 @@ public class MonitoringScheduler {
   private void runCleanupMetrics() {
     if (monitoringConfiguration.isEnabled()) {
       try {
-        monitoringService.cleanUpMetrics();;
+        monitoringService.cleanUpMetrics();
       } catch (Exception e) {
         LOG.error("Error cleaning up metrics: ", e);
       }
