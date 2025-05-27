@@ -57,6 +57,9 @@ public class MonitoringScheduler {
   @PostConstruct
   public void scheduleMonitoring() {
     if (monitoringConfiguration.isEnabled()) {
+      LOG.trace("Scheduling monitoring jobs...");
+      LOG.trace("Update metrics: '{}'", monitoringConfiguration.getCron4schedule());
+      LOG.trace("Clean up metrics: '{}'", monitoringConfiguration.getCron4cleanUp());
       // Intialize the ThreadPoolTaskScheduler
       scheduler4Monitoring.setPoolSize(2);
       scheduler4Monitoring.setThreadNamePrefix("monitoring-scheduler-");
