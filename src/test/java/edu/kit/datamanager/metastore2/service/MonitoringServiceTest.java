@@ -36,22 +36,43 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class MonitoringServiceTest {
   private SimpleMeterRegistry meterRegistry;
   private MonitoringService metrics;
-  DataResourceRecordUtil dataResourceRecordUtil;
+  MonitoringConfiguration monitoringConfiguration;
 
   @Before
   public void setUp() {
     meterRegistry = new SimpleMeterRegistry();
-    MonitoringConfiguration monitoringConfiguration = new MonitoringConfiguration();
+    monitoringConfiguration = new MonitoringConfiguration();
     monitoringConfiguration.setEnabled(true);
     MonitoringUtil.setMonitoringConfiguration(monitoringConfiguration);
-    metrics = new MonitoringService(null);
+    metrics = new MonitoringService(monitoringConfiguration);
   }
+
+  @Test
+  public void testUpdateMetricsWithInvalidSetup() {
+    try (MockedStatic<DataResourceRecordUtil> dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class)) {
+      dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfMetadataDocuments).thenReturn(0L);
+      dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfSchemaDocuments).thenReturn(0L);
+      dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::collectDocumentsPerSchema).thenReturn(Map.ofEntries(
+              Map.entry("schema1", 10L)
+      ));
+      MonitoringConfiguration monitoringConfiguration = new MonitoringConfiguration();
+      monitoringConfiguration.setEnabled(false);
+      MonitoringService metrics = new MonitoringService(monitoringConfiguration);
+      metrics.updateMetrics();
+      monitoringConfiguration.setEnabled(true);
+      metrics.updateMetrics();
+      metrics.bindTo(meterRegistry);
+      metrics.updateMetrics();
+    }
+
+  }
+
   @Test
   public void testCountMetadataDocuments() {
     // Simulate the count of metadata documents
     long expectedCountMetadataDocuments = 50;
     long expectedCountSchemaDocuments = 5;
-    try (MockedStatic<DataResourceRecordUtil>dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class)) {
+    try (MockedStatic<DataResourceRecordUtil> dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class)) {
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfMetadataDocuments).thenReturn(expectedCountMetadataDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfSchemaDocuments).thenReturn(expectedCountSchemaDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::collectDocumentsPerSchema).thenReturn(Map.ofEntries(
@@ -82,15 +103,16 @@ public class MonitoringServiceTest {
         // This exception is not expected
         Assert.fail();
       }
-      assertThat(meterRegistry.get(MonitoringService.PREFIX_METRICS + MonitoringService.LABEL_DOCUMENTS_PER_SCHEMA).meters()).hasSize(MonitoringService.NO_OF_SCHEMAS);
+      assertThat(meterRegistry.get(MonitoringService.PREFIX_METRICS + MonitoringService.LABEL_DOCUMENTS_PER_SCHEMA).meters()).hasSize(monitoringConfiguration.getNoOfSchemas());
     }
   }
+
   @Test
   public void testCountMetadataDocumentsWithAdditionalSchema() {
     // Simulate the count of metadata documents
     long expectedCountMetadataDocuments = 60;
     long expectedCountSchemaDocuments = 3;
-    try (MockedStatic<DataResourceRecordUtil>dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class)) {
+    try (MockedStatic<DataResourceRecordUtil> dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class)) {
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfMetadataDocuments).thenReturn(expectedCountMetadataDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfSchemaDocuments).thenReturn(expectedCountSchemaDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::collectDocumentsPerSchema).thenReturn(Map.ofEntries(
@@ -121,13 +143,14 @@ public class MonitoringServiceTest {
       assertThat(meterRegistry.get(MonitoringService.PREFIX_METRICS + MonitoringService.LABEL_DOCUMENTS_PER_SCHEMA).meters()).hasSize(4);
     }
   }
+
   @Test
   public void testWithoutMonitoring() {
     // Simulate the count of metadata documents
     long expectedCountMetadataDocuments = 50;
     long expectedCountSchemaDocuments = 5;
-    try (MockedStatic<DataResourceRecordUtil>dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class);
-    MockedStatic<MonitoringUtil> monitoringUtilMockedStatic = Mockito.mockStatic(MonitoringUtil.class)) {
+    try (MockedStatic<DataResourceRecordUtil> dataResourceRecordUtilMockedStatic = Mockito.mockStatic(DataResourceRecordUtil.class);
+         MockedStatic<MonitoringUtil> monitoringUtilMockedStatic = Mockito.mockStatic(MonitoringUtil.class)) {
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfMetadataDocuments).thenReturn(expectedCountMetadataDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::getNoOfSchemaDocuments).thenReturn(expectedCountSchemaDocuments);
       dataResourceRecordUtilMockedStatic.when(DataResourceRecordUtil::collectDocumentsPerSchema).thenReturn(Map.ofEntries(

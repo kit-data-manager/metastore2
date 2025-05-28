@@ -15,6 +15,7 @@
  */
 package edu.kit.datamanager.metastore2.service;
 
+import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MonitoringUtil;
 import io.micrometer.common.lang.NonNull;
@@ -50,10 +51,6 @@ public class MonitoringService implements MeterBinder {
    */
   public static final String LABEL_SCHEMA_ID = "schema_id";
   /**
-   * Number of schemas to be registered.
-   */
-  public static final int NO_OF_SCHEMAS = 10;
-  /**
    * Label for metrics of documents per schema.
    */
   public static final String LABEL_DOCUMENTS_PER_SCHEMA = "documents_per_schema";
@@ -66,17 +63,20 @@ public class MonitoringService implements MeterBinder {
   private Map<String, Long> documentsPerSchema = null;
   private MeterRegistry meterRegistry;
 
+  private final MonitoringConfiguration monitoringConfiguration;
+
   /**
    * Constructor.
    *
-   * @param preHandleInterceptor The pre-handle interceptor to be used for cleaning up metrics.
+   * @param monitoringConfiguration Configuration for monitoring.
    */
-  public MonitoringService(PreHandleInterceptor preHandleInterceptor) {
+  public MonitoringService(@org.springframework.lang.NonNull MonitoringConfiguration monitoringConfiguration) {
+    this.monitoringConfiguration = monitoringConfiguration;
   }
 
   @Override
   public void bindTo(@NonNull MeterRegistry meterRegistry) {
-    if (MonitoringUtil.isMonitoringEnabled()) {
+    if (monitoringConfiguration.isEnabled()) {
       this.meterRegistry = meterRegistry;
       Gauge.builder(PREFIX_METRICS + LABEL_METADATA_DOCUMENTS, this::countMetadataDocuments).register(meterRegistry);
       Gauge.builder(PREFIX_METRICS + LABEL_METADATA_SCHEMAS, this::countMetadataSchemas).register(meterRegistry);
@@ -92,7 +92,7 @@ public class MonitoringService implements MeterBinder {
    * Initialize and update the metrics for the metastore in regular manner.
    */
   public void updateMetrics() {
-    if (MonitoringUtil.isMonitoringEnabled()) {
+    if (monitoringConfiguration.isEnabled() && meterRegistry != null) {
       LOG.info("Updating metrics for the metastore");
 
       Map<String, Long> documentsPerSchema = getDocumentsPerSchema();
@@ -101,7 +101,7 @@ public class MonitoringService implements MeterBinder {
               entrySet().
               stream().
               sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
-              limit(NO_OF_SCHEMAS).
+              limit(monitoringConfiguration.getNoOfSchemas()).
               forEach(entry -> {
                 String schemaId = entry.getKey();
                 if (registeredSchemas.add(schemaId)) {

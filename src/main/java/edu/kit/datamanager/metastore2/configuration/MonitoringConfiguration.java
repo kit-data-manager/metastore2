@@ -53,4 +53,10 @@ public class MonitoringConfiguration extends GenericPluginProperties {
    * The number of days to keep the hash of the ips.
    */
   private int noOfDaysToKeep = 28; // 4 weeks
+  /**
+   * The number of schemas the number of documents
+   * will be monitored for.
+   */
+  private int noOfSchemas = 10; // 10 schemas
+
 }
