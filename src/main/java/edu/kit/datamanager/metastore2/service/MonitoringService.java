@@ -15,8 +15,10 @@
  */
 package edu.kit.datamanager.metastore2.service;
 
+import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MonitoringUtil;
+import io.micrometer.common.lang.NonNull;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
@@ -49,10 +51,6 @@ public class MonitoringService implements MeterBinder {
    */
   public static final String LABEL_SCHEMA_ID = "schema_id";
   /**
-   * Number of schemas to be registered.
-   */
-  public static final int NO_OF_SCHEMAS = 10;
-  /**
    * Label for metrics of documents per schema.
    */
   public static final String LABEL_DOCUMENTS_PER_SCHEMA = "documents_per_schema";
@@ -62,24 +60,27 @@ public class MonitoringService implements MeterBinder {
    */
   private static final Logger LOG = LoggerFactory.getLogger(MonitoringService.class);
   private final Set<String> registeredSchemas = ConcurrentHashMap.newKeySet();
-  private final PreHandleInterceptor preHandleInterceptor;
+  private Map<String, Long> documentsPerSchema = null;
   private MeterRegistry meterRegistry;
+
+  private final MonitoringConfiguration monitoringConfiguration;
 
   /**
    * Constructor.
    *
-   * @param preHandleInterceptor The pre-handle interceptor to be used for cleaning up metrics.
+   * @param monitoringConfiguration Configuration for monitoring.
    */
-  public MonitoringService(PreHandleInterceptor preHandleInterceptor) {
-    this.preHandleInterceptor = preHandleInterceptor;
+  public MonitoringService(@org.springframework.lang.NonNull MonitoringConfiguration monitoringConfiguration) {
+    this.monitoringConfiguration = monitoringConfiguration;
   }
 
   @Override
-  public void bindTo(MeterRegistry meterRegistry) {
-    if (MonitoringUtil.isMonitoringEnabled()) {
+  public void bindTo(@NonNull MeterRegistry meterRegistry) {
+    if (monitoringConfiguration.isEnabled()) {
       this.meterRegistry = meterRegistry;
       Gauge.builder(PREFIX_METRICS + LABEL_METADATA_DOCUMENTS, this::countMetadataDocuments).register(meterRegistry);
       Gauge.builder(PREFIX_METRICS + LABEL_METADATA_SCHEMAS, this::countMetadataSchemas).register(meterRegistry);
+      getDocumentsPerSchema();
       // Register the initial set of schemas
       updateMetrics();
     } else {
@@ -88,26 +89,25 @@ public class MonitoringService implements MeterBinder {
   }
 
   /**
-   * Register and update the metrics for the metastore.
+   * Initialize and update the metrics for the metastore in regular manner.
    */
   public void updateMetrics() {
-    if (MonitoringUtil.isMonitoringEnabled()) {
+    if (monitoringConfiguration.isEnabled() && meterRegistry != null) {
       LOG.info("Updating metrics for the metastore");
 
-      Map<String, Long> documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
+      Map<String, Long> documentsPerSchema = getDocumentsPerSchema();
       LOG.trace("Documents per schema: {}", documentsPerSchema);
       documentsPerSchema.
               entrySet().
               stream().
               sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
-              limit(NO_OF_SCHEMAS).
+              limit(monitoringConfiguration.getNoOfSchemas()).
               forEach(entry -> {
                 String schemaId = entry.getKey();
                 if (registeredSchemas.add(schemaId)) {
                   Gauge.builder(PREFIX_METRICS + LABEL_DOCUMENTS_PER_SCHEMA,
                                   this,
-                                  ddm -> ddm.getDocumentsPerSchema().
-                                          getOrDefault(schemaId, 0L)).
+                                  ddm -> ddm.getDocumentsPerSchema(schemaId)).
                           tags(Tags.of(LABEL_SCHEMA_ID, schemaId)).
                           register(meterRegistry);
                 }
@@ -141,7 +141,17 @@ public class MonitoringService implements MeterBinder {
    * @return The number of documents per schema.
    */
   private Map<String, Long> getDocumentsPerSchema() {
-    return DataResourceRecordUtil.collectDocumentsPerSchema();
+    documentsPerSchema = DataResourceRecordUtil.collectDocumentsPerSchema();
+    return documentsPerSchema;
+  }
+
+  /**
+   * Get the number of documents per schema.
+   * @param schemaId The schema ID for which to get the number of documents.
+   * @return The number of documents per schema.
+   */
+  private Long getDocumentsPerSchema(String schemaId) {
+    return documentsPerSchema.getOrDefault(schemaId, 0L);
   }
 
   /**
