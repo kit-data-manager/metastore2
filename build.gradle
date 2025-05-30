@@ -25,6 +25,10 @@ ext {
     snippetsDir = file("build/generated-snippets")
 }
 
+configurations {
+    mockitoAgent
+}
+
 println "Running gradle version: $gradle.gradleVersion"
 println "Building ${name} version: ${version}"
 println "JDK version: ${JavaVersion.current()}"
@@ -129,11 +133,18 @@ dependencies {
    
     //Java 11 Support 
     testImplementation "org.mockito:mockito-core:5.18.0"
+    mockitoAgent("org.mockito:mockito-core:5.18.0") {
+        transitive = false
+    }
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
     // errorprone
     errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
+
+    // monitoring
+    implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.8.0'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.4'
 }
 
 compileJava {
@@ -158,6 +169,13 @@ test {
         showStandardStreams = true
     }
 }
+
+tasks {
+    test {
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    }
+}
+
 
 tasks.withType(Test) {
     testLogging {

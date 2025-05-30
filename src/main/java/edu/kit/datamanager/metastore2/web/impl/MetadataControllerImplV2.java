@@ -26,6 +26,7 @@ import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
 import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.domain.ElasticWrapper;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
@@ -38,6 +39,8 @@ import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
+import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.swagger.v3.core.util.Json;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -73,11 +76,13 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 import static edu.kit.datamanager.entities.Identifier.IDENTIFIER_TYPE.INTERNAL;
-import edu.kit.datamanager.metastore2.domain.ElasticWrapper;
 
 /**
  * Controller for metadata documents.
@@ -105,6 +110,9 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
   private final MetastoreConfiguration metadataConfig;
 
   private final ISchemaRecordDao schemaRecordDao;
+
+  @Autowired
+  private MeterRegistry meterRegistry;
 
   /**
    * Optional messagingService bean may or may not be available, depending on a
@@ -208,6 +216,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Sending CREATE event.");
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryCreateMetadataMessage(result, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    String language = result.getLanguage() != null ? result.getLanguage() : "unknown";
+    DistributionSummary.builder("metastore_metadata_records_created").tags("language", language).register(meterRegistry).record(1);
 
     return ResponseEntity.created(locationUri).eTag("\"" + eTag + "\"").body(result);
   }
@@ -401,6 +411,8 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
     LOG.trace("Sending UPDATE event.");
     messagingService.orElse(new LogfileMessagingService()).
             send(MetadataResourceMessage.factoryUpdateMetadataMessage(updateDataResource, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+    String language = updateDataResource.getLanguage() != null ? updateDataResource.getLanguage() : "unknown";
+    DistributionSummary.builder("metastore_metadata_records_updated").tags("language", language, "version", updateDataResource.getVersion()).register(meterRegistry).record(1);
 
     return ResponseEntity.ok().location(locationUri).eTag("\"" + etag + "\"").body(updateDataResource);
   }
@@ -426,10 +438,14 @@ public class MetadataControllerImplV2 implements IMetadataControllerV2 {
       LOG.trace("Sending UPDATE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryUpdateMetadataMessage(dataResourceAfterDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+      String language = dataResourceAfterDeletion.getLanguage() != null ? dataResourceAfterDeletion.getLanguage() : "unknown";
+      DistributionSummary.builder("metastore_metadata_records_updated").tags("language", language, "version", dataResourceAfterDeletion.getVersion()).register(meterRegistry).record(1);
     } else {
       LOG.trace("Sending DELETE event.");
       messagingService.orElse(new LogfileMessagingService()).
               send(MetadataResourceMessage.factoryDeleteMetadataMessage(dataResourceBeforeDeletion, AuthenticationHelper.getPrincipal(), ControllerUtils.getLocalHostname()));
+      String language = dataResourceBeforeDeletion.getLanguage() != null ? dataResourceBeforeDeletion.getLanguage() : "unknown";
+      DistributionSummary.builder("metastore_metadata_records_deleted").tags("language", language, "version", dataResourceBeforeDeletion.getVersion()).register(meterRegistry).record(1);
     }
 
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);

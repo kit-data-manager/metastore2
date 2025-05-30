@@ -45,7 +45,7 @@ import static org.junit.Assert.*;
   TransactionalTestExecutionListener.class,
   WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
-@TestPropertySource(properties = {"server.port=41419"})
+@TestPropertySource(properties = {"server.port=41424"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class ISchemaRecordDaoTest {
 
