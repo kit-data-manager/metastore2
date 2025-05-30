@@ -46,6 +46,7 @@ import java.time.temporal.ChronoUnit;
         WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41420"})
+@TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_ip_monitoring_dao;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class IIpMonitoringDaoTest {
 
@@ -54,7 +55,6 @@ public class IIpMonitoringDaoTest {
   private MonitoringService monitoringService;
   @Autowired
   private IIpMonitoringDao monitoringDao;
-  private IpMonitoring instance;
 
   public IIpMonitoringDaoTest() {
   }
