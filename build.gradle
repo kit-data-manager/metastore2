@@ -144,7 +144,7 @@ dependencies {
 
     // monitoring
     implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.10.2'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.3.4'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.5.0'
 }
 
 compileJava {
