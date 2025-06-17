@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## [2.1.0] - 2025-06-16
+## [2.1.0] - 2025-06-17
 ### Added
 - Add actuator endpoint for prometheus metrics.
 
