@@ -17,7 +17,7 @@ package edu.kit.datamanager.metastore2.health;
 
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.ActuatorUtil;
-import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
+import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.health.Health;
@@ -61,7 +61,7 @@ public class MetadataRepoHealthCheck  implements HealthIndicator {
     if (details.isEmpty()) {
       return Health.down().withDetail("No of metadata documents", 0).build();
     } else {
-      details.put("No of metadata documents", Long.toString(MetadataRecordUtil.getNoOfDocuments()));
+      details.put("No of metadata documents", Long.toString(DataResourceRecordUtil.getNoOfMetadataDocuments()));
       return Health.up().withDetails(details).build();
     }
   }

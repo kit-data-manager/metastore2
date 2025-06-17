@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
@@ -158,6 +159,7 @@ public class ActuatorTest {
     this.mockMvc.perform(get("/actuator/metrics")).andDo(print()).andExpect(status().isNotFound());
     this.mockMvc.perform(get("/actuator/scheduledtasks")).andDo(print()).andExpect(status().isNotFound());
     this.mockMvc.perform(get("/actuator/mappings")).andDo(print()).andExpect(status().isNotFound());
+    this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isNotFound());
   }
     @Test
     public void testActuator() throws Exception {

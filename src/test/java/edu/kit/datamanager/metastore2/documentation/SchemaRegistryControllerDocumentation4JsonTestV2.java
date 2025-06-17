@@ -91,6 +91,9 @@ import org.springframework.web.context.WebApplicationContext;
 @TestPropertySource(properties = {"metastore.metadata.metadataFolder=file:///tmp/metastore2/v2/restdocu/json/metadata"})
 @TestPropertySource(properties = {"metastore.metadata.schemaRegistries="})
 @TestPropertySource(properties = {"server.error.include-message=always"})
+@TestPropertySource(properties = {"metastore.monitoring.enabled=true"})
+@TestPropertySource(properties = {"metastore.monitoring.cron4schedule=* * * * * *"})
+@TestPropertySource(properties = {"metastore.monitoring.cron4cleanUp=*/2 * * * * *"})
 public class SchemaRegistryControllerDocumentation4JsonTestV2 {
 
   private MockMvc mockMvc;

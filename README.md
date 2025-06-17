@@ -157,12 +157,30 @@ only contain your adapted settings. e.g. in case you want to change only the por
 # Server settings
 server.port: 1234
 ```
-## Build framework using docker (Linux only)
+## Build framework using docker 
+### Prerequisites
+In order to run this framework via docker you'll need:
+* [Docker](https://www.docker.com/)
+### Preparation
+You have to add the following line to your /etc/hosts file:
+```
+127.0.0.1 metastore.docker
+```
+```yaml
+Note for Windows users:
+You have to add the line to your C:\Windows\System32\drivers\etc\hosts file.
+```
 Based on Docker Compose, the entire framework, including elasticsearch and the UI, can now be installed with a single command.
 ```
 user@localhost:/home/user/metastore2$ docker compose up -d
 ```
-As soon all services are running you can browse to http://localhost/index.html
+As soon all services are running you can browse to http://metastore.docker/index.html
+
+```yaml
+Note: The framework is only for testing purposes and not intended for production use.
+If you want to use the framework in production mode you have to modify your 
+configuration (application.properties) and setup a database (e.g. postgres).
+``` 
 
 ### First steps using framework
 If you want to use the (external) web frontend please visit:

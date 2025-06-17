@@ -1,9 +1,9 @@
 plugins { 
-    id 'org.springframework.boot' version '3.4.5'
+    id 'org.springframework.boot' version '3.5.0'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.13.1'
     id 'io.freefair.maven-publish-java' version '8.13.1'
-    id 'org.owasp.dependencycheck' version '12.1.1'
+    id 'org.owasp.dependencycheck' version '12.1.3'
     id 'org.asciidoctor.jvm.convert' version '4.0.4'
     id 'net.ltgt.errorprone' version '4.2.0'
     id 'net.researchgate.release' version '3.1.0'
@@ -17,12 +17,16 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '2.8.6'
+    springDocVersion  = '2.8.9'
     javersVersion     = '7.8.0'
     keycloakVersion   = '19.0.0'
     errorproneVersion = '2.36.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
+}
+
+configurations {
+    mockitoAgent
 }
 
 println "Running gradle version: $gradle.gradleVersion"
@@ -49,8 +53,8 @@ if (System.getProperty('profile') == 'minimal') {
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:6.2.6'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.2.2'
+    implementation 'org.springframework:spring-messaging:6.2.8'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.0'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -69,8 +73,8 @@ dependencies {
 
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:4.2.2"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.2.1"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:4.3.0"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.3.0"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
@@ -94,16 +98,16 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.7.5"
+    implementation "org.postgresql:postgresql:42.7.7"
     //driver for h2
     implementation "com.h2database:h2:2.3.232"
     
     // apache
     implementation "commons-io:commons-io:2.19.0"
-    implementation "org.apache.tika:tika-core:3.1.0"
+    implementation "org.apache.tika:tika-core:3.2.0"
 
     // JSON validator
-    implementation "com.networknt:json-schema-validator:1.5.6"
+    implementation "com.networknt:json-schema-validator:1.5.7"
   
     // XML validator // https://mvnrepository.com/artifact/xerces/xercesImpl
     implementation "xerces:xercesImpl:2.12.2"
@@ -113,7 +117,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.3.4"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.4.5"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.5.1"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
@@ -122,18 +126,25 @@ dependencies {
     
     // Additional libraries for tests
     testImplementation "com.google.guava:guava:33.4.8-jre"
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.3"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.4"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.17.0"
+    testImplementation "org.mockito:mockito-core:5.18.0"
+    mockitoAgent("org.mockito:mockito-core:5.18.0") {
+        transitive = false
+    }
     testImplementation "junit:junit:4.13.2"
     testImplementation "com.github.stefanbirkner:system-lambda:1.2.1"
 
     // errorprone
     errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
+
+    // monitoring
+    implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.11.0'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.5.0'
 }
 
 compileJava {
@@ -158,6 +169,13 @@ test {
         showStandardStreams = true
     }
 }
+
+tasks {
+    test {
+        jvmArgs += "-javaagent:${configurations.mockitoAgent.asPath}"
+    }
+}
+
 
 tasks.withType(Test) {
     testLogging {

@@ -13,6 +13,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [2.1.0] - 2025-06-17
+### Added
+- Add actuator endpoint for prometheus metrics.
+
+### Fixed
+- Fixed broken docker image due to incompatible dependencies.
+
+### Libs
+- Update dependency gradle to v8.14.2
+- Update dependency io.micronaut.micrometer:micronaut-micrometer-registry-prometheus to v5.11.0
+- Update dependency org.apache.tika:tika-core to v3.2.0
+- Update dependency org.mockito:mockito-core to v5.18.0
+- Update dependency org.postgresql:postgresql to v42.7.7
+- Update dependency org.springframework.boot:spring-boot-starter-actuator to v3.5.0
+- Update dependency org.springframework.cloud:spring-cloud-starter-netflix-eureka-client to v4.3.0
+- Update dependency org.springframework.data:spring-data-elasticsearch to v5.5.1
+- Update dependency org.springframework.restdocs:spring-restdocs-mockmvc to v3.0.4
+- Update dependency org.springframework:spring-messaging to v6.2.8
+- Update springDocVersion to v2.8.9
+
+### Plugins
+- Update plugin org.owasp.dependencycheck to v12.1.3
+- Update plugin org.springframework.boot to v3.5.0
+
 ## [2.0.2] - 2025-05-02
 ### Security
 - Actuator endpoints are now restricted to info and health by default.
@@ -605,7 +629,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.0.2...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/kit-data-manager/metastore2/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/kit-data-manager/metastore2/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/kit-data-manager/metastore2/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...v2.0.0

@@ -1910,6 +1910,33 @@ public class DataResourceRecordUtil {
     }
     return records;
   }
+  /**
+   * Count the number of linked metadata documents per schema.
+   * @return A map with the number of linked metadata documents per schema.
+   */
+  public static Map<String, Long> collectDocumentsPerSchema() {
+    Map<String, Long> documentsPerSchema = new HashMap<>();
+    // Search for resource type of MetadataSchemaRecord
+    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(null, null);
+    // Ignore all records that are deleted or gone
+    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+
+    LOG.debug("Performing query for records.");
+    Pageable pageable = PageRequest.of(0, 10);
+    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pageable);
+    for (DataResource record : records.getContent()) {
+      String schemaId = record.getId();
+      // Get no of documents per schema
+      spec = DataResourceRecordUtil.findBySchemaId(null, Arrays.asList(schemaId));
+      // Ignore all records that are deleted or gone
+      spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+      Page<DataResource> documents = DataResourceRecordUtil.queryDataResources(spec, pageable);
+      documentsPerSchema.put(schemaId,
+              documents.getTotalElements());
+    }
+
+    return documentsPerSchema;
+  }
 
   /**
    * Remove all entries from database and all related files from disc. (For
