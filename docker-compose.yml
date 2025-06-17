@@ -1,16 +1,5 @@
 version: "3.8"
 services:
-  dps:
-    image: defreitas/dns-proxy-server
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /etc/resolv.conf:/etc/resolv.conf
-    environment:
-      - MG_LOG_LEVEL=ERROR
-    hostname: dns.mageddo
-    networks:
-      dps:
-        ipv4_address: 172.0.0.10
   my-apache:
     image: ${PREFIX4DOCKER}/frontend-collection-metastore:${FRONTEND_COLLECTION_VERSION}
     container_name: frontend.docker
@@ -28,6 +17,8 @@ services:
       - xpack.security.enabled=false
 #      - logger.org.elasticsearch=ERROR
       - HOSTNAMES=elastic.docker
+      - http.cors.enabled=true
+      - http.cors.allow-origin=/.*/
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
@@ -37,6 +28,16 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
+    networks:
+      - dps
+  elasticvue:
+    image: cars10/elasticvue
+    container_name: elastic_vue.docker
+    environment:
+      - HOSTNAMES=elastic_vue.docker
+      - 'ELASTICVUE_CLUSTERS=[{"name": "test elastic", "uri": "http://localhost:9200" }]'
+    ports:
+      - "8080:8080"
     networks:
       - dps
   rabbitmq:
