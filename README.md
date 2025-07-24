@@ -260,3 +260,7 @@ user@localhost:/home/user/metastore2$bash /PATH/TO/EMPTY/INSTALLATION/DIRECTORY/
 ## License
 
 The MetaStore2 is licensed under the Apache License, Version 2.0.
+
+## Acknowledgements
+
+This work is supported by [NFDI4ING](https://nfdi4ing.de/) (DFG project number 442146713).
