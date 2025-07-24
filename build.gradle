@@ -88,7 +88,7 @@ dependencies {
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.5.0"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.13.1"
+    implementation "org.apache.commons:commons-text:1.14.0"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
