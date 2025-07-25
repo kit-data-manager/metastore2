@@ -15,9 +15,9 @@
  */
 package edu.kit.datamanager.metastore2.service;
 
-import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
+import edu.kit.datamanager.metastore2.configuration.MonitoringMetastoreConfiguration;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
-import edu.kit.datamanager.metastore2.util.MonitoringUtil;
+import edu.kit.datamanager.repo.configuration.MonitoringConfiguration;
 import io.micrometer.common.lang.NonNull;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,19 +25,19 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.binder.MeterBinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class MonitoringService implements MeterBinder {
+public class MonitoringMetastoreService implements MeterBinder {
   /**
    * Prefix for metrics.
    */
-  public static final String PREFIX_METRICS = "metastore.";
+  public static String PREFIX_METRICS = "metastore.";
   /**
    * Label for metrics of metadata documents.
    */
@@ -58,11 +58,12 @@ public class MonitoringService implements MeterBinder {
   /**
    * Logger.
    */
-  private static final Logger LOG = LoggerFactory.getLogger(MonitoringService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MonitoringMetastoreService.class);
   private final Set<String> registeredSchemas = ConcurrentHashMap.newKeySet();
   private Map<String, Long> documentsPerSchema = null;
   private MeterRegistry meterRegistry;
 
+  private final MonitoringMetastoreConfiguration monitoringMetastoreConfiguration;
   private final MonitoringConfiguration monitoringConfiguration;
 
   /**
@@ -70,8 +71,11 @@ public class MonitoringService implements MeterBinder {
    *
    * @param monitoringConfiguration Configuration for monitoring.
    */
-  public MonitoringService(@org.springframework.lang.NonNull MonitoringConfiguration monitoringConfiguration) {
+  @Autowired
+  public MonitoringMetastoreService(MonitoringConfiguration monitoringConfiguration, @org.springframework.lang.NonNull MonitoringMetastoreConfiguration monitoringMetastoreConfiguration) {
     this.monitoringConfiguration = monitoringConfiguration;
+    this.monitoringMetastoreConfiguration = monitoringMetastoreConfiguration;
+    PREFIX_METRICS = monitoringConfiguration.getServiceName() + ".";
   }
 
   @Override
@@ -97,21 +101,12 @@ public class MonitoringService implements MeterBinder {
 
       Map<String, Long> documentsPerSchema = getDocumentsPerSchema();
       LOG.trace("Documents per schema: {}", documentsPerSchema);
-      documentsPerSchema.
-              entrySet().
-              stream().
-              sorted(Map.Entry.<String, Long>comparingByValue().reversed()).
-              limit(monitoringConfiguration.getNoOfSchemas()).
-              forEach(entry -> {
-                String schemaId = entry.getKey();
-                if (registeredSchemas.add(schemaId)) {
-                  Gauge.builder(PREFIX_METRICS + LABEL_DOCUMENTS_PER_SCHEMA,
-                                  this,
-                                  ddm -> ddm.getDocumentsPerSchema(schemaId)).
-                          tags(Tags.of(LABEL_SCHEMA_ID, schemaId)).
-                          register(meterRegistry);
-                }
-              });
+      documentsPerSchema.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed()).limit(monitoringMetastoreConfiguration.getNoOfSchemas()).forEach(entry -> {
+        String schemaId = entry.getKey();
+        if (registeredSchemas.add(schemaId)) {
+          Gauge.builder(PREFIX_METRICS + LABEL_DOCUMENTS_PER_SCHEMA, this, ddm -> ddm.getDocumentsPerSchema(schemaId)).tags(Tags.of(LABEL_SCHEMA_ID, schemaId)).register(meterRegistry);
+        }
+      });
     } else {
       LOG.info("Monitoring is disabled. Skipping metric update.");
     }
@@ -147,18 +142,11 @@ public class MonitoringService implements MeterBinder {
 
   /**
    * Get the number of documents per schema.
+   *
    * @param schemaId The schema ID for which to get the number of documents.
    * @return The number of documents per schema.
    */
   private Long getDocumentsPerSchema(String schemaId) {
     return documentsPerSchema.getOrDefault(schemaId, 0L);
-  }
-
-  /**
-   * Clean up the metrics for IP addresses that are older than the configured number of days.
-   */
-  @Transactional
-  public void cleanUpMetrics() {
-    MonitoringUtil.cleanupMetrics();
   }
 }

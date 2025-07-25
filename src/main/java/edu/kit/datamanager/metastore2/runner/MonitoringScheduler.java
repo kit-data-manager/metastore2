@@ -15,8 +15,9 @@
  */
 package edu.kit.datamanager.metastore2.runner;
 
-import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
-import edu.kit.datamanager.metastore2.service.MonitoringService;
+import edu.kit.datamanager.metastore2.configuration.MonitoringMetastoreConfiguration;
+import edu.kit.datamanager.metastore2.service.MonitoringMetastoreService;
+import edu.kit.datamanager.repo.configuration.MonitoringConfiguration;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,12 +42,15 @@ public class MonitoringScheduler {
 
   private final MonitoringConfiguration monitoringConfiguration;
 
-  private final MonitoringService monitoringService;
+  private final MonitoringMetastoreConfiguration monitoringMetastoreConfiguration;
+
+  private final MonitoringMetastoreService monitoringService;
 
   private final ThreadPoolTaskScheduler scheduler4Monitoring = new ThreadPoolTaskScheduler();
 
-  MonitoringScheduler(MonitoringConfiguration monitoringConfiguration, MonitoringService monitoringService) {
+  MonitoringScheduler(MonitoringConfiguration monitoringConfiguration, MonitoringMetastoreConfiguration monitoringMetastoreConfiguration, MonitoringMetastoreService monitoringService) {
     this.monitoringConfiguration = monitoringConfiguration;
+    this.monitoringMetastoreConfiguration = monitoringMetastoreConfiguration;
     this.monitoringService = monitoringService;
   }
 
@@ -54,15 +58,13 @@ public class MonitoringScheduler {
   public void scheduleMonitoring() {
     if (monitoringConfiguration.isEnabled()) {
       LOG.trace("Scheduling monitoring jobs...");
-      LOG.trace("Update metrics: '{}'", monitoringConfiguration.getCron4schedule());
-      LOG.trace("Clean up metrics: '{}'", monitoringConfiguration.getCron4cleanUp());
+      LOG.trace("Update metrics: '{}'", monitoringMetastoreConfiguration.getCron4schedule());
       // Intialize the ThreadPoolTaskScheduler
-      scheduler4Monitoring.setPoolSize(2);
-      scheduler4Monitoring.setThreadNamePrefix("monitoring-scheduler-");
+      scheduler4Monitoring.setPoolSize(1);
+      scheduler4Monitoring.setThreadNamePrefix("monitoring-metastore-scheduler-");
       scheduler4Monitoring.initialize();
       // Schedule the tasks
-      scheduler4Monitoring.schedule(this::runUpdateMetrics, cronTrigger(monitoringConfiguration.getCron4schedule()));
-      scheduler4Monitoring.schedule(this::runCleanupMetrics, cronTrigger(monitoringConfiguration.getCron4cleanUp()));
+      scheduler4Monitoring.schedule(this::runUpdateMetrics, cronTrigger(monitoringMetastoreConfiguration.getCron4schedule()));
 
     } else {
       LOG.info(MONITORING_DISABLED);
@@ -84,18 +86,6 @@ public class MonitoringScheduler {
         monitoringService.updateMetrics();
       } catch (Exception e) {
         LOG.error("Error updating metrics: ", e);
-      }
-    } else {
-      LOG.info(MONITORING_DISABLED);
-    }
-  }
-
-  private void runCleanupMetrics() {
-    if (monitoringConfiguration.isEnabled()) {
-      try {
-        monitoringService.cleanUpMetrics();
-      } catch (Exception e) {
-        LOG.error("Error cleaning up metrics: ", e);
       }
     } else {
       LOG.info(MONITORING_DISABLED);

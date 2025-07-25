@@ -1,20 +1,21 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Copyright 2025 Karlsruhe Institute of Technology.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package edu.kit.datamanager.metastore2.test;
 
-import edu.kit.datamanager.configuration.SearchConfiguration;
-import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
-import edu.kit.datamanager.metastore2.dao.ILinkedMetadataRecordDao;
-import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
-import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
-import edu.kit.datamanager.repo.dao.IContentInformationDao;
-import edu.kit.datamanager.repo.dao.IDataResourceDao;
 import org.hamcrest.Matchers;
-import org.hamcrest.core.IsNot;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,21 +40,9 @@ import org.springframework.test.context.transaction.TransactionalTestExecutionLi
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
-import java.util.stream.Stream;
-
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,8 +51,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- *
- * @author Torridity
+ * Test for the Prometheus actuator endpoint.
+ * This test checks that the Prometheus endpoint is correctly exposed and that it contains the expected metrics.
+ * Also checks that other actuator endpoints are not exposed.
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT) //RANDOM_PORT)
@@ -72,10 +62,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ComponentScan({"edu.kit.datamanager"})
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
-  DependencyInjectionTestExecutionListener.class,
-  DirtiesContextTestExecutionListener.class,
-  TransactionalTestExecutionListener.class,
-  WithSecurityContextTestExecutionListener.class})
+        DependencyInjectionTestExecutionListener.class,
+        DirtiesContextTestExecutionListener.class,
+        TransactionalTestExecutionListener.class,
+        WithSecurityContextTestExecutionListener.class})
 @ActiveProfiles("test")
 @TestPropertySource(properties = {"server.port=41426"})
 @TestPropertySource(properties = {"metastore.schema.schemaFolder=file:///tmp/metastore2/prometheus/schema"})
@@ -83,73 +73,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {"spring.datasource.url=jdbc:h2:mem:db_prometheus;DB_CLOSE_DELAY=-1;MODE=LEGACY;NON_KEYWORDS=VALUE"})
 @TestPropertySource(properties = {"spring.jpa.database-platform=org.hibernate.dialect.H2Dialect"})
 @TestPropertySource(properties = {"spring.jpa.defer-datasource-initialization=true"})
-@TestPropertySource(properties = {"metastore.monitoring.enabled=true"})
+@TestPropertySource(properties = {"repo.monitoring.enabled=true"})
+@TestPropertySource(properties = {"repo.monitoring.serviceName=metastore"})
 @TestPropertySource(properties = {"management.endpoint.prometheus.enabled=true"})
-//@TestPropertySource(properties = {"management.endpoint.prometheus.access=unrestricted"})
 @TestPropertySource(properties = {"management.endpoints.web.exposure.include=info,health,prometheus"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @AutoConfigureObservability
 public class ActuatorPrometheusTest {
 
-  private final static String TEMP_DIR_4_ALL = "/tmp/metastore2/prometheus/";
-  private final static String TEMP_DIR_4_SCHEMAS = TEMP_DIR_4_ALL + "schema/";
-  private final static String TEMP_DIR_4_METADATA = TEMP_DIR_4_ALL + "metadata/";
-
-  private static Boolean alreadyInitialized = Boolean.FALSE;
 
   private MockMvc mockMvc;
   @Autowired
   private WebApplicationContext context;
-  @Autowired
-  private ILinkedMetadataRecordDao metadataRecordDao;
-  @Autowired
-  private IDataResourceDao dataResourceDao;
-  @Autowired
-  private IDataRecordDao dataRecordDao;
-  @Autowired
-  private ISchemaRecordDao schemaRecordDao;
-  @Autowired
-  private IContentInformationDao contentInformationDao;
-  @Autowired
-  private IAllIdentifiersDao allIdentifiersDao;
-  @Autowired
-  private MetastoreConfiguration metadataConfig;
-  @Autowired
-  private SearchConfiguration elasticConfig;
   @Rule
   public JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation();
 
   @Before
-  public void setUp() throws Exception {
-    System.out.println("------MetadataControllerTest--------------------------");
-    System.out.println("------" + this.metadataConfig);
-    System.out.println("------------------------------------------------------");
-
-    contentInformationDao.deleteAll();
-    dataResourceDao.deleteAll();
-    metadataRecordDao.deleteAll();
-    schemaRecordDao.deleteAll();
-    dataRecordDao.deleteAll();
-    allIdentifiersDao.deleteAll();
-
-    try {
-      // setup mockMvc
-      this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
-              .apply(springSecurity())
-              .apply(documentationConfiguration(this.restDocumentation).uris()
-                      .withPort(41416))
-              .build();
-      // Create schema only once.
-      try (Stream<Path> walk = Files.walk(Paths.get(URI.create("file://" + TEMP_DIR_4_SCHEMAS)))) {
-        walk.sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
-      }
-      Paths.get(TEMP_DIR_4_SCHEMAS).toFile().mkdir();
-      Paths.get(TEMP_DIR_4_METADATA).toFile().mkdir();
-    } catch (IOException ex) {
-      ex.printStackTrace();
-    }
+  public void setUp() {
+    // setup mockMvc
+    this.mockMvc = MockMvcBuilders.webAppContextSetup(this.context)
+            .apply(springSecurity())
+            .apply(documentationConfiguration(this.restDocumentation).uris()
+                    .withPort(41416))
+            .build();
   }
 
   @Test
@@ -165,23 +111,16 @@ public class ActuatorPrometheusTest {
     this.mockMvc.perform(get("/actuator/metrics")).andDo(print()).andExpect(status().isNotFound());
     this.mockMvc.perform(get("/actuator/scheduledtasks")).andDo(print()).andExpect(status().isNotFound());
     this.mockMvc.perform(get("/actuator/mappings")).andDo(print()).andExpect(status().isNotFound());
-//    this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isNotFound());
   }
-    @Test
-    public void testActuator() throws Exception {
-      // /actuator/info
-      MvcResult result = this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isOk())
-              .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_documents")))
-              .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_schemas")))
-              .andExpect(content().string(Matchers.containsString("# TYPE metastore_requests_served_total")))
-              .andExpect(content().string(Matchers.containsString("# TYPE metastore_unique_users")))
-              .andReturn();
-        }
 
-  public static synchronized boolean isInitialized() {
-    boolean returnValue = alreadyInitialized;
-    alreadyInitialized = Boolean.TRUE;
-
-    return returnValue;
+  @Test
+  public void testActuator() throws Exception {
+    // /actuator/info
+    MvcResult result = this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isOk())
+            .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_documents")))
+            .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_schemas")))
+            .andExpect(content().string(Matchers.containsString("# TYPE metastore_requests_served_total")))
+            .andExpect(content().string(Matchers.containsString("# TYPE metastore_unique_users")))
+            .andReturn();
   }
 }

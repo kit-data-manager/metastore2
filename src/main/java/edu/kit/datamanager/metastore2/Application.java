@@ -23,16 +23,19 @@ import edu.kit.datamanager.configuration.SearchConfiguration;
 import edu.kit.datamanager.entities.messaging.IAMQPSubmittable;
 import edu.kit.datamanager.metastore2.configuration.ApplicationProperties;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
-import edu.kit.datamanager.metastore2.configuration.MonitoringConfiguration;
+import edu.kit.datamanager.metastore2.configuration.MonitoringMetastoreConfiguration;
 import edu.kit.datamanager.metastore2.configuration.OaiPmhConfiguration;
-import edu.kit.datamanager.metastore2.dao.*;
+import edu.kit.datamanager.metastore2.dao.IDataRecordDao;
+import edu.kit.datamanager.metastore2.dao.IMetadataFormatDao;
+import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
+import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
-import edu.kit.datamanager.metastore2.util.MonitoringUtil;
 import edu.kit.datamanager.metastore2.validation.IValidator;
 import edu.kit.datamanager.repo.configuration.DateBasedStorageProperties;
 import edu.kit.datamanager.repo.configuration.IdBasedStorageProperties;
+import edu.kit.datamanager.repo.configuration.MonitoringConfiguration;
 import edu.kit.datamanager.repo.configuration.StorageServiceProperties;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -116,8 +119,6 @@ public class Application {
   @Autowired
   private IMetadataFormatDao metadataFormatDao;
   @Autowired
-  private IIpMonitoringDao ipMonitoringDao;
-  @Autowired
   private List<IValidator> validators;
 
   @Bean
@@ -129,11 +130,9 @@ public class Application {
 
   @Bean(name = "OBJECT_MAPPER_BEAN")
   public ObjectMapper jsonObjectMapper() {
-    return Jackson2ObjectMapperBuilder.json()
-            .serializationInclusion(JsonInclude.Include.NON_EMPTY) // Don’t include null values
+    return Jackson2ObjectMapperBuilder.json().serializationInclusion(JsonInclude.Include.NON_EMPTY) // Don’t include null values
             .featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS) //ISODate
-            .modules(new JavaTimeModule())
-            .build();
+            .modules(new JavaTimeModule()).build();
   }
 
   @Bean
@@ -160,6 +159,11 @@ public class Application {
   @Bean
   public OaiPmhConfiguration oaiPmhConfiguration() {
     return new OaiPmhConfiguration();
+  }
+
+  @Bean
+  public MonitoringMetastoreConfiguration monitoringMetastoreConfiguration() {
+    return new MonitoringMetastoreConfiguration();
   }
 
   @Bean
@@ -231,17 +235,9 @@ public class Application {
   }
 
   @Bean
-  @ConditionalOnProperty(
-          value = "repo.auth.enabled",
-          havingValue = "true",
-          matchIfMissing = false)
+  @ConditionalOnProperty(value = "repo.auth.enabled", havingValue = "true", matchIfMissing = false)
   public KeycloakTokenFilter keycloaktokenFilterBean() throws Exception {
-    return new KeycloakTokenFilter(KeycloakTokenValidator.builder()
-            .readTimeout(keycloakProperties().getReadTimeoutms())
-            .connectTimeout(keycloakProperties().getConnectTimeoutms())
-            .sizeLimit(keycloakProperties().getSizeLimit())
-            .jwtLocalSecret(applicationProperties().getJwtSecret())
-            .build(keycloakProperties().getJwkUrl(), keycloakProperties().getResource(), keycloakProperties().getJwtClaim()));
+    return new KeycloakTokenFilter(KeycloakTokenValidator.builder().readTimeout(keycloakProperties().getReadTimeoutms()).connectTimeout(keycloakProperties().getConnectTimeoutms()).sizeLimit(keycloakProperties().getSizeLimit()).jwtLocalSecret(applicationProperties().getJwtSecret()).build(keycloakProperties().getJwkUrl(), keycloakProperties().getResource(), keycloakProperties().getJwtClaim()));
   }
 
   @Bean
@@ -294,8 +290,6 @@ public class Application {
     DataResourceRecordUtil.setSchemaConfig(rbc);
     DataResourceRecordUtil.setUrl2PathDao(url2PathDao);
     DataResourceRecordUtil.setAllIdentifiersDao(allIdentifiersDao);
-    MonitoringUtil.setIpMonitoringDao(ipMonitoringDao);
-    MonitoringUtil.setMonitoringConfiguration(monitoringConfiguration());
 
 
     fixBasePath(rbc);
