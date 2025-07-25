@@ -263,4 +263,4 @@ The MetaStore2 is licensed under the Apache License, Version 2.0.
 
 ## Acknowledgements
 
-This work is supported by [NFDI4ING](https://nfdi4ing.de/) (DFG project number 442146713).
+This work is funded by the [Helmholtz Metadata Collaboration Platform (HMC)](https://helmholtz-metadaten.de/), with additional support by [NFDI4ING](https://nfdi4ing.de/) (DFG project number 442146713) and [NFDI-MatWerk](https://nfdi-matwerk.de/) (DFG project number 460247524).
