@@ -263,4 +263,4 @@ The MetaStore2 is licensed under the Apache License, Version 2.0.
 
 ## Acknowledgements
 
-This work has been supported by the research program [‘Engineering Digital Futures’](https://www.helmholtz.de/forschung/forschungsbereiche/information/engineering-digital-futures/) of the [Helmholtz Association of German Research Centers](https://www.helmholtz.de/) and the [Helmholtz Metadata Collaboration Platform (HMC)](https://helmholtz-metadaten.de/), with additional support by [NFDI4ING](https://nfdi4ing.de/) (DFG project number 442146713) and [NFDI-MatWerk](https://nfdi-matwerk.de/) (DFG project number 460247524).
+This work has been supported by the research program [‘Engineering Digital Futures’](https://www.helmholtz.de/en/research/research-fields/information/engineering-digital-futures/) of the [Helmholtz Association of German Research Centers](https://www.helmholtz.de/en) and the [Helmholtz Metadata Collaboration Platform (HMC)](https://helmholtz-metadaten.de/), with additional support by [NFDI4ING](https://nfdi4ing.de/) (DFG project number 442146713) and [NFDI-MatWerk](https://nfdi-matwerk.de/) (DFG project number 460247524).
