@@ -39,7 +39,6 @@ import org.springframework.test.context.support.DirtiesContextTestExecutionListe
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.context.web.ServletTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -75,7 +74,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @TestPropertySource(properties = {"spring.jpa.defer-datasource-initialization=true"})
 @TestPropertySource(properties = {"repo.monitoring.enabled=true"})
 @TestPropertySource(properties = {"repo.monitoring.serviceName=metastore"})
-@TestPropertySource(properties = {"management.endpoint.prometheus.enabled=true"})
+@TestPropertySource(properties = {"management.endpoint.prometheus.access=read_only"})
 @TestPropertySource(properties = {"management.endpoints.web.exposure.include=info,health,prometheus"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @AutoConfigureObservability
@@ -115,12 +114,12 @@ public class ActuatorPrometheusTest {
 
   @Test
   public void testActuator() throws Exception {
-    // /actuator/info
-    MvcResult result = this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isOk())
+    this.mockMvc.perform(get("/actuator/prometheus")).andDo(print()).andExpect(status().isOk())
             .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_documents")))
             .andExpect(content().string(Matchers.containsString("# TYPE metastore_metadata_schemas")))
             .andExpect(content().string(Matchers.containsString("# TYPE metastore_requests_served_total")))
             .andExpect(content().string(Matchers.containsString("# TYPE metastore_unique_users")))
+            .andExpect(content().string(Matchers.containsString("# TYPE metastore_registered_users")))
             .andReturn();
   }
 }
