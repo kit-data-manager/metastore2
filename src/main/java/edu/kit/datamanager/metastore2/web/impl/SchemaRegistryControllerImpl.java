@@ -23,6 +23,7 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.metastore2.web.ISchemaRegistryController;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
+import edu.kit.datamanager.repo.domain.ContentInformation;
 import edu.kit.datamanager.repo.domain.DataResource;
 import edu.kit.datamanager.util.AuthenticationHelper;
 import edu.kit.datamanager.util.ControllerUtils;
@@ -168,12 +169,11 @@ public class SchemaRegistryControllerImpl implements ISchemaRegistryController {
           HttpServletResponse hsr) {
     LOG.trace("Performing getSchemaDocumentById({}, {}).", schemaId, version);
 
-    LOG.trace("Obtaining schema record with id {} and version {}.", schemaId, version);
-    MetadataSchemaRecord schemaRecord = MetadataSchemaRecordUtil.getRecordByIdAndVersion(schemaConfig, schemaId, version);
-    URI schemaDocumentUri = URI.create(schemaRecord.getSchemaDocumentUri());
-
-    MediaType contentType = MetadataSchemaRecord.SCHEMA_TYPE.XML.equals(schemaRecord.getType()) ? MediaType.APPLICATION_XML : MediaType.APPLICATION_JSON;
-    Path schemaDocumentPath = Paths.get(schemaDocumentUri);
+    DataResource schemaRecord = DataResourceRecordUtil.getSchemaRecordByIdAndVersion(schemaConfig, schemaId, version);
+    ContentInformation contentInfo = DataResourceRecordUtil.getContentInformationByIdAndVersion(schemaConfig, schemaRecord.getId(), Long.valueOf(schemaRecord.getVersion()));
+    MediaType contentType = MediaType.valueOf(contentInfo.getMediaType());
+    URI pathToFile = URI.create(contentInfo.getContentUri());
+    Path schemaDocumentPath = Paths.get(pathToFile);
     if (!Files.exists(schemaDocumentPath) || !Files.isRegularFile(schemaDocumentPath) || !Files.isReadable(schemaDocumentPath)) {
       LOG.trace("Schema document at path {} either does not exist or is no file or is not readable. Returning HTTP NOT_FOUND.", schemaDocumentPath);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Schema document on server either does not exist or is no file or is not readable.");

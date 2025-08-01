@@ -27,8 +27,6 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.dao.IUrl2PathDao;
 import edu.kit.datamanager.metastore2.domain.*;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
-import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.SCHEMA_SUFFIX;
-import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.queryDataResources;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
@@ -45,17 +43,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
-import org.springframework.stereotype.Component;
-
-import java.util.*;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpClientErrorException;
+
+import java.util.*;
+
+import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.SCHEMA_SUFFIX;
+import static edu.kit.datamanager.metastore2.util.DataResourceRecordUtil.queryDataResources;
 
 /**
  * This class contains 3 runners:
@@ -388,6 +389,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private void migrateAllSchemasToDataciteVersion2() {
     Specification<DataResource> spec;
     spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataSchemaRecord.RESOURCE_TYPE, ResourceType.TYPE_GENERAL.DATASET));
+    // Hide revoked and gone data resources.
+    spec = addStateSpecification(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
     int pageNumber = 0;
     int pageSize = 1;
     Pageable pgbl = PageRequest.of(pageNumber, pageSize);
@@ -453,6 +456,8 @@ public class ElasticIndexerRunner implements CommandLineRunner {
   private void migrateAllMetadataDocumentsToDataciteVersion2() {
     Specification<DataResource> spec;
     spec = ResourceTypeSpec.toSpecification(ResourceType.createResourceType(MetadataRecord.RESOURCE_TYPE, ResourceType.TYPE_GENERAL.DATASET));
+    // Hide revoked and gone data resources.
+    spec = addStateSpecification(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
     int pageNumber = 0;
     int pageSize = 10;
     Pageable pgbl = PageRequest.of(pageNumber, pageSize);
@@ -500,5 +505,14 @@ public class ElasticIndexerRunner implements CommandLineRunner {
       }
     }
     LOG.info("Migration for metadata document with ID: '{}', finished! No of versions: '{}'", id, version);
+  }
+
+  private Specification addStateSpecification(Specification<DataResource> spec, DataResource.State... states) {
+    Specification returnValue = spec;
+    if (states != null && states.length > 0) {
+      List<DataResource.State> stateList = Arrays.asList(states);
+      returnValue = spec.and(edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification.toSpecification(stateList));
+    }
+    return returnValue;
   }
 }

@@ -21,11 +21,7 @@ import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
 import edu.kit.datamanager.metastore2.web.impl.MetadataControllerImplV2;
 import edu.kit.datamanager.metastore2.web.impl.SchemaRegistryControllerImplV2;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
-import edu.kit.datamanager.repo.domain.DataResource;
-import edu.kit.datamanager.repo.domain.PrimaryIdentifier;
-import edu.kit.datamanager.repo.domain.RelatedIdentifier;
-import edu.kit.datamanager.repo.domain.ResourceType;
-import edu.kit.datamanager.repo.domain.Title;
+import edu.kit.datamanager.repo.domain.*;
 import edu.kit.datamanager.repo.domain.acl.AclEntry;
 import edu.kit.datamanager.repo.util.DataResourceUtils;
 import org.slf4j.Logger;
@@ -94,14 +90,8 @@ public class Migration2V2Runner {
     resourceType.setTypeGeneral(ResourceType.TYPE_GENERAL.MODEL);
     resourceType.setValue(recordByIdAndVersion.getFormats().iterator().next() + DataResourceRecordUtil.SCHEMA_SUFFIX);
     // Remove existing IDs
-    for (AclEntry acl : recordByIdAndVersion.getAcls()){
-      acl.setId(null);
-    }
-    for (Identifier identifier : recordByIdAndVersion.getAlternateIdentifiers()){
-      identifier.setId(null);
-    }
-    recordByIdAndVersion.getResourceType().setId(null);
-    
+    removeExistingIds(recordByIdAndVersion);
+
     // Add provenance
     if (version > 1) {
       String schemaUrl = baseUrl + WebMvcLinkBuilder.linkTo(WebMvcLinkBuilder.methodOn(SchemaRegistryControllerImplV2.class).getSchemaDocumentById(id, version - 1l, null, null)).toString();
@@ -119,6 +109,7 @@ public class Migration2V2Runner {
     // Save migrated version
     LOG.trace("Persisting created schema document resource.");
     DataResource migratedDataResource = dataResourceDao.save(recordByIdAndVersion);
+    dataResourceDao.flush();
 
     //Capture state change
     LOG.trace("Capturing audit information.");
@@ -157,14 +148,8 @@ public class Migration2V2Runner {
       }
     }
     // Remove existing IDs
-    for (AclEntry acl : recordByIdAndVersion.getAcls()){
-      acl.setId(null);
-    }
-    for (Identifier identifier : recordByIdAndVersion.getAlternateIdentifiers()){
-      identifier.setId(null);
-    }
-    recordByIdAndVersion.getResourceType().setId(null);
-    
+    removeExistingIds(recordByIdAndVersion);
+
     // Add provenance
     LOG.trace("Add provenance: '{}'", version);
     if (version > 1) {
@@ -234,6 +219,21 @@ public class Migration2V2Runner {
         break;
       }
     }
+  }
+  private void removeExistingIds(DataResource dataResource) {
+    for (AclEntry acl : dataResource.getAcls()) {
+      acl.setId(null);
+    }
+    for (Identifier identifier : dataResource.getAlternateIdentifiers()) {
+      identifier.setId(null);
+    }
+    for (Description description : dataResource.getDescriptions()) {
+      description.setId(null);
+    }
+    for (Scheme scheme : dataResource.getRights()) {
+      scheme.setId(null);
+    }
+    dataResource.getResourceType().setId(null);
   }
 
   /**
