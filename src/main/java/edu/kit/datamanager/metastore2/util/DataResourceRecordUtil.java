@@ -751,7 +751,7 @@ public class DataResourceRecordUtil {
    * @param mimeTypes Provided mimetypes.
    * @return Refined specification for DataResource.
    */
-  public static final Specification<DataResource> findByMimetypes(Specification<DataResource> specification, List<String> mimeTypes) {
+  public static final Specification<DataResource> findSchemasByMimetypes(Specification<DataResource> specification, List<String> mimeTypes) {
     specification = initializeSpecification(specification);
     // Search for both mimetypes (xml & json)
     ResourceType resourceType;
@@ -1917,22 +1917,30 @@ public class DataResourceRecordUtil {
   public static Map<String, Long> collectDocumentsPerSchema() {
     Map<String, Long> documentsPerSchema = new HashMap<>();
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(null, null);
+    Specification<DataResource> schemaSpec = DataResourceRecordUtil.findSchemasByMimetypes(null, null);
     // Ignore all records that are deleted or gone
-    spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+     schemaSpec= DataResourceRecordUtil.findByStateWithAuthorization(schemaSpec, DataResource.State.FIXED, DataResource.State.VOLATILE);
 
     LOG.debug("Performing query for records.");
-    Pageable pageable = PageRequest.of(0, 10);
-    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(spec, pageable);
-    for (DataResource record : records.getContent()) {
-      String schemaId = record.getId();
-      // Get no of documents per schema
-      spec = DataResourceRecordUtil.findBySchemaId(null, Arrays.asList(schemaId));
-      // Ignore all records that are deleted or gone
-      spec = DataResourceRecordUtil.findByStateWithAuthorization(spec, DataResource.State.FIXED, DataResource.State.VOLATILE);
-      Page<DataResource> documents = DataResourceRecordUtil.queryDataResources(spec, pageable);
-      documentsPerSchema.put(schemaId,
-              documents.getTotalElements());
+    int pageNumber = 0;
+    int pageSize = 10;
+    Pageable pageable = PageRequest.of(pageNumber, pageSize);
+    Page<DataResource> records = DataResourceRecordUtil.queryDataResources(schemaSpec, pageable);
+    LOG.debug("Found '{}' records for query in '{}' pages.", records.getTotalElements(), records.getTotalPages());
+    for (pageNumber = 1; pageNumber <= records.getTotalPages(); pageNumber++) {
+      for (DataResource record : records.getContent()) {
+        String schemaId = record.getId();
+        LOG.trace("Collecting documents for schema '{}'", schemaId);
+        // Get no of documents per schema
+         Specification<DataResource> documentSpec= DataResourceRecordUtil.findBySchemaId(null, Arrays.asList(schemaId));
+        // Ignore all records that are deleted or gone
+        documentSpec = DataResourceRecordUtil.findByStateWithAuthorization(documentSpec, DataResource.State.FIXED, DataResource.State.VOLATILE);
+        Page<DataResource> documents = DataResourceRecordUtil.queryDataResources(documentSpec, pageable);
+        documentsPerSchema.put(schemaId,
+                documents.getTotalElements());
+      }
+      pageable = PageRequest.of(pageNumber, pageSize);
+      records = DataResourceRecordUtil.queryDataResources(schemaSpec, pageable);
     }
 
     return documentsPerSchema;

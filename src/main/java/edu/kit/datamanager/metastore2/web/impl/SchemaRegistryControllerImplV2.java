@@ -264,7 +264,7 @@ public class SchemaRegistryControllerImplV2 implements ISchemaRegistryController
       return getAllVersions(schemaId, pgbl);
     }
     // Search for resource type of MetadataSchemaRecord
-    Specification<DataResource> spec = DataResourceRecordUtil.findByMimetypes(null, mimeTypes);
+    Specification<DataResource> spec = DataResourceRecordUtil.findSchemasByMimetypes(null, mimeTypes);
     // Add authentication if enabled
     spec = DataResourceRecordUtil.findByAccessRights(spec);
     spec = DataResourceRecordUtil.findByUpdateDates(spec, updateFrom, updateUntil);
