@@ -5,6 +5,7 @@
  */
 package edu.kit.datamanager.metastore2.test;
 
+import com.beust.ah.A;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.kit.datamanager.entities.PERMISSION;
 import edu.kit.datamanager.metastore2.configuration.MetastoreConfiguration;
@@ -12,6 +13,7 @@ import edu.kit.datamanager.metastore2.dao.ISchemaRecordDao;
 import edu.kit.datamanager.metastore2.domain.MetadataSchemaRecord;
 import edu.kit.datamanager.metastore2.domain.SchemaRecord;
 import edu.kit.datamanager.metastore2.util.DataResourceRecordUtil;
+import edu.kit.datamanager.metastore2.util.MetadataSchemaRecordUtil;
 import edu.kit.datamanager.repo.dao.IAllIdentifiersDao;
 import edu.kit.datamanager.repo.dao.IContentInformationDao;
 import edu.kit.datamanager.repo.dao.IDataResourceDao;
@@ -24,9 +26,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
@@ -72,6 +77,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@EntityScan("edu.kit.datamanager")
+@EnableJpaRepositories("edu.kit.datamanager")
+@ComponentScan({"edu.kit.datamanager"})
 @AutoConfigureMockMvc
 @TestExecutionListeners(listeners = {ServletTestExecutionListener.class,
   DependencyInjectionTestExecutionListener.class,
@@ -1089,9 +1097,11 @@ public class JsonSchemaRegistryControllerTest {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
 
-    schemaConfig.getDataResourceService().create(dataResource, "SELF");
-//    dataResourceDao.save(dataResource);
+    dataResource = schemaConfig.getDataResourceService().create(dataResource, "SELF");
+    ci.setParentResource(dataResource);
+
     contentInformationDao.save(ci);
+    schemaConfig.getContentInformationAuditService().captureAuditInformation(ci, "SELF");
 
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId() + "/1");

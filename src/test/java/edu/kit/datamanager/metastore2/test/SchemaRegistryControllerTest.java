@@ -1701,9 +1701,11 @@ public class SchemaRegistryControllerTest {
     ci.setHash("sha1:400dfe162fd702a619c4d11ddfb3b7550cb9dec7");
     ci.setSize(1097);
 
-    schemaConfig.getDataResourceService().create(dataResource, "SELF");
-//    dataResource = dataResourceDao.save(dataResource);
-    ci = contentInformationDao.save(ci);
+    dataResource = schemaConfig.getDataResourceService().create(dataResource, "SELF");
+    ci.setParentResource(dataResource);
+
+    contentInformationDao.save(ci);
+    schemaConfig.getContentInformationAuditService().captureAuditInformation(ci, "SELF");
 
     SchemaRecord schemaRecord = new SchemaRecord();
     schemaRecord.setSchemaId(dataResource.getId() + "/1");
