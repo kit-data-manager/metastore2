@@ -1902,6 +1902,9 @@ public class DataResourceRecordUtil {
    */
   public static Page<DataResource> queryDataResources(Specification<DataResource> spec, Pageable pgbl) {
     Page<DataResource> records = null;
+    if (pgbl == null) {
+      pgbl = PageRequest.of(0, 10); // Default to first page with 10 records
+    }
     try {
       records = spec != null ? dataResourceDao.findAll(spec, pgbl) : dataResourceDao.findAll(pgbl);
     } catch (Exception ex) {
@@ -1935,7 +1938,7 @@ public class DataResourceRecordUtil {
          Specification<DataResource> documentSpec= DataResourceRecordUtil.findBySchemaId(null, Arrays.asList(schemaId));
         // Ignore all records that are deleted or gone
         documentSpec = DataResourceRecordUtil.findByStateWithAuthorization(documentSpec, DataResource.State.FIXED, DataResource.State.VOLATILE);
-        Page<DataResource> documents = DataResourceRecordUtil.queryDataResources(documentSpec, pageable);
+        Page<DataResource> documents = DataResourceRecordUtil.queryDataResources(documentSpec, null);
         documentsPerSchema.put(schemaId,
                 documents.getTotalElements());
       }
