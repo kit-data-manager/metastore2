@@ -26,7 +26,6 @@ import java.util.Optional;
 
 /**
  * DAO for the record of a metadata document.
- * @author Torridity
  */
 public interface IDataRecordDao extends JpaRepository<DataRecord, String>, JpaSpecificationExecutor<DataRecord>{
   Optional<DataRecord> findByMetadataIdAndVersion(String metadataId, Long version);

@@ -23,8 +23,6 @@ import java.util.List;
 
 /**
  * DAO for the record of a schema document.
- *
- * @author Torridity
  */
 public interface ISchemaRecordDao extends JpaRepository<SchemaRecord, String>, JpaSpecificationExecutor<SchemaRecord> {
 

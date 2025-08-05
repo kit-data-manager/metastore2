@@ -14,7 +14,6 @@ import java.util.Optional;
 
 /**
  * Database linking URL to local path (if available)
- * @author Torridity
  */
 public interface IUrl2PathDao extends JpaRepository<Url2Path, String>, JpaSpecificationExecutor<Url2Path>{
   Optional<Url2Path>  findByUrl(String url);
