@@ -42,6 +42,7 @@ import edu.kit.datamanager.repo.dao.spec.dataresource.RelatedIdentifierSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.ResourceTypeSpec;
 import edu.kit.datamanager.repo.dao.spec.dataresource.StateSpecification;
 import edu.kit.datamanager.repo.domain.DataResource;
+import edu.kit.datamanager.repo.domain.RelatedIdentifier;
 import edu.kit.datamanager.repo.domain.ResourceType;
 import edu.kit.datamanager.service.IMessagingService;
 import edu.kit.datamanager.service.impl.LogfileMessagingService;
@@ -196,24 +197,14 @@ public class MetadataControllerImpl implements IMetadataController {
       LOG.debug("Error checking for existing relations.", rnfe);
       throw new UnprocessableEntityException("Schema ID seems to be invalid");
     }
-    boolean recordAlreadyExists = metadataRecordDao.existsMetadataRecordByRelatedResourceAndSchemaId(metadataRecord.getRelatedResource().getIdentifier(), schemaIdentifier.getIdentifier());
     long nano3 = System.nanoTime() / 1000000;
 
-    if (recordAlreadyExists) {
-      String message = String.format("Conflict! There is already a metadata document with "
-              + "the same schema ('%s') and the same related resource ('%s')",
-              metadataRecord.getSchemaId(),
-              metadataRecord.getRelatedResource().getIdentifier());
-      LOG.error(message);
-      return ResponseEntity.status(HttpStatus.CONFLICT).body(message);
-    }
     MetadataRecord result = MetadataRecordUtil.createMetadataRecord(metadataConfig, recordDocument, document);
     // Successfully created metadata record.
     long nano4 = System.nanoTime() / 1000000;
     LOG.trace("Metadata record successfully persisted. Returning result.");
     MetadataRecordUtil.fixMetadataDocumentUri(result);
     long nano5 = System.nanoTime() / 1000000;
-    metadataRecordDao.save(new LinkedMetadataRecord(result));
     long nano6 = System.nanoTime() / 1000000;
 
     URI locationUri;

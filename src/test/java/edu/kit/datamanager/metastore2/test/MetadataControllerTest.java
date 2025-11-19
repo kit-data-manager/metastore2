@@ -554,6 +554,30 @@ public class MetadataControllerTest {
   }
 
   @Test
+  public void testCreateRecordWithSameRelatedResourceAndSchema() throws Exception {
+        MetadataRecord record = new MetadataRecord();
+    //    record.setId("my_id");
+                record.setSchema(ResourceIdentifier.factoryInternalResourceIdentifier(SCHEMA_ID));
+        record.setRelatedResource(RELATED_RESOURCE);
+        Set<AclEntry> aclEntries = new HashSet<>();
+    //    aclEntries.add(new AclEntry("SELF",PERMISSION.READ));
+    //    aclEntries.add(new AclEntry("test2",PERMISSION.ADMINISTRATE));
+    //    record.setAcl(aclEntries);
+        ObjectMapper mapper = new ObjectMapper();
+
+        MockMultipartFile recordFile = new MockMultipartFile("record", "metadata-record.json", "application/json", mapper.writeValueAsString(record).getBytes());
+        MockMultipartFile metadataFile = new MockMultipartFile("document", "metadata.xml", "application/xml", DC_DOCUMENT.getBytes());
+
+        MvcResult result = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+                file(recordFile).
+                file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
+
+        MvcResult result2 = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
+                file(recordFile).
+                file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andExpect(redirectedUrlPattern("http://*:*/**/*?version=1")).andReturn();
+  }
+
+  @Test
   public void testCreateRecordWithLocationUri() throws Exception {
     MetadataRecord record = new MetadataRecord();
 //    record.setId("my_id");
@@ -841,9 +865,8 @@ public class MetadataControllerTest {
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
-    Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(SCHEMA_ID));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }

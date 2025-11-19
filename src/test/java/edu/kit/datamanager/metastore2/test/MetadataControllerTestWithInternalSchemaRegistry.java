@@ -642,9 +642,8 @@ public class MetadataControllerTestWithInternalSchemaRegistry {
 
     res = this.mockMvc.perform(MockMvcRequestBuilders.multipart("/api/v1/metadata/").
             file(recordFile).
-            file(metadataFile)).andDo(print()).andExpect(status().isConflict()).andReturn();
+            file(metadataFile)).andDo(print()).andExpect(status().isCreated()).andReturn();
 
-    Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(SCHEMA_ID));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }

@@ -787,10 +787,9 @@ public class MetadataControllerTestWithAuthenticationEnabled {
                     file(metadataFile).
                     header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken)).
             andDo(print()).
-            andExpect(status().isConflict()).
+            andExpect(status().isCreated()).
             andReturn();
 
-    Assert.assertTrue(res.getResponse().getContentAsString().contains("Conflict"));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(SCHEMA_ID));
     Assert.assertTrue(res.getResponse().getContentAsString().contains(RELATED_RESOURCE_STRING));
   }
