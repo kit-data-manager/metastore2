@@ -558,7 +558,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.5...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v1.4.6...HEAD
+[1.4.6]: https://github.com/kit-data-manager/metastore2/compare/v1.4.5...v1.4.6
 [1.4.5]: https://github.com/kit-data-manager/metastore2/compare/v1.4.4...v1.4.5
 [1.4.4]: https://github.com/kit-data-manager/metastore2/compare/v1.4.3...v1.4.4
 [1.4.3]: https://github.com/kit-data-manager/metastore2/compare/v1.4.2...v1.4.3
