@@ -80,11 +80,11 @@ public class DownloadUtilTest {
   public void testDownloadResourceWithPath() throws URISyntaxException {
     System.out.println("downloadResource");
     assertNotNull(new DownloadUtil());
-    URI resourceURL = new URI("https://www.example.org/index.html");
+    URI resourceURL = new URI("https://httpbin.org/json");
     Optional<Path> result = DownloadUtil.downloadResource(resourceURL);
     assertTrue("No file available!", result.isPresent());
     assertTrue("File '" + result.get() + "' doesn't exist!", result.get().toFile().exists());
-    assertTrue("Wrong suffix for file '" + result.get() + "'!", result.get().toString().endsWith(".html"));
+    assertTrue("Wrong suffix for file '" + result.get() + "'!", result.get().toString().endsWith(".json"));
     assertTrue("Can't delete file '" + result.get() + "'!", result.get().toFile().delete());
   }
 
