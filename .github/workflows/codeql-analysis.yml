@@ -20,6 +20,10 @@ on:
   schedule:
     - cron: '30 5 * * 1'
 
+env:
+  # JDK version used for running codeql analysis
+  currentBuildVersion: 21
+
 jobs:
   analyze:
     name: Analyze
@@ -39,6 +43,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v6
+
+    - name: Set up Java ${{ env.currentBuildVersion }}
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'zulu'
+        java-version: ${{ env.currentBuildVersion }}
 
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
