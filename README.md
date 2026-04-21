@@ -182,7 +182,9 @@ https://kit-data-manager.github.io/webpage/metastore/documentation/frontend/inde
 
 A small documentation guiding you through the first steps of using the RESTful API you can find at
 
-https://kit-data-manager.github.io/webpage/metastore/documentation/REST/index.html
+https://kit-data-manager.github.io/webpage/metastore/documentation/REST/APIv2/index.html
+
+https://kit-data-manager.github.io/webpage/metastore/documentation/REST/APIv1/index.html (deprecated)
 
 If you want to use a script for doing so please refer to 
 

@@ -6,6 +6,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+### Added
+
+### Fixed
+
+### Docker
+
+### Libs
+
+### Plugins
+
+### Github Actions
+
+## [2.1.2] - 2026-04-21
+### Changed
+
+### Added
+
+### Fixed
+- Fix bug throwing exception in special cases when monitoring service is active.
+### Docker
+
+### Libs
+- Update dependency com.google.errorprone:error_prone_core to v2.45.0
+- Update dependency edu.kit.datamanager:repo-core to v1.2.7
+
+### Plugins
+
+### Github Actions
+
 ## [2.1.1] - 2025-11-24
 ### Changed
 - Move parts of monitoring to repo-core -> Change in configuration:
@@ -13,7 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `metastore.monitoring.noOfDaysToKeep` -> `repo.monitoring.noOfDaysToKeep`
   - `metastore.monitoring.cron4schedule`-> removed
 ### Added
-  - Add property 'repo.monitoring.serviceName' to set the name of the service for monitoring.
+- Add property 'repo.monitoring.serviceName' to set the name of the service for monitoring.
 
 ### Fixed
 - Fix bug while migrating to v2.x.x, which breaks when revoked records are available.
@@ -673,7 +704,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Registry for XSD files and support for XML metadata
 
-[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/kit-data-manager/metastore2/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/kit-data-manager/metastore2/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/kit-data-manager/metastore2/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/kit-data-manager/metastore2/compare/v2.0.2...v2.1.0
 [2.0.2]: https://github.com/kit-data-manager/metastore2/compare/v2.0.1...v2.0.2
