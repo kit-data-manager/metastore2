@@ -20,7 +20,7 @@ ext {
     springDocVersion  = '2.8.17'
     javersVersion     = '7.9.0'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.42.0'
+    errorproneVersion = '2.50.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -151,7 +151,7 @@ dependencies {
 compileJava {
 //    options.errorprone.disableAllWarnings = true
     options.errorprone.disableWarningsInGeneratedCode = true
-    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xmaxwarns" << "200"
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-XDaddTypeAnnotationsToSymbol=true" << "-Xmaxwarns" << "200"
 }
 
 compileTestJava {
