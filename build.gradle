@@ -42,13 +42,27 @@ java {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
 }
- 
-if (System.getProperty('profile') == 'minimal') {
-    println 'Using minimal profile for building ' + project.getName()
-    apply from: 'gradle/profile-minimal.gradle'   
-} else {
-    println 'Using default profile executing all tests for building ' + project.getName()
-    apply from: 'gradle/profile-complete.gradle'
+// The build profile can be specified via command line using -PbuildProfile=<profile>
+// For example: ./gradlew build -PbuildProfile=minimal
+// Default build profile is "complete" if not specified
+// Available profiles:
+// - "minimal" Only necessary tests for building online REST documentation will be executed.
+//             This is useful for building a production ready jar file without executing all tests.
+// - "release" Before releasing all tests will be executed.
+//             If successful, the release task will be executed to create a new release version and tag it in git.
+// - "complete" All tests will be executed
+//              To ensure that the application is working as expected, it is recommended to use this profile for development and testing.
+def buildProfile = project.findProperty("buildProfile") ?: "complete"
+
+def profileFile = file("$rootDir/gradle/profile-${buildProfile}.gradle")
+
+// The release task should only be executed with the "release" profile, which is defined in gradle/profile-minimal.gradle
+// Throw exception if the release task is executed with a different profile
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name == "release" } &&
+            findProperty("buildProfile") != "release") {
+        throw new GradleException("Task 'release' is only available with '-PbuildProfile=release'!" )
+    }
 }
 
 dependencies {
@@ -239,8 +253,12 @@ bootJar {
     launchScript()
 }
 
-release {
-    tagTemplate = 'v${version}'
+// Apply profile-specific build configuration at the end of this build script
+// to ensure that all settings are available.
+if (profileFile.exists()) {
+    apply from: profileFile
+} else {
+    throw new GradleException("Profile-file missing: $profileFile")
 }
 
 // task for printing project name.
