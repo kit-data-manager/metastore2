@@ -1,0 +1,95 @@
+{
+    "@context": "https://w3id.org/codemeta/3.0",
+    "type": "SoftwareSourceCode",
+    "applicationCategory": "Metadata management",
+    "applicationSubCategory": "JSON & XML Processing",
+    "codeRepository": "https://github.com/kit-data-manager/metastore2.git",
+    "name": "MetaStore",
+    "dateCreated": "2025-12-17",
+    "description": "JSONPatch is a Java library that implements the JSON Patch standard (RFC 6902) for applying partial modifications to JSON documents. It provides functionality to create, apply, and validate JSON Patch operations, making it easier to manage and manipulate JSON data structures in Java applications.",
+    "author": [
+        {
+            "@type": "Person",
+            "givenName": "Volker",
+            "familyName": "Hartmann",
+            "email": "volker.hartmann@kit.edu",
+            "@id": "https://orcid.org/0000-0001-6383-5214",
+            "identifier": "https://orcid.org/0000-0001-6383-5214",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Karlsruhe Institute of Technology (KIT)"
+            }
+        },
+        {
+            "@type": "Person",
+            "givenName": "Thomas",
+            "familyName": "Jejkal",
+            "email": "thomas.jejkal@kit.edu",
+            "@id": "https://orcid.org/0000-0003-2804-688X",
+            "identifier": "https://orcid.org/0000-0003-2804-688X",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Karlsruhe Institute of Technology (KIT)"
+            }
+        }
+    ],
+    "maintainer": [
+        {
+            "@type": "Person",
+            "givenName": "Volker",
+            "familyName": "Hartmann",
+            "email": "volker.hartmann@kit.edu",
+            "@id": "https://orcid.org/0000-0001-6383-5214",
+            "identifier": "https://orcid.org/0000-0001-6383-5214",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Karlsruhe Institute of Technology (KIT)"
+            }
+        },
+        {
+            "@type": "Person",
+            "givenName": "Thomas",
+            "familyName": "Jejkal",
+            "email": "thomas.jejkal@kit.edu",
+            "@id": "https://orcid.org/0000-0003-2804-688X",
+            "identifier": "https://orcid.org/0000-0003-2804-688X",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Karlsruhe Institute of Technology (KIT)"
+            }
+        }
+    ],
+    "funder": [
+        {
+            "@type": "Organization",
+            "name": "Helmholtz Association of German Research Centers",
+            "@id": "https://ror.org/0281dp749",
+            "url": "https://www.helmholtz.de/"
+        },
+        {
+            "@type": "Organization",
+            "name": "Helmholtz Metadata Collaboration (HMC)",
+            "@id": "https://ror.org/04v4h0v24",
+            "url": "https://helmholtz-metadaten.de/"
+        }
+    ],
+    "keywords": [
+        "Java",
+        "JSON",
+        "JSON Patch",
+        "RFC 6902",
+        "RFC 7396",
+        "Jackson 3",
+        "Library"
+    ],
+    "license": "https://spdx.org/licenses/Apache-2.0",
+    "runtimePlatform": "JVM",
+    "softwareRequirements": [
+      "https://www.oracle.com/java/technologies/downloads/#java21"
+    ],
+    "developmentStatus": "Production/Stable",
+    "issueTracker": "https://github.com/kit-data-manager/JSONPatch/issues",
+    "version": "1.0.0",
+    "softwareVersion": "1.0.0",
+    "dateModified": "2026-06-17"
+}
