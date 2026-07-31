@@ -147,8 +147,8 @@ dependencies {
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.20.0"
-    mockitoAgent("org.mockito:mockito-core:5.20.0") {
+    testImplementation "org.mockito:mockito-core:5.23.0"
+    mockitoAgent("org.mockito:mockito-core:5.23.0") {
         transitive = false
     }
     testImplementation "junit:junit:4.13.2"
