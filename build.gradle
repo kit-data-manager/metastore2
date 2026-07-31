@@ -18,7 +18,7 @@ group = 'edu.kit.datamanager'
 ext {
     // versions of dependencies
     springDocVersion  = '2.8.17'
-    javersVersion     = '7.9.0'
+    javersVersion     = '7.11.7'
     keycloakVersion   = '19.0.0'
     errorproneVersion = '2.50.0'
     // directory for generated code snippets during tests
