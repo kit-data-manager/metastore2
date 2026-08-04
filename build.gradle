@@ -1,13 +1,13 @@
 plugins { 
-    id 'org.springframework.boot' version '3.5.8'
+    id 'org.springframework.boot' version '3.5.16'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'io.freefair.lombok' version '9.1.0'
-    id 'io.freefair.maven-publish-java' version '9.1.0'
-    id 'org.owasp.dependencycheck' version '12.1.9'
+    id 'io.freefair.lombok' version '9.5.0'
+    id 'io.freefair.maven-publish-java' version '9.5.0'
+    id 'org.owasp.dependencycheck' version '12.2.2'
     id 'org.asciidoctor.jvm.convert' version '4.0.5'
-    id 'net.ltgt.errorprone' version '4.3.0'
+    id 'net.ltgt.errorprone' version '4.4.0'
     id 'net.researchgate.release' version '3.1.0'
-    id 'com.gorylenko.gradle-git-properties' version '2.5.4'
+    id 'com.gorylenko.gradle-git-properties' version '2.5.7'
     id 'java'
     id 'jacoco'
 }
@@ -17,10 +17,10 @@ group = 'edu.kit.datamanager'
 
 ext {
     // versions of dependencies
-    springDocVersion  = '2.8.14'
+    springDocVersion  = '2.9.0'
     javersVersion     = '7.9.0'
     keycloakVersion   = '19.0.0'
-    errorproneVersion = '2.42.0'
+    errorproneVersion = '2.50.0'
     // directory for generated code snippets during tests
     snippetsDir = file("build/generated-snippets")
 }
@@ -42,19 +42,33 @@ java {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
 }
- 
-if (System.getProperty('profile') == 'minimal') {
-    println 'Using minimal profile for building ' + project.getName()
-    apply from: 'gradle/profile-minimal.gradle'   
-} else {
-    println 'Using default profile executing all tests for building ' + project.getName()
-    apply from: 'gradle/profile-complete.gradle'
+// The build profile can be specified via command line using -PbuildProfile=<profile>
+// For example: ./gradlew build -PbuildProfile=minimal
+// Default build profile is "complete" if not specified
+// Available profiles:
+// - "minimal" Only necessary tests for building online REST documentation will be executed.
+//             This is useful for building a production ready jar file without executing all tests.
+// - "release" Before releasing all tests will be executed.
+//             If successful, the release task will be executed to create a new release version and tag it in git.
+// - "complete" All tests will be executed
+//              To ensure that the application is working as expected, it is recommended to use this profile for development and testing.
+def buildProfile = project.findProperty("buildProfile") ?: "complete"
+
+def profileFile = file("$rootDir/gradle/profile-${buildProfile}.gradle")
+
+// The release task should only be executed with the "release" profile, which is defined in gradle/profile-minimal.gradle
+// Throw exception if the release task is executed with a different profile
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.name == "release" } &&
+            findProperty("buildProfile") != "release") {
+        throw new GradleException("Task 'release' is only available with '-PbuildProfile=release'!" )
+    }
 }
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:7.0.1'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.2'
+    implementation 'org.springframework:spring-messaging:7.0.8'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.5'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -73,8 +87,8 @@ dependencies {
 
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:4.3.0"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.3.0"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:4.3.4"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:4.3.3"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
@@ -88,7 +102,7 @@ dependencies {
     implementation "commons-configuration:commons-configuration:1.10"
     implementation "org.apache.commons:commons-collections4:4.5.0"
     // includes commons-lang3
-    implementation "org.apache.commons:commons-text:1.14.0"
+    implementation "org.apache.commons:commons-text:1.15.0"
 
     // UI (website)
     implementation "org.springframework.boot:spring-boot-starter-thymeleaf"
@@ -98,13 +112,13 @@ dependencies {
     implementation "org.javers:javers-core:${javersVersion}"
 
     // driver for postgres
-    implementation "org.postgresql:postgresql:42.7.8"
+    implementation "org.postgresql:postgresql:42.7.13"
     //driver for h2
     implementation "com.h2database:h2:2.4.240"
     
     // apache
-    implementation "commons-io:commons-io:2.21.0"
-    implementation "org.apache.tika:tika-core:3.2.3"
+    implementation "commons-io:commons-io:2.22.0"
+    implementation "org.apache.tika:tika-core:3.3.2"
 
     // JSON validator
     implementation "com.networknt:json-schema-validator:1.5.9"
@@ -117,7 +131,7 @@ dependencies {
     implementation "edu.kit.datamanager:service-base:1.3.6"
 
     // elasticsearch (since service-base 1.1.0)
-    implementation "org.springframework.data:spring-data-elasticsearch:5.5.6"
+    implementation "org.springframework.data:spring-data-elasticsearch:5.5.13"
 
     // DOIP SDK
     implementation "net.dona.doip:doip-sdk:2.2.0"
@@ -125,15 +139,16 @@ dependencies {
     runtimeOnly    "org.apache.httpcomponents:httpclient:4.5.14"
     
     // Additional libraries for tests
-    testImplementation "com.google.guava:guava:33.5.0-jre"
-    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.5"
+    testImplementation "org.springframework.cloud:spring-cloud-contract-wiremock:4.3.4"
+    testImplementation "com.google.guava:guava:33.6.0-jre"
+    testImplementation "org.springframework.restdocs:spring-restdocs-mockmvc:3.0.6"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
     testImplementation "org.springframework:spring-test"
     testImplementation "org.springframework.security:spring-security-test"
    
     //Java 11 Support 
-    testImplementation "org.mockito:mockito-core:5.20.0"
-    mockitoAgent("org.mockito:mockito-core:5.20.0") {
+    testImplementation "org.mockito:mockito-core:5.23.0"
+    mockitoAgent("org.mockito:mockito-core:5.23.0") {
         transitive = false
     }
     testImplementation "junit:junit:4.13.2"
@@ -143,14 +158,14 @@ dependencies {
     errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
 
     // monitoring
-    implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.13.1'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.5.8'
+    implementation 'io.micronaut.micrometer:micronaut-micrometer-registry-prometheus:5.13.3'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator:3.5.16'
 }
 
 compileJava {
 //    options.errorprone.disableAllWarnings = true
     options.errorprone.disableWarningsInGeneratedCode = true
-    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-Xmaxwarns" << "200"
+    options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation" << "-XDaddTypeAnnotationsToSymbol=true" << "-Xmaxwarns" << "200"
 }
 
 compileTestJava {
@@ -184,7 +199,7 @@ tasks.withType(Test) {
 }
 
 jacoco {
-    toolVersion = "0.8.14"
+    toolVersion = "0.8.15"
 }
 
 import java.text.SimpleDateFormat
@@ -238,8 +253,12 @@ bootJar {
     launchScript()
 }
 
-release {
-    tagTemplate = 'v${version}'
+// Apply profile-specific build configuration at the end of this build script
+// to ensure that all settings are available.
+if (profileFile.exists()) {
+    apply from: profileFile
+} else {
+    throw new GradleException("Profile-file missing: $profileFile")
 }
 
 // task for printing project name.
