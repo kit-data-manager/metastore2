@@ -67,7 +67,7 @@ gradle.taskGraph.whenReady { graph ->
 
 dependencies {
     // Spring
-    implementation 'org.springframework:spring-messaging:7.0.8'
+    implementation 'org.springframework:spring-messaging:7.0.9'
     implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.5'
 
     // Spring Boot
