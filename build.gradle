@@ -54,7 +54,7 @@ if (System.getProperty('profile') == 'minimal') {
 dependencies {
     // Spring
     implementation 'org.springframework:spring-messaging:7.0.1'
-    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.2'
+    implementation 'org.springframework.cloud:spring-cloud-gateway-mvc:4.3.5'
 
     // Spring Boot
     implementation "org.springframework.boot:spring-boot-starter-data-rest"
@@ -73,8 +73,8 @@ dependencies {
 
     
     // cloud support
-    implementation "org.springframework.cloud:spring-cloud-starter-config:5.0.0"
-    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:5.0.1"
+    implementation "org.springframework.cloud:spring-cloud-starter-config:5.0.6"
+    implementation "org.springframework.cloud:spring-cloud-starter-netflix-eureka-client:5.0.3"
 
     // springdoc
     implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springDocVersion}"
